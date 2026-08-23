@@ -39,3 +39,10 @@ worktrees/
 .agents/worktrees/
 .typert-*/
 .hex-skills/
+
+# Machine-local agent and analysis tools
+.ua/
+.superpowers/
+.martty/
+.tokensave/
+.claude/.headroom_wrap_marker.json
