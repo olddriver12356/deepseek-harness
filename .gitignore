@@ -41,6 +41,7 @@ worktrees/
 .hex-skills/
 
 # Machine-local agent and analysis tools
+graphify-out/
 .ua/
 .superpowers/
 .martty/
