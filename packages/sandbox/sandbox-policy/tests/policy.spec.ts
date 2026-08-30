@@ -196,6 +196,36 @@ describe('sandbox:policy request context', () => {
     expect(await policyContext(ctx, active)).toBe(`Current DSH file policy: workspace-write. Any available operation enforced by the DSH file sandbox may modify files under the session workspace: ${JSON.stringify(resolve('/projects/current'))}. Some platform temporary areas may also be writable.`)
   })
 
+  it('advertises only escalation targets wider than the active session mode', async () => {
+    const ctx = await promptMounted()
+    ctx.systemPrompt.tools(() => ({
+      schemas: [{
+        name: 'write',
+        description: 'Write a file.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_path: { type: 'string' },
+            sandbox_permissions: { type: 'string', enum: ['workspace-write', 'danger-full-access'] },
+            justification: { type: 'string' },
+          },
+        },
+      }],
+    }))
+    const active = session('sess-schema', '/projects/current')
+    const escalation = async () => {
+      const [tool] = (await ctx.systemPrompt.assemble({ agent: agentFor(active) })).tools
+      return (tool?.parameters['properties'] as Record<string, { enum?: string[] }>)
+    }
+
+    expect((await escalation())['sandbox_permissions']?.enum).toEqual(['workspace-write', 'danger-full-access'])
+    setSandboxMode(active, 'workspace-write')
+    expect((await escalation())['sandbox_permissions']?.enum).toEqual(['danger-full-access'])
+    setSandboxMode(active, 'danger-full-access')
+    expect(await escalation()).not.toHaveProperty('sandbox_permissions')
+    expect(await escalation()).not.toHaveProperty('justification')
+  })
+
   it('reconstructs resumed policy from the session log and omits diagnostics without an agent', async () => {
     const active = session('sess-resume', '/projects/current')
     setSandboxMode(active, 'workspace-write')

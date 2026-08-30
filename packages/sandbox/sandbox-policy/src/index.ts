@@ -13,7 +13,8 @@
  * capabilities, while each backend retains its own enforcement dialect and each
  * tool owns its operation-specific denial and escalation guidance. The service
  * reads session state once at each operation boundary; executors and providers
- * remain session-free.
+ * remain session-free. Prompt assembly also projects escalation fields to only
+ * the modes wider than the active session without mutating registered schemas.
  *
  * @module @deepseek-ai/dsh-sandbox-policy
  */
@@ -22,7 +23,7 @@ import { resolve as resolvePath } from 'node:path'
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
-import { canonicalPath, type SandboxExecutionPolicy, type SandboxMode } from '@deepseek-ai/dsh-sandbox'
+import { WIDER_MODES, canonicalPath, type SandboxExecutionPolicy, type SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import { effectiveSandboxMode } from './session-mode.ts'
@@ -119,6 +120,30 @@ export class SandboxPolicyService extends Service {
             ? ''
             : renderPolicyContext(this.resolve({ session }))
         },
+      })
+      scope.on('system-prompt/assemble', async (_assembly, context, next) => {
+        const assembly = await next()
+        const session = context.agent?.session
+        if (session === undefined) return assembly
+        const widerModes = WIDER_MODES[this.resolve({ session }).mode] ?? []
+        return {
+          ...assembly,
+          tools: assembly.tools.map((tool) => {
+            const properties = tool.parameters['properties']
+            if (typeof properties !== 'object' || properties === null || Array.isArray(properties)
+              || !Object.hasOwn(properties, 'sandbox_permissions')) return tool
+            const projected = structuredClone(properties) as Record<string, unknown>
+            if (widerModes.length === 0) {
+              delete projected['sandbox_permissions']
+              delete projected['justification']
+            } else {
+              const permissions = projected['sandbox_permissions']
+              if (typeof permissions !== 'object' || permissions === null || Array.isArray(permissions)) return tool
+              projected['sandbox_permissions'] = { ...permissions, enum: [...widerModes] }
+            }
+            return { ...tool, parameters: { ...tool.parameters, properties: projected } }
+          }),
+        }
       })
     })
   }

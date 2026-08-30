@@ -836,6 +836,46 @@ export interface Config {
 
 Source: [`packages/jobs/jobs-local/src/index.ts:31`](../packages/jobs/jobs-local/src/index.ts)
 
+<a id="deepseek-aidsh-llm-claude-code-subscription"></a>
+
+## `@deepseek-ai/dsh-llm-claude-code-subscription`
+
+Requires: `llm` · `subprocess`
+
+```ts config-catalog
+/** Configuration for the Claude Code subscription adapter plugin. */
+export interface Config {
+  /** `claude` executable path or bare PATH name; defaults to `claude`. */
+  executable?: string
+  /** Working directory for the spawned CLI (`--add-dir`); defaults to the host process cwd. */
+  cwd?: string
+  /** SIGTERM-to-SIGKILL grace period; defaults to 5000ms. */
+  graceMs?: number
+}
+```
+
+Source: [`packages/llm/llm-claude-code-subscription/src/index.ts:29`](../packages/llm/llm-claude-code-subscription/src/index.ts)
+
+<a id="deepseek-aidsh-llm-codex-subscription"></a>
+
+## `@deepseek-ai/dsh-llm-codex-subscription`
+
+Requires: `llm` · `subprocess`
+
+```ts config-catalog
+/** Configuration for the Codex subscription adapter plugin. */
+export interface Config {
+  /** `codex` executable path or bare PATH name; defaults to `codex`. */
+  executable?: string
+  /** Working directory for the spawned CLI; defaults to the host process cwd. */
+  cwd?: string
+  /** SIGTERM-to-SIGKILL grace period; defaults to 5000ms. */
+  graceMs?: number
+}
+```
+
+Source: [`packages/llm/llm-codex-subscription/src/index.ts:28`](../packages/llm/llm-codex-subscription/src/index.ts)
+
 <a id="deepseek-aidsh-llm-deepseek"></a>
 
 ## `@deepseek-ai/dsh-llm-deepseek`
@@ -1518,7 +1558,7 @@ export interface Config {
 
 Depends on: [`SandboxMode`](subsystems/sandbox.md)
 
-Source: [`packages/sandbox/sandbox-policy/src/index.ts:67`](../packages/sandbox/sandbox-policy/src/index.ts)
+Source: [`packages/sandbox/sandbox-policy/src/index.ts:68`](../packages/sandbox/sandbox-policy/src/index.ts)
 
 <a id="deepseek-aidsh-sdk-jsonrpc-server"></a>
 

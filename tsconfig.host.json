@@ -200,6 +200,8 @@
     { "path": "./packages/code-runtime/code-runtime" },
     { "path": "./packages/code-runtime/code-runtime-worker-thread" },
     { "path": "./packages/llm/llm-deepseek" },
+    { "path": "./packages/llm/llm-claude-code-subscription" },
+    { "path": "./packages/llm/llm-codex-subscription" },
     { "path": "./packages/llm/llm-pi-ai" },
     { "path": "./packages/shell/bash-local" },
     { "path": "./packages/shell/shell-env" },

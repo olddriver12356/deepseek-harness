@@ -149,7 +149,8 @@ export interface EscalationRequest {
  * non-widening request, a missing approval service, an agent-less execution,
  * a rejection, a cancellation, an unanswerable ask) — the tool registry turns
  * the throw into the call's isError result, and nothing has run. A
- * non-widening request never prompts a human.
+ * non-widening request never prompts a human and tells the model that no
+ * access was denied, so it can remove the stale escalation pair.
  * @param request - the escalation to judge (see {@link EscalationRequest}).
  * @param approval - the approval ingredients the tool holds (see {@link EscalationApproval}).
  * @returns the granted mode, consumed by the one call that asked.
@@ -160,7 +161,7 @@ export async function approveEscalation<A, C>(request: EscalationRequest, approv
   // deliberately not a schema constraint (the enum is the closed target
   // vocabulary; the effective mode is per-call truth).
   if (!(WIDER_MODES[effectiveMode] ?? []).includes(mode as SandboxMode)) {
-    throw new Error(`sandbox escalation to "${mode}" is not strictly wider than this call's current "${effectiveMode}" mode`)
+    throw new Error(`sandbox escalation to "${mode}" is not strictly wider than this call's current "${effectiveMode}" mode; nothing was denied; retry without sandbox_permissions and justification`)
   }
   if (approval.approver === undefined) {
     throw new Error(`sandbox escalation to "${mode}" requires approval, but no approval service is composed`)
