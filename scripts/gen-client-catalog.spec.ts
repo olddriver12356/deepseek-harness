@@ -7,6 +7,9 @@
  * make a stale or undocumented contract fail loudly instead of shipping.
  */
 
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { collectSlotEntries, oversizedSlotReports, resolveSlotEntries, validateSlotContracts } from './gen-client-catalog.ts'
 import type { SlotDeclaration, SlotRegistration, TypeDeclaration } from './slot-walk.ts'
@@ -197,8 +200,44 @@ describe('the per-slot report budget', () => {
 })
 
 describe('the real workspace surface', () => {
+  it('excludes a replaced package before declarations and owner types are indexed', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-client-catalog-exclude-'))
+    const source = [
+      "declare module '@deepseek-ai/dsh-client-ui-slots' {",
+      '  interface SlotMap {',
+      '    /** A test seat whose active owner receives its width. */',
+      "    'demo.seat': { kind: 'single'; scope: 'root'; owner: DemoOwnerProps }",
+      '  }',
+      '}',
+      '/** Owner share for the test seat. */',
+      'export interface DemoOwnerProps { width: number }',
+      '',
+    ].join('\n')
+    try {
+      for (const name of ['active', 'replaced']) {
+        const directory = join(root, 'packages', 'client', name)
+        await mkdir(join(directory, 'src'), { recursive: true })
+        await writeFile(join(directory, 'package.json'), JSON.stringify({
+          name: `@deepseek-ai/dsh-client-${name}`,
+        }))
+        await writeFile(join(directory, 'src', 'index.ts'), source)
+      }
+
+      const entries = collectSlotEntries(root, {
+        exclude: ['packages/client/replaced/src/**'],
+      })
+      expect(entries.map(entry => entry.key)).toEqual(['demo.seat'])
+      expect(entries[0]?.ownerProps.join('\n')).toContain('DemoOwnerProps')
+      expect(entries[0]?.source).toContain('packages/client/active/')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('collects every declared slot with a teachable contract', { timeout: 30_000 }, () => {
-    const entries = collectSlotEntries(process.cwd())
+    const entries = collectSlotEntries(process.cwd(), {
+      exclude: ['packages/client/ui-layout/src/**'],
+    })
     expect(entries.length).toBeGreaterThan(30)
     for (const entry of entries) {
       expect(entry.summary, `${entry.key} has no summary`).not.toBe('')

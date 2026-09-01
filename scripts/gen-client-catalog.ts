@@ -31,6 +31,15 @@ const OUT = 'packages/extensions/cordis-client-runner/src/client/slot-catalog.ts
 /** Source globs: every workspace package's sources, `.tsx` included (a contract may live in one). */
 const SOURCE_GLOBS = ['packages/*/*/src/**/*.ts', 'packages/*/*/src/**/*.tsx']
 
+/** Sources replaced in the shipped web bundle and therefore absent from its catalog surface. */
+const SOURCE_EXCLUDES = ['packages/client/ui-layout/src/**']
+
+/** Source-selection options for a catalog scan. */
+export interface ClientCatalogScanOptions {
+  /** Glob patterns excluded before contracts and exported owner types are indexed. */
+  readonly exclude?: readonly string[]
+}
+
 /** Slot cardinalities the contract allows. */
 const KINDS = ['single', 'list', 'keyed', 'chain'] as const
 /** Slot data scopes the contract allows. */
@@ -129,11 +138,12 @@ export interface SlotEntry {
  * @returns the entries, sorted by key.
  * @throws when any declared slot is unteachable or the scan contradicts itself.
  */
-export function collectSlotEntries(scanRoot: string): SlotEntry[] {
-  const files = scanSlotFiles(scanRoot, SOURCE_GLOBS)
+export function collectSlotEntries(scanRoot: string, options: ClientCatalogScanOptions = {}): SlotEntry[] {
+  const exclude = options.exclude ?? []
+  const files = scanSlotFiles(scanRoot, SOURCE_GLOBS, exclude)
   const declarations = files.flatMap(file => slotDeclarations(file))
   const registrations = files.flatMap(file => slotRegistrations(file))
-  const types = indexExportedTypes(scanRoot, SOURCE_GLOBS)
+  const types = indexExportedTypes(scanRoot, SOURCE_GLOBS, exclude)
   const problems = validateSlotContracts(declarations, registrations, types)
   if (problems.length > 0) {
     throw new Error(`gen-client-catalog: ${String(problems.length)} contract violation(s):\n${problems.map(problem => `  ${problem}`).join('\n')}`)
@@ -529,7 +539,7 @@ export function renderClientCatalog(entries: readonly SlotEntry[]): string {
  * @returns nothing; writes the artifact or reports freshness through the process.
  */
 export function main(): void {
-  const content = renderClientCatalog(collectSlotEntries(root))
+  const content = renderClientCatalog(collectSlotEntries(root, { exclude: SOURCE_EXCLUDES }))
   const destination = resolve(root, OUT)
   if (process.argv.includes('--check')) {
     let committed: string | null = null

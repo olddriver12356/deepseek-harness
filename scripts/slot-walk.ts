@@ -88,12 +88,17 @@ export interface ScannedFile {
  * the scan stays cheap over the whole workspace.
  * @param scanRoot - repository root the patterns resolve against.
  * @param patterns - glob(s) selecting the TypeScript/TSX files to scan.
+ * @param exclude - glob(s) removed before source parsing.
  * @returns one entry per interesting file, in path order.
  */
-export function scanSlotFiles(scanRoot: string, patterns: readonly string[]): ScannedFile[] {
+export function scanSlotFiles(
+  scanRoot: string,
+  patterns: readonly string[],
+  exclude: readonly string[] = [],
+): ScannedFile[] {
   const out: ScannedFile[] = []
   const names = new Map<string, string>()
-  const rels = [...new Set(globSync(patterns as string[], { cwd: scanRoot })
+  const rels = [...new Set(globSync(patterns as string[], { cwd: scanRoot, exclude })
     .map(path => path.split(sep).join('/')))].sort()
   for (const rel of rels) {
     const abs = resolve(scanRoot, rel)
@@ -115,12 +120,17 @@ export function scanSlotFiles(scanRoot: string, patterns: readonly string[]): Sc
  * documentation IS the teaching material a registrant needs.
  * @param scanRoot - repository root the patterns resolve against.
  * @param patterns - glob(s) selecting the TypeScript/TSX files to index.
+ * @param exclude - glob(s) removed before exported declarations are indexed.
  * @returns name → declaration, with names declared more than once dropped as ambiguous.
  */
-export function indexExportedTypes(scanRoot: string, patterns: readonly string[]): Map<string, TypeDeclaration> {
+export function indexExportedTypes(
+  scanRoot: string,
+  patterns: readonly string[],
+  exclude: readonly string[] = [],
+): Map<string, TypeDeclaration> {
   const index = new Map<string, TypeDeclaration>()
   const ambiguous = new Set<string>()
-  const rels = [...new Set(globSync(patterns as string[], { cwd: scanRoot })
+  const rels = [...new Set(globSync(patterns as string[], { cwd: scanRoot, exclude })
     .map(path => path.split(sep).join('/')))].sort()
   for (const rel of rels) {
     const abs = resolve(scanRoot, rel)
