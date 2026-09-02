@@ -125,10 +125,10 @@ async function screen(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: join(REPO_ROOT, '.artifacts', `w5-${name}.png`) })
 }
 
-/** First column track (px string) of the frame grid. */
-async function firstTrack(page: Page): Promise<string> {
+/** Sidebar track (px string) of the frame grid. */
+async function sidebarTrack(page: Page): Promise<string> {
   return (await page.locator('[class*="frame"]').evaluate(
-    el => getComputedStyle(el).gridTemplateColumns)).split(' ')[0]!
+    el => getComputedStyle(el).gridTemplateColumns)).split(' ')[1]!
 }
 
 /** Last column track (details) as a number of pixels. */
@@ -523,12 +523,14 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY || notReady.length > 0)('web smoke
     if (sessionsDir !== undefined) rmSync(sessionsDir, { recursive: true, force: true })
   })
 
-  it('cold start: loading page settles into the three-column frame', async () => {
+  it('cold start: loading page settles into the four-track frame', async () => {
     onTestFailed(() => saveFailureShot(page, 'w5-cold-start'))
     await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
     expect(await page.locator('text=Failed to load plugins').count()).toBe(0)
     const template = await page.locator('[class*="frame"]').evaluate(el => getComputedStyle(el).gridTemplateColumns)
-    expect(template.split(' ').length).toBe(3)
+    const tracks = template.split(' ')
+    expect(tracks).toHaveLength(4)
+    expect(tracks[0]).toBe('72px')
     await screen(page, '01-cold-start')
   })
 
@@ -610,20 +612,19 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY || notReady.length > 0)('web smoke
 
   it('sidebar drag widens the column and resets across reload', async () => {
     onTestFailed(() => saveFailureShot(page, 'w5-drag'))
-    const before = await firstTrack(page)
-    const handle = page.locator('[class*="handle"]').first()
+    const before = await sidebarTrack(page)
+    const handle = page.locator('[data-side="sidebar"]')
     const box = await handle.boundingBox()
     expect(box).not.toBeNull()
     await page.mouse.move(box!.x + box!.width / 2, box!.y + 300)
     await page.mouse.down()
     await page.mouse.move(box!.x + 70, box!.y + 300, { steps: 6 })
     await page.mouse.up()
-    const after = await firstTrack(page)
-    expect(after).not.toBe(before)
+    await expect.poll(() => sidebarTrack(page), { timeout: 5_000 }).not.toBe(before)
     await screen(page, '10-sidebar-dragged')
     await page.reload({ waitUntil: 'load' })
     await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
-    expect(await firstTrack(page)).toBe(before)
+    expect(await sidebarTrack(page)).toBe(before)
   })
 
   it('dark mode: the body attribute cascades the token sheets', async () => {

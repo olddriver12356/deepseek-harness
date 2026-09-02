@@ -96,7 +96,7 @@ function mountFrame() {
 }
 
 function tracks(frame: HTMLElement): number[] {
-  const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px$/.exec(frame.style.gridTemplateColumns)
+  const m = /^72px (\d+)px minmax\(0, 1fr\) (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return [Number(m[1]), Number(m[2])]
 }
@@ -137,7 +137,14 @@ afterEach(() => {
 })
 
 describe('AppFrame', () => {
-  it('renders three tracks from store state', () => {
+  it('renders the app rail slot in a fixed leftmost track', () => {
+    const { slotCalls, container } = mountFrame()
+    expect(slotCalls.map(c => c.key)).toContain('app.rail')
+    const frame = container.querySelector('[data-shell-frame]') as HTMLElement
+    expect(frame.style.gridTemplateColumns.startsWith('72px ')).toBe(true)
+  })
+
+  it('renders resizable panel tracks from store state', () => {
     const { frame } = mountFrame()
     expect(tracks(frame)).toEqual([280, 0])
   })
@@ -222,7 +229,7 @@ describe('AppFrame', () => {
   it('sidebar drag widens through rAF-batched pointer moves', () => {
     const { frame } = mountFrame()
     const handles = frame.querySelectorAll('[class*="handle"]')
-    drag(handles[0]!, 280, 350)
+    drag(handles[0]!, 352, 422)
     expect(tracks(frame)[0]).toBe(350)
   })
 
@@ -230,7 +237,7 @@ describe('AppFrame', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
     const handles = frame.querySelectorAll('[class*="handle"]')
-    drag(handles[1]!, 1560, 1500)
+    drag(handles[1]!, 1632, 1572)
     expect(tracks(frame)[1]).toBe(420)
   })
 
@@ -240,7 +247,7 @@ describe('AppFrame', () => {
     act(() => { instance.actions.openDetails() })
     expect(tracks(frame)).toEqual([280, 330])
     const handles = frame.querySelectorAll('[class*="handle"]')
-    drag(handles[1]!, 920, 930) // shrink by 10 from the rendered width
+    drag(handles[1]!, 992, 1002) // shrink by 10 from the rendered width
     expect(instance.getSnapshot().details).toBe(320)
   })
 
@@ -343,26 +350,26 @@ describe('AppFrame — guard branches', () => {
   it('two moves inside one frame coalesce through the pending rAF', () => {
     const { frame, instance } = mountFrame()
     const handle = frame.querySelectorAll('[class*="handle"]')[0]!
-    act(() => { handle.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: 280, bubbles: true })) })
+    act(() => { handle.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: 352, bubbles: true })) })
     act(() => {
       // Two moves before the frame flushes: the second must ride the pending
       // rAF (frame.current ??= guard), and the flush sees the latest x.
-      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 320, bubbles: true }))
-      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 340, bubbles: true }))
+      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 392, bubbles: true }))
+      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 412, bubbles: true }))
       vi.advanceTimersByTime(20)
     })
-    act(() => { handle.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 340, bubbles: true })) })
+    act(() => { handle.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 412, bubbles: true })) })
     expect(instance.getSnapshot().sidebar).toBe(340)
   })
 
   it('pointerup with a pending rAF cancels it and commits the final position', () => {
     const { frame, instance } = mountFrame()
     const handle = frame.querySelectorAll('[class*="handle"]')[0]!
-    act(() => { handle.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: 280, bubbles: true })) })
+    act(() => { handle.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: 352, bubbles: true })) })
     act(() => {
-      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 360, bubbles: true }))
+      handle.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 432, bubbles: true }))
       // No timer advance: the rAF is still pending when pointerup arrives.
-      handle.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 360, bubbles: true }))
+      handle.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 432, bubbles: true }))
     })
     expect(instance.getSnapshot().sidebar).toBe(360)
   })

@@ -1,7 +1,7 @@
 /**
  * Layout plugin, browser half: one register() call contributes AppFrame into
  * the runtime's built-in 'root' slot and, in the same breath, declares the
- * four child slots (declaration = exclusive render authority), seats the
+ * five child slots (declaration = exclusive render authority), seats the
  * layout store (panel geometry), and wires the panel-action service face.
  * ctx.layout is the cross-plugin panel-action contract; navigation state lives
  * with the runtime sessions service. A second effect seats the theme
@@ -33,9 +33,16 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     // The 'root' entry itself is the runtime's built-in slot (declared
-    // there); these four are the frame's children, declared by the same
+    // there); these five are the frame's children, declared by the same
     // register() call that contributes AppFrame. Session owners never pass
     // sessionId: the framework injects it as a standard prop.
+    /**
+     * The persistent application rail: a fixed-width leftmost track holding
+     * app-level navigation. It is separate from the sidebar on purpose,
+     * because app navigation and session navigation are different axes and
+     * the sidebar collapses while the rail does not.
+     */
+    'app.rail': { kind: 'single'; scope: 'root'; owner: RailOwnerProps }
     /**
      * The whole left column. OCCUPIED by ui-sidebar's SidebarRoot, which
      * declares the workspace and settings seats inside it — registering here
@@ -90,6 +97,9 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 // PropsStore & I). Conversation business state and actions arrive through
 // framework-standard hooks and each registrant's inject face, not owner props.
 
+/** App rail owner share: the fixed track exposes no frame state. */
+export interface RailOwnerProps {}
+
 /** Sidebar owner share: live column state from the frame's concession solve. */
 export interface SidebarOwnerProps {
   /** True when the sidebar is closed (the column renders the compact control rail). */
@@ -109,7 +119,7 @@ export const inject = ['slots', 'theme']
 
 /**
  * Client plugin body: provide ctx.layout, then one register() call — AppFrame
- * into 'root' with the four child-slot declarations, the layout store seat,
+ * into 'root' with the five child-slot declarations, the layout store seat,
  * and the inject hook that hands the store's bound actions to the service.
  * @param ctx - client root context.
  */
@@ -120,6 +130,7 @@ export function apply(ctx: ClientContext): void {
     const disposeRegistration = ctx.slots.register({
       name: 'root',
       children: {
+        'app.rail': { kind: 'single', scope: 'root' },
         'sidebar': { kind: 'single', scope: 'root' },
         'conversation': { kind: 'single', scope: 'session-maybe' },
         'details': { kind: 'single', scope: 'session' },

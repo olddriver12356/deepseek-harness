@@ -80,6 +80,30 @@ export const CLIENT_NOTES: readonly string[] = [
 // detection is told to skip the data rather than the file.
 export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
   {
+    key: 'app.rail',
+    kind: 'single',
+    scope: 'root',
+    summary: 'The persistent application rail: a fixed-width leftmost track holding app-level navigation.',
+    doc: 'The persistent application rail: a fixed-width leftmost track holding\napp-level navigation. It is separate from the sidebar on purpose,\nbecause app navigation and session navigation are different axes and\nthe sidebar collapses while the rail does not.',
+    registerOptions: [],
+    ownerProps: [
+      '/** App rail owner share: the fixed track exposes no frame state. */\nexport interface RailOwnerProps {}',
+    ],
+    ownerPropsReferences: [],
+    standardProps: [
+      'useSessions: SnapshotSelectorHook<SessionListState>',
+      'useWorkspaces: SnapshotSelectorHook<import(\'./workspaces/service.ts\').WorkspaceListState>',
+    ],
+    keyDomain: '',
+    hookContext: '',
+    slotInject: '',
+    declaredBy: 'an entry in \'root\' (client-ui-shell), so it exists while that entry is mounted',
+    occupants: [],
+    replaceRisk: 'none',
+    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'app.rail\', () => ctx.slots.register(\n      { name: \'app.rail\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
+    source: 'packages/client/ui-shell/src/client/index.ts:45',
+  },
+  {
     key: 'conversation',
     kind: 'single',
     scope: 'session-maybe',
@@ -108,7 +132,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'shadows-shipped-ui',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation\', () => ctx.slots.register(\n      { name: \'conversation\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-shell/src/client/index.ts:62',
+    source: 'packages/client/ui-shell/src/client/index.ts:69',
   },
   {
     key: 'conversation.chat.assistant-actions',
@@ -1172,7 +1196,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'shadows-shipped-ui',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'details\', () => ctx.slots.register(\n      { name: \'details\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-shell/src/client/index.ts:72',
+    source: 'packages/client/ui-shell/src/client/index.ts:79',
   },
   {
     key: 'root',
@@ -1586,7 +1610,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'shell.overlay\', () => ctx.slots.register(\n      { name: \'shell.overlay\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-shell/src/client/index.ts:83',
+    source: 'packages/client/ui-shell/src/client/index.ts:90',
   },
   {
     key: 'sidebar',
@@ -1612,7 +1636,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'shadows-shipped-ui',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar\', () => ctx.slots.register(\n      { name: \'sidebar\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-shell/src/client/index.ts:49',
+    source: 'packages/client/ui-shell/src/client/index.ts:56',
   },
   {
     key: 'sidebar.brand.mark',

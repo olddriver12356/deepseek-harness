@@ -22,6 +22,14 @@
   }
 }
 
+.railCol {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .sidebarCol {
   min-width: 0;
   overflow: hidden;
