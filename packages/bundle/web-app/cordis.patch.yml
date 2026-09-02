@@ -190,6 +190,8 @@
       name: '@deepseek-ai/dsh-client-ui-layout'
     - id: ui-shell
       name: '@deepseek-ai/dsh-client-ui-shell'
+    - id: ui-app-rail
+      name: '@deepseek-ai/dsh-client-ui-app-rail'
 
     - id: ui-renderer
       name: '@deepseek-ai/dsh-client-ui-renderer'
