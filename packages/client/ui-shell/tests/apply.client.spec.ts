@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// Client apply wiring under the terminal register form: ctx.layout provided,
+// Client apply wiring under the terminal register form: shell services provided,
 // ONE register() call declares the five child slots + seats the store factory
 // + wires the panel actions through the inject hook; teardown cascades
-// (service unprovided + declarations gone + registration cleared). Node half
+// (services unprovided + declarations gone + registration cleared). Node half
 // and the invariant companion ride along — one line exposes the aggregate
 // coverage gate still requires exercised.
 
@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { apply as themeApply, inject as themeInject, ThemeRuntime } from '@deepseek-ai/dsh-client-ui-theme/client'
-import { apply, inject, LayoutController } from '@deepseek-ai/dsh-client-ui-shell/client'
+import { AppPanelsController, apply, inject, LayoutController } from '@deepseek-ai/dsh-client-ui-shell/client'
 import { apply as nodeApply } from '@deepseek-ai/dsh-client-ui-shell'
 import * as invariant from '@deepseek-ai/dsh-client-ui-shell/invariant'
 
@@ -35,7 +35,7 @@ async function bench() {
   return { ctx, slots: ctx.get('slots') as SlotRegistry }
 }
 
-describe('ui-layout client apply', () => {
+describe('ui-shell client apply', () => {
   it('declares its service dependencies', () => {
     expect(inject).toEqual(['slots', 'theme'])
   })
@@ -47,11 +47,12 @@ describe('ui-layout client apply', () => {
     expect(effect).toHaveBeenNthCalledWith(2, expect.any(Function), 'ui-shell: theme presenter')
   })
 
-  it('provides ctx.layout and registers AppFrame into root with the five child declarations', async () => {
+  it('provides the shell services and registers AppFrame into root with the five child declarations', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     expect(ctx.get('layout')).toBeInstanceOf(LayoutController)
+    expect(ctx.get('appPanels')).toBeInstanceOf(AppPanelsController)
     // The one register() call occupied 'root'…
     expect(slots.entries('root')).toHaveLength(1)
     // …and declared the five children in the ledger.
@@ -100,11 +101,12 @@ describe('ui-layout client apply', () => {
     expect(document.body.hasAttribute('data-ds-dark-theme')).toBe(false)
   })
 
-  it('teardown unwinds the service, the root registration, and the child declarations', async () => {
+  it('teardown unwinds the services, the root registration, and the child declarations', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     await fiber.dispose()
+    expect(ctx.get('appPanels')).toBeUndefined()
     expect(ctx.get('layout')).toBeUndefined()
     expect(slots.entries('root')).toHaveLength(0)
     expect(slots.spec('app.rail')).toBeUndefined()

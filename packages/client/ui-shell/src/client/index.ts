@@ -3,13 +3,15 @@
  * the runtime's built-in 'root' slot and, in the same breath, declares the
  * five child slots (declaration = exclusive render authority), seats the
  * layout store (panel geometry), and wires the panel-action service face.
- * ctx.layout is the cross-plugin panel-action contract; navigation state lives
- * with the runtime sessions service. A second effect seats the theme
- * presenter, which projects ctx.theme snapshots onto document.body.
+ * ctx.layout is the cross-plugin panel-action contract; ctx.appPanels owns
+ * active app-panel visibility without electing slots or panel lifecycles.
+ * Navigation state lives with the runtime sessions service. A second effect
+ * seats the theme presenter, which projects ctx.theme snapshots onto document.body.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { PanelActions } from './service.ts'
+import { AppPanelsController } from './app-panels.ts'
 import { AppFrame } from './AppFrame.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
@@ -22,11 +24,15 @@ import { ThemePresenter } from './theme-presenter.ts'
 // against; the frame components and the store factory are package-internal.
 export { LayoutController } from './service.ts'
 export type { ILayout } from './service.ts'
+export { AppPanelsController } from './app-panels.ts'
+export type { IAppPanels, PanelId } from './app-panels.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
     /** The outward face only; the concrete service stays inside this plugin. */
     layout: import('./service.ts').ILayout
+    /** Active app-panel visibility subscription; slot ownership remains separate. */
+    appPanels: import('./app-panels.ts').IAppPanels
   }
 }
 
@@ -118,15 +124,17 @@ export interface DetailsOwnerProps {}
 export const inject = ['slots', 'theme']
 
 /**
- * Client plugin body: provide ctx.layout, then one register() call — AppFrame
+ * Client plugin body: provide the shell services, then one register() call — AppFrame
  * into 'root' with the five child-slot declarations, the layout store seat,
  * and the inject hook that hands the store's bound actions to the service.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
   const layout = new LayoutController()
+  const appPanels = new AppPanelsController()
   ctx.effect(() => {
-    const disposeService = ctx.reflect.provide('layout', layout)
+    const disposeLayoutService = ctx.reflect.provide('layout', layout)
+    const disposeAppPanelsService = ctx.reflect.provide('appPanels', appPanels)
     const disposeRegistration = ctx.slots.register({
       name: 'root',
       children: {
@@ -147,9 +155,10 @@ export function apply(ctx: ClientContext): void {
       },
     }, AppFrame)
     return () => {
+      void disposeAppPanelsService()
       disposeRegistration()
       // provide()'s disposer settles asynchronously; teardown is synchronous fire-and-forget.
-      void disposeService()
+      void disposeLayoutService()
     }
   }, 'ui-shell: service + root registration')
 

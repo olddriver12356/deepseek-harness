@@ -10,9 +10,11 @@ The Web frame and its grid tracks need one package boundary that owns the persis
 
 ## Decision
 
-`@deepseek-ai/dsh-client-ui-shell` owns the shipped Web frame and is mounted in place of `ui-layout`. The `ui-layout` row remains present but disabled, which keeps the substitution explicit and patchable. The package owns the root registration and declares `app.rail`, `sidebar`, `conversation`, `details`, and `shell.overlay`. The root-scoped single `app.rail` has an empty owner share and renders in a fixed 72px leftmost track, keeping app navigation present while the session sidebar collapses. Both absolute drag handles add the rail width to their frame-left positions. The public client face exports `LayoutController`, `ILayout`, and the four owner prop interfaces.
+`@deepseek-ai/dsh-client-ui-shell` owns the shipped Web frame and is mounted in place of `ui-layout`. The `ui-layout` row remains present but disabled, which keeps the substitution explicit and patchable. The package owns the root registration and declares `app.rail`, `sidebar`, `conversation`, `details`, and `shell.overlay`. The root-scoped single `app.rail` has an empty owner share and renders in a fixed 72px leftmost track, keeping app navigation present while the session sidebar collapses. Both absolute drag handles add the rail width to their frame-left positions. The public client face exports `LayoutController`, `ILayout`, `AppPanelsController`, `IAppPanels`, `PanelId`, and the four owner prop interfaces.
 
-The client catalog excludes `packages/client/ui-layout/src/**` before both slot contract scanning and exported type indexing. The exclusion represents the shipped bundle substitution rather than weakening duplicate detection. A focused generator test proves that an excluded replacement cannot contribute duplicate declarations or make owner types ambiguous, and a real Loader composition test proves the new package row mounts from `cordis.yml`.
+`ctx.appPanels` owns only active app-panel visibility. Its closed `PanelId` set is `agent`, `knowledge`, `experts`, `styles`, `monitor`, and `news`, with `agent` active initially. Its `getSnapshot` and `subscribe` methods form a React `useSyncExternalStore` observable; same-value writes do not notify, and unsubscription removes the listener. Slot declarations and registration lifecycles remain the render-authority mechanism, so visibility changes neither elect occupants nor unmount panel state.
+
+The client catalog excludes `packages/client/ui-layout/src/**` before both slot contract scanning and exported type indexing. The exclusion represents the shipped bundle substitution rather than weakening duplicate detection. A focused generator test proves that an excluded replacement cannot contribute duplicate declarations or make owner types ambiguous, a real Loader composition test proves the new package row mounts from `cordis.yml`, and client composition coverage proves `ctx.appPanels` appears and disappears with the shell fiber.
 
 ## Alternatives considered
 
@@ -20,8 +22,10 @@ The client catalog excludes `packages/client/ui-layout/src/**` before both slot 
 
 **Mount both packages.** Both packages register the root frame and declare the same child slots, so activation order would decide ownership and the compile time catalog would correctly reject the duplicate contracts.
 
+**Use slot registration as active-panel election.** This would conflate shell visibility with render authority, remount panel components on selection, and discard their local state.
+
 **Allow duplicate declarations in the catalog.** Choosing one declaration silently would hide a real ownership conflict and could teach dynamic plugins the contract from a package that the shipped bundle does not mount.
 
 ## Consequences
 
-The shipped Web surface uses `ui-shell` and reserves 72px for persistent app navigation independently of session panel geometry. Drag handles remain aligned with the visible sidebar and details boundaries because their absolute positions include the rail width. The old package remains available for explicit overlays, but the generated catalog documents the shipped default composition and therefore excludes an overlay that deliberately re-enables `ui-layout`. Duplicate declarations among active catalog sources still fail closed.
+The shipped Web surface uses `ui-shell` and reserves 72px for persistent app navigation independently of session panel geometry. Drag handles remain aligned with the visible sidebar and details boundaries because their absolute positions include the rail width. App-panel selection is transient and starts at `agent`, while mounted panels can preserve local state across visibility changes. The old package remains available for explicit overlays, but the generated catalog documents the shipped default composition and therefore excludes an overlay that deliberately re-enables `ui-layout`. Duplicate declarations among active catalog sources still fail closed.

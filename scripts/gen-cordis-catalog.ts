@@ -136,6 +136,7 @@ export const SERVICE_PAGE: Record<string, string> = {
 export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
   agent: 'not a service: the DX accessor field on Agent.ctx (root accessor defaulting to undefined) — docs/subsystems/core.md owns the Agent handle',
   appExit: 'not a service: launcher-provided bounded process-exit callback — packages/boot/cmdline/README.md owns the launcher contract',
+  appPanels: 'client-side interface-typed browser service — packages/client/ui-shell/README.md owns the API',
   cmdlineArgs: 'not a service: launcher-provided immutable app argument accessor — packages/boot/cmdline/README.md owns the launcher contract',
   configuredAgentIdentities: 'not a service: launcher-provided boot-context value (ConfiguredAgentIdentities | undefined) — packages/core/agent-loop/README.md owns this launcher contract',
   launcherSessionQueryPath: 'not a service: launcher-provided boot-context value (string | undefined) — packages/session-query/session-query-sqlite/README.md owns this launcher contract',
@@ -150,7 +151,7 @@ export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
   conversation: 'client-side interface-typed browser service — packages/client/ui-conversation/README.md owns the API',
   conversationEvents: 'client-side interface-typed registry — packages/client/runtime/README.md owns the API',
   conversationViews: 'client-side interface-typed registry — packages/client/runtime/README.md owns the API',
-  layout: 'client-side interface-typed browser service — packages/client/ui-layout/README.md owns the API',
+  layout: 'client-side interface-typed browser service — packages/client/ui-shell/README.md owns the API',
   locale: 'client-side interface-typed browser service — packages/client/locale/README.md owns the API',
   modelDirectories: 'client-side interface-typed browser service — packages/client/ui-model-selection/README.md owns the API',
   modules: 'client-side interface-typed browser service — packages/client/modules/README.md owns the API',
