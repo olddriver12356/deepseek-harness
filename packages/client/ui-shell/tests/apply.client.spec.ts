@@ -40,6 +40,13 @@ describe('ui-layout client apply', () => {
     expect(inject).toEqual(['slots', 'theme'])
   })
 
+  it('ships shell-owned effect labels', () => {
+    const effect = vi.fn()
+    apply({ effect } as never)
+    expect(effect).toHaveBeenNthCalledWith(1, expect.any(Function), 'ui-shell: service + root registration')
+    expect(effect).toHaveBeenNthCalledWith(2, expect.any(Function), 'ui-shell: theme presenter')
+  })
+
   it('provides ctx.layout and registers AppFrame into root with the three child declarations', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
@@ -111,6 +118,7 @@ describe('node half + invariant companion', () => {
   })
 
   it('invariant companion registers under the package name', async () => {
+    expect(invariant.name).toBe('client-ui-shell-invariant')
     const register = vi.fn().mockReturnValue(() => {})
     const ctx = { invariants: { register } } as never
     // The /invariant subpath types live in lib/types (build product); assert

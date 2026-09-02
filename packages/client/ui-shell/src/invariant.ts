@@ -10,7 +10,7 @@ import type { InvariantInstaller } from '@deepseek-ai/dsh-invariants'
 const PACKAGE_NAME = '@deepseek-ai/dsh-client-ui-shell'
 
 /** Cordis companion plugin name. */
-export const name = 'client-ui-layout-invariant'
+export const name = 'client-ui-shell-invariant'
 /** Service required before the companion can reserve package ownership. */
 export const inject = ['invariants']
 

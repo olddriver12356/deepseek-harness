@@ -140,7 +140,7 @@ export function apply(ctx: ClientContext): void {
       // provide()'s disposer settles asynchronously; teardown is synchronous fire-and-forget.
       void disposeService()
     }
-  }, 'ui-layout: service + root registration')
+  }, 'ui-shell: service + root registration')
 
   // Theme presentation: pure DOM writes from resolved snapshots — initial
   // state through the getter once, then event-driven only; no React path.
@@ -152,5 +152,5 @@ export function apply(ctx: ClientContext): void {
       off()
       presenter.dispose()
     }
-  }, 'ui-layout: theme presenter')
+  }, 'ui-shell: theme presenter')
 }
