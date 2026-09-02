@@ -237,18 +237,32 @@ describe('AppFrame', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
     const handles = frame.querySelectorAll('[class*="handle"]')
-    drag(handles[1]!, 1632, 1572)
+    drag(handles[1]!, 1560, 1500)
     expect(tracks(frame)[1]).toBe(420)
   })
 
-  it('drag base is the rendered (concession-clamped) width, not the preference', () => {
-    frameWidth = 1250 // step-2 squeeze: details renders 330 while preference is 360
+  it('aligns the details handle with the actual details grid boundary', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
-    expect(tracks(frame)).toEqual([280, 330])
+    const handle = frame.querySelector('[data-side="details"]') as HTMLElement
+    expect(handle.style.left).toBe('1560px')
+  })
+
+  it('reserves the rail before conceding details to preserve the center floor', () => {
+    frameWidth = 1320
+    const { frame, instance } = mountFrame()
+    act(() => { instance.actions.openDetails() })
+    expect(tracks(frame)).toEqual([280, 328])
+  })
+
+  it('drag base is the rendered (concession-clamped) width, not the preference', () => {
+    frameWidth = 1320 // rail-aware step-2 squeeze: details renders 328 while preference is 360
+    const { frame, instance } = mountFrame()
+    act(() => { instance.actions.openDetails() })
+    expect(tracks(frame)).toEqual([280, 328])
     const handles = frame.querySelectorAll('[class*="handle"]')
     drag(handles[1]!, 992, 1002) // shrink by 10 from the rendered width
-    expect(instance.getSnapshot().details).toBe(320)
+    expect(instance.getSnapshot().details).toBe(318)
   })
 
   it('details column stays mounted at zero width', () => {
@@ -273,7 +287,7 @@ describe('AppFrame', () => {
     act(() => { instance.actions.openDetails() })
     frameWidth = 1250
     act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
-    expect(tracks(frame)).toEqual([280, 330])
+    expect(tracks(frame)).toEqual([280, 0])
     frameWidth = 1920
     act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
     expect(tracks(frame)).toEqual([280, 360])
@@ -291,6 +305,12 @@ describe('AppFrame', () => {
   })
 })
 describe('AppFrame — narrow-viewport auto-collapse', () => {
+  it('evaluates the breakpoint against the Agent content width', () => {
+    frameWidth = 1050
+    const { frame } = mountFrame()
+    expect(tracks(frame)).toEqual([SIDEBAR_COLLAPSED, 0])
+  })
+
   it('mounts collapsed below the breakpoint with no sidebar handle', () => {
     frameWidth = 980
     const { frame, slotCalls } = mountFrame()
@@ -397,6 +417,6 @@ describe('AppFrame — unmount with an in-flight resize frame', () => {
     act(() => { instance.actions.openDetails() })
     frameWidth = 1250
     act(() => { fireResize?.(); fireResize?.(); vi.advanceTimersByTime(20) })
-    expect(tracks(frame)).toEqual([280, 330])
+    expect(tracks(frame)).toEqual([280, 0])
   })
 })
