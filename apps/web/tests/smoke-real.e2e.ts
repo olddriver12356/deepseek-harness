@@ -7,9 +7,7 @@
 //
 // Selector convention: CSS Modules hash as [hash]_[local], so class-substring
 // selectors are unreliable — anchor on data-* attributes (data-variant /
-// data-sample) or visible text. The one [class*=] use below
-// (frame/handle) rides local names that survive hashing as suffixes; prefer
-// data-* for anything new.
+// data-sample) or visible text.
 //
 // Flow order matters: chat rounds first (the bash round reuses the first
 // send's session), geometry and theme after, reload recovery last. Tests run
@@ -127,13 +125,13 @@ async function screen(page: Page, name: string): Promise<void> {
 
 /** Sidebar track (px string) of the frame grid. */
 async function sidebarTrack(page: Page): Promise<string> {
-  return (await page.locator('[class*="frame"]').evaluate(
+  return (await page.locator('[data-shell-frame]').evaluate(
     el => getComputedStyle(el).gridTemplateColumns)).split(' ')[1]!
 }
 
 /** Last column track (details) as a number of pixels. */
 async function detailsTrack(page: Page): Promise<number> {
-  const cols = await page.locator('[class*="frame"]').evaluate(
+  const cols = await page.locator('[data-shell-frame]').evaluate(
     el => getComputedStyle(el).gridTemplateColumns)
   return Number(cols.split(' ').pop()!.replace('px', ''))
 }
@@ -142,7 +140,7 @@ async function detailsTrack(page: Page): Promise<number> {
 // plugin's client bundle exists and exports apply, the loader fail-louds and
 // the frame never appears.
 const UI_PLUGIN_DIRS = [
-  'connection', 'runtime', 'ui-theme', 'locale', 'ui-layout', 'ui-sidebar',
+  'connection', 'runtime', 'ui-theme', 'locale', 'ui-shell', 'ui-sidebar',
   'ui-settings', 'ui-settings-general', 'ui-settings-models', 'ui-conversation',
   'ui-model-selection', 'ui-user-questions', 'ui-trajectory', '../session-query/session-log-export',
 ]
@@ -525,9 +523,9 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY || notReady.length > 0)('web smoke
 
   it('cold start: loading page settles into the four-track frame', async () => {
     onTestFailed(() => saveFailureShot(page, 'w5-cold-start'))
-    await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
+    await page.waitForSelector('[data-shell-frame]', { timeout: 30_000 })
     expect(await page.locator('text=Failed to load plugins').count()).toBe(0)
-    const template = await page.locator('[class*="frame"]').evaluate(el => getComputedStyle(el).gridTemplateColumns)
+    const template = await page.locator('[data-shell-frame]').evaluate(el => getComputedStyle(el).gridTemplateColumns)
     const tracks = template.split(' ')
     expect(tracks).toHaveLength(4)
     expect(tracks[0]).toBe('72px')
