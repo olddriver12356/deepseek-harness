@@ -14,6 +14,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { loadCordisYaml } from './cordis-yaml.ts'
 import {
   declaredTypes,
   indexExportedTypes,
@@ -33,6 +34,50 @@ const SOURCE_GLOBS = ['packages/*/*/src/**/*.ts', 'packages/*/*/src/**/*.tsx']
 
 /** Sources replaced in the shipped web bundle and therefore absent from its catalog surface. */
 const SOURCE_EXCLUDES = ['packages/client/ui-layout/src/**']
+
+/** Web bundle patch whose explicit substitution authorizes SOURCE_EXCLUDES. */
+const WEB_APP_PATCH = 'packages/bundle/web-app/cordis.patch.yml'
+
+/** One parsed Loader entry, narrowed only as far as this focused guard needs. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Fail-closed contract for the one source package omitted from the catalog.
+ * The exclusion is valid only while the shipped web patch disables ui-layout
+ * and mounts ui-shell as its active replacement.
+ * @param document Parsed web-app Cordis patch.
+ * @returns Diagnostics when the exact replacement tuple is not shipped.
+ */
+export function shippedLayoutSubstitutionErrors(document: unknown): string[] {
+  const inserted = Array.isArray(document)
+    ? document.flatMap((entry): unknown[] => isRecord(entry) && Array.isArray(entry.insert) ? entry.insert : [])
+    : []
+  const entries = inserted.filter(isRecord)
+  const layouts = entries.filter(entry => entry.id === 'ui-layout')
+  const shells = entries.filter(entry => entry.id === 'ui-shell')
+  const layout = layouts.length === 1 ? layouts[0] : undefined
+  const shell = shells.length === 1 ? shells[0] : undefined
+  const errors: string[] = []
+  if (layout === undefined
+    || layout.name !== '@deepseek-ai/dsh-client-ui-layout'
+    || layout.disabled !== true) {
+    errors.push(`${WEB_APP_PATCH}: ui-layout must appear exactly once as @deepseek-ai/dsh-client-ui-layout with disabled: true before its sources may be excluded`)
+  }
+  if (shell === undefined
+    || shell.name !== '@deepseek-ai/dsh-client-ui-shell'
+    || (shell.disabled !== undefined && shell.disabled !== false)) {
+    errors.push(`${WEB_APP_PATCH}: ui-shell must appear exactly once as the active @deepseek-ai/dsh-client-ui-shell replacement`)
+  }
+  return errors
+}
+
+/** Read and validate the shipped replacement before any source scan begins. */
+function validateShippedLayoutSubstitution(scanRoot: string): string[] {
+  const document = loadCordisYaml(readFileSync(resolve(scanRoot, WEB_APP_PATCH), 'utf8'))
+  return shippedLayoutSubstitutionErrors(document)
+}
 
 /** Source-selection options for a catalog scan. */
 export interface ClientCatalogScanOptions {
@@ -539,6 +584,12 @@ export function renderClientCatalog(entries: readonly SlotEntry[]): string {
  * @returns nothing; writes the artifact or reports freshness through the process.
  */
 export function main(): void {
+  const substitutionErrors = validateShippedLayoutSubstitution(root)
+  if (substitutionErrors.length > 0) {
+    console.error('gen-client-catalog: shipped source substitution is invalid:')
+    for (const error of substitutionErrors) console.error(`- ${error}`)
+    process.exit(1)
+  }
   const content = renderClientCatalog(collectSlotEntries(root, { exclude: SOURCE_EXCLUDES }))
   const destination = resolve(root, OUT)
   if (process.argv.includes('--check')) {

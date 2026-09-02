@@ -11,7 +11,13 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { collectSlotEntries, oversizedSlotReports, resolveSlotEntries, validateSlotContracts } from './gen-client-catalog.ts'
+import {
+  collectSlotEntries,
+  oversizedSlotReports,
+  resolveSlotEntries,
+  shippedLayoutSubstitutionErrors,
+  validateSlotContracts,
+} from './gen-client-catalog.ts'
 import type { SlotDeclaration, SlotRegistration, TypeDeclaration } from './slot-walk.ts'
 
 /** A declaration with every field the catalog needs, overridable per case. */
@@ -200,6 +206,26 @@ describe('the per-slot report budget', () => {
 })
 
 describe('the real workspace surface', () => {
+  it.each([
+    ['activates ui-layout', false, 'active'],
+    ['removes ui-shell', true, 'missing'],
+    ['disables ui-shell', true, 'disabled'],
+  ])('rejects the shipped substitution when it %s', (_case, layoutDisabled, shellState) => {
+    const insert: Record<string, unknown>[] = [{
+      id: 'ui-layout',
+      name: '@deepseek-ai/dsh-client-ui-layout',
+      disabled: layoutDisabled,
+    }]
+    if (shellState !== 'missing') {
+      insert.push({
+        id: 'ui-shell',
+        name: '@deepseek-ai/dsh-client-ui-shell',
+        ...(shellState === 'disabled' ? { disabled: true } : {}),
+      })
+    }
+    expect(shippedLayoutSubstitutionErrors([{ insert }])).not.toEqual([])
+  })
+
   it('excludes a replaced package before declarations and owner types are indexed', async () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-client-catalog-exclude-'))
     const source = [
@@ -248,6 +274,8 @@ describe('the real workspace surface', () => {
     // so a dynamic package registering there replaces the whole UI.
     const root = entries.find(entry => entry.key === 'root')
     expect(root?.replaceRisk).toBe('shadows-shipped-ui')
-    expect(root?.occupants.join(' ')).toContain('AppFrame')
+    expect(root?.doc).toContain("the shipped shell's AppFrame")
+    expect(root?.doc).not.toContain('ui-layout')
+    expect(root?.occupants).toContain('client-ui-shell AppFrame')
   })
 })
