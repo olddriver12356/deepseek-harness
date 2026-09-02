@@ -1,0 +1,11 @@
+.proof {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--dsw-alias-button-floating, #1f1f1f);
+  color: var(--dsw-alias-text-primary, #fff);
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}

@@ -8,12 +8,14 @@
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import { AppRail } from './AppRail.tsx'
+import { ProofPanel } from './ProofPanel.tsx'
 
 /** Required services (cordis fiber inject). */
 export const inject = ['slots', 'appPanels']
 
 /**
- * Client plugin body: contribute the rail into the shell's rail slot.
+ * Client plugin body: contribute the rail into the shell's rail slot, plus a
+ * temporary proof panel into shell.overlay until real panel shells exist.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
@@ -26,5 +28,16 @@ export function apply(ctx: ClientContext): void {
       AppRail,
     ),
     'ui-app-rail: rail registration',
+  )
+  ctx.effect(
+    () => ctx.slots.register(
+      {
+        name: 'shell.overlay',
+        id: 'ui-app-rail-proof-panel',
+        inject: () => ({ appPanels: ctx.appPanels }),
+      },
+      ProofPanel,
+    ),
+    'ui-app-rail: proof panel registration',
   )
 }
