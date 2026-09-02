@@ -1,3 +1,8 @@
+/**
+ * Active-panel service spec: the observable contract the rail and every panel
+ * occupant share. Panel visibility is a subscription, never a slot election,
+ * so nothing here disposes or remounts anything.
+ */
 import { describe, expect, it, vi } from 'vitest'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 

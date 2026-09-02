@@ -1,3 +1,15 @@
+/**
+ * Active-panel service. Which application panel is showing is shell state, so
+ * it lives beside the layout service rather than inside any one panel.
+ *
+ * This is deliberately an observable and not a slot election. Panels occupy
+ * the list-kind 'shell.overlay' seat and every one of them stays mounted,
+ * reading this snapshot to decide whether to render. An election would
+ * dispose the losing entry, and a disposer collapses its declared child slots
+ * recursively, which would destroy the Agent surface's draft, scroll position,
+ * details width, and active session view on every panel change.
+ */
+
 /** Identifies a shell-level panel whose visibility `ctx.appPanels` controls. */
 export type PanelId = 'agent' | 'knowledge' | 'experts' | 'styles' | 'monitor' | 'news'
 
