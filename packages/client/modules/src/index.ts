@@ -3,10 +3,11 @@
  * the host Loader's entries for packages declaring `dsh.client`, composes the
  * `window.__DSH_BOOT__` entry graph (wire single source: {@link WebBootEntry}
  * in `./client/manifest.ts`) in module-graph order, serves
- * `/plugins/<id>/client.js` and its source map, contributes the boot manifest
- * plus the parser-blocking bootstrap preloads to the webserver's index
- * injection table, and provides the `clientModuleHost` service (the HMR node
- * half's registration/notification face).
+ * `/plugins/<id>/client.js`, its source map, and constrained package assets,
+ * contributes the boot manifest plus the parser-blocking bootstrap preloads
+ * to the webserver's index injection table, and provides the
+ * `clientModuleHost` service (the HMR node half's registration/notification
+ * face).
  *
  * Scanning is incremental per package — there is no full-rescan code path.
  * Every cordis `internal/plugin` emission (fiber construction/disposal) marks
@@ -26,13 +27,20 @@ import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import { Service } from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver'
 import { optionalStringArray, stripClientSuffix } from './client/manifest.ts'
 import type { WebBootEntry, WebBootGraph } from './client/manifest.ts'
+
+const ASSET_PATH = /^(.*)\/assets\/([A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|woff2))$/
+const ASSET_CONTENT_TYPES: Readonly<Record<string, string>> = {
+  '.png': 'image/png',
+  '.woff2': 'font/woff2',
+}
+const PATH_TRAVERSAL = /(?:^|\/)(?:\.{1,2}|(?:%2e){1,2}|%2e\.|\.%2e)(?:\/|$)/i
 
 export { stripClientSuffix } from './client/manifest.ts'
 export type {
@@ -533,10 +541,29 @@ export class ClientModuleRegistry extends Service {
       return
     }
     /* v8 ignore next -- `?? '/'` arm: node:http always sets url on server requests. */
-    const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)
+    const rawUrl = req.url ?? '/'
+    let pathname: string
+    try {
+      const rawPath = rawUrl.split(/[?#]/, 1)[0] ?? ''
+      if (/%(?:2f|5c)/i.test(rawPath) || PATH_TRAVERSAL.test(rawPath)) {
+        throw new URIError('unsafe plugin path')
+      }
+      pathname = decodeURIComponent(new URL(rawUrl, 'http://x').pathname)
+    } catch {
+      res.writeHead(404)
+      res.end()
+      return
+    }
     // The id may contain a scope slash. Anything else under /plugins (including
     // /plugins/events when the HMR row is absent) is an unknown resource.
     const prefix = '/plugins/'
+    const relativePath = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : ''
+    const assetMatch = ASSET_PATH.exec(relativePath)
+    const assetClientPath = assetMatch?.[1] === undefined ? undefined : this.clientPath(assetMatch[1])
+    const assetPath = assetClientPath === undefined || assetMatch?.[2] === undefined
+      ? undefined
+      : join(dirname(assetClientPath), 'assets', assetMatch[2])
+    const assetContentType = assetPath === undefined ? undefined : ASSET_CONTENT_TYPES[extname(assetPath)]
     const mapSuffix = '/client.js.map'
     const bundleSuffix = '/client.js'
     const isSourceMap = pathname.startsWith(prefix) && pathname.endsWith(mapSuffix)
@@ -544,7 +571,8 @@ export class ClientModuleRegistry extends Service {
     const clientPath = pathname.startsWith(prefix) && pathname.endsWith(suffix)
       ? this.clientPath(pathname.slice(prefix.length, -suffix.length))
       : undefined
-    const path = clientPath === undefined ? undefined : `${clientPath}${isSourceMap ? '.map' : ''}`
+    const bundlePath = clientPath === undefined ? undefined : `${clientPath}${isSourceMap ? '.map' : ''}`
+    const path = assetPath ?? bundlePath
     if (path === undefined) {
       res.writeHead(404)
       res.end()
@@ -553,10 +581,11 @@ export class ClientModuleRegistry extends Service {
     try {
       const body = await readFile(path)
       res.writeHead(200, {
-        'content-type': isSourceMap ? 'application/json; charset=utf-8' : 'text/javascript; charset=utf-8',
+        'content-type': assetContentType
+          ?? (isSourceMap ? 'application/json; charset=utf-8' : 'text/javascript; charset=utf-8'),
         'cache-control': 'no-cache',
       })
-      res.end(body)
+      res.end(req.method === 'HEAD' ? undefined : body)
     } catch {
       // Registered but unreadable (bundle not built yet): loud 404 beats a silent SPA-fallback HTML page.
       res.writeHead(404)

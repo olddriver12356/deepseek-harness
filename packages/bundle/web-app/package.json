@@ -67,6 +67,7 @@
     "@deepseek-ai/dsh-client-ui-layout": "workspace:^",
     "@deepseek-ai/dsh-client-ui-shell": "workspace:^",
     "@deepseek-ai/dsh-client-ui-app-rail": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-knowledge": "workspace:^",
     "@deepseek-ai/dsh-client-ui-model-selection": "workspace:^",
     "@deepseek-ai/dsh-client-ui-settings-models": "workspace:^",
     "@deepseek-ai/dsh-client-ui-settings-plugin-inventory": "workspace:^",

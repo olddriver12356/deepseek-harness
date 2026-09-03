@@ -101,6 +101,23 @@ const BUILD_TIME_TOOLS = [
   },
 ]
 
+const BUNDLED_ASSETS = [
+  {
+    name: 'Fusion Pixel 10px proportional zh_hans',
+    license: 'SIL Open Font License 1.1',
+    source: 'https://github.com/TakWolf/fusion-pixel-font',
+    role: 'Knowledge panel display font',
+    licenseFile: 'packages/client/ui-knowledge/LICENSE-OFL',
+  },
+  {
+    name: 'Boujoy punk collage artwork',
+    license: 'MIT',
+    source: 'https://github.com/olddriver12356/boujoy-harness',
+    role: 'Knowledge panel collage background',
+    licenseFile: 'packages/client/ui-knowledge/LICENSE-BOUJOY',
+  },
+] as const
+
 /** The `package.json` fields this generator reads. */
 export interface Manifest {
   name?: string
@@ -581,6 +598,15 @@ function verifyBuildTimePins(): void {
   }
 }
 
+/** Fail closed when a distributed visual asset loses its complete license text. */
+export function verifyBundledAssetLicenses(base = root): void {
+  for (const asset of BUNDLED_ASSETS) {
+    if (!existsSync(resolve(base, asset.licenseFile))) {
+      throw new Error(`gen-third-party-notices: bundled asset ${asset.name} is missing ${asset.licenseFile}.`)
+    }
+  }
+}
+
 /** SPDX identifiers this project may ship without further review. */
 const PERMISSIVE_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause', 'BSD-3-Clause', 'Apache-2.0', '0BSD', 'Unlicense', 'CC0-1.0', 'BlueOak-1.0.0', 'Python-2.0'])
 
@@ -662,6 +688,7 @@ ${rows.join('\n')}
  */
 export function render(): string {
   verifyBuildTimePins()
+  verifyBundledAssetLicenses()
   const npm = collectNpmDeps()
   const runtimeDeps = npm.filter(dep => dep.runtime)
   const devDeps = npm.filter(dep => !dep.runtime)
@@ -735,6 +762,12 @@ ${python.map(dep => `| [\`${dep.name}\`](${dep.repo}) | ${dep.license} | ${dep.r
 | Package | License | Role |
 | --- | --- | --- |
 ${BUILD_TIME_TOOLS.map(tool => `| [\`${tool.name}\`](${tool.repo}) | ${tool.license} | ${tool.role} |`).join('\n')}
+
+## Bundled visual assets
+
+| Asset | License | Role | License text |
+| --- | --- | --- | --- |
+${BUNDLED_ASSETS.map(asset => `| [${asset.name}](${asset.source}) | ${asset.license} | ${asset.role} | [\`${asset.licenseFile}\`](${asset.licenseFile}) |`).join('\n')}
 
 ## First-party native packages
 

@@ -14,6 +14,7 @@ import {
   parseVendoredRows,
   render,
   tierExternalDeps,
+  verifyBundledAssetLicenses,
   virtualManifest,
 } from './gen-third-party-notices.ts'
 
@@ -27,7 +28,18 @@ describe('THIRD_PARTY_NOTICES.md', () => {
   it('matches what the generator produces from the current manifests', () => {
     const generated = render()
     expect(generated).toContain('It depends on the third-party software listed below.')
+    expect(generated).toContain('## Bundled visual assets')
+    expect(generated).toContain('Fusion Pixel 10px proportional zh_hans')
+    expect(generated).toContain('SIL Open Font License 1.1')
+    expect(generated).toContain('packages/client/ui-knowledge/LICENSE-OFL')
+    expect(generated).toContain('Boujoy punk collage artwork')
+    expect(generated).toContain('MIT')
+    expect(generated).toContain('packages/client/ui-knowledge/LICENSE-BOUJOY')
     expect(readFileSync(resolve(root, 'THIRD_PARTY_NOTICES.md'), 'utf8'), 'stale notices — run `pnpm run gen-third-party-notices`').toBe(generated)
+  })
+
+  it('fails when a bundled asset license file is missing', () => {
+    expect(() => { verifyBundledAssetLicenses(tmpdir()) }).toThrow(/bundled asset .* is missing/)
   })
 })
 

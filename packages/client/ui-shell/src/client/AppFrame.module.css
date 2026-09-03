@@ -118,6 +118,8 @@
 .overlayLayer {
   position: absolute;
   inset: 0;
+  grid-column: 2 / -1;
+  grid-row: 1;
   z-index: 20;
   pointer-events: none;
 }

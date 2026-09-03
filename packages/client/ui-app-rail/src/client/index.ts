@@ -15,7 +15,7 @@ export const inject = ['slots', 'appPanels']
 
 /**
  * Client plugin body: contribute the rail into the shell's rail slot, plus a
- * temporary proof panel into shell.overlay until real panel shells exist.
+ * temporary fallback panel for unfinished application panels.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {

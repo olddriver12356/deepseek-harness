@@ -188,6 +188,13 @@ Direct dependencies of the `pyproject.toml` manifests, plus `uv` as the developm
 | --- | --- | --- |
 | [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg) | MIT | invoked by `scripts/build-exe-for-python-sdk.ts` to assemble the single-file SDK runtime executable |
 
+## Bundled visual assets
+
+| Asset | License | Role | License text |
+| --- | --- | --- | --- |
+| [Fusion Pixel 10px proportional zh_hans](https://github.com/TakWolf/fusion-pixel-font) | SIL Open Font License 1.1 | Knowledge panel display font | [`packages/client/ui-knowledge/LICENSE-OFL`](packages/client/ui-knowledge/LICENSE-OFL) |
+| [Boujoy punk collage artwork](https://github.com/olddriver12356/boujoy-harness) | MIT | Knowledge panel collage background | [`packages/client/ui-knowledge/LICENSE-BOUJOY`](packages/client/ui-knowledge/LICENSE-BOUJOY) |
+
 ## First-party native packages
 
 `@deepseek-ai/node-addon-landlock-run` (and its platform packages) is built and released from this repository under BSD 3-Clause. It is listed here for completeness; it is first-party, not third-party.

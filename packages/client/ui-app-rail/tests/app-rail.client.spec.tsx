@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import { AppRail } from '@deepseek-ai/dsh-client-ui-app-rail/src/client/AppRail.tsx'
+import { ProofPanel } from '@deepseek-ai/dsh-client-ui-app-rail/src/client/ProofPanel.tsx'
 
 afterEach(cleanup)
 
@@ -31,5 +32,25 @@ describe('AppRail', () => {
     fireEvent.click(screen.getByRole('tab', { name: /新闻/ }))
     expect(appPanels.getSnapshot()).toBe('news')
     expect(screen.getByRole('tab', { selected: true }).getAttribute('data-panel')).toBe('news')
+  })
+})
+
+describe('ProofPanel', () => {
+  it.each(['agent', 'knowledge'] as const)('yields to the real %s panel', (id) => {
+    const appPanels = new AppPanelsController()
+    appPanels.setActive(id)
+
+    const view = render(<ProofPanel appPanels={appPanels} />)
+
+    expect(view.container.querySelector('[data-proof-panel]')).toBeNull()
+  })
+
+  it('remains visible for an unfinished panel', () => {
+    const appPanels = new AppPanelsController()
+    appPanels.setActive('experts')
+
+    render(<ProofPanel appPanels={appPanels} />)
+
+    expect(screen.getByText(/专家/)).toBeTruthy()
   })
 })

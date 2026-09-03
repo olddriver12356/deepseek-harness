@@ -81,6 +81,29 @@ function construct(packageNames: string[]): ClientModuleRegistry {
   return constructWithRoute(packageNames).service
 }
 
+async function requestRoute(route: WebRoute, method: string, url: string): Promise<{
+  status: number
+  headers: Record<string, string> | undefined
+  body: Buffer
+}> {
+  let status = 0
+  let headers: Record<string, string> | undefined
+  let body = Buffer.alloc(0)
+  const response = {
+    writeHead(nextStatus: number, nextHeaders?: Record<string, string>) {
+      status = nextStatus
+      headers = nextHeaders
+      return response
+    },
+    end(chunk?: Uint8Array) {
+      body = chunk === undefined ? Buffer.alloc(0) : Buffer.from(chunk)
+      return response
+    },
+  } as unknown as ServerResponse
+  await route.handler({ method, url } as IncomingMessage, response)
+  return { status, headers, body }
+}
+
 /** Execute the exact first inline script emitted by the Host boot rows. */
 function injectedFacade(graph: WebBootGraph): { html: string; target: ClientModuleLoaderTarget } {
   const html = renderIndexInjections(
@@ -243,6 +266,67 @@ describe('client bundle activation', () => {
       'cache-control': 'no-cache',
     })
     expect(body).toBe(map)
+  })
+})
+
+describe('client package assets', () => {
+  function assetRoute(): { route: WebRoute; packageName: string; png: Buffer; font: Buffer } {
+    const packageName = '@fixture/assets'
+    const clientPath = writePackage(packageName)
+    const assets = join(dirname(clientPath), 'assets')
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+    const font = Buffer.from([0x77, 0x4f, 0x46, 0x32])
+    mkdirSync(assets, { recursive: true })
+    writeFileSync(clientPath, 'module.exports = {}\n')
+    writeFileSync(join(assets, 'panel.png'), png)
+    writeFileSync(join(assets, 'display.woff2'), font)
+    return { route: constructWithRoute([packageName]).route, packageName, png, font }
+  }
+
+  it('serves a PNG owned by a registered package', async () => {
+    const { route, packageName, png } = assetRoute()
+
+    const response = await requestRoute(route, 'GET', `/plugins/${packageName}/assets/panel.png`)
+
+    expect(response).toEqual({
+      status: 200,
+      headers: { 'content-type': 'image/png', 'cache-control': 'no-cache' },
+      body: png,
+    })
+  })
+
+  it('serves WOFF2 headers without a body for HEAD', async () => {
+    const { route, packageName } = assetRoute()
+
+    const response = await requestRoute(route, 'HEAD', `/plugins/${packageName}/assets/display.woff2`)
+
+    expect(response).toEqual({
+      status: 200,
+      headers: { 'content-type': 'font/woff2', 'cache-control': 'no-cache' },
+      body: Buffer.alloc(0),
+    })
+  })
+
+  it('rejects unsupported methods', async () => {
+    const { route, packageName } = assetRoute()
+
+    expect(await requestRoute(route, 'POST', `/plugins/${packageName}/assets/panel.png`))
+      .toMatchObject({ status: 405, body: Buffer.alloc(0) })
+  })
+
+  it.each([
+    '/plugins/@fixture/assets/assets/missing.png',
+    '/plugins/@fixture/unknown/assets/panel.png',
+    '/plugins/@fixture/assets/assets/../client.js',
+    '/plugins/@fixture/assets/assets/sub/panel.png',
+    '/plugins/@fixture/assets/assets/panel.svg',
+    '/plugins/@fixture/assets/assets%2fpanel.png',
+    '/plugins/@fixture/assets/assets%5cpanel.png',
+    '/plugins/@fixture/assets/assets/%2e%2e/client.js',
+  ])('returns 404 for unknown or unsafe resource %s', async (url) => {
+    const { route } = assetRoute()
+
+    expect(await requestRoute(route, 'GET', url)).toMatchObject({ status: 404, body: Buffer.alloc(0) })
   })
 })
 

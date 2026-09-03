@@ -11,7 +11,7 @@
 import { readFile } from 'node:fs/promises'
 import { existsSync, globSync, readFileSync } from 'node:fs'
 import { isBuiltin } from 'node:module'
-import { basename, dirname, isAbsolute, relative, resolve as resolvePath, sep } from 'node:path'
+import { basename, dirname, extname, isAbsolute, relative, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { UserConfig } from 'tsdown'
 import { transform } from 'lightningcss'
@@ -244,6 +244,7 @@ function clientLibraryConfig(
 
 /** The slice of the rolldown plugin context the stylesheet plugin uses. */
 interface AssetEmitter {
+  addWatchFile(file: string): void
   emitFile(file: {
     type: 'asset'
     fileName: string
@@ -434,8 +435,41 @@ function matchesSpecifier(patterns: readonly RegExp[], specifier: string): boole
   return patterns.some(pattern => pattern.test(specifier))
 }
 
+const CLIENT_ASSET_EXTENSIONS = new Set(['.png', '.woff2'])
+
+/** Emit one package-local binary referenced by a dynamic CSS Module and return its host URL. */
+function emitClientAsset(
+  emitter: AssetEmitter,
+  emitted: Set<string>,
+  packageId: string,
+  stylesheet: string,
+  specifier: string,
+): string {
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(specifier)) return specifier
+  const file = resolvePath(dirname(stylesheet), specifier)
+  const sourceBoundary = stylesheet.lastIndexOf(SOURCE_MARKER)
+  if (sourceBoundary < 0) throw new Error(`tsdown: stylesheet ${stylesheet} is outside package sources`)
+  const sourceRoot = stylesheet.slice(0, sourceBoundary + SOURCE_MARKER.length)
+  const fromSource = relative(sourceRoot, file)
+  if (fromSource.startsWith(`..${sep}`) || isAbsolute(fromSource)) {
+    throw new Error(`tsdown: asset ${file} is outside package src ${sourceRoot}`)
+  }
+  const extension = extname(file).toLowerCase()
+  if (!CLIENT_ASSET_EXTENSIONS.has(extension)) {
+    throw new Error(`tsdown: unsupported local asset ${file}; allowed extensions: .png, .woff2`)
+  }
+  const fileName = `assets/${basename(file)}`
+  if (!emitted.has(fileName)) {
+    emitted.add(fileName)
+    emitter.addWatchFile(file)
+    emitter.emitFile({ type: 'asset', fileName, source: readFileSync(file), originalFileName: file })
+  }
+  return `/plugins/${packageId}/${fileName}`
+}
+
 function clientConfig(id: string, entry: string): UserConfig {
   const isRequested = (specifier: string): boolean => clientExternals(id).has(specifier)
+  const emittedAssets = new Set<string>()
   return {
     name: `${id}/client`,
     entry: { client: entry },
@@ -513,6 +547,12 @@ function clientConfig(id: string, entry: string): UserConfig {
           code: source,
           cssModules: { pattern: '[hash]_[local]' },
           minify: true,
+          visitor: {
+            Url: value => ({
+              ...value,
+              url: emitClientAsset(this, emittedAssets, id, fileId, String(value.url)),
+            }),
+          },
         })
         const classMap: Record<string, string> = {}
         const exportEntries = Object.entries(cssExports ?? {})

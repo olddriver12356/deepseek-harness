@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 /** Dynamic ui-theme entry owns the global styles in dependency order. */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it } from 'vitest'
 import { installThemeStyles } from '../src/client/styles.ts'
@@ -28,5 +30,27 @@ describe('ui-theme client styles', () => {
     ])
     await fiber.dispose()
     expect(document.head.querySelectorAll(`style[data-plugin="${PLUGIN_ID}"]`)).toHaveLength(0)
+  })
+
+  it('owns the fixed Knowledge art palette and display-font alias', () => {
+    const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-theme/src/styles/design-platform.css'), 'utf8')
+    for (const declaration of [
+      '--dsw-specific-knowledge-canvas: rgb(25, 28, 35);',
+      '--dsw-specific-knowledge-surface: rgb(34, 38, 46);',
+      '--dsw-specific-knowledge-surface-raised: rgb(41, 46, 55);',
+      '--dsw-specific-knowledge-text: rgb(241, 234, 220);',
+      '--dsw-specific-knowledge-muted: rgb(166, 169, 179);',
+      '--dsw-specific-knowledge-line: rgb(255 255 255 / 11%);',
+      '--dsw-specific-knowledge-card-line: rgb(255 255 255 / 14%);',
+      '--dsw-specific-knowledge-contrast: rgb(255, 255, 255);',
+      '--dsw-specific-knowledge-acid: rgb(210, 255, 0);',
+      '--dsw-specific-knowledge-blue: rgb(36, 57, 255);',
+      '--dsw-specific-knowledge-pink: rgb(255, 43, 139);',
+      '--dsw-specific-knowledge-cyan: rgb(50, 228, 210);',
+      '--dsw-specific-knowledge-yellow: rgb(255, 214, 41);',
+      '--dsw-specific-knowledge-collage-fade-top: rgb(25 28 35 / 20%);',
+      '--dsw-specific-knowledge-collage-fade-bottom: rgb(25 28 35 / 62%);',
+      "--dsw-specific-knowledge-display-font: 'DSH Knowledge Fusion Pixel', var(--dsw-font-family);",
+    ]) expect(source).toContain(declaration)
   })
 })

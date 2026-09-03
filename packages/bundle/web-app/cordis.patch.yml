@@ -193,6 +193,9 @@
     - id: ui-app-rail
       name: '@deepseek-ai/dsh-client-ui-app-rail'
 
+    - id: ui-knowledge
+      name: '@deepseek-ai/dsh-client-ui-knowledge'
+
     - id: ui-renderer
       name: '@deepseek-ai/dsh-client-ui-renderer'
 
