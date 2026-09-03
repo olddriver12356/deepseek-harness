@@ -12,16 +12,17 @@
   padding: 0 8px;
   cursor: pointer;
   user-select: none;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .projectRow:hover,
 .sessionRow:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--dsw-specific-agent-surface-raised);
 }
 
 .sessionRow.selected {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--dsw-specific-agent-acid);
+  color: var(--dsw-specific-agent-canvas);
 }
 
 .searchResultRow {
@@ -98,6 +99,9 @@
   height: 34px;
   align-items: center;
   box-sizing: border-box;
+  border-left: 3px solid var(--dsw-specific-agent-blue);
+  background: var(--dsw-specific-agent-surface);
+  font-weight: 650;
 }
 
 .projectRow .rowActions {
@@ -111,6 +115,7 @@
   /* Mount fade: session rows appear by unfolding a group (or the tree
      mounting). Stable row keys keep already-visible rows from replaying it. */
   animation: row-in 150ms var(--ds-ease-in-out);
+  border-left: 1px solid var(--dsw-specific-agent-line);
 }
 
 .sessionRow .title {
@@ -145,7 +150,7 @@
 }
 
 .folderActive {
-  color: var(--dsw-alias-state-business-primary);
+  color: var(--dsw-specific-agent-acid);
 }
 
 
@@ -202,7 +207,7 @@
   white-space: nowrap;
   font-size: 12px;
   line-height: 20px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .time {
@@ -241,7 +246,7 @@
    hover fill while its dropdown is up). */
 .projectRow.menuOpen,
 .sessionRow.menuOpen {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--dsw-specific-agent-surface-raised);
 }
 
 /* Session drag insert marker: a leading chevron and 2px rule between rows,
@@ -344,7 +349,7 @@
 /* Chevrons ride the caption grey (#ADB2B8); the folder glyph stays one step
    darker (tertiary, #81858C) per the cell spec. */
 .chevron {
-  color: var(--dsw-alias-label-caption);
+  color: var(--dsw-specific-agent-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

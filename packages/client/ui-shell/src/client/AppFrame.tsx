@@ -13,12 +13,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
-import { computeColumns, SIDEBAR_AUTO_COLLAPSE, SIDEBAR_DEFAULT } from './columns.ts'
+import {
+  computeColumns, SIDEBAR_AUTO_COLLAPSE, SIDEBAR_COLLAPSED, SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN,
+} from './columns.ts'
 import type { createLayoutStore } from './stores.ts'
 import css from './AppFrame.module.css'
 
 /** Fixed width in px reserved for persistent app-level navigation. */
 export const RAIL_WIDTH = 72
+/** Phone layouts keep a rail-sized grid track and paint the expanded sidebar as a drawer. */
+export const SIDEBAR_DRAWER_MAX_VIEWPORT = 820
 
 /** Full composed props: runtime share + child-slot render share + store share. */
 export type AppFrameProps =
@@ -143,12 +147,21 @@ export function AppFrame({
   // absorbs the squeeze.
   const contentViewport = Math.max(0, viewport - RAIL_WIDTH)
   const narrow = contentViewport < SIDEBAR_AUTO_COLLAPSE
+  const sidebarDrawer = viewport <= SIDEBAR_DRAWER_MAX_VIEWPORT
   useEffect(() => { actions.setNarrow(narrow) }, [actions, narrow])
   const sidebarCollapsed = narrow ? !panels.narrowExpanded : panels.sidebar === 0
   const sidebarPreference = sidebarCollapsed
     ? 0
     : panels.sidebar === 0 ? SIDEBAR_DEFAULT : panels.sidebar
-  const cols = computeColumns(contentViewport, sidebarPreference, detailsSession === undefined ? 0 : panels.details)
+  const cols = computeColumns(
+    contentViewport,
+    sidebarDrawer ? 0 : sidebarPreference,
+    detailsSession === undefined ? 0 : panels.details,
+  )
+  const sidebarWidth = sidebarDrawer && !sidebarCollapsed
+    ? Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, sidebarPreference))
+    : cols.sidebar
+  const sidebarTrack = sidebarDrawer ? SIDEBAR_COLLAPSED : cols.sidebar
   const colsRef = useRef(cols)
   colsRef.current = cols
 
@@ -174,14 +187,16 @@ export function AppFrame({
     <div
       ref={frameRef}
       className={css.frame}
-      style={{ gridTemplateColumns: `${RAIL_WIDTH}px ${cols.sidebar}px minmax(0, 1fr) ${cols.details}px` }}
+      style={{ gridTemplateColumns: `${RAIL_WIDTH}px ${sidebarTrack}px minmax(0, 1fr) ${cols.details}px` }}
       data-shell-frame
       data-sidebar-collapsed={sidebarCollapsed || undefined}
+      data-sidebar-drawer={sidebarDrawer || undefined}
+      data-sidebar-drawer-open={sidebarDrawer && !sidebarCollapsed || undefined}
       data-details-collapsed={cols.details === 0 || undefined}
       data-dragging={dragging || undefined}
     >
       <RailColumn>{renderSlot('app.rail', {})}</RailColumn>
-      <div className={css.sidebarCol}>
+      <div className={css.sidebarCol} style={sidebarDrawer ? { width: sidebarWidth } : undefined}>
         {/* Render-site slot call with live concession output: a closed
             sidebar keeps the mounted slot at the compact-rail width, and the
             component sees its rendered state as owner params decided here
@@ -189,7 +204,7 @@ export function AppFrame({
             renders the rail UI too). */}
         {renderSlot('sidebar', {
           collapsed: sidebarCollapsed,
-          width: cols.sidebar,
+          width: sidebarWidth,
         })}
       </div>
       <>
@@ -205,7 +220,7 @@ export function AppFrame({
         {renderSlot('shell.overlay', {})}
       </div>
       {/* The collapsed sidebar is fixed-width: no resize handle while closed. */}
-      {!sidebarCollapsed && <DragHandle side="sidebar" left={RAIL_WIDTH + cols.sidebar} onStart={onSidebarStart} onDrag={onSidebarDrag} onEnd={onDragEnd} />}
+      {!sidebarCollapsed && !sidebarDrawer && <DragHandle side="sidebar" left={RAIL_WIDTH + cols.sidebar} onStart={onSidebarStart} onDrag={onSidebarDrag} onEnd={onDragEnd} />}
       {cols.details > 0 && <DragHandle side="details" left={RAIL_WIDTH + contentViewport - cols.details} onStart={onDetailsStart} onDrag={onDetailsDrag} onEnd={onDragEnd} />}
     </div>
   )

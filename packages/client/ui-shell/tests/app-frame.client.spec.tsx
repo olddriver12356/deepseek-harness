@@ -305,6 +305,20 @@ describe('AppFrame', () => {
   })
 })
 describe('AppFrame — narrow-viewport auto-collapse', () => {
+  it('keeps a 56px phone track while the expanded sidebar overlays as a 280px drawer', () => {
+    frameWidth = 800
+    const { frame, instance, slotCalls } = mountFrame()
+    expect(tracks(frame)).toEqual([SIDEBAR_COLLAPSED, 0])
+    expect(frame.hasAttribute('data-sidebar-drawer')).toBe(true)
+    expect(frame.hasAttribute('data-sidebar-drawer-open')).toBe(false)
+
+    act(() => { instance.actions.toggleSidebar() })
+    expect(tracks(frame)).toEqual([SIDEBAR_COLLAPSED, 0])
+    expect(frame.hasAttribute('data-sidebar-drawer-open')).toBe(true)
+    expect(slotCalls.filter(c => c.key === 'sidebar').at(-1)!.props).toEqual({ collapsed: false, width: 280 })
+    expect(frame.querySelector('[data-side="sidebar"]')).toBeNull()
+  })
+
   it('evaluates the breakpoint against the Agent content width', () => {
     frameWidth = 1050
     const { frame } = mountFrame()

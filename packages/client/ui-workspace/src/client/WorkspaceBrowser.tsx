@@ -12,8 +12,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import {
-  Button, IconCloseFill14, IconPersonalizationOutline16,
-  IconProjectAddOutline16, IconSearchOutline16, Menu, Modal, Tooltip,
+  Button, IconChevronDownOutline14, IconCloseFill14, IconFolderClose16,
+  IconNewChatOutline16, IconPersonalizationOutline16, IconProjectAddOutline16,
+  IconSearchOutline16, Menu, Modal, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type {
   SessionId, SessionListState, SessionSearchResultItem, WorkspaceId, WorkspaceView,
@@ -769,6 +770,7 @@ export function WorkspaceBrowser({
   const workspaces = useWorkspaces(state => state.items)
   const workspacePhase = useWorkspaces(state => state.phase)
   const archivedSessionIds = useWorkspaces(state => state.archivedSessionIds)
+  const recentWorkspaceId = useWorkspaces(state => state.recentWorkspaceId)
   // Live occupancy of this surface's directory-flow hole (the same source the
   // flow reads): a composition without a picking affordance can add nothing.
   const directoryFlowAvailable = useDirectoryFlow(occupied => occupied)
@@ -777,6 +779,19 @@ export function WorkspaceBrowser({
   const groupExpansion = useStore(s => s.groupExpansion)
   const sessionOrderByAccount = useStore(s => s.sessionOrderByAccount)
   const sessionUpdatedAtByAccount = useStore(s => s.sessionUpdatedAtByAccount)
+  const sessionPhase = useSessions(state => state.phase)
+  const currentSessionId = useSessions(state => state.current)
+  const sessionCount = useSessions(state => state.ids.length)
+  const currentWorkspace = currentSessionId === undefined
+    ? workspaces.find(workspace => workspace.workspaceId === recentWorkspaceId)
+    : workspaces.find(workspace => workspace.sessionIds.includes(currentSessionId))
+  const currentWorkspaceLabel = workspacePhase !== 'ready' || sessionPhase !== 'ready'
+    ? t('currentWorkspace.loading')
+    : currentWorkspace?.title ?? (currentSessionId === undefined ? t('currentWorkspace.none') : t('group.ungrouped'))
+  const mainListReady = workspacePhase === 'ready' && sessionPhase === 'ready'
+  const currentWorkspaceDisplay = mainListReady
+    ? t('currentWorkspace.value', { name: currentWorkspaceLabel })
+    : currentWorkspaceLabel
   const currentBlankSessionId = useSessions((state) => {
     const current = state.current
     return current !== undefined && state.byId[current]?.blank === true ? current : undefined
@@ -825,8 +840,8 @@ export function WorkspaceBrowser({
   const searchInput = useRef<HTMLInputElement | null>(null)
   // Section-header ＋ opens the picker menu (same popover in wide and rail
   // states; the menu anchors on this button).
-  const [wsPickerOpen, setWsPickerOpen] = useState(false)
-  const wsPlusRef = useRef<HTMLButtonElement>(null)
+  const [pickerMode, setPickerMode] = useState<'add' | 'select' | null>(null)
+  const pickerAnchor = useRef<HTMLElement | null>(null)
   const composingRef = useRef(false)
 
   // Rail search = expand + land in the search box: the flag arms before the
@@ -1009,10 +1024,59 @@ export function WorkspaceBrowser({
 
   return (
     <div className={clsx(css.root, !wide && css.rail)}>
+      {wide && (
+        <>
+          <div className={css.projectTape}>
+            <span>{t('section.projectTape')}</span>
+            <span className={css.sessionCount} aria-label={t('sessions.total', { n: sessionCount })}>{sessionCount}</span>
+          </div>
+          <div className={css.primaryActions}>
+            <button
+              type="button"
+              className={css.newSessionAction}
+              onClick={() => { startSession(currentWorkspace?.workspaceId) }}
+            >
+              <IconNewChatOutline16 size={16} />
+              <span>{t('session.new')}</span>
+            </button>
+            <button
+              type="button"
+              className={css.addWorkspaceAction}
+              disabled={!directoryFlowAvailable}
+              onClick={(event) => {
+                pickerAnchor.current = event.currentTarget
+                setPickerMode(mode => mode === 'add' ? null : 'add')
+              }}
+            >
+              <IconProjectAddOutline16 size={16} />
+              <span>{t('workspace.add')}</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            className={css.currentWorkspace}
+            aria-label={t('currentWorkspace.menu')}
+            aria-haspopup="menu"
+            aria-expanded={pickerMode === 'select'}
+            disabled={!mainListReady || (workspaces.length === 0 && !directoryFlowAvailable)}
+            onClick={(event) => {
+              pickerAnchor.current = event.currentTarget
+              setPickerMode(mode => mode === 'select' ? null : 'select')
+            }}
+          >
+            <span className={css.currentWorkspaceIcon} aria-hidden="true"><IconFolderClose16 size={16} /></span>
+            <span className={css.currentWorkspaceCopy}>
+              <span className={css.currentWorkspaceEyebrow}>{t('currentWorkspace.label')}</span>
+              <span className={css.currentWorkspaceName}>{currentWorkspaceDisplay}</span>
+            </span>
+            <IconChevronDownOutline14 className={css.currentWorkspaceChevron} />
+          </button>
+        </>
+      )}
       <div className={css.sectionHeader}>
         {wide && (
           <span className={clsx(css.sectionLabel, css.wide, searchExpanded && css.sectionLabelHidden)}>
-            {groupBy === 'flat' ? t('section.sessions') : t('section.workspaces')}
+            {t('section.sessionTape')}
           </span>
         )}
         {wide && (
@@ -1021,7 +1085,7 @@ export function WorkspaceBrowser({
               ref={searchRoot}
               className={clsx(css.search, searchExpanded && css.searchExpanded)}
               onClick={() => {
-                setWsPickerOpen(false)
+                setPickerMode(null)
                 setSearchExpanded(true)
                 searchInput.current?.focus()
               }}
@@ -1033,7 +1097,7 @@ export function WorkspaceBrowser({
                   aria-label={t('search.sessions.aria')}
                   aria-expanded={searchExpanded}
                   onClick={() => {
-                    setWsPickerOpen(false)
+                    setPickerMode(null)
                     setSearchExpanded(true)
                   }}
                 >
@@ -1085,18 +1149,18 @@ export function WorkspaceBrowser({
           {/* Adding is the button's one action, so a composition with no
               picking affordance has nothing to offer here: the region hides the
               button rather than leaving a dead one in the header. */}
-          {directoryFlowAvailable && (
+          {!wide && directoryFlowAvailable && (
             <Tooltip label={t('workspace.add')} side="bottom" delayMs={500}>
               <button
-                ref={wsPlusRef}
                 type="button"
                 className={css.iconButton}
                 aria-label={t('workspace.add')}
-                onClick={() => {
-                  setWsPickerOpen(v => !v)
+                onClick={(event) => {
+                  pickerAnchor.current = event.currentTarget
+                  setPickerMode(mode => mode === 'add' ? null : 'add')
                 }}
               >
-                <IconProjectAddOutline16 size={wide ? 16 : 18} />
+                <IconProjectAddOutline16 size={18} />
               </button>
             </Tooltip>
           )}
@@ -1104,19 +1168,20 @@ export function WorkspaceBrowser({
         {/* Add flow + its error dialog (same package — direct composition). */}
         <WorkspacePickFlow
           t={t}
-          open={wsPickerOpen}
-          anchorRef={wsPlusRef}
+          open={pickerMode !== null}
+          anchorRef={pickerAnchor}
           useWorkspaces={useWorkspaces}
           createWorkspace={createWorkspace}
           useDirectoryFlow={useDirectoryFlow}
           renderDirectoryFlow={owner => renderSlot('sidebar.workspaces.directoryFlow', owner)}
-          addOnly
+          addOnly={pickerMode === 'add'}
           side="right"
+          selectedId={currentWorkspace?.workspaceId}
           onPick={(workspaceId) => {
-            setWsPickerOpen(false)
+            setPickerMode(null)
             startSession(workspaceId)
           }}
-          onClose={() => { setWsPickerOpen(false) }}
+          onClose={() => { setPickerMode(null) }}
         />
       </div>
 
@@ -1141,7 +1206,12 @@ export function WorkspaceBrowser({
       {/* Always-mounted seat keeps the region's flex slot while the list
           itself is wide-only. */}
       <div className={css.listArea}>
-        {wide && (normalizedQuery !== ''
+        {wide && !mainListReady && (
+          <div className={css.listSkeleton} role="status" aria-label={t('sessions.loading')}>
+            <span /><span /><span /><span /><span />
+          </div>
+        )}
+        {wide && mainListReady && (normalizedQuery !== ''
           ? (
             <SearchResults
               useSessions={useSessions}

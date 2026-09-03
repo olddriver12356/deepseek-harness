@@ -53,4 +53,22 @@ describe('ui-theme client styles', () => {
       "--dsw-specific-knowledge-display-font: 'DSH Knowledge Fusion Pixel', var(--dsw-font-family);",
     ]) expect(source).toContain(declaration)
   })
+
+  it('owns the Agent panel art palette and display-font alias', () => {
+    const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-theme/src/styles/design-platform.css'), 'utf8')
+    for (const declaration of [
+      '--dsw-specific-agent-canvas: rgb(25, 28, 35);',
+      '--dsw-specific-agent-surface: rgb(34, 38, 46);',
+      '--dsw-specific-agent-surface-raised: rgb(41, 46, 55);',
+      '--dsw-specific-agent-text: rgb(241, 234, 220);',
+      '--dsw-specific-agent-muted: rgb(166, 169, 179);',
+      '--dsw-specific-agent-line: rgb(255 255 255 / 11%);',
+      '--dsw-specific-agent-acid: rgb(210, 255, 0);',
+      '--dsw-specific-agent-blue: rgb(36, 57, 255);',
+      '--dsw-specific-agent-pink: rgb(255, 43, 139);',
+      '--dsw-specific-agent-cyan: rgb(50, 228, 210);',
+      '--dsw-specific-agent-yellow: rgb(255, 214, 41);',
+      "--dsw-specific-agent-display-font: 'DSH Agent Fusion Pixel', var(--dsw-font-family);",
+    ]) expect(source).toContain(declaration)
+  })
 })
