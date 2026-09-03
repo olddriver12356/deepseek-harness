@@ -202,7 +202,7 @@ export function ModelSelect(
     void select(selection).then(settleSelection)
   }
 
-  const modelLabel = currentChoice?.model.name ?? t('trigger.fallback')
+  const modelLabel = state.status === 'loading' ? t('status.loading') : currentChoice?.model.name ?? t('trigger.fallback')
   const triggerLabel = effortLabel === undefined ? modelLabel : `${modelLabel} · ${effortLabel}`
   const triggerAria = currentChoice === undefined
     ? t('trigger.selectAria')

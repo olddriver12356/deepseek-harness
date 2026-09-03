@@ -368,3 +368,8 @@
 .root[data-phase='settling'] .composerSeat {
   visibility: hidden;
 }
+
+.heroWorkspaceRow {
+  gap: 7px;
+  filter: drop-shadow(3px 3px 0 rgb(50 228 210 / 35%));
+}

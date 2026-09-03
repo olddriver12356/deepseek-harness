@@ -234,6 +234,31 @@ function attachmentOwner(slotCalls: readonly { key: string; owner: unknown }[]):
 }
 
 describe('image draft rail', () => {
+  it('offers the native multi-image picker with the supported media types', () => {
+    const addImages = vi.fn(() => null)
+    const { view } = bench({ addImages })
+    const picker = view.container.querySelector<HTMLInputElement>('input[type="file"]')!
+    expect(picker.accept).toBe('image/png,image/jpeg,image/webp,image/gif')
+    expect(picker.multiple).toBe(true)
+    const open = vi.spyOn(picker, 'click')
+    fireEvent.click(view.getByRole('button', { name: '添加图片' }))
+    expect(open).toHaveBeenCalledOnce()
+    const files = [
+      new File([Uint8Array.of(1)], 'one.png', { type: 'image/png' }),
+      new File([Uint8Array.of(2)], 'two.webp', { type: 'image/webp' }),
+    ]
+    fireEvent.change(picker, { target: { files } })
+    expect(addImages).toHaveBeenCalledWith(files)
+  })
+
+  it('renders attachment context above the composer card', () => {
+    const { view } = bench({ accessory: <span data-testid="context-chip">Context</span> })
+    const context = view.container.querySelector('[data-composer-context-chips]')!
+    const card = view.container.querySelector('[data-composer-card]')!
+    expect(context.contains(view.getByTestId('context-chip'))).toBe(true)
+    expect(context.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  })
+
   it('collects clipboard files while preserving text from a mixed paste', () => {
     const addImages = vi.fn(() => null)
     const { textarea, shell } = bench({ addImages })
@@ -420,9 +445,9 @@ describe('Enter semantics', () => {
   })
 
   it('keeps the owning placeholder or ordinary guidance when whole-queue steering is unavailable', () => {
-    expect(bench({ running: true }).textarea.placeholder).toBe('给智能体发消息')
-    expect(bench({ queue: [row('q-1')] }).textarea.placeholder).toBe('给智能体发消息')
-    expect(bench({ running: true, queue: [row('q-1')], draft: '消息' }).textarea.placeholder).toBe('给智能体发消息')
+    expect(bench({ running: true }).textarea.placeholder).toBe('描述你要完成的事…')
+    expect(bench({ queue: [row('q-1')] }).textarea.placeholder).toBe('描述你要完成的事…')
+    expect(bench({ running: true, queue: [row('q-1')], draft: '消息' }).textarea.placeholder).toBe('描述你要完成的事…')
     expect(bench({
       running: true,
       queue: [row('q-1')],
@@ -430,7 +455,7 @@ describe('Enter semantics', () => {
         address: { parentSessionId: 'parent' as SessionId, childSessionId: SID, mode: 'continuable' },
         parentAvailable: true,
       },
-    }).textarea.placeholder).toBe('给智能体发消息')
+    }).textarea.placeholder).toBe('描述你要完成的事…')
     expect(bench({
       running: true,
       queue: [row('q-1')],
@@ -442,7 +467,7 @@ describe('Enter semantics', () => {
       running: true,
       queue: [row('q-1')],
       commandMenuOpen: true,
-    }).textarea.placeholder).toBe('给智能体发消息')
+    }).textarea.placeholder).toBe('描述你要完成的事…')
     // The steer hint intentionally outranks the plan placeholder: while it
     // shows, the whole-queue gesture is genuinely available in plan mode.
     expect(bench({
@@ -612,6 +637,18 @@ describe('Enter semantics', () => {
 })
 
 describe('running and lock semantics', () => {
+  it('shows the busy overlay with the native mutually exclusive Enter mode', () => {
+    const steer = bench({ running: true, busyEnter: 'steer' })
+    const status = steer.view.getByRole('status', { name: '任务运行中' })
+    expect(status.textContent).toContain('↳ 引导当前任务')
+    expect(status.textContent).toContain('排到下一条')
+    expect(status.querySelector('[data-active]')?.textContent).toBe('↳ 引导当前任务')
+    cleanup()
+    const queue = bench({ running: true, busyEnter: 'queue' })
+    expect(queue.view.getByRole('status', { name: '任务运行中' }).querySelector('[data-active]')?.textContent)
+      .toBe('排到下一条')
+  })
+
   it('running keeps the input free (typing + Enter queue) while the primary turns stop', () => {
     const { textarea, button, stop, sink } = bench({ running: true, draft: '排队消息' })
     expect(textarea.disabled).toBe(false)
@@ -1064,7 +1101,7 @@ describe('running and lock semantics', () => {
     const { textarea } = bench({ disabled: true })
     expect(textarea.placeholder).toBe('会话不可用')
     const live = bench()
-    expect(live.textarea.placeholder).toBe('给智能体发消息')
+    expect(live.textarea.placeholder).toBe('描述你要完成的事…')
     const custom = bench({ placeholder: 'Custom placeholder' })
     expect(custom.textarea.placeholder).toBe('Custom placeholder')
   })
@@ -1111,7 +1148,7 @@ describe('running and lock semantics', () => {
     expect(entering.textarea.placeholder).toBe('描述你的任务以生成计划')
     // Pending exit: target is default again.
     const leaving = bench({ plan: { active: true, pending: true } })
-    expect(leaving.textarea.placeholder).toBe('给智能体发消息')
+    expect(leaving.textarea.placeholder).toBe('描述你要完成的事…')
     // Owner placeholder outranks the plan swap.
     const custom = bench({ plan: { active: true, pending: false }, placeholder: 'Custom placeholder' })
     expect(custom.textarea.placeholder).toBe('Custom placeholder')
@@ -1507,16 +1544,16 @@ describe('command launcher chrome and control seats', () => {
     const { view } = bench({ permissions, command })
     const trigger = view.getByLabelText(/^访问模式/) as HTMLButtonElement
     // Title-case display is presentation only; the menu ids stay machine names.
-    expect(trigger.textContent).toBe('Read Only')
+    expect(trigger.textContent).toBe('只读')
     expect([...trigger.querySelectorAll('svg')]
       .every(icon => icon.closest('[aria-hidden="true"]') !== null)).toBe(true)
     fireEvent.click(trigger)
     const items = view.getAllByRole('menuitem')
-    expect(items.map(o => o.textContent)).toEqual(['Read Only', 'Workspace Write', 'Full access'])
+    expect(items.map(o => o.textContent)).toEqual(['只读', '工作区写入', '完全访问'])
     fireEvent.click(items[1]!)
     // Optimistic pick + disable until admission resolves (command stub resolves true).
     const busy = view.getByLabelText(/^访问模式/) as HTMLButtonElement
-    expect(busy.textContent).toBe('Workspace Write')
+    expect(busy.textContent).toBe('工作区写入')
     expect(busy.disabled).toBe(true)
     expect(command).toHaveBeenCalledWith('/permission workspace-write')
     await act(async () => {})
@@ -1534,7 +1571,7 @@ describe('command launcher chrome and control seats', () => {
     }
     const { view } = bench({ permissions, command })
     fireEvent.click(view.getByLabelText(/^访问模式/))
-    fireEvent.click(view.getByRole('menuitem', { name: 'Full access' }))
+    fireEvent.click(view.getByRole('menuitem', { name: '完全访问' }))
 
     expect(command).not.toHaveBeenCalled()
     expect(view.getByRole('dialog', { name: '确认启用 Full access？' })).toBeTruthy()
@@ -1548,7 +1585,7 @@ describe('command launcher chrome and control seats', () => {
     expect(command).toHaveBeenCalledOnce()
     expect(command).toHaveBeenCalledWith('/permission danger-full-access')
     expect(view.queryByRole('dialog')).toBeNull()
-    expect((view.getByLabelText(/^访问模式/) as HTMLButtonElement).textContent).toBe('Full access')
+    expect((view.getByLabelText(/^访问模式/) as HTMLButtonElement).textContent).toBe('完全访问')
     await act(async () => {})
   })
 
@@ -1564,14 +1601,14 @@ describe('command launcher chrome and control seats', () => {
     const { view } = bench({ permissions, command })
     const openConfirmation = () => {
       fireEvent.click(view.getByLabelText(/^访问模式/))
-      fireEvent.click(view.getByRole('menuitem', { name: 'Full access' }))
+      fireEvent.click(view.getByRole('menuitem', { name: '完全访问' }))
     }
 
     openConfirmation()
     fireEvent.click(view.getByRole('checkbox'))
     fireEvent.click(view.getByRole('button', { name: '取消' }))
     expect(command).not.toHaveBeenCalled()
-    expect((view.getByLabelText(/^访问模式/) as HTMLButtonElement).textContent).toBe('Workspace Write')
+    expect((view.getByLabelText(/^访问模式/) as HTMLButtonElement).textContent).toBe('工作区写入')
 
     openConfirmation()
     expect((view.getByRole('checkbox') as HTMLInputElement).checked).toBe(false)
@@ -1589,7 +1626,7 @@ describe('command launcher chrome and control seats', () => {
     }
     const { view, session } = bench({ permissions, command })
     fireEvent.click(view.getByLabelText(/^访问模式/))
-    fireEvent.click(view.getByRole('menuitem', { name: 'Full access' }))
+    fireEvent.click(view.getByRole('menuitem', { name: '完全访问' }))
     fireEvent.click(view.getByRole('checkbox'))
     act(() => { session.set(snapshotOf({ removed: true })) })
     expect(view.queryByRole('dialog')).toBeNull()
@@ -1607,7 +1644,7 @@ describe('command launcher chrome and control seats', () => {
     }
     const { view, props } = bench({ permissions, command })
     fireEvent.click(view.getByLabelText(/^访问模式/))
-    fireEvent.click(view.getByRole('menuitem', { name: 'Full access' }))
+    fireEvent.click(view.getByRole('menuitem', { name: '完全访问' }))
     fireEvent.click(view.getByRole('checkbox'))
     view.rerender(<InputBar {...props} sessionId={'s2' as SessionId} />)
     expect(view.queryByRole('dialog')).toBeNull()

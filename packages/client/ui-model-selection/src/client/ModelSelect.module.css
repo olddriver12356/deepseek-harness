@@ -268,3 +268,23 @@
   flex: 0 0 auto;
   color: var(--dsw-alias-label-tertiary);
 }
+
+.trigger {
+  border: 1px solid var(--dsw-specific-composer-line);
+  border-radius: 2px;
+  background: var(--dsw-specific-composer-surface-raised);
+  color: var(--dsw-specific-composer-text);
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--dsw-specific-composer-yellow);
+  background: var(--dsw-specific-composer-blue);
+}
+
+.triggerEffort {
+  color: var(--dsw-specific-composer-cyan);
+}
+
+.chevron {
+  color: var(--dsw-specific-composer-yellow);
+}

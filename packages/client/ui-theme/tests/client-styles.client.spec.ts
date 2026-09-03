@@ -71,4 +71,22 @@ describe('ui-theme client styles', () => {
       "--dsw-specific-agent-display-font: 'DSH Agent Fusion Pixel', var(--dsw-font-family);",
     ]) expect(source).toContain(declaration)
   })
+
+  it('owns the Composer art palette and display-font alias', () => {
+    const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-theme/src/styles/design-platform.css'), 'utf8')
+    for (const declaration of [
+      '--dsw-specific-composer-canvas: rgb(12, 15, 20);',
+      '--dsw-specific-composer-surface: rgb(25, 29, 37);',
+      '--dsw-specific-composer-surface-raised: rgb(35, 40, 49);',
+      '--dsw-specific-composer-text: rgb(241, 234, 220);',
+      '--dsw-specific-composer-muted: rgb(156, 162, 174);',
+      '--dsw-specific-composer-line: rgb(255 255 255 / 14%);',
+      '--dsw-specific-composer-acid: rgb(210, 255, 0);',
+      '--dsw-specific-composer-blue: rgb(36, 57, 255);',
+      '--dsw-specific-composer-pink: rgb(255, 43, 139);',
+      '--dsw-specific-composer-cyan: rgb(50, 228, 210);',
+      '--dsw-specific-composer-yellow: rgb(255, 214, 41);',
+      "--dsw-specific-composer-display-font: 'DSH Composer Fusion Pixel', var(--dsw-font-family);",
+    ]) expect(source).toContain(declaration)
+  })
 })

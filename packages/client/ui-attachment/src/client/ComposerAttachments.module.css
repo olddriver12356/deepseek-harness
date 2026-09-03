@@ -1,4 +1,9 @@
 .rail {
   min-width: 0;
-  padding: 4px 12px 0;
+  padding: 5px 8px;
+  border: 1px solid var(--dsw-specific-composer-line);
+  border-left: 4px solid var(--dsw-specific-composer-cyan);
+  border-radius: 2px;
+  background: var(--dsw-specific-composer-surface);
+  box-shadow: 3px 3px 0 var(--dsw-specific-composer-pink);
 }

@@ -136,6 +136,7 @@ export function InputBar({
     if (notice?.level === 'error') showToast(notice.text)
   }, [notice, showToast])
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const cardRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const mirrorRef = useRef<HTMLDivElement | null>(null)
@@ -562,6 +563,7 @@ export function InputBar({
   // pointer users can queue follow-ups while its current turn is running.
   const primaryStops = running && subagent === null
   const interruptible = running && continuable
+  const busyMode = running && subagent === null ? resolveSubmitMode(true, 'enter', true) : null
   const primaryLabel = primaryStops ? t('input.stop') : t('input.send')
   const onPrimary = (): void => {
     if (primaryStops) {
@@ -584,6 +586,16 @@ export function InputBar({
   // text. Claim tokens and references retain the draft's own glyph metrics,
   // so their decoration cannot drift from wrapping, selection, or the caret.
   const deco = input === undefined ? INERT_DECORATIONS : deriveDecorations(input, lexicon)
+  const attachmentSeat = renderSlot('conversation.input.attachments', {
+    attachments,
+    canAcceptDrop,
+    onAddImages: intakeImages,
+    onRemoveImage: (id) => { removeImage?.(id) },
+    dropLimits: imageLimits === undefined ? undefined : {
+      count: imageLimits.maxImagesPerMessage,
+      size: imageSizeText(imageLimits.maxImageBytes),
+    },
+  })
   const backdrop: ReactNode[] = []
   {
     // Segment boundaries: the token range end, every structured-reference
@@ -693,6 +705,10 @@ export function InputBar({
           {notice.text}
         </div>
       )}
+      <div className={css.contextChips} data-composer-context-chips="">
+        {accessory !== undefined && <div className={css.accessory}>{accessory}</div>}
+        {attachmentSeat}
+      </div>
       {/* Trigger clicks land on the card, not the textarea: the toolbar row's
           disabled controls swallow clicks otherwise (the CSS state disarms
           their pointer events), so the WHOLE capsule is the pick target.
@@ -705,18 +721,16 @@ export function InputBar({
         onClick={workspaceTrigger ? onRequestWorkspace : undefined}
         onPointerDown={workspaceTrigger ? (e) => { e.stopPropagation() } : undefined}
       >
+        {busyMode !== null && (
+          <div className={css.busyComposer} role="status" aria-label={t('busy.running')}>
+            <span className={css.busyLabel}><span className={css.busyPulse} aria-hidden />{t('busy.running')}</span>
+            <span className={css.busyModes} role="group" aria-label={t('busy.mode.active', { mode: busyMode })}>
+              <span data-active={busyMode === 'steer' || undefined}>{t('busy.mode.steer')}</span>
+              <span data-active={busyMode === 'queue' || undefined}>{t('busy.mode.queue')}</span>
+            </span>
+          </div>
+        )}
         {overlay !== undefined && <div className={css.overlayAnchor}>{overlay}</div>}
-        {accessory !== undefined && <div className={css.accessory}>{accessory}</div>}
-        {renderSlot('conversation.input.attachments', {
-          attachments,
-          canAcceptDrop,
-          onAddImages: intakeImages,
-          onRemoveImage: (id) => { removeImage?.(id) },
-          dropLimits: imageLimits === undefined ? undefined : {
-            count: imageLimits.maxImagesPerMessage,
-            size: imageSizeText(imageLimits.maxImageBytes),
-          },
-        })}
         {/* One scrollport, two text layers. The hidden mirror renders draft+'\n' and stretches the
             stack to the draft's FULL height (counting rows by '\n' cannot see soft wraps); the
             absolutely-positioned backdrop and textarea ride that height, and .scroll — capped at 14
@@ -769,6 +783,32 @@ export function InputBar({
         </div>
         <div className={css.row}>
           <div className={css.tools}>
+            <Tooltip label={t('input.attachImages')} side="top" delayMs={500}>
+              <button
+                type="button"
+                className={css.imageAdd}
+                aria-label={t('input.attachImages')}
+                disabled={!canAcceptDrop}
+                onMouseDown={keepFocus}
+                onClick={() => { fileInputRef.current?.click() }}
+              >
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+                  <path d="M2 2.75h12v10.5H2zM4 10l2.25-2.5 1.8 1.8L10.5 6.5 13 10.2M5 5.25h.01" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </Tooltip>
+            <input
+              ref={fileInputRef}
+              className={css.fileInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              multiple
+              tabIndex={-1}
+              onChange={(event) => {
+                intakeImages(Array.from(event.currentTarget.files ?? []))
+                event.currentTarget.value = ''
+              }}
+            />
             <Tooltip label={t('input.commands')} side="top" delayMs={500}>
               <button
                 type="button"
@@ -798,6 +838,7 @@ export function InputBar({
                 <button
                   type="button"
                   className={css.primary}
+                  data-composer-action="stop"
                   aria-label={t('input.stop')}
                   disabled={stop === undefined}
                   onMouseDown={keepFocus}
@@ -813,6 +854,7 @@ export function InputBar({
               <button
                 type="button"
                 className={css.primary}
+                data-composer-action={primaryStops ? 'stop' : 'send'}
                 aria-label={primaryLabel}
                 disabled={primaryStops ? stop === undefined : empty || disabled || machineBusy}
                 onMouseDown={keepFocus}

@@ -47,3 +47,10 @@
   font-size: 12px;
   line-height: 18px;
 }
+
+.chip {
+  border: 1px solid var(--dsw-specific-composer-yellow);
+  border-radius: 2px;
+  background: var(--dsw-specific-composer-surface-raised);
+  color: var(--dsw-specific-composer-yellow);
+}

@@ -74,3 +74,19 @@
 .chevronOpen {
   transform: rotate(180deg);
 }
+
+.trigger {
+  border: 1px solid var(--dsw-specific-composer-line);
+  border-radius: 2px;
+  background: var(--dsw-specific-composer-surface-raised);
+  color: var(--dsw-specific-composer-text);
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--dsw-specific-composer-cyan);
+  background: var(--dsw-specific-composer-blue);
+}
+
+.chevron {
+  color: var(--dsw-specific-composer-yellow);
+}

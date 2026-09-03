@@ -117,3 +117,24 @@
   color: var(--dsw-alias-label-caption);
   white-space: normal;
 }
+
+.seat {
+  border: 1px solid var(--dsw-specific-composer-line);
+  border-radius: 2px;
+  background: var(--dsw-specific-composer-surface);
+  color: var(--dsw-specific-composer-text);
+}
+
+.seat:not(:disabled):hover,
+.seat[aria-expanded='true'] {
+  border-color: var(--dsw-specific-composer-pink);
+  background: var(--dsw-specific-composer-blue);
+}
+
+.seatIcon {
+  color: var(--dsw-specific-composer-acid);
+}
+
+.chevron {
+  color: var(--dsw-specific-composer-yellow);
+}
