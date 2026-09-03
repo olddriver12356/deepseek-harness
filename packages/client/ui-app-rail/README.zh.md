@@ -10,7 +10,7 @@ AppRail 消费从 `@deepseek-ai/dsh-client-ui-shell/client` 注入的 `ctx.appPa
 
 ## Model Experience
 
-无，rail 占用者仅拥有可见性和选择；无任何内容触及模型请求。
+无，因为 rail 占用者只管理可见性和选择，不向模型请求添加任何内容。
 
 #### KV 缓存效应
 

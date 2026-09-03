@@ -10,13 +10,13 @@ AppRail consumes `ctx.appPanels` injected from `@deepseek-ai/dsh-client-ui-shell
 
 ## Model Experience
 
-None, rail occupant owns visibility selection only; nothing reaches model request.
+None, as the rail occupant owns visibility and selection only; nothing reaches a model request.
 
 #### KV Cache effect
 
 None; package neither assembles nor sends provider request.
 
-## Known Limitations Deferred Work
+## Known Limitations and Deferred Work
 
 - **No roving tabindex**: rail entries render as stateless buttons. Arrow-key navigation deferred until Task 5 when panel pages exist.
 - **No aria-controls**: tab-like `aria-selected` markup describes active state only. `aria-controls` links to panel content IDs deferred until panel registration stabilizes.
