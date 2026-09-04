@@ -26,9 +26,10 @@
   height: 36px;
   margin: 0 auto;
   padding: 4px 5px 4px 12px;
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-radius: 12px;
-  background: var(--dsw-specific-tip);
+  /* Same squared dock chrome as the todo panel, in the goal accent. */
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-left: 3px solid var(--dsw-specific-agent-cyan);
+  background: var(--dsw-specific-agent-surface);
 }
 
 .goalGlyph {

@@ -19,11 +19,13 @@
      so header and footer actions stay reachable on long batches. */
   max-height: min(60vh, 520px);
   padding: 0 0 10px;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
-  border-radius: 20px;
-  background: var(--dsw-specific-input-major);
-  box-shadow: var(--dsw-shadow-lv2);
-  color: var(--dsw-alias-label-primary);
+  /* Boujoy's `AGENT NEEDS YOU` interrupt chrome, applied to DSH's inline
+     takeover rather than the source's modal dialog: squared card, hard accent
+     edge, blue offset shadow. Question carriers and answer flow unchanged. */
+  border: 2px solid var(--dsw-specific-agent-acid);
+  background: var(--dsw-specific-agent-surface);
+  box-shadow: 5px 5px 0 var(--dsw-specific-agent-blue);
+  color: var(--dsw-specific-agent-text);
   overflow: hidden;
   /* Elevated surface in dark, same as the menus: the body inside scrolls
      once the card hits the cap above, so the thumb takes the l2 pair. Declared
@@ -176,8 +178,8 @@
      over the title and the next row. Overflow belongs to .options. */
   flex-shrink: 0;
   padding: 8px 12px 8px 8px;
-  border: 1px solid transparent;
-  border-radius: 12px;
+  /* Boujoy `.interrupt-option`: squared, hairline-bordered rows. */
+  border: 1px solid var(--dsw-specific-agent-line);
   background: transparent;
   color: inherit;
   text-align: left;
@@ -187,11 +189,11 @@
 
 .option:hover:not(:disabled),
 .optionSelected {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: rgb(255 255 255 / 4%);
 }
 
 .optionSelected {
-  border-color: var(--dsw-alias-border-l2);
+  border-color: var(--dsw-specific-agent-acid);
 }
 
 .option:disabled {

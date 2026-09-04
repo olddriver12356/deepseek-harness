@@ -24,11 +24,11 @@
      hidden): cap the card against the viewport and scroll the plan, so the
      strip and the decision row stay reachable on a long plan. */
   max-height: min(60vh, 520px);
-  border: 1px solid var(--dsw-alias-state-warn-secondary);
-  border-radius: 20px;
-  background: var(--dsw-specific-input-major);
-  box-shadow: var(--dsw-shadow-lv2);
-  color: var(--dsw-alias-label-primary);
+  /* Same interrupt-card chrome as the approval and question takeovers. */
+  border: 2px solid var(--dsw-specific-agent-yellow);
+  background: var(--dsw-specific-agent-surface);
+  box-shadow: 5px 5px 0 var(--dsw-specific-agent-blue);
+  color: var(--dsw-specific-agent-text);
   /* Elevated surface in dark: the plan body inside scrolls once the card hits
      the cap above, so the thumb takes the l2 pair (see ui-theme
      styles/scrollbar.css for the rebinding contract). */
@@ -48,17 +48,21 @@
   flex-shrink: 0;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--dsw-alias-state-warn-tertiary);
-  color: var(--dsw-alias-state-warn-primary);
-  font-size: 13px;
+  background: color-mix(in srgb, var(--dsw-specific-agent-yellow) 12%, transparent);
+  color: var(--dsw-specific-agent-yellow);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   line-height: 18px;
+  text-transform: uppercase;
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--dsw-alias-state-warn-primary);
+  background: var(--dsw-specific-agent-yellow);
 }
 
 /* The plan is the panel's message: it takes the whole body and the scroll. */

@@ -24,9 +24,11 @@
     var(--dsh-composer-dock-inset) -
     var(--dsh-composer-dock-inset)
   );
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-radius: 12px;
-  background: var(--dsw-specific-tip);
+  /* Boujoy plan-list chrome: squared dock with a hard edge over the shared
+     Agent surface, no rounded platform card. */
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-left: 3px solid var(--dsw-specific-agent-acid);
+  background: var(--dsw-specific-agent-surface);
   /* Elevated surface: `--dsw-specific-tip` is the same dark rung as the menu
      surface, and `.list` scrolls inside this card, so the thumb takes the l2
      elevation tokens. Declared here because the elevation belongs to the
@@ -119,15 +121,15 @@
 }
 
 .glyphCompleted {
-  color: var(--dsw-alias-state-success-primary);
+  color: var(--dsw-specific-agent-cyan);
 }
 
 .glyphPending {
-  color: var(--dsw-alias-label-caption);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .glyphProgress {
-  color: var(--dsw-alias-state-business-primary);
+  color: var(--dsw-specific-agent-acid);
   animation: todo-progress-spin 1s linear infinite;
 }
 
