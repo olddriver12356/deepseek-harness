@@ -1,0 +1,248 @@
+/* Shared Boujoy transcript grammar (M2 row 3).
+ *
+ * One vocabulary for every chat node kind rather than a bespoke treatment per
+ * surface: message cards with an author kicker and an offset shadow, and a
+ * single notice strip (icon, accent left rule, tinted field) whose variants
+ * only swap the accent colour. DSH-only surfaces with no Boujoy exemplar
+ * (context, command-input, workflow-run, unknown, produced files, feedback)
+ * extend these same classes, per the fidelity rulings recorded on 2026-09-03.
+ *
+ * Source: C:\Projects\boujoy-harness\web\app.css (.message*, .notice-line,
+ * .thought-summary, .history-loading-card, .message-media*). Colours resolve
+ * through the shared --dsw-specific-agent-* token set the sidebar and
+ * workspace repaint already established, so the whole Agent panel stays one
+ * palette.
+ */
+
+/* ---- message cards ------------------------------------------------ */
+
+.messageLabel {
+  margin-bottom: 7px;
+  color: var(--dsw-specific-agent-acid);
+  font-family: var(--ds-font-family-code);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.userLabel {
+  color: var(--dsw-specific-agent-pink);
+  text-align: right;
+}
+
+/* Pending steering keeps the label but marks it with the source's animated
+   dashed ticker instead of inventing a second pending treatment. */
+.userLabel[data-pending]::after {
+  display: inline-block;
+  width: 18px;
+  height: 4px;
+  margin-left: 7px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--dsw-specific-agent-pink) 0 4px,
+    transparent 4px 7px
+  );
+  content: '';
+  animation: pending-move 0.7s steps(2) infinite;
+}
+
+.assistantCard {
+  padding: 14px 16px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  background: var(--dsw-specific-agent-surface);
+  box-shadow: 4px 4px 0 rgb(36 57 255 / 62%);
+  color: var(--dsw-specific-agent-text);
+}
+
+.userCard {
+  border: 1px solid var(--dsw-specific-agent-canvas);
+  background: var(--dsw-specific-agent-yellow);
+  box-shadow: 4px 4px 0 var(--dsw-specific-agent-pink);
+  color: var(--dsw-specific-agent-canvas);
+  clip-path: polygon(1% 2%, 100% 0, 98% 94%, 4% 100%);
+}
+
+/* A tall pasted prompt would lose its final lines to a percentage clip, so the
+   bottom cut is capped at a fixed depth with a matching text gutter. */
+.userCard[data-long] {
+  padding-bottom: 42px;
+  clip-path: polygon(1% 2%, 100% 0, 98% calc(100% - 36px), 4% 100%);
+}
+
+.userCard[data-pending] {
+  border-style: dashed;
+  opacity: 0.82;
+}
+
+/* ---- notice strips ------------------------------------------------ */
+
+.notice {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0;
+  padding: 5px 10px;
+  border-left: 3px solid var(--dsw-specific-agent-blue);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 8%, transparent);
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* Block-level sibling of .notice for the DSH-only surfaces whose bodies are
+   too rich for a single strip (context disclosures, unknown-surface JSON,
+   workflow runs, produced files): same accent rule and tinted field, without
+   imposing a flex row on the body. */
+.noticeBlock {
+  padding: 6px 10px;
+  border-left: 3px solid var(--dsw-specific-agent-blue);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 6%, transparent);
+}
+
+/* Variant glyphs are decorative and render through ::before rather than a DOM
+   node, so a notice's text content stays exactly its message. */
+.noticeCompaction::before,
+.noticeRetry::before,
+.noticeError::before,
+.noticeWarn::before {
+  flex: none;
+  align-self: baseline;
+  font-weight: 700;
+}
+
+.noticeCommand {
+  border-left-color: var(--dsw-specific-agent-acid);
+}
+
+.noticeRetry {
+  border-left-color: var(--dsw-specific-agent-cyan);
+}
+
+.noticeRetry::before {
+  color: var(--dsw-specific-agent-cyan);
+  content: '↻';
+}
+
+.noticeCompaction {
+  border-left-color: var(--dsw-specific-agent-cyan);
+}
+
+.noticeCompaction::before {
+  color: var(--dsw-specific-agent-cyan);
+  content: '▤';
+}
+
+.noticeError {
+  border-left-color: var(--dsw-specific-agent-pink);
+  background: color-mix(in srgb, var(--dsw-specific-agent-pink) 8%, transparent);
+  color: var(--dsw-specific-agent-pink);
+}
+
+.noticeError::before {
+  content: '✕';
+}
+
+.noticeWarn {
+  border-left-color: var(--dsw-specific-agent-yellow);
+  background: color-mix(in srgb, var(--dsw-specific-agent-yellow) 7%, transparent);
+  color: var(--dsw-specific-agent-yellow);
+}
+
+.noticeWarn::before {
+  content: '△';
+}
+
+/* ---- stats and thought summary ------------------------------------- */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 9px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--dsw-specific-agent-line);
+}
+
+.thoughtSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 10px;
+  letter-spacing: 0.035em;
+}
+
+.thoughtTape {
+  flex: none;
+  padding: 3px 5px;
+  background: var(--dsw-specific-agent-cyan);
+  box-shadow: 2px 2px 0 var(--dsw-specific-agent-blue);
+  color: var(--dsw-specific-agent-canvas);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+/* ---- history loading ----------------------------------------------- */
+
+.loadingCard {
+  width: min(560px, 86%);
+  margin: 0 auto;
+  padding: 30px;
+  border: 2px solid var(--dsw-specific-agent-acid);
+  background: var(--dsw-specific-agent-surface);
+  box-shadow: 8px 8px 0 var(--dsw-specific-agent-blue);
+}
+
+.loadingKicker {
+  color: var(--dsw-specific-agent-acid);
+  font-family: var(--ds-font-family-code);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.loadingTitle {
+  display: block;
+  margin-top: 9px;
+  color: var(--dsw-specific-agent-text);
+  font-family: var(--dsw-specific-agent-display-font);
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.loadingLines {
+  height: 74px;
+  margin-top: 20px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 13px,
+    var(--dsw-specific-agent-text) 13px 17px
+  );
+  opacity: 0.25;
+  animation: transcript-skeleton 1.2s infinite alternate;
+}
+
+@keyframes transcript-skeleton {
+  to {
+    opacity: 0.08;
+  }
+}
+
+@keyframes pending-move {
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingLines,
+  .userLabel[data-pending]::after {
+    animation: none;
+  }
+}

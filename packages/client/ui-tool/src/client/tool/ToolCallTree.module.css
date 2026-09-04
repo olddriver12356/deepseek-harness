@@ -1,5 +1,9 @@
+/* Boujoy activity-card chrome (`.activity-tool`) applied to DSH's existing
+   inline recursive tree. Ruling 2 of 2026-09-03-chat-transcript-fidelity-
+   rulings keeps the placement as-is: skin only, no separate activity rail. */
 .callRow {
-  border-radius: 6px;
+  border-left: 3px solid var(--dsw-specific-agent-blue);
+  background: rgb(255 255 255 / 4%);
 }
 
 .subCalls {
@@ -8,5 +12,5 @@
   gap: 4px;
   margin: 4px 0 2px 22px;
   padding-left: 8px;
-  border-left: 1px solid var(--dsw-alias-border-l2);
+  border-left: 1px solid var(--dsw-specific-agent-line);
 }

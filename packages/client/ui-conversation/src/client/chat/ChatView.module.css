@@ -136,14 +136,23 @@
   justify-content: center;
 }
 
+/* Paging control in the transcript's own grammar: mono kicker on a tinted
+   field with the accent rule, not a neutral pill. */
 .older button {
-  border: none;
-  border-radius: 14px;
-  padding: 4px 12px;
-  font-size: 12px;
-  color: var(--dsw-alias-label-secondary);
-  background: var(--dsw-alias-interactive-bg-hover-solid);
+  padding: 5px 12px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-left: 3px solid var(--dsw-specific-agent-acid);
+  background: color-mix(in srgb, var(--dsw-specific-agent-acid) 8%, transparent);
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
   cursor: pointer;
+}
+
+.older button:hover:not(:disabled) {
+  background: var(--dsw-specific-agent-acid);
+  color: var(--dsw-specific-agent-canvas);
 }
 
 .older button:disabled {

@@ -17,6 +17,7 @@ import type { MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives
 import type { ChatNodeOwnerProps, ChatViewSlotProps } from '../contract/slots.ts'
 import { ReasoningRow } from './ReasoningRow.tsx'
 import css from './AssistantMarkdown.module.css'
+import chrome from './transcript-chrome.module.css'
 
 export interface AssistantMarkdownProps {
   blocks: readonly AssistantBlock[]
@@ -105,7 +106,8 @@ export const AssistantMarkdown = memo(function AssistantMarkdown({
   }
   return (
     <div className={css.root} data-streaming={streaming || undefined}>
-      <div className={css.body}>
+      <div className={chrome.messageLabel}>{t('message.author.agent')}</div>
+      <div className={`${css.body} ${chrome.assistantCard}`}>
         {rendered}
         {interrupted && <span className={css.stopped}>{t('message.stopped')}</span>}
       </div>

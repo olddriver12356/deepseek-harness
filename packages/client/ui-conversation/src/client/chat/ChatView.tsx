@@ -20,6 +20,7 @@ import type { ChatViewSlotProps, RenderMessageImages } from '../contract/slots.t
 import { PendingSteeringBubble } from './MessageItem.tsx'
 import { ChatNodeSeat } from './ChatNodeSeat.tsx'
 import { formatRunDuration } from './message-chrome.ts'
+import chrome from './transcript-chrome.module.css'
 import css from './ChatView.module.css'
 
 const FOLLOW_THRESHOLD = 24
@@ -416,9 +417,15 @@ export function ChatView({
     <div className={css.root}>
       <div ref={listRef} className={css.scroll}>
         <div ref={columnRef} className={css.column} data-chat-flow="">
-          {openState === 'loading' && <div className={css.hint}>{t('chat.loadingHistory')}</div>}
+          {openState === 'loading' && (
+            <div className={chrome.loadingCard} role="status">
+              <span className={chrome.loadingKicker}>{t('chat.loadingHistory.kicker')}</span>
+              <strong className={chrome.loadingTitle}>{t('chat.loadingHistory')}</strong>
+              <div className={chrome.loadingLines} aria-hidden="true" />
+            </div>
+          )}
           {openState === 'error' && openError !== null && (
-            <div className={css.openError}>
+            <div className={`${css.openError} ${chrome.notice} ${chrome.noticeError}`}>
               {t('chat.loadError', { message: openError.message, code: openError.code })}
             </div>
           )}

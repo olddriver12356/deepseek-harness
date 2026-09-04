@@ -4,6 +4,7 @@ import { DisclosureRow, IconThinkOutline14 } from '@deepseek-ai/dsh-client-ui-pr
 import type { ChatViewSlotProps } from '../contract/slots.ts'
 import { useThrottledVisualUpdate } from './use-throttled-visual-update.ts'
 import a11yCss from './accessibility.module.css'
+import chrome from './transcript-chrome.module.css'
 import css from './ReasoningRow.module.css'
 
 function firstLine(text: string): string {
@@ -40,10 +41,15 @@ export function ReasoningRow({ text, running, t }: { text: string; running: bool
   return (
     <div className={css.root} data-variant="think" data-state={running ? 'running' : 'ok'}>
       {running && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
+      {/* Ruling 4 of 2026-09-03-chat-transcript-fidelity-rulings: the terse
+          thought line is persistent and the raw-reasoning disclosure stays
+          nested under it. DSH's collapsed row already IS that line, so it
+          takes the source's tape + mono summary treatment instead of gaining
+          a second copy of the same text above it. */}
       <DisclosureRow
-        rowClassName={css.row}
+        rowClassName={`${css.row} ${chrome.thoughtSummary}`}
         leadingClassName={css.leading}
-        titleClassName={css.title}
+        titleClassName={`${css.title} ${chrome.thoughtTape}`}
         chevronClassName={css.chevron}
         icon={<IconThinkOutline14 size={14} />}
         title="Think"

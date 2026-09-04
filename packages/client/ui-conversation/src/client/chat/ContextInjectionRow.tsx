@@ -4,6 +4,7 @@ import type { ChatViewSlotProps } from '../contract/slots.ts'
 import { DisclosureRow, IconBrowseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { ReferenceIcon } from '../reference/ReferenceIcon.tsx'
 import { contextBody } from './ContextBody.tsx'
+import chrome from './transcript-chrome.module.css'
 import css from './ContextInjectionRow.module.css'
 
 /** Props for the logged non-user message presentation. */
@@ -37,7 +38,7 @@ export function ContextInjectionRow({ content, source, provenance, form, t }: Co
 
   return (
     <DisclosureRow
-      className={css.root}
+      className={`${css.root} ${chrome.noticeBlock}`}
       icon={provenance.role === 'recall'
         ? <span data-context-recall-icon><ReferenceIcon kind="session" /></span>
         : <IconBrowseOutline16 size={14} />}

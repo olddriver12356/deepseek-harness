@@ -13,13 +13,19 @@
   max-width: min(525px, 82%);
 }
 
+/* A human-entered command has no Boujoy exemplar of its own, so it extends the
+   transcript's shared grammar: the user card's cut-paper silhouette in the
+   command accent instead of a bespoke treatment (ruling 3 of
+   2026-09-03-chat-transcript-fidelity-rulings). */
 .bubble {
   max-width: 100%;
   padding: 10px 16px;
   overflow-wrap: anywhere;
-  border-radius: 22px;
-  background: var(--dsw-specific-bubble);
-  color: var(--dsw-alias-label-primary);
+  border: 1px solid var(--dsw-specific-agent-canvas);
+  background: var(--dsw-specific-agent-acid);
+  box-shadow: 4px 4px 0 var(--dsw-specific-agent-blue);
+  color: var(--dsw-specific-agent-canvas);
   font: var(--dsw-font-markdown-code);
   white-space: pre-wrap;
+  clip-path: polygon(1% 2%, 100% 0, 98% 94%, 4% 100%);
 }

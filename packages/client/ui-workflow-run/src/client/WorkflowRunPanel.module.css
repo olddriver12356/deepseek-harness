@@ -3,6 +3,10 @@
   min-width: 0;
 }
 
+/* Workflow runs have no Boujoy exemplar, so the header extends the shared
+   transcript grammar: accent left rule over a tinted field, same as every
+   other notice-shaped surface (ruling 3 of
+   2026-09-03-chat-transcript-fidelity-rulings). */
 .runHeader {
   box-sizing: border-box;
   display: flex;
@@ -12,8 +16,8 @@
   min-width: 0;
   height: 32px;
   padding: 0 8px;
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-module-platform);
+  border-left: 3px solid var(--dsw-specific-agent-blue);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 8%, transparent);
 }
 
 .runHeader:focus-visible {

@@ -42,8 +42,10 @@
   border: none;
   border-radius: 14px;
   background: transparent;
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 13px;
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
   line-height: 28px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -136,9 +138,14 @@
   color: var(--dsw-alias-label-secondary);
 }
 
+/* Feedback has no Boujoy exemplar; it takes the transcript's shared mono
+   notice type rather than a treatment of its own (ruling 3 of
+   2026-09-03-chat-transcript-fidelity-rulings). */
 .failure {
   padding-left: 4px;
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 13px;
+  color: var(--dsw-specific-agent-pink);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
   line-height: 20px;
 }

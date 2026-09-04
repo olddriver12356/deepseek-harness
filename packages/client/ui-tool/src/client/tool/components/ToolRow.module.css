@@ -73,15 +73,17 @@
   background: var(--dsw-alias-label-caption);
 }
 
+/* Activity-card type: mono, muted, one line. */
 .summary {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-family: var(--ds-font-family-code);
+  font-size: 12px;
   line-height: 24px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 /* Trailing summary fragment kept out of .summary's ellipsis, for a count whose
@@ -93,9 +95,10 @@
   flex: none;
   margin-left: 4px;
   white-space: nowrap;
-  font-size: 14px;
+  font-family: var(--ds-font-family-code);
+  font-size: 12px;
   line-height: 24px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 /* File-tool path: same geometry as .summary, with a persistent link affordance. */
@@ -127,7 +130,7 @@
 
 /* Error row's collapsed summary: the failure's first line in the error color. */
 .errorSummary {
-  color: var(--dsw-alias-state-error-primary);
+  color: var(--dsw-specific-agent-pink);
 }
 
 /* Expanded body + Inspect pill wrapper (sibling of .row: clicks never toggle). */

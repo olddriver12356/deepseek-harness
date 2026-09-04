@@ -17,6 +17,16 @@
   gap: 16px;
 }
 
+/* Live turn: the card edge takes the cyan streaming accent (Boujoy
+   `.message.streaming .message-body`). Colour only — no layout shift. */
+.root[data-streaming] .body {
+  border-color: color-mix(
+    in srgb,
+    var(--dsw-specific-agent-cyan) 72%,
+    var(--dsw-specific-agent-line)
+  );
+}
+
 /* Wide markdown tables (the renderer's ≥4-column md-table-wide hook) span
    the whole transcript width instead of clipping at the 748px message
    column, while the table content keeps starting at its normal x (the lead

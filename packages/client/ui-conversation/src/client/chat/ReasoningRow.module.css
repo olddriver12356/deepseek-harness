@@ -37,8 +37,10 @@
   color: var(--dsw-alias-label-secondary);
 }
 
+/* Tape colours come from the shared grammar (.thoughtTape); the row keeps its
+   own hit target and spacing. */
 .title {
-  font-weight: 400;
+  flex: none;
 }
 
 .separator {
@@ -54,8 +56,9 @@
   min-width: 0;
   overflow: hidden;
   flex: 1 1 auto;
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 14px;
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 12px;
   line-height: 24px;
   text-overflow: ellipsis;
   white-space: nowrap;

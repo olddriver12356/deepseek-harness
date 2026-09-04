@@ -3,6 +3,7 @@ import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ChatNodeViewProps, TurnTailOwnerProps } from '../contract/slots.ts'
 import { MessageIconActions } from './MessageIconActions.tsx'
 import { assistantText } from './turn-assistant.ts'
+import chrome from './transcript-chrome.module.css'
 import css from './TurnTailNodeView.module.css'
 
 type TurnTailNodeViewProps = ChatNodeViewProps<'turn-tail'>
@@ -44,7 +45,7 @@ export const TurnTailNodeView = memo(function TurnTailNodeView({
         clock="end"
         onBranch={() => { forkAt(closing.finalNode.seq) }}
         branchUnavailable={data.branchUnavailable || hasLaterChatNode}
-        className={css.actions}
+        className={`${css.actions} ${chrome.stats}`}
         extraActions={assistantActions}
         t={t}
       />

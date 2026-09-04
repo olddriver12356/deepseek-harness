@@ -15,6 +15,7 @@ import {
   MarkdownText,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ChatViewSlotProps } from '../contract/slots.ts'
+import chrome from './transcript-chrome.module.css'
 import css from './MessageItem.module.css'
 
 interface CompactionItemProps {
@@ -52,7 +53,7 @@ export const CompactionItem = memo(function CompactionItem({
     <div className={css.compactionRow}>
       <button
         type="button"
-        className={css.compactionButton}
+        className={`${css.compactionButton} ${chrome.notice} ${chrome.noticeCompaction}`}
         disabled={!expandable}
         aria-expanded={expandable ? open : undefined}
         onClick={() => { setExpanded(value => !value) }}

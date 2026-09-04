@@ -23,9 +23,12 @@
   min-height: 44px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
-  border-radius: 16px;
-  background: var(--dsw-alias-interactive-bg-hover);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--dsw-specific-agent-cyan) 58%,
+    var(--dsw-specific-agent-line)
+  );
+  background: rgb(2 4 10 / 78%);
   cursor: zoom-in;
 }
 
@@ -43,19 +46,22 @@
   object-fit: cover;
 }
 
+/* Framed media in the transcript's grammar (Boujoy `.message-media-frame` /
+   `.media-loading`): squared cyan-edged frame, mono status copy. */
 .loading,
 .error {
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 12px;
+  color: var(--dsw-specific-agent-cyan);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
   line-height: 18px;
 }
 
 .error {
   max-width: 240px;
   padding: 10px 12px;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
-  border-radius: 10px;
-  background: var(--dsw-alias-interactive-bg-hover-danger);
+  border: 1px solid var(--dsw-specific-agent-pink);
+  background: color-mix(in srgb, var(--dsw-specific-agent-pink) 12%, transparent);
   cursor: pointer;
 }
 
@@ -65,5 +71,4 @@
   height: 64px;
   padding: 4px;
   overflow: hidden;
-  border-radius: 16px;
 }

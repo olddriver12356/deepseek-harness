@@ -16,7 +16,10 @@
 .label {
   grid-column: 1;
   grid-row: 1;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.05em;
 }
 
 .row {
@@ -41,10 +44,11 @@
   margin: 0;
   padding: 0 8px;
   border: none;
-  border-radius: 6px;
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-secondary);
-  font: inherit;
+  border-left: 3px solid var(--dsw-specific-agent-cyan);
+  background: color-mix(in srgb, var(--dsw-specific-agent-cyan) 10%, transparent);
+  color: var(--dsw-specific-agent-text);
+  font-family: var(--ds-font-family-code);
+  font-size: 12px;
   cursor: pointer;
 }
 

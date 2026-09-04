@@ -10,19 +10,25 @@
 }
 
 /* Clock before icons (user figma 388:20051) / after (assistant 43:32997). */
+/* Mono stamp type (Boujoy `.message-stamp`); the hover-reveal rule below is
+   unchanged. */
 .timeStart {
   padding-right: 12px;
-  font-size: 14px;
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   line-height: 24px;
-  color: var(--dsw-alias-label-tertiary);
   white-space: nowrap;
 }
 
 .timeEnd {
   padding-left: 12px;
-  font-size: 14px;
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   line-height: 24px;
-  color: var(--dsw-alias-label-tertiary);
   white-space: nowrap;
 }
 

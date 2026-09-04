@@ -15,6 +15,7 @@ import { CompactionItem } from './CompactionItem.tsx'
 import { ContextInjectionRow } from './ContextInjectionRow.tsx'
 import { MessageIconActions } from './MessageIconActions.tsx'
 import css from './MessageItem.module.css'
+import chrome from './transcript-chrome.module.css'
 
 type UserImage = Extract<UserMessageNode['content'][number], { type: 'image' }>
 
@@ -93,7 +94,7 @@ function ModelRetryItem({ node, active, t }: {
 
   return (
     <details className={css.retryRow} data-active={active || undefined}>
-      <summary className={css.retrySummary}>
+      <summary className={`${css.retrySummary} ${chrome.notice} ${chrome.noticeRetry}`}>
         <span className={css.retryText} role="status">
           {t('message.retry.status', { label, retry: node.retry, maximum, seconds })}
         </span>
@@ -118,7 +119,7 @@ function TurnErrorItem({ node, t }: {
   t: ChatViewSlotProps['t']
 }) {
   return (
-    <div className={css.turnErrorRow} role="status">
+    <div className={`${css.turnErrorRow} ${chrome.notice} ${chrome.noticeError}`} role="status">
       <StateDot state="error" className={css.turnErrorDot} />
       <div className={css.turnErrorCopy}>
         <span className={css.turnErrorTitle}>{t('message.turnError')}</span>
@@ -134,7 +135,7 @@ function TurnMaxTokensItem({ t }: {
   t: ChatViewSlotProps['t']
 }) {
   return (
-    <div className={css.turnErrorRow} role="status">
+    <div className={`${css.turnErrorRow} ${chrome.notice} ${chrome.noticeWarn}`} role="status">
       <StateDot state="warning" className={css.turnErrorDot} />
       <div className={css.turnErrorCopy}>
         <span className={css.maxTokensTitle}>{t('message.maxTokens')}</span>
@@ -232,8 +233,18 @@ function UserStyleBubble({
   return (
     <div className={css.userRow} data-pending-steering={pending || undefined} data-time-hover-root>
       <div className={css.userStack}>
+        <div
+          className={`${chrome.messageLabel} ${chrome.userLabel}`}
+          data-pending={pending || undefined}
+        >
+          {t('message.author.you')}
+        </div>
         {renderMessageImages({ images, align: 'end' })}
-        {showBubble && <div className={css.bubble}>
+        {showBubble && <div
+          className={`${css.bubble} ${chrome.userCard}`}
+          data-pending={pending || undefined}
+          data-long={text.length > 600 || undefined}
+        >
           {projectUserText(text, referenceLabels)}
           {rest.map((block, i) => <JsonBlock key={i} label={t('message.extraBlock')} payload={block} truncatedLabel={truncated} />)}
         </div>}
@@ -340,7 +351,7 @@ export const TurnMaxTokensNodeView = memo(function TurnMaxTokensNodeView({ t }: 
 export const UnknownNodeView = memo(function UnknownNodeView({ node, t }: ChatNodeViewProps<'unknown'>) {
   const data = node.data
   return (
-    <div className={css.contextRow}>
+    <div className={`${css.contextRow} ${chrome.noticeBlock}`}>
       <JsonBlock
         label={t('message.unknownSurface', { type: data.type })}
         payload={data.data}
