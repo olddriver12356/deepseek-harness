@@ -53,11 +53,9 @@ describe('ModelsSection theme styles', () => {
   })
 
   it('separates the row card from the editor it expands into', () => {
-    // `bg-layer-3` and `bg-module-platform` both resolve to neutral-bluish-800
-    // under the dark theme, so filling the row with either erases the nested
-    // editor's boundary. The row is outlined; the fill is the editor's alone.
-    expect(block('.editor')).toContain('background: var(--dsw-alias-bg-module-platform)')
-    expect(block('.rowCard')).toContain('border: 1px solid var(--dsw-alias-border-l2)')
+    // The Agent palette keeps the editor fill distinct from the outlined row.
+    expect(block('.editor')).toContain('background: var(--dsw-specific-agent-surface-raised)')
+    expect(block('.rowCard')).toContain('border: 1px solid var(--dsw-specific-agent-line)')
     expect(block('.rowCard')).not.toMatch(/\bbackground\s*:/)
   })
 

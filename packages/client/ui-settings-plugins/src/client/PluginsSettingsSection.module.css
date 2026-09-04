@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 12px;
   max-width: 760px;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .heading {
@@ -17,14 +17,14 @@
 .intro {
   margin: 0;
   font-size: 13px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .tabs {
   display: flex;
   align-items: flex-end;
   gap: 22px;
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  border-bottom: 1px solid var(--dsw-specific-agent-line);
   margin-top: 2px;
 }
 
@@ -33,7 +33,7 @@
   border: 0;
   padding: 7px 1px 9px;
   background: transparent;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   font: inherit;
   font-size: 13px;
   line-height: 20px;
@@ -42,7 +42,7 @@
 
 .tab:hover,
 .tab[data-active='true'] {
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .tab[data-active='true']::after,
@@ -52,16 +52,16 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--dsw-alias-label-primary);
+  border-radius: 0;
+  background: var(--dsw-specific-agent-text);
   content: '';
 }
 
 .tab:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsw-specific-agent-blue);
   outline-offset: 2px;
-  border-radius: 2px;
-  color: var(--dsw-alias-label-primary);
+  border-radius: 0;
+  color: var(--dsw-specific-agent-text);
 }
 
 .panel {
@@ -81,5 +81,5 @@
 .empty {
   margin: 0;
   font-size: 13px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }

@@ -8,7 +8,7 @@
 }
 
 .field + .field {
-  border-top: 1px solid var(--dsw-alias-border-l2);
+  border-top: 1px solid var(--dsw-specific-agent-line);
 }
 
 .head {
@@ -23,7 +23,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .badges {
@@ -33,23 +33,23 @@
 }
 
 .badge {
-  border-radius: 999px;
+  border-radius: 0;
   padding: 1px 8px;
   font-size: 11px;
   line-height: 17px;
   white-space: nowrap;
   font-weight: 500;
-  background: var(--dsw-alias-bg-module-platform);
-  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-specific-agent-surface-raised);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .badgeMuted {
-  border-radius: 999px;
+  border-radius: 0;
   padding: 1px 8px;
   font-size: 11px;
   line-height: 17px;
   white-space: nowrap;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .reset {
@@ -59,12 +59,12 @@
   font: inherit;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-specific-agent-muted);
   cursor: pointer;
 }
 
 .reset:hover:not(:disabled) {
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .reset:disabled {
@@ -74,40 +74,40 @@
 .input {
   height: 34px;
   padding: 0 12px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-layer-3);
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
+  background: var(--dsw-specific-agent-surface-raised);
   font: inherit;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .input:focus-visible {
   outline: none;
-  border-color: var(--dsw-alias-brand-primary);
+  border-color: var(--dsw-specific-agent-blue);
 }
 
 .input:disabled {
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   cursor: default;
 }
 
 .inputInvalid {
   composes: input;
-  border-color: var(--dsw-alias-label-error);
+  border-color: var(--dsw-specific-agent-pink);
 }
 
 .invalid {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--dsw-alias-label-error);
+  color: var(--dsw-specific-agent-pink);
 }
 
 .hint {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }

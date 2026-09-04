@@ -1,19 +1,11 @@
-/* Models settings section, in the settings-panel design language: 14/22 body,
- * 12/18 caption, capsule controls (h36 r18; h28 r14 where a row is dense),
- * 32px fields, and `border-l2` hairlines — the vocabulary GeneralSection and
- * the Button/Input primitives already use.
- *
- * Every color resolves through a `--dsw-alias-*` token. Bare `--border` /
- * `--surface` / `--text-*` names, which nothing in this app defines, would
- * render the light-mode literals written as their fallbacks and stay light
- * under the dark theme. */
+/* Models settings section in the Agent-scoped Boujoy design language. */
 
 .section {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 720px;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .title {
@@ -21,28 +13,28 @@
   font-size: 16px;
   line-height: 24px;
   font-weight: 500;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .intro {
   margin: 0;
   font-size: 14px;
   line-height: 22px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .notice {
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-state-warn-label);
+  color: var(--dsw-specific-agent-yellow);
 }
 
 .savedNotice {
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-state-success-primary);
+  color: var(--dsw-specific-agent-cyan);
 }
 
 .rows {
@@ -58,10 +50,11 @@
 /* A configured provider: outlined on the panel fill, so the filled editor
    card it expands into reads as the nested object. */
 .rowCard {
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 12px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
   padding: 12px 14px;
   display: flex;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--dsw-specific-agent-blue) 34%, transparent);
   flex-direction: column;
   gap: 12px;
 }
@@ -83,7 +76,7 @@
   font-size: 14px;
   line-height: 22px;
   font-weight: 500;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 /* Reads as an annotation on the name, not as a second name: caption size and
@@ -93,11 +86,11 @@
 .rowTag {
   flex: none;
   padding: 1px 6px;
-  border: 1px solid var(--dsw-alias-border-l3);
-  border-radius: 4px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
   font-size: 11px;
   line-height: 16px;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .credentialDot {
@@ -110,11 +103,11 @@
 }
 
 .credentialDotConfigured {
-  background: var(--dsw-alias-state-success-primary);
+  background: var(--dsw-specific-agent-cyan);
 }
 
 .credentialDotMissing {
-  background: var(--dsw-alias-state-error-primary);
+  background: var(--dsw-specific-agent-pink);
 }
 
 .rowActions {
@@ -138,7 +131,7 @@
   height: 36px;
   padding: 0 14px;
   border: none;
-  border-radius: 18px;
+  border-radius: 0;
   font: inherit;
   font-size: 14px;
   line-height: 22px;
@@ -146,28 +139,28 @@
 }
 
 .primaryButton {
-  background: var(--dsw-alias-button-primary-fill);
-  color: var(--dsw-alias-label-primary-foreground);
+  background: var(--dsw-specific-agent-acid);
+  color: var(--dsw-specific-agent-canvas);
 }
 
 .primaryButton:hover:not(:disabled) {
-  background: var(--dsw-alias-button-primary-hover);
+  background: var(--dsw-specific-agent-blue);
 }
 
 .secondaryButton,
 .addButton {
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 1px solid var(--dsw-specific-agent-line);
   background: transparent;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .secondaryButton:hover:not(:disabled),
 .addButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 12%, transparent);
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover-solid);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 18%, transparent);
 }
 
 .dangerButton {
@@ -178,9 +171,9 @@
   height: 36px;
   padding: 0 14px;
   border: none;
-  border-radius: 18px;
+  border-radius: 0;
   background: transparent;
-  color: var(--dsw-alias-state-error-primary);
+  color: var(--dsw-specific-agent-pink);
   font: inherit;
   font-size: 14px;
   line-height: 22px;
@@ -188,7 +181,7 @@
 }
 
 .dangerButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover-danger);
+  background: color-mix(in srgb, var(--dsw-specific-agent-pink) 16%, transparent);
 }
 
 /* Provider-row controls take the dense capsule (Button `.sm`). */
@@ -196,7 +189,7 @@
 .rowActions .dangerButton {
   height: 28px;
   padding: 0 10px;
-  border-radius: 14px;
+  border-radius: 0;
   font-size: 12px;
   line-height: 18px;
 }
@@ -220,15 +213,16 @@
 .iconButton:focus-visible,
 .customizedSummary:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-specific-agent-line);
 }
 
 /* Editing surface: a filled module on the panel, matching the settings
    selector fill rather than adding another outline inside the row. */
 .editor {
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-module-platform);
+  border-radius: 0;
+  background: var(--dsw-specific-agent-surface-raised);
   padding: 14px 16px;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--dsw-specific-agent-blue) 28%, transparent);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -244,13 +238,13 @@
   font-size: 14px;
   line-height: 22px;
   font-weight: 500;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .editorRoute {
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .field {
@@ -266,7 +260,7 @@
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .linkButton {
@@ -276,9 +270,9 @@
   height: 28px;
   padding: 0 10px;
   border: none;
-  border-radius: 14px;
+  border-radius: 0;
   background: transparent;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   font: inherit;
   font-size: 12px;
   line-height: 18px;
@@ -286,15 +280,15 @@
 }
 
 .linkButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-secondary);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 12%, transparent);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .advancedHint {
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .editorActions {
@@ -327,14 +321,14 @@
   min-width: 180px;
   gap: 6px;
   height: 44px;
-  border: 1px dashed var(--dsw-alias-border-l3);
-  border-radius: 12px;
+  border: 1px dashed var(--dsw-specific-agent-line);
+  border-radius: 0;
 }
 
 .addCard,
 .setupCard {
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-module-platform);
+  border-radius: 0;
+  background: var(--dsw-specific-agent-surface-raised);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -350,7 +344,7 @@
 }
 
 .customized {
-  border-top: 1px solid var(--dsw-alias-border-l2);
+  border-top: 1px solid var(--dsw-specific-agent-line);
   padding-top: 10px;
 }
 
@@ -363,12 +357,12 @@
   width: fit-content;
   padding: 2px 4px;
   margin-left: -4px;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-specific-agent-muted);
   list-style: none;
 }
 
@@ -391,7 +385,7 @@
 }
 
 .customizedSummary:hover {
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
 }
 
 .customizedBody {
@@ -411,7 +405,7 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid var(--dsw-alias-border-l2);
+  border-top: 1px solid var(--dsw-specific-agent-line);
 }
 
 .modelCatalogHeading {
@@ -424,23 +418,18 @@
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-specific-agent-muted);
 }
 
 .modelCatalogMeta,
 .modelEmpty {
   margin: 0;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   font-size: 12px;
   line-height: 18px;
 }
 
-/* Model list, shared with the pi-ai provider form: one bordered
-   entry per model, id and display name on the row, capacities behind the
-   row's own disclosure. The rules use this stylesheet's token vocabulary —
-   `--dsw-alias-border-subtle`, `--dsw-alias-text-tertiary`, and
-   `--dsw-alias-text-primary` are undefined here and would resolve to their
-   light-mode literals. */
+/* Model list keeps technical identifiers legible on the Agent surface. */
 .modelList {
   display: flex;
   flex-direction: column;
@@ -455,8 +444,8 @@
 }
 
 .modelEntry {
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
   padding: 6px;
 }
 
@@ -477,15 +466,15 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   cursor: pointer;
 }
 
 .iconButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-primary);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 12%, transparent);
+  color: var(--dsw-specific-agent-text);
 }
 
 .iconButton:disabled {
@@ -495,8 +484,8 @@
 
 /* The delete glyph keeps the danger tint the rest of the section uses. */
 .iconButtonDanger:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover-danger);
-  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-specific-agent-pink) 16%, transparent);
+  color: var(--dsw-specific-agent-pink);
 }
 
 .modelAdvanced {
@@ -513,15 +502,15 @@
 }
 
 .modelFieldLabel {
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-specific-agent-muted);
   font-size: 12px;
   line-height: 18px;
 }
 
 .modelEmpty {
   padding: 12px;
-  border: 1px dashed var(--dsw-alias-border-l3);
-  border-radius: 8px;
+  border: 1px dashed var(--dsw-specific-agent-line);
+  border-radius: 0;
   text-align: center;
 }
 
@@ -533,10 +522,10 @@
   gap: 4px;
   height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 14px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
   background: transparent;
-  color: var(--dsw-alias-label-primary);
+  color: var(--dsw-specific-agent-text);
   font: inherit;
   font-size: 12px;
   line-height: 18px;
@@ -544,7 +533,7 @@
 }
 
 .addModelButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: color-mix(in srgb, var(--dsw-specific-agent-blue) 12%, transparent);
 }
 
 .input {
@@ -552,13 +541,13 @@
   width: 100%;
   height: 32px;
   padding: 0 10px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-radius: 0;
   font: inherit;
   font-size: 14px;
   line-height: 22px;
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-specific-agent-canvas);
+  color: var(--dsw-specific-agent-text);
 }
 
 /* Enum pickers hold a handful of short options; a field-width dropdown reads
@@ -570,11 +559,11 @@ select.input {
 
 .input:focus {
   outline: none;
-  border-color: var(--dsw-alias-brand-primary);
+  border-color: var(--dsw-specific-agent-blue);
 }
 
 .input::placeholder {
-  color: var(--dsw-alias-label-dimmed);
+  color: var(--dsw-specific-agent-line);
 }
 
 .input:disabled {
@@ -600,7 +589,7 @@ select.input {
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-state-error-primary);
+  color: var(--dsw-specific-agent-pink);
 }
 
 .deleteDialog {
@@ -608,12 +597,12 @@ select.input {
 }
 
 .deleteConfirm:not(:disabled) {
-  border-color: var(--dsw-alias-state-error-primary);
-  color: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-specific-agent-pink);
+  color: var(--dsw-specific-agent-pink);
 }
 
 .deleteConfirm:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover-danger);
+  background: color-mix(in srgb, var(--dsw-specific-agent-pink) 16%, transparent);
 }
 
 /* Icon-button label seat: named for assistive tech and for the tests that
@@ -640,8 +629,8 @@ select.input {
      scrollbar indirection is rebound here rather than on the scrolling child:
      the elevation choice belongs with the surface and inherits down (see
      ui-theme styles/scrollbar.css for the contract). */
-  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
-  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+  --dsh-scrollbar-thumb: var(--dsw-specific-agent-line);
+  --dsh-scrollbar-thumb-hover: var(--dsw-specific-agent-blue);
 }
 
 .candidateActions {
@@ -662,7 +651,7 @@ select.input {
 }
 
 .candidate {
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .candidateLabel {
