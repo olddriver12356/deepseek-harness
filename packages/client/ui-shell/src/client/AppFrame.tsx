@@ -1,6 +1,7 @@
 /**
  * Shell frame, registered into the built-in 'root' slot (the web shell renders
- * only 'root'). Owns the grid tracks (app rail | sidebar | center | details),
+ * only 'root'). Owns the grid tracks (app rail | sidebar | center | details) and
+ * the floating activity surface,
  * the drag handles (pointer capture + rAF throttle), the concession
  * chain (columns.ts), and the child-slot render decisions: the sidebar slot
  * renders HERE with live parameters from the concession solve, and the
@@ -27,7 +28,7 @@ export const SIDEBAR_DRAWER_MAX_VIEWPORT = 820
 /** Full composed props: runtime share + child-slot render share + store share. */
 export type AppFrameProps =
   & PropsRuntime<'root'>
-  & PropsRenderSlots<'app.rail' | 'sidebar' | 'conversation' | 'details' | 'shell.overlay'>
+  & PropsRenderSlots<'app.rail' | 'sidebar' | 'conversation' | 'details' | 'shell.activity' | 'shell.overlay'>
   & PropsStore<ReturnType<typeof createLayoutStore>>
 
 /** Persistent app-level navigation column. */
@@ -43,6 +44,11 @@ function CenterColumn(props: { children?: ReactNode }) {
 /** Details column grid item; width 0 keeps the subtree mounted (never unmount on close). */
 function DetailsColumn(props: { children?: ReactNode }) {
   return <div className={css.detailsCol}>{props.children}</div>
+}
+
+/** Session-aware activity column; unlike details it is not user-resizable. */
+function ActivityColumn(props: { children?: ReactNode; width: number }) {
+  return <div className={css.activityCol} style={{ width: props.width }}>{props.children}</div>
 }
 
 /**
@@ -148,6 +154,9 @@ export function AppFrame({
   const contentViewport = Math.max(0, viewport - RAIL_WIDTH)
   const narrow = contentViewport < SIDEBAR_AUTO_COLLAPSE
   const sidebarDrawer = viewport <= SIDEBAR_DRAWER_MAX_VIEWPORT
+  // The activity card floats over the right edge. It must not consume a grid
+  // track, otherwise opening the top-right toolbar squeezes the conversation.
+  const activityWidth = detailsSession === undefined || sidebarDrawer ? 0 : 320
   useEffect(() => { actions.setNarrow(narrow) }, [actions, narrow])
   const sidebarCollapsed = narrow ? !panels.narrowExpanded : panels.sidebar === 0
   const sidebarPreference = sidebarCollapsed
@@ -187,12 +196,15 @@ export function AppFrame({
     <div
       ref={frameRef}
       className={css.frame}
-      style={{ gridTemplateColumns: `${RAIL_WIDTH}px ${sidebarTrack}px minmax(0, 1fr) ${cols.details}px` }}
+      // Keep a zero-width activity track for stable shell geometry; the card
+      // itself is absolutely positioned and never participates in sizing.
+      style={{ gridTemplateColumns: `${RAIL_WIDTH}px ${sidebarTrack}px minmax(0, 1fr) ${cols.details}px 0px` }}
       data-shell-frame
       data-sidebar-collapsed={sidebarCollapsed || undefined}
       data-sidebar-drawer={sidebarDrawer || undefined}
       data-sidebar-drawer-open={sidebarDrawer && !sidebarCollapsed || undefined}
       data-details-collapsed={cols.details === 0 || undefined}
+      data-activity-collapsed={activityWidth === 0 || undefined}
       data-dragging={dragging || undefined}
     >
       <RailColumn>{renderSlot('app.rail', {})}</RailColumn>
@@ -215,6 +227,7 @@ export function AppFrame({
             empty while no session is current. */}
         <CenterColumn>{renderSlot('conversation', {})}</CenterColumn>
         <DetailsColumn>{renderSlot('details', {})}</DetailsColumn>
+        <ActivityColumn width={activityWidth}>{renderSlot('shell.activity', {})}</ActivityColumn>
       </>
       <div className={css.overlayLayer} data-shell-overlay>
         {renderSlot('shell.overlay', {})}

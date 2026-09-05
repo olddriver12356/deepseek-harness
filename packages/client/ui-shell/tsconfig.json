@@ -27,6 +27,9 @@
       "path": "../runtime"
     },
     {
+      "path": "../../llm/token-meter"
+    },
+    {
       "path": "../../runtime-diagnostics/invariants"
     }
   ]

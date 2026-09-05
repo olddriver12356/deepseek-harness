@@ -15,7 +15,7 @@ const LABELS: Record<string, string> = {
 /** Floating proof badge. `appPanels` is passed in so the component stays testable without cordis. */
 export function ProofPanel({ appPanels }: { appPanels: IAppPanels }) {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
-  if (active === 'agent' || active === 'knowledge') return null
+  if (active === 'agent' || active === 'knowledge' || active === 'monitor' || active === 'news') return null
   return (
     <div className={css.proof} data-proof-panel data-active-panel={active}>
       当前面板: {LABELS[active] ?? active}

@@ -96,7 +96,7 @@ function mountFrame() {
 }
 
 function tracks(frame: HTMLElement): number[] {
-  const m = /^72px (\d+)px minmax\(0, 1fr\) (\d+)px$/.exec(frame.style.gridTemplateColumns)
+  const m = /^72px (\d+)px minmax\(0, 1fr\) (\d+)px (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return [Number(m[1]), Number(m[2])]
 }
@@ -147,6 +147,13 @@ describe('AppFrame', () => {
   it('renders resizable panel tracks from store state', () => {
     const { frame } = mountFrame()
     expect(tracks(frame)).toEqual([280, 0])
+  })
+
+  it('keeps the session activity surface as an overlay', () => {
+    const { frame } = mountFrame()
+    const activity = frame.querySelector('[class*="activityCol"]') as HTMLElement
+    expect(activity.style.width).toBe('320px')
+    expect(frame.style.gridTemplateColumns.endsWith('0px')).toBe(true)
   })
 
   it('renders the session pair with empty owner shares (sessionId is framework-standard)', () => {
@@ -248,21 +255,21 @@ describe('AppFrame', () => {
     expect(handle.style.left).toBe('1560px')
   })
 
-  it('reserves the rail before conceding details to preserve the center floor', () => {
-    frameWidth = 1320
+  it('keeps the activity surface out of details concession sizing', () => {
+    frameWidth = 1650
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
-    expect(tracks(frame)).toEqual([280, 328])
+    expect(tracks(frame)).toEqual([280, 360])
   })
 
-  it('drag base is the rendered (concession-clamped) width, not the preference', () => {
-    frameWidth = 1320 // rail-aware step-2 squeeze: details renders 328 while preference is 360
+  it('drag base is the rendered width, not a stale preference', () => {
+    frameWidth = 1650
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
-    expect(tracks(frame)).toEqual([280, 328])
+    expect(tracks(frame)).toEqual([280, 360])
     const handles = frame.querySelectorAll('[class*="handle"]')
     drag(handles[1]!, 992, 1002) // shrink by 10 from the rendered width
-    expect(instance.getSnapshot().details).toBe(318)
+    expect(instance.getSnapshot().details).toBe(350)
   })
 
   it('details column stays mounted at zero width', () => {

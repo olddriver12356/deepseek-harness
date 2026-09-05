@@ -86,6 +86,8 @@ export {
 export { emptyAssistantBlock } from './sessions/partial.ts'
 export { isTokenDelta } from './sessions/assistant-timing.ts'
 export { contextForm, contextProvenance, sessionRecallLabels } from './sessions/context-provenance.ts'
+export { contextOccupancyPercent } from './context-occupancy.ts'
+export type { ContextPressureValue } from './context-occupancy.ts'
 export { displayFailureMessage } from './sessions/failure-display.ts'
 export type {
   ConversationContext, ConversationContextOriginKind,

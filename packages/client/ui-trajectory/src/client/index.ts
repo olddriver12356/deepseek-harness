@@ -19,6 +19,13 @@ import { registerTrajectoryConversationView } from './trajectory-snapshot-builde
 import { registerTrajectoryToolDefinition } from './trajectory-tool-definition.ts'
 import { TrajectoryView, type TrajectoryViewInjected } from './TrajectoryView.tsx'
 
+/**
+ * The canonical trajectory target snapshot. Exported so other panels can read
+ * `session.views.get('trajectory')` — re-exporting it is also what carries this
+ * package's ConversationViewSnapshotMap augmentation into a consumer's program.
+ */
+export type { TrajectorySnapshot } from './trajectory-contract.ts'
+
 /** Required services: the conversation slot, registries, ordinary Session paging, and the locale service. */
 export const inject = ['slots', 'conversationEvents', 'conversationViews', 'sessions', 'locale']
 

@@ -47,7 +47,7 @@ describe('ui-shell client apply', () => {
     expect(effect).toHaveBeenNthCalledWith(2, expect.any(Function), 'ui-shell: theme presenter')
   })
 
-  it('provides the shell services and registers AppFrame into root with the five child declarations', async () => {
+  it('provides the shell services and registers AppFrame into root with the six child declarations', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
@@ -60,6 +60,7 @@ describe('ui-shell client apply', () => {
     expect(slots.spec('sidebar')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('conversation')).toEqual({ kind: 'single', scope: 'session-maybe' })
     expect(slots.spec('details')).toEqual({ kind: 'single', scope: 'session' })
+    expect(slots.spec('shell.activity')).toEqual({ kind: 'single', scope: 'session' })
   })
 
   it('injects no business face and attaches the layout actions', async () => {

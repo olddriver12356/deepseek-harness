@@ -36,7 +36,7 @@ describe('AppRail', () => {
 })
 
 describe('ProofPanel', () => {
-  it.each(['agent', 'knowledge'] as const)('yields to the real %s panel', (id) => {
+  it.each(['agent', 'knowledge', 'monitor'] as const)('yields to the real %s panel', (id) => {
     const appPanels = new AppPanelsController()
     appPanels.setActive(id)
 

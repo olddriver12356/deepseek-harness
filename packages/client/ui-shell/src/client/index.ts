@@ -13,6 +13,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { PanelActions } from './service.ts'
 import { AppPanelsController } from './app-panels.ts'
 import { AppFrame } from './AppFrame.tsx'
+import { LiveSignalPanel } from './LiveSignalPanel.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
 import { ThemePresenter } from './theme-presenter.ts'
@@ -39,7 +40,7 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     // The 'root' entry itself is the runtime's built-in slot (declared
-    // there); these five are the frame's children, declared by the same
+    // there); these six are the frame's children, declared by the same
     // register() call that contributes AppFrame. Session owners never pass
     // sessionId: the framework injects it as a standard prop.
     /**
@@ -83,6 +84,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * `session` scope, and `ctx.layout` owns whether the column is open.
      */
     'details': { kind: 'single'; scope: 'session'; owner: DetailsOwnerProps }
+    /** Session-aware right activity surface; independent from tool details. */
+    'shell.activity': { kind: 'single'; scope: 'session'; owner: ActivityOwnerProps }
     /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
@@ -93,7 +96,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * This is the additive seat for a frame-wide surface of your own: a fresh
      * `id` is added beside the shipped entries instead of replacing them.
      */
-    'shell.overlay': { kind: 'list'; scope: 'root' }
+    'shell.overlay': { kind: 'list'; scope: 'session-maybe' }
   }
 }
 
@@ -120,12 +123,15 @@ export interface ConvOwnerProps {}
 /** Details owner share: empty — sessionId arrives as a framework-standard prop. */
 export interface DetailsOwnerProps {}
 
+/** Activity owner share: the shell supplies no extra data. */
+export interface ActivityOwnerProps {}
+
 /** Required services (cordis fiber inject — the loader passes all module exports as an object plugin). */
 export const inject = ['slots', 'theme']
 
 /**
  * Client plugin body: provide the shell services, then one register() call — AppFrame
- * into 'root' with the five child-slot declarations, the layout store seat,
+ * into 'root' with the six child-slot declarations, the layout store seat,
  * and the inject hook that hands the store's bound actions to the service.
  * @param ctx - client root context.
  */
@@ -142,7 +148,8 @@ export function apply(ctx: ClientContext): void {
         'sidebar': { kind: 'single', scope: 'root' },
         'conversation': { kind: 'single', scope: 'session-maybe' },
         'details': { kind: 'single', scope: 'session' },
-        'shell.overlay': { kind: 'list', scope: 'root' },
+        'shell.activity': { kind: 'single', scope: 'session' },
+        'shell.overlay': { kind: 'list', scope: 'session-maybe' },
       },
       // Exclusive store: the factory itself — the framework instantiates per
       // entry and delivers useStore/actions to AppFrame as standard props.
@@ -173,4 +180,11 @@ export function apply(ctx: ClientContext): void {
       presenter.dispose()
     }
   }, 'ui-shell: theme presenter')
+
+  ctx.effect(
+    () => ctx.slots.inject('shell.activity', () => ctx.slots.register({
+      name: 'shell.activity',
+    }, LiveSignalPanel)),
+    'ui-shell: activity slot registration',
+  )
 }

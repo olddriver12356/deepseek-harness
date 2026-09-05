@@ -20,6 +20,10 @@
   .frame {
     transition: none;
   }
+
+  .centerCol {
+    transition: none;
+  }
 }
 
 .railCol {
@@ -60,6 +64,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: padding-right var(--ds-transition-duration-slow) var(--ds-ease-in-out);
+}
+
+/* The drawer floats at the right edge, so keep the conversation's interactive
+   content out from underneath it without moving the center column's left edge. */
+.frame:not([data-activity-collapsed]) .centerCol {
+  box-sizing: border-box;
+  padding-right: 320px;
 }
 
 .detailsCol {
@@ -67,6 +79,27 @@
   min-width: 0;
   overflow: hidden;
   border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+.activityCol {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-specific-agent-canvas);
+  box-shadow: -10px 0 28px rgb(0 0 0 / 18%);
+  transition: width var(--ds-transition-duration-slow) var(--ds-ease-in-out);
+}
+
+.frame[data-activity-collapsed] .activityCol {
+  border-left: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 /* The details subtree stays mounted at zero width, so its border must not paint

@@ -1,9 +1,3 @@
-@font-face {
-  font-family: 'DSH Knowledge Fusion Pixel';
-  src: url('./assets/fusion-pixel-10px-proportional-zh_hans.otf.woff2') format('woff2');
-  font-display: swap;
-}
-
 .panel {
   container-type: inline-size;
   position: relative;

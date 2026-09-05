@@ -100,6 +100,11 @@
     - id: plugin-inventory
       name: '@deepseek-ai/dsh-host-plugin-inventory'
 
+    - id: news
+      name: '@deepseek-ai/dsh-host-news'
+      config:
+        cacheDir: !!js dshHomePath('news-cache')
+
     # The API gateway: the transport-agnostic dispatch face every client shape
     # shares. The base layer's agent-default-model service owns the default model.
     - id: api-gateway
@@ -193,8 +198,15 @@
     - id: ui-app-rail
       name: '@deepseek-ai/dsh-client-ui-app-rail'
 
+    - id: ui-experts
+      name: '@deepseek-ai/dsh-client-ui-experts'
+
     - id: ui-knowledge
       name: '@deepseek-ai/dsh-client-ui-knowledge'
+    - id: ui-monitor
+      name: '@deepseek-ai/dsh-client-ui-monitor'
+    - id: ui-news
+      name: '@deepseek-ai/dsh-client-ui-news'
 
     - id: ui-renderer
       name: '@deepseek-ai/dsh-client-ui-renderer'
