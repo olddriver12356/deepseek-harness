@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-01-ui-shell-package-ownership.md
-2026-09-01-ui-shell-package-ownership.md: 408477fb9b762a7dad1eb39fcb926875758ce2b5
-2026-09-01-ui-shell-package-ownership.zh.md: 8c1d69c3c631d83f62fda2892eee1f0f9bfaefa8
+2026-09-01-ui-shell-package-ownership.md: 84b3d4e1c06408aee8b752ecfed2975db244d159
+2026-09-01-ui-shell-package-ownership.zh.md: c741c6edc3323cbff339a651c97fff0dbd1d5b83

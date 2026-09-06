@@ -10,7 +10,10 @@
   flex-direction: column;
   align-items: flex-end;
   min-width: 0;
-  max-width: min(525px, 82%);
+  /* Mirrors the user bubble in ui-conversation MessageItem.module.css: the
+     figma 525px cap as a share of the width axis (525/748 ≈ 0.702), with the
+     same 748px fallback outside the conversation column. */
+  max-width: min(calc(var(--dsh-chat-content-width, 748px) * 0.702), 82%);
 }
 
 /* A human-entered command has no Boujoy exemplar of its own, so it extends the
@@ -25,7 +28,12 @@
   background: var(--dsw-specific-agent-acid);
   box-shadow: 4px 4px 0 var(--dsw-specific-agent-blue);
   color: var(--dsw-specific-agent-canvas);
-  font: var(--dsw-font-markdown-code);
+  /* The command echo is a user message: it inherits the body face like the
+     user bubble and rides the same Settings font-size axis (14/22 at the
+     default); the `/goal` command chip, set in the code face by the shared
+     projection, is what marks the line as a command. */
+  font-size: var(--dsh-content-font-size, 14px);
+  line-height: calc(22px + var(--dsh-content-font-delta, 0px));
   white-space: pre-wrap;
   clip-path: polygon(1% 2%, 100% 0, 98% 94%, 4% 100%);
 }

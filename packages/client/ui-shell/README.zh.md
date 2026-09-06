@@ -6,9 +6,11 @@
 
 每个 `shell.overlay` 占用方都位于固定 AppRail 右侧的中央栏与详情栏区域。Knowledge 通过这个 slot 作为独立且持续挂载的面板，因此切换 `ctx.appPanels` 只改变可见性，不会移动或覆盖导航栏。
 
-AppFrame 始终挂载 app rail、会话栏和详情栏；已连接 Session 通过 `SessionProvider` 渲染。布局 store 是瞬时状态，侧边栏以默认宽度启动，详情栏则保持关闭，且该 store 从不读写 `localStorage`。`ctx.appPanels` 从 `agent` 开始，接受 `agent`、`knowledge`、`experts`、`styles`、`monitor` 或 `news`，并向 React `useSyncExternalStore` 提供 `getSnapshot` 和 `subscribe`；再次选择活动值不会通知订阅方。它只拥有可见性，因此选择不会选举 slot 占用方，也不会卸载面板状态。hero 和其他未选中状态也会将详情栏的渲染宽度派生为零，但不会改变存储的宽度偏好。AppFrame 会跨越这些状态保留最后一个非 blank 会话 id：首个会话保持关闭；显式打开详情栏的操作会使用约定默认宽度；返回同一会话时恢复其未改变的宽度；选择不同会话时，详情栏会在绘制前关闭。app rail、会话和详情栏的 owner share 均为空，侧边栏 owner share 只包含 `collapsed` 和 `width`；注册方通过标准钩子获取业务数据，并从各自的 inject 接口获取操作。
+AppFrame 始终挂载 app rail、会话栏和详情栏容器。`SessionProvider` 接收普通 React children，在未选择会话时抑制严格作用域的详情与活动内容，并在会话 id 改变时重新挂载。布局 store 是瞬时状态，侧边栏以默认宽度启动，详情栏则保持关闭，且该 store 从不读写 `localStorage`。`ctx.appPanels` 从 `agent` 开始，接受 `agent`、`knowledge`、`experts`、`styles`、`monitor` 或 `news`，并向 React `useSyncExternalStore` 提供 `getSnapshot` 和 `subscribe`；再次选择活动值不会通知订阅方。它只拥有可见性，因此选择不会选举 slot 占用方，也不会卸载面板状态。hero 和其他未选中状态也会将详情栏的渲染宽度派生为零，但不会改变存储的宽度偏好。AppFrame 会跨越这些状态保留最后一个非 blank 会话 id：首个会话保持关闭；显式打开详情栏的操作会使用约定默认宽度；返回同一会话时恢复其未改变的宽度；选择不同会话时，详情栏会在绘制前关闭。app rail、会话和详情栏的 owner share 均为空，侧边栏 owner share 只包含 `collapsed` 和 `width`；注册方通过标准钩子获取业务数据，并从各自的 inject 接口获取操作。
 
 `/client` 导出表层包含插件主体（`apply`／`inject`）、`LayoutController`、`ILayout`、`AppPanelsController`、`IAppPanels`、`PanelId` 和四个 owner-share 接口。AppFrame、面板 store 与让步求解器仍属于包内部。
+
+浮动活动面板只为尚未被实际 details 栏或外部 Files 侧栏的 `--dsh-sidebar-width` 外框内边距覆盖的宽度预留空间。展开任一右侧面板都不会再从聊天区重复扣除 320px；拖动或关闭面板时会更新剩余重叠宽度，不改动面板偏好。未安装外部侧栏插件时，该宽度默认为零。
 
 ## 模型体验
 

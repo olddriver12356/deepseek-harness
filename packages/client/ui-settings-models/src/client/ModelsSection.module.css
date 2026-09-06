@@ -1,4 +1,8 @@
-/* Models settings section in the Agent-scoped Boujoy design language. */
+/* Models settings section in the Agent-scoped Boujoy design language.
+ * Every color resolves through a `--dsw-specific-agent-*` (or, where noted,
+ * `--dsw-alias-*`) token. A bare `--border` / `--surface` / `--text-*` name,
+ * which nothing in this app defines, would render the light-mode literal
+ * written as its fallback and stay light under the dark theme. */
 
 .section {
   display: flex;
@@ -100,6 +104,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .credentialDotConfigured {
@@ -617,7 +622,8 @@ select.input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .customizedSummary::before {
+  .customizedSummary::before,
+  .switchThumb {
     transition: none;
   }
 }
@@ -633,10 +639,16 @@ select.input {
   --dsh-scrollbar-thumb-hover: var(--dsw-specific-agent-blue);
 }
 
-.candidateActions {
+.candidateToolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 6px;
+}
+
+.candidateSearch {
+  min-width: 0;
+  flex: 1 1 240px;
 }
 
 .candidateList {
@@ -667,4 +679,12 @@ select.input {
   font-family: var(--ds-font-family-code);
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+.candidateEmpty {
+  margin: 24px 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
 }

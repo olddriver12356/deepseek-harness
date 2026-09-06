@@ -5,7 +5,7 @@
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../ui-shell" },
-    { "path": "../runtime" },
+    { "path": "../ui-renderer" },
     { "path": "../../api/remotes/tsconfig.client.json" },
     { "path": "../../host/news" },
     { "path": "../../runtime-diagnostics/invariants" }

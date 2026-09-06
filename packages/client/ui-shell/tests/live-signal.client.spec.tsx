@@ -2,18 +2,22 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { LiveSignalPanel } from '@deepseek-ai/dsh-client-ui-shell/src/client/LiveSignalPanel.tsx'
-import type { PendingInteraction } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
 
 afterEach(cleanup)
 
-function mount(options: { goal?: unknown; pressure?: unknown; pending?: readonly PendingInteraction[]; running?: boolean } = {}) {
-  const pending = options.pending ?? []
+function mount(options: { goal?: unknown; pressure?: unknown; pending?: Pick<SessionPendingInteraction, 'key' | 'kind' | 'sessionId'>; running?: boolean } = {}) {
   const props = {
     sessionId: 's-test' as never,
     useProjection: ((key: string) => key === 'goal' ? options.goal : options.pressure) as never,
-    useSession: ((select: (snapshot: { pending: readonly PendingInteraction[] }) => unknown) => select({ pending })) as never,
+    useSessionPendingInteraction: ((select: (map: Map<string, Pick<SessionPendingInteraction, 'key' | 'kind' | 'sessionId'>>) => unknown) =>
+      select(new Map(options.pending === undefined ? [] : [['s-test', options.pending]]))) as never,
     useSessions: ((select: (snapshot: { byId: Record<string, unknown> }) => unknown) => select({ byId: { 's-test': { displayTitle: '测试会话', running: options.running ?? false } } })) as never,
     useWorkspaces: undefined as never,
+    useSession: undefined as never,
+    useConversation: undefined as never,
+    useChat: undefined as never,
+    useTrajectory: undefined as never,
     useInput: undefined as never,
     inputActions: undefined as never,
   }
@@ -35,7 +39,7 @@ describe('LiveSignalPanel', () => {
 
   it('keeps deferred actions disabled and labels pending work from the carrier list', () => {
     const { getByText, getByRole } = mount({
-      pending: [{ kind: 'approval' } as PendingInteraction],
+      pending: { key: 'p1', kind: 'approval', sessionId: 's-test' as never },
     })
     expect(getByText('1 项待审批')).toBeTruthy()
     expect((getByRole('button', { name: /查看完整轨迹/ }) as HTMLButtonElement).disabled).toBe(true)

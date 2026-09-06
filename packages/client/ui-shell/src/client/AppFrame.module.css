@@ -59,6 +59,7 @@
 }
 
 .centerCol {
+  box-sizing: border-box;
   grid-column: 3;
   min-width: 0;
   display: flex;
@@ -67,12 +68,8 @@
   transition: padding-right var(--ds-transition-duration-slow) var(--ds-ease-in-out);
 }
 
-/* The drawer floats at the right edge, so keep the conversation's interactive
-   content out from underneath it without moving the center column's left edge. */
-.frame:not([data-activity-collapsed]) .centerCol {
-  box-sizing: border-box;
-  padding-right: 320px;
-}
+/* AppFrame reserves only the activity overlay's overlap beyond the details
+   track, so opening details does not subtract the same space twice. */
 
 .detailsCol {
   grid-column: 4;

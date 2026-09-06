@@ -1,12 +1,14 @@
 /** Browser News panel over the mounted Host News Remote. */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import { NewsPanel } from './NewsPanel.tsx'
 
 export type { NewsPanelProps, NewsReader } from './NewsPanel.tsx'
 export { NewsPanel } from './NewsPanel.tsx'
 
-export const inject = ['slots', 'appPanels', 'remote']
+export const inject = ['slots', 'appPanels', 'remote', 'remote.news']
 
 /** Register the persistent News overlay in the shell's additive slot. */
 export function apply(ctx: ClientContext): void {

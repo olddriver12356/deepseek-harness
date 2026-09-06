@@ -2,7 +2,8 @@
  * Knowledge plugin, browser half: one persistent overlay reads the active
  * application panel and one frozen package fixture.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import { KNOWLEDGE_FIXTURE } from './fixture.ts'
 import { KnowledgePanel } from './KnowledgePanel.tsx'

@@ -37,8 +37,10 @@ function RailColumn(props: { children?: ReactNode }) {
 }
 
 /** Center column grid item (session-body building block). */
-function CenterColumn(props: { children?: ReactNode }) {
-  return <div className={css.centerCol}>{props.children}</div>
+function CenterColumn(props: { children?: ReactNode; paddingRight: number }) {
+  // The external Files sidebar reserves frame padding rather than a details track.
+  const paddingRight = `max(0px, calc(${props.paddingRight}px - var(--dsh-sidebar-width, 0px)))`
+  return <div className={css.centerCol} style={{ paddingRight }}>{props.children}</div>
 }
 
 /** Details column grid item; width 0 keeps the subtree mounted (never unmount on close). */
@@ -107,6 +109,7 @@ export function AppFrame({
   useSessions,
   actions,
   renderSlot,
+  SessionProvider,
 }: AppFrameProps) {
   const panels = useStore(s => s)
   const detailsSession = useSessions((s) => {
@@ -223,11 +226,11 @@ export function AppFrame({
         {/* Both column occupants stay at fixed tree positions from first
             paint — no loading gate: a bare status line reads worse than
             the shell's own pending rendering. The conversation
-            is session-maybe; the strict details entry naturally renders
-            empty while no session is current. */}
-        <CenterColumn>{renderSlot('conversation', {})}</CenterColumn>
-        <DetailsColumn>{renderSlot('details', {})}</DetailsColumn>
-        <ActivityColumn width={activityWidth}>{renderSlot('shell.activity', {})}</ActivityColumn>
+            is session-maybe; SessionProvider withholds strict entries
+            while no session is current. */}
+        <CenterColumn paddingRight={Math.max(0, activityWidth - cols.details)}>{renderSlot('conversation', {})}</CenterColumn>
+        <DetailsColumn><SessionProvider>{renderSlot('details', {})}</SessionProvider></DetailsColumn>
+        <ActivityColumn width={activityWidth}><SessionProvider>{renderSlot('shell.activity', {})}</SessionProvider></ActivityColumn>
       </>
       <div className={css.overlayLayer} data-shell-overlay>
         {renderSlot('shell.overlay', {})}

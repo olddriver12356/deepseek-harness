@@ -2,7 +2,8 @@
  * the cross-surface commands (goal, trajectory, pending takeover, capture) have
  * explicit contracts. */
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { contextOccupancyPercent, type PendingInteraction } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
+import { contextOccupancy } from '@deepseek-ai/dsh-token-meter/client'
 import css from './LiveSignalPanel.module.css'
 import type {} from '@deepseek-ai/dsh-token-meter/client'
 
@@ -16,21 +17,22 @@ function formatTokens(value: number): string {
   return `${Math.round(value / 100_000) / 10}M`
 }
 
-function pendingLabel(pending: readonly PendingInteraction[]): string {
-  if (pending.length === 0) return '无待处理事项'
-  const kinds = new Set(pending.map(item => item.kind))
-  if (kinds.has('approval') && kinds.has('question')) return `${pending.length} 项待处理`
-  if (kinds.has('approval')) return `${pending.length} 项待审批`
-  return `${pending.length} 项待回答`
+function pendingLabel(pending: SessionPendingInteraction | undefined): string {
+  if (pending === undefined) return '无待处理事项'
+  if (pending.kind === 'approval') return '1 项待审批'
+  if (pending.kind === 'question') return '1 项待回答'
+  return '1 项待处理'
 }
 
-export function LiveSignalPanel({ sessionId, useSession, useProjection, useSessions }: LiveSignalProps) {
+export function LiveSignalPanel({
+  sessionId, useProjection, useSessions, useSessionPendingInteraction,
+}: LiveSignalProps) {
   const goal = useProjection('goal') as GoalProjectionLike | null | undefined
   const pressure = useProjection('contextPressure')
-  const pending = useSession(snapshot => snapshot.pending)
+  const pending = useSessionPendingInteraction(map => map.get(sessionId))
   const session = useSessions(snapshot => snapshot.byId[sessionId])
   const usedTokens = pressure?.projectedTokens ?? pressure?.pressureTokens
-  const contextPercent = contextOccupancyPercent(pressure)
+  const contextPercent = contextOccupancy(pressure)?.percent
 
   return (
     <aside className={css.panel} aria-label="活动信号" data-live-signal>
@@ -59,8 +61,8 @@ export function LiveSignalPanel({ sessionId, useSession, useProjection, useSessi
       </section>
 
       <section className={css.section} aria-labelledby="signal-pending">
-        <div className={css.sectionHeader}><span id="signal-pending">待处理</span><span className={pending.length > 0 ? css.alert : css.mono}>{pending.length}</span></div>
-        <p className={pending.length > 0 ? css.value : css.muted}>{pendingLabel(pending)}</p>
+        <div className={css.sectionHeader}><span id="signal-pending">待处理</span><span className={pending === undefined ? css.mono : css.alert}>{pending === undefined ? 0 : 1}</span></div>
+        <p className={pending === undefined ? css.muted : css.value}>{pendingLabel(pending)}</p>
       </section>
 
       <section className={css.section} aria-labelledby="signal-inspector">

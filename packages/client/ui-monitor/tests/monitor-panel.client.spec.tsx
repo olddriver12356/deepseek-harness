@@ -8,7 +8,7 @@ import {
   type MonitorEffortAccess,
   type MonitorPanelProps,
 } from '../src/client/MonitorPanel.tsx'
-import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
 
 afterEach(cleanup)
 
@@ -24,7 +24,7 @@ function renderMonitor(options: {
   const props: MonitorPanelProps = {
     appPanels,
     useProjection: (key: string) => projection[key],
-    useSession: selector => snapshot === undefined ? undefined : selector(snapshot),
+    useConversation: selector => snapshot === undefined ? undefined : selector(snapshot),
     effort: options.effort,
   }
   return render(<MonitorPanel {...props} />)
@@ -277,7 +277,7 @@ describe('MonitorPanel', () => {
       <MonitorPanel
         appPanels={appPanels}
         useProjection={() => undefined}
-        useSession={() => undefined}
+        useConversation={() => undefined}
       />,
     )
     const panel = view.container.querySelector('[data-monitor-panel]') as HTMLElement

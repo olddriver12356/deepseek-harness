@@ -5,7 +5,8 @@
  * it. The inject hook supplies that service as the registrant's business
  * share, so the component itself imports no cordis.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import { AppRail } from './AppRail.tsx'
 import { ProofPanel } from './ProofPanel.tsx'

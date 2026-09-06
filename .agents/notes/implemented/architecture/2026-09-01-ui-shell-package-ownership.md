@@ -16,6 +16,8 @@ The Web frame and its grid tracks need one package boundary that owns the persis
 
 The client catalog excludes `packages/client/ui-layout/src/**` before both slot contract scanning and exported type indexing. The exclusion represents the shipped bundle substitution rather than weakening duplicate detection. A focused generator test proves that an excluded replacement cannot contribute duplicate declarations or make owner types ambiguous, a real Loader composition test proves the new package row mounts from `cordis.yml`, and client composition coverage proves `ctx.appPanels` appears and disappears with the shell fiber.
 
+The shell follows the adapter layering in [Session and Conversation ownership](2026-08-20-client-session-conversation-ownership.md). `ui-renderer` owns the registry, `client/store` owns layout storage, and `ui-session` supplies Session hooks. Strict `details` and `shell.activity` bodies render through `SessionProvider` with ordinary React children, so an absent Session never renders consumers that require its identity. Activity reads the current Session's single effective pending item through `useSessionPendingInteraction`; Monitor reads views through `useConversation`, not the Session status snapshot. The no-session regression covers selection and deselection and fails when the providers are absent.
+
 ## Alternatives considered
 
 **Change `ui-layout` in place.** This would keep the current name attached to a package whose responsibility expands from panel geometry into native shell ownership, and rail regressions would be harder to distinguish from package substitution defects.

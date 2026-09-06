@@ -1,5 +1,7 @@
 /** Monitor application panel over native DSH surfaces. */
-import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/src/client/index.ts'
 // Type-only: merges ui-model-selection's `ctx.modelDirectories` Context row.

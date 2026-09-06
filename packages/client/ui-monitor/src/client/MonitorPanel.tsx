@@ -1,9 +1,9 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
 import type { MaybeSnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
-import {
-  contextOccupancyPercent, type ConversationSnapshot, type UseProjection,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import { contextOccupancy } from '@deepseek-ai/dsh-token-meter/client'
+import type { UseProjection } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-token-meter/client'
 // Type-only: merges ui-trajectory's ConversationViewSnapshotMap row so
 // `views.get('trajectory')` reads the canonical trajectory target.
@@ -59,7 +59,7 @@ export interface MonitorEffortAccess {
 
 export interface MonitorPanelProps {
   readonly appPanels: IAppPanels
-  readonly useSession: MaybeSnapshotSelectorHook<ConversationSnapshot>
+  readonly useConversation: MaybeSnapshotSelectorHook<ConversationSnapshot>
   readonly useProjection: UseProjection
   /** Absent with no current session, or when ui-model-selection is not loaded. */
   readonly effort?: MonitorEffortAccess | undefined
@@ -274,7 +274,7 @@ function PlaceholderCard({ title, label, missing }: {
 function TokenCompositionPanel({ useProjection }: { readonly useProjection: UseProjection }): ReactNode {
   const usage = useProjection('tokenUsage')
   const pressure = useProjection('contextPressure')
-  const percent = contextOccupancyPercent(pressure)
+  const percent = contextOccupancy(pressure)?.percent
   const values = [
     ['输入', usage?.uncachedInputTokens],
     ['输出', usage?.outputTokens],
@@ -389,10 +389,10 @@ function EffortCard({ effort }: { readonly effort: MonitorEffortAccess | undefin
  * Agent panel's 轨迹 tab renders, not a reconstruction: `views.get('trajectory')`
  * is ui-trajectory's own registered snapshot builder output.
  */
-function TrajectoryPanel({ useSession }: {
-  readonly useSession: MaybeSnapshotSelectorHook<ConversationSnapshot>
+function TrajectoryPanel({ useConversation }: {
+  readonly useConversation: MaybeSnapshotSelectorHook<ConversationSnapshot>
 }): ReactNode {
-  const snapshot = useSession(session => session.views.get('trajectory'))
+  const snapshot = useConversation(session => session.views.get('trajectory'))
   if (snapshot === undefined) {
     return (
       <PlaceholderPanel
@@ -963,7 +963,7 @@ function CallDetailsPanel({ rangeDays }: { readonly rangeDays: UsageStatsRangeDa
 /** The activity heatmap is always a full year, so it is fetched on its own, independent of the trend-range toggle. */
 const HEATMAP_WINDOW_DAYS = 365
 
-export function MonitorPanel({ appPanels, useProjection, useSession, effort }: MonitorPanelProps): ReactNode {
+export function MonitorPanel({ appPanels, useProjection, useConversation, effort }: MonitorPanelProps): ReactNode {
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   const [rangeDays, setRangeDays] = useState<UsageStatsRangeDays>(30)
   const usageStats = useUsageStats(rangeDays)
@@ -1007,7 +1007,7 @@ export function MonitorPanel({ appPanels, useProjection, useSession, effort }: M
           <TokenCard useProjection={useProjection} />
           <EffortCard effort={effort} />
         </div>
-        <TrajectoryPanel useSession={useSession} />
+        <TrajectoryPanel useConversation={useConversation} />
         <TokenCompositionPanel useProjection={useProjection} />
       </main>
     </section>

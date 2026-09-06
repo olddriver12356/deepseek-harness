@@ -24,7 +24,25 @@
       "path": "../ui-primitives"
     },
     {
-      "path": "../runtime"
+      "path": "../ui-renderer"
+    },
+    {
+      "path": "../store"
+    },
+    {
+      "path": "../ui-session"
+    },
+    {
+      "path": "../ui-conversation"
+    },
+    {
+      "path": "../../api/session-controller/tsconfig.client.json"
+    },
+    {
+      "path": "../../api/workspace-controller/tsconfig.client.json"
+    },
+    {
+      "path": "../../core/session"
     },
     {
       "path": "../../llm/token-meter"

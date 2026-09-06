@@ -16,6 +16,8 @@ Web frame 及其 grid tracks 需要一个统一的包边界来拥有持久 app r
 
 Client catalog 在 slot contract 扫描和 exported type indexing 之前都排除 `packages/client/ui-layout/src/**`。该排除表达 shipped bundle 的替换关系，而不是放宽 duplicate detection。Focused generator test 证明被排除的旧实现不会制造重复声明或让 owner types 产生歧义，real Loader composition test 证明新 package row 能从 `cordis.yml` 挂载，client composition coverage 则证明 `ctx.appPanels` 会随 shell fiber 出现和消失。
 
+外壳沿用[会话与会话视图所有权](2026-08-20-client-session-conversation-ownership.zh.md)的适配器分层。`ui-renderer` 拥有注册表，`client/store` 拥有布局存储，`ui-session` 提供会话钩子。严格会话作用域的 `details` 和 `shell.activity` 通过接收普通 React children 的 `SessionProvider` 渲染，因此无会话状态不会渲染需要会话身份的内容。活动卡通过 `useSessionPendingInteraction` 读取当前会话唯一的有效待处理项；Monitor 通过 `useConversation` 读取视图，而不是把会话状态当作视图快照。无会话回归检查覆盖选择会话及清空选择；相同检查在缺少 provider 时失败。
+
 ## Alternatives considered
 
 **直接修改 `ui-layout`。** 这会让原有名称继续绑定到一个职责从 panel geometry 扩展为 native shell ownership 的包，也会让 rail 回归更难与 package substitution 缺陷区分。

@@ -2,7 +2,7 @@
 /**
  * AppFrame interaction spec under the four-share props form: real layout
  * store instance (createLayoutStore().create() — the test-sanctioned engine
- * path), a recording renderSlot stub, and a render-prop SessionProvider stub
+ * path), a recording renderSlot stub, and a SessionProvider stub
  * (the real one is framework-wired to the renderer host; its own behavior is
  * ui-renderer's spec territory). Drag sequences (pointer capture + rAF flush),
  * concession response to viewport change, and details staying mounted at
@@ -17,22 +17,18 @@ import { AppFrame } from '@deepseek-ai/dsh-client-ui-shell/src/client/AppFrame.t
 import type { AppFrameProps } from '@deepseek-ai/dsh-client-ui-shell/src/client/AppFrame.tsx'
 import { SIDEBAR_COLLAPSED } from '@deepseek-ai/dsh-client-ui-shell/src/client/columns.ts'
 import { createLayoutStore } from '@deepseek-ai/dsh-client-ui-shell/src/client/stores.ts'
-import type {
-  SessionId, SessionListState, WorkspaceListState,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 
 // Session selection controls for the SessionProvider and useSessions stubs.
 const selectedSession = { current: 's-test' as SessionId | undefined }
 const selectedSessionBlank = { current: false }
 const baselinesReady = { current: true }
 
-// Render-prop contract stub fed through the standard seat prop (the renderer
-// injects the real one in production): session mode runs children(id), empty
-// mode runs the empty branch — the frame must work against exactly this
-// shape. Typed as the seat's own component type so the branded sessionId
-// parameter stays contract-checked.
+// Match the renderer's ReactNode children API and no-session suppression.
 const SessionProviderStub: AppFrameProps['SessionProvider'] = ({ children, empty }) =>
-  selectedSession.current === undefined ? <>{empty?.() ?? null}</> : <>{children(selectedSession.current)}</>
+  selectedSession.current === undefined ? <>{empty?.() ?? null}</> : <>{children}</>
 
 
 /** Observer stub: captures the callback so tests can fire resizes manually. */
@@ -61,6 +57,7 @@ function mountFrame() {
     if (key === 'sidebar') return <div data-testid="sidebar-content" />
     if (key === 'conversation') return <div data-testid="center-content" />
     if (key === 'details') return <div data-testid="details-content" />
+    if (key === 'shell.activity') return <div data-testid="activity-content" />
     if (key === 'conversation.empty') return <div data-testid="empty-content" />
     return <div data-testid="other-content" />
   }) as AppFrameProps['renderSlot']
@@ -76,9 +73,8 @@ function mountFrame() {
     } as SessionListState
     return sel(sessionState)
   }) as never
-  const workspaceState: WorkspaceListState = {
+  const workspaceState: WorkspaceSnapshot = {
     items: [], archivedSessionIds: [], state: 'idle', phase: 'ready', error: null,
-    baselinesReady: baselinesReady.current, recentWorkspaceId: undefined,
   }
   const element = () => (
     <AppFrame
@@ -86,7 +82,8 @@ function mountFrame() {
       actions={instance.actions}
       renderSlot={renderSlot}
       useSessions={useSessions}
-      useWorkspaces={((sel: (s: WorkspaceListState) => unknown) => sel(workspaceState)) as never}
+      useSessionPendingInteraction={undefined as never}
+      useWorkspaces={((sel: (s: WorkspaceSnapshot) => unknown) => sel(workspaceState)) as never}
       SessionProvider={SessionProviderStub}
     />
   )
@@ -177,6 +174,21 @@ describe('AppFrame', () => {
     expect(slotCalls.map(c => c.key)).toContain('conversation')
   })
 
+  it('withholds strict details and activity bodies until a session is selected', () => {
+    selectedSession.current = undefined
+    const { queryByTestId, getByTestId, rerenderFrame } = mountFrame()
+    expect(queryByTestId('details-content')).toBeNull()
+    expect(queryByTestId('activity-content')).toBeNull()
+    selectedSession.current = 's-first' as SessionId
+    act(() => { rerenderFrame() })
+    expect(getByTestId('details-content')).toBeTruthy()
+    expect(getByTestId('activity-content')).toBeTruthy()
+    selectedSession.current = undefined
+    act(() => { rerenderFrame() })
+    expect(queryByTestId('details-content')).toBeNull()
+    expect(queryByTestId('activity-content')).toBeNull()
+  })
+
   it('renders both column occupants before baselines settle (no loading gate)', () => {
     // No loading gate: a bare loading status reads worse than the shell's own
     // pending rendering — both occupants mount from first paint.
@@ -260,6 +272,28 @@ describe('AppFrame', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
     expect(tracks(frame)).toEqual([280, 360])
+  })
+
+  it('accounts for the external sidebar reservation in conversation padding', () => {
+    const { getByTestId } = mountFrame()
+    expect(getByTestId('center-content').parentElement!.style.paddingRight)
+      .toBe('max(0px, calc(320px - var(--dsh-sidebar-width, 0px)))')
+  })
+
+  it('reserves only activity overlap not already covered by the details track', () => {
+    const { frame, instance, getByTestId } = mountFrame()
+    const center = getByTestId('center-content').parentElement!
+    expect(center.style.paddingRight).toBe('max(0px, calc(320px - var(--dsh-sidebar-width, 0px)))')
+    act(() => { instance.actions.openDetails() })
+    expect(center.style.paddingRight).toBe('max(0px, calc(0px - var(--dsh-sidebar-width, 0px)))')
+    act(() => { instance.actions.setDetails(300) })
+    expect(center.style.paddingRight).toBe('max(0px, calc(20px - var(--dsh-sidebar-width, 0px)))')
+    act(() => { instance.actions.closeDetails() })
+    expect(center.style.paddingRight).toBe('max(0px, calc(320px - var(--dsh-sidebar-width, 0px)))')
+    frameWidth = 800
+    act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
+    expect(frame.hasAttribute('data-activity-collapsed')).toBe(true)
+    expect(center.style.paddingRight).toBe('max(0px, calc(0px - var(--dsh-sidebar-width, 0px)))')
   })
 
   it('drag base is the rendered width, not a stale preference', () => {
