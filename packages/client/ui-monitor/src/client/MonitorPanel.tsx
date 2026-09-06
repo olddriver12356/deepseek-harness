@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
 import type { MaybeSnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -446,7 +446,7 @@ function PlaceholderPanel({ title, label, missing, children }: {
   readonly children?: ReactNode
 }): ReactNode {
   return (
-    <section className={css.dataPanel}>
+    <section aria-label={title} className={css.dataPanel}>
       <div className={css.panelHead}><h2>{title}</h2><span className={css.panelNote}>{label}</span></div>
       {children}
       <p className={css.placeholder}>{missing}</p>
@@ -538,6 +538,72 @@ function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
   )
 }
 
+const HOVER_CARD_WIDTH = 220
+
+/** Clamps a hover card's left offset so it never overflows the panel's right edge. */
+function clampHoverX(x: number, panelWidth: number): number {
+  return Math.max(0, Math.min(x, panelWidth - HOVER_CARD_WIDTH))
+}
+
+/** Pointer position for a hover card, relative to `panel`'s own box and clamped off its right edge. Undefined before `panel` mounts. */
+function hoverPositionFor(panel: HTMLElement | null, event: ReactMouseEvent): { readonly x: number; readonly y: number } | undefined {
+  const rect = panel?.getBoundingClientRect()
+  if (rect === undefined) return undefined
+  return { x: clampHoverX(event.clientX - rect.left + 14, rect.width), y: event.clientY - rect.top + 14 }
+}
+
+/** A day hovered on the heatmap or the trend chart, with the pointer position its hover card renders at. */
+interface ChartHoverPoint {
+  readonly day: UsageStatsDay
+  readonly x: number
+  readonly y: number
+}
+
+interface HoverCardRow {
+  readonly key: string
+  readonly color?: string
+  readonly label: string
+  readonly value: string
+}
+
+/**
+ * Shared hover card for the heatmap and the trend chart, replacing both
+ * charts' native title/<title> tooltips with one styled, instant, pointer-
+ * following card. Rendered inside a `position: relative` panel (`.dataPanel`
+ * already is one) and never intercepts hover itself.
+ */
+function HoverCard({ x, y, title, rows }: {
+  readonly x: number
+  readonly y: number
+  readonly title: string
+  readonly rows: readonly HoverCardRow[]
+}): ReactNode {
+  return (
+    <div className={css.hoverCard} style={{ left: x, top: y }}>
+      <div className={css.hoverCardTitle}>{title}</div>
+      {rows.map(row => (
+        <div className={css.hoverCardRow} key={row.key}>
+          {row.color !== undefined && <i className={css.hoverCardSwatch} style={{ background: row.color }} />}
+          <span className={css.hoverCardLabel}>{row.label}</span>
+          <b>{row.value}</b>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Hover rows for one heatmap day: totals plus the day's own busiest model, so a dark cell says what drove it. */
+function heatmapHoverRows(day: UsageStatsDay): readonly HoverCardRow[] {
+  const rows: HoverCardRow[] = [
+    { key: 'tokens', label: 'Token', value: formatTokens(day.tokens) },
+    { key: 'calls', label: '调用', value: String(day.calls) },
+  ]
+  let top: readonly [string, number] | undefined
+  for (const entry of Object.entries(day.models)) if (top === undefined || entry[1] > top[1]) top = entry
+  if (top !== undefined) rows.push({ key: 'top', label: modelLabel(top[0]), value: formatTokens(top[1]) })
+  return rows
+}
+
 /**
  * The activity heatmap: always a fixed year window, independent of the
  * trend-range toggle above — matching the real 使用统计 page exactly.
@@ -545,6 +611,8 @@ function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
  * horizontal scroll.
  */
 function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+  const panelRef = useRef<HTMLElement | null>(null)
+  const [hover, setHover] = useState<ChartHoverPoint | undefined>(undefined)
   if (state === undefined) {
     return <PlaceholderPanel title="活跃热力图" label="ACTIVITY.HEATMAP" missing="— waiting for dsh-usage-stats snapshot" />
   }
@@ -554,8 +622,12 @@ function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | und
   const weekCount = Math.max(1, Math.ceil(state.days.length / 7))
   const weeks = Array.from({ length: weekCount }, (_, w) =>
     Array.from({ length: 7 }, (_, d) => state.days[w * 7 + d]))
+  const showHover = (event: ReactMouseEvent<HTMLSpanElement>, day: UsageStatsDay): void => {
+    const position = hoverPositionFor(panelRef.current, event)
+    if (position !== undefined) setHover({ day, ...position })
+  }
   return (
-    <section className={css.dataPanel}>
+    <section className={css.dataPanel} ref={panelRef}>
       <div className={css.panelHead}>
         <h2>活跃热力图</h2>
         <div className={css.legend}>
@@ -573,13 +645,29 @@ function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | und
                 ? <span className={css.heatCell} key={d} />
                 : (() => {
                   const level = day.tokens === 0 ? 0 : Math.min(4, Math.ceil(day.tokens / maxTokens * 4))
-                  return <span className={levelClass(level)} key={d} title={`${day.date}: ${formatTokens(day.tokens)} tokens`} />
+                  return (
+                    <span
+                      className={levelClass(level)}
+                      key={d}
+                      onMouseEnter={(event) => { showHover(event, day) }}
+                      onMouseLeave={() => { setHover(undefined) }}
+                      onMouseMove={(event) => { showHover(event, day) }}
+                    />
+                  )
                 })())}
             </div>
           ))}
         </div>
       </div>
       <p className={css.muted}>按 dsh-usage-stats days[].tokens；共 {state.days.length} 天</p>
+      {hover !== undefined && (
+        <HoverCard
+          rows={heatmapHoverRows(hover.day)}
+          title={hover.day.date}
+          x={hover.x}
+          y={hover.y}
+        />
+      )}
     </section>
   )
 }
@@ -620,8 +708,23 @@ function topModelSeries(days: readonly UsageStatsDay[], capacity: number): reado
   return series
 }
 
+/** Non-zero hover rows for one day's stack, largest token count first. */
+function hoverRowsForDay(
+  day: UsageStatsDay,
+  series: readonly ChartSeries[],
+  valueFor: (day: UsageStatsDay, s: ChartSeries) => number,
+): readonly HoverCardRow[] {
+  return series
+    .map(s => ({ key: s.key, color: s.color, label: s.label, tokens: valueFor(day, s) }))
+    .filter(row => row.tokens > 0)
+    .sort((left, right) => right.tokens - left.tokens)
+    .map(row => ({ key: row.key, color: row.color, label: row.label, value: formatTokens(row.tokens) }))
+}
+
 /** Stacked daily Token trend, hand-rolled as an inline SVG bar chart (no charting library). */
 function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+  const panelRef = useRef<HTMLElement | null>(null)
+  const [hover, setHover] = useState<ChartHoverPoint | undefined>(undefined)
   if (state === undefined) {
     return <PlaceholderPanel title="按天 Token 趋势" label="USAGE.TREND" missing="— waiting for dsh-usage-stats snapshot" />
   }
@@ -641,8 +744,12 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
   const slot = days.length > 0 ? width / days.length : width
   const barWidth = Math.max(2, Math.min(28, slot * 0.62))
   const labelEvery = Math.max(1, Math.ceil(days.length / 8))
+  const showHover = (event: ReactMouseEvent<SVGRectElement>, day: UsageStatsDay): void => {
+    const position = hoverPositionFor(panelRef.current, event)
+    if (position !== undefined) setHover({ day, ...position })
+  }
   return (
-    <section className={css.dataPanel}>
+    <section className={css.dataPanel} ref={panelRef}>
       <div className={css.panelHead}><h2>按天 Token 趋势</h2><span className={css.panelNote}>USAGE.TREND</span></div>
       <div className={css.chartWrap}>
         <svg className={css.chart} preserveAspectRatio="none" viewBox={`0 0 ${width} ${height}`}>
@@ -662,11 +769,23 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
                   const rectY = stackTop - barHeight
                   stackTop -= barHeight
                   return (
-                    <rect fill={s.color} height={Math.max(barHeight - 1, 0)} key={s.key} width={barWidth} x={cx - barWidth / 2} y={rectY}>
-                      <title>{`${day.date} · ${s.label}: ${formatTokens(value)}`}</title>
-                    </rect>
+                    <rect
+                      fill={s.color} height={Math.max(barHeight - 1, 0)} key={s.key}
+                      width={barWidth} x={cx - barWidth / 2} y={rectY}
+                    />
                   )
                 })}
+                {/* Transparent full-height hit area: hovering anywhere in the column reads the whole day, not one thin segment. */}
+                <rect
+                  className={css.hitArea}
+                  height={plotHeight}
+                  onMouseEnter={(event) => { showHover(event, day) }}
+                  onMouseLeave={() => { setHover(undefined) }}
+                  onMouseMove={(event) => { showHover(event, day) }}
+                  width={slot}
+                  x={cx - slot / 2}
+                  y={0}
+                />
                 {i % labelEvery === 0 && (
                   <text fill="var(--dsw-specific-agent-muted)" fontSize={11} textAnchor="middle" x={cx} y={height - 8}>{day.date.slice(5)}</text>
                 )}
@@ -679,6 +798,14 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
         {series.map(s => <span key={s.key}><i style={{ background: s.color }} />{s.label}</span>)}
       </div>
       <p className={css.muted}>按 dsh-usage-stats days[].models 的每日 token 堆叠；共 {days.length} 天</p>
+      {hover !== undefined && (
+        <HoverCard
+          rows={hoverRowsForDay(hover.day, series, valueFor)}
+          title={`${hover.day.date} · 共 ${formatTokens(hover.day.tokens)}`}
+          x={hover.x}
+          y={hover.y}
+        />
+      )}
     </section>
   )
 }
@@ -844,11 +971,25 @@ function parseUsageStatsCallsPage(value: unknown): UsageStatsCallsPage | undefin
 
 const CALLS_PAGE_SIZE = 20
 
-function useUsageStatsCalls(days: number, page: number): UsageStatsCallsPage | undefined {
+/**
+ * Server-side query for `/usage-stats/v1/calls`. Model, provider and token-floor
+ * filtering happen on the endpoint, not the loaded page, so totals and `hasMore` stay correct.
+ */
+interface UsageStatsCallsQuery {
+  readonly model: string
+  readonly provider: string
+  readonly minInputTokens: string
+  readonly minOutputTokens: string
+  readonly maxRecords: number
+  readonly pageSize: number
+}
+
+function useUsageStatsCalls(days: number, page: number, query: UsageStatsCallsQuery): UsageStatsCallsPage | undefined {
   const [state, setState] = useState<UsageStatsCallsPage>()
   useEffect(() => {
     let cancelled = false
-    setState(undefined)
+    // Keep showing the previous page while a filter/pagination change refetches, rather than
+    // flashing back to the placeholder and disabling the toolbar mid-edit.
     const load = async (): Promise<void> => {
       if (typeof globalThis.fetch !== 'function') return
       try {
@@ -858,8 +999,12 @@ function useUsageStatsCalls(days: number, page: number): UsageStatsCallsPage | u
         const isoDay = (d: Date): string => d.toISOString().slice(0, 10)
         const params = new URLSearchParams({
           from: isoDay(from), to: isoDay(to), scope: 'all', timeZone,
-          page: String(page), pageSize: String(CALLS_PAGE_SIZE), maxRecords: '1000',
+          page: String(page), pageSize: String(query.pageSize), maxRecords: String(query.maxRecords),
         })
+        if (query.model !== '') params.set('model', query.model)
+        if (query.provider !== '') params.set('provider', query.provider)
+        if (query.minInputTokens !== '') params.set('minInputTokens', query.minInputTokens)
+        if (query.minOutputTokens !== '') params.set('minOutputTokens', query.minOutputTokens)
         const response = await globalThis.fetch(`/usage-stats/v1/calls?${params.toString()}`, { headers: { accept: 'application/json' } })
         if (!response.ok) return
         const payload: unknown = await response.json()
@@ -871,8 +1016,29 @@ function useUsageStatsCalls(days: number, page: number): UsageStatsCallsPage | u
     }
     void load()
     return () => { cancelled = true }
-  }, [days, page])
+  }, [days, page, query.model, query.provider, query.minInputTokens, query.minOutputTokens, query.maxRecords, query.pageSize])
   return state
+}
+
+interface CallFilterOptions {
+  readonly models: readonly string[]
+  readonly providers: readonly string[]
+}
+
+/** Distinct model/provider names across the whole windowed snapshot, not just the loaded page. */
+function callFilterOptions(state: UsageStatsSnapshot | undefined): CallFilterOptions {
+  if (state === undefined) return { models: [], providers: [] }
+  const models = new Set<string>()
+  const providers = new Set<string>()
+  for (const day of state.days) {
+    for (const key of Object.keys(day.models)) {
+      const slash = key.indexOf('/')
+      if (slash === -1) { models.add(key); continue }
+      providers.add(key.slice(0, slash))
+      models.add(key.slice(slash + 1))
+    }
+  }
+  return { models: [...models].sort(), providers: [...providers].sort() }
 }
 
 function formatCallDuration(ms: number): string {
@@ -888,51 +1054,112 @@ function formatCallTime(epochMs: number): string {
 const EFFORT_LABEL: Readonly<Record<string, string>> = { low: '低', medium: '中', high: '高' }
 
 /**
- * Per-call detail table, real and paginated through `/usage-stats/v1/calls`
- * — model/provider filters are real, applied to the currently loaded page.
+ * Per-call detail table, real and paginated through `/usage-stats/v1/calls`.
+ * Model/provider/token-floor filters and the max-records/page-size controls
+ * are all sent as query params to the SAME endpoint, the original 使用统计
+ * page's approach, rather than filtered client-side against the loaded
+ * page, which would report a wrong total and `hasMore` for anything outside
+ * that one page.
  */
-function CallDetailsPanel({ rangeDays }: { readonly rangeDays: UsageStatsRangeDays }): ReactNode {
+function CallDetailsPanel({ rangeDays, usageStats }: {
+  readonly rangeDays: UsageStatsRangeDays
+  readonly usageStats: UsageStatsSnapshot | undefined
+}): ReactNode {
   const [page, setPage] = useState(1)
   const [modelFilter, setModelFilter] = useState('')
   const [providerFilter, setProviderFilter] = useState('')
-  useEffect(() => { setPage(1) }, [rangeDays])
-  const data = useUsageStatsCalls(rangeDays, page)
+  const [minInputTokens, setMinInputTokens] = useState('')
+  const [minOutputTokens, setMinOutputTokens] = useState('')
+  const [maxRecords, setMaxRecords] = useState<number>(1000)
+  const [pageSize, setPageSize] = useState<number>(CALLS_PAGE_SIZE)
+  useEffect(() => {
+    setPage(1)
+  }, [rangeDays, modelFilter, providerFilter, minInputTokens, minOutputTokens, maxRecords, pageSize])
+  const data = useUsageStatsCalls(rangeDays, page, {
+    model: modelFilter, provider: providerFilter, minInputTokens, minOutputTokens, maxRecords, pageSize,
+  })
+  const { models, providers } = callFilterOptions(usageStats)
+  const hasFilters = modelFilter !== '' || providerFilter !== '' || minInputTokens !== '' || minOutputTokens !== ''
+  const clearFilters = (): void => {
+    setModelFilter('')
+    setProviderFilter('')
+    setMinInputTokens('')
+    setMinOutputTokens('')
+  }
+  const toolbar = (
+    <div className={css.tableToolbar}>
+      <select aria-label="按模型筛选" disabled={data === undefined} onChange={(event) => { setModelFilter(event.currentTarget.value) }} value={modelFilter}>
+        <option value="">全部模型</option>
+        {models.map(model => <option key={model} value={model}>{model}</option>)}
+      </select>
+      <select aria-label="按提供商筛选" disabled={data === undefined} onChange={(event) => { setProviderFilter(event.currentTarget.value) }} value={providerFilter}>
+        <option value="">全部提供商</option>
+        {providers.map(provider => <option key={provider} value={provider}>{provider}</option>)}
+      </select>
+      <input
+        aria-label="输入 Token 下限"
+        disabled={data === undefined}
+        min={0}
+        onChange={(event) => { setMinInputTokens(event.currentTarget.value) }}
+        placeholder="输入 ≥ Token"
+        type="number"
+        value={minInputTokens}
+      />
+      <input
+        aria-label="输出 Token 下限"
+        disabled={data === undefined}
+        min={0}
+        onChange={(event) => { setMinOutputTokens(event.currentTarget.value) }}
+        placeholder="输出 ≥ Token"
+        type="number"
+        value={minOutputTokens}
+      />
+      <button aria-label="清除筛选" className={css.clearFilters} disabled={!hasFilters} onClick={clearFilters} type="button">✕ 清除筛选</button>
+      <span className={css.spacer} />
+      <label className={css.toolbarNumber}>
+        明细上限
+        <input
+          aria-label="明细上限"
+          disabled={data === undefined}
+          min={1}
+          onChange={(event) => { const n = Number(event.currentTarget.value); if (n > 0) setMaxRecords(n) }}
+          type="number"
+          value={maxRecords}
+        />
+        条
+      </label>
+      <label className={css.toolbarNumber}>
+        <input
+          aria-label="每页条数"
+          disabled={data === undefined}
+          min={1}
+          onChange={(event) => { const n = Number(event.currentTarget.value); if (n > 0) setPageSize(n) }}
+          type="number"
+          value={pageSize}
+        />
+        条/页
+      </label>
+    </div>
+  )
   if (data === undefined) {
     return (
       <PlaceholderPanel label="CALL.DETAILS" missing="— waiting for dsh-usage-stats snapshot" title="调用明细">
-        <div className={css.tableToolbar}>
-          <select aria-label="按模型筛选" disabled><option>全部模型</option></select>
-          <select aria-label="按提供商筛选" disabled><option>全部提供商</option></select>
-        </div>
+        {toolbar}
       </PlaceholderPanel>
     )
   }
-  const models = [...new Set(data.items.map(call => call.model))].sort()
-  const providers = [...new Set(data.items.map(call => call.provider))].sort()
-  const rows = data.items.filter(call =>
-    (modelFilter === '' || call.model === modelFilter) && (providerFilter === '' || call.provider === providerFilter))
   const start = data.total === 0 ? 0 : (data.page - 1) * data.pageSize + 1
   const end = Math.min(data.page * data.pageSize, data.total)
   return (
-    <section className={css.dataPanel}>
-      <div className={css.panelHead}><h2>调用明细</h2><span className={css.panelNote}>CALL.DETAILS</span></div>
-      <div className={css.tableToolbar}>
-        <select aria-label="按模型筛选" onChange={(event) => { setModelFilter(event.currentTarget.value) }} value={modelFilter}>
-          <option value="">全部模型</option>
-          {models.map(model => <option key={model} value={model}>{model}</option>)}
-        </select>
-        <select aria-label="按提供商筛选" onChange={(event) => { setProviderFilter(event.currentTarget.value) }} value={providerFilter}>
-          <option value="">全部提供商</option>
-          {providers.map(provider => <option key={provider} value={provider}>{provider}</option>)}
-        </select>
-        <span className={css.spacer} />
-      </div>
-      {rows.length === 0 ? <p className={css.placeholder}>本页没有匹配的调用</p> : (
+    <section aria-label="调用明细" className={css.dataPanel}>
+      <div className={css.panelHead}><h2>调用明细</h2><span className={css.panelNote}>每次模型调用 · 最新在前</span></div>
+      {toolbar}
+      {data.items.length === 0 ? <p className={css.placeholder}>没有匹配的调用</p> : (
         <div className={css.tableWrap}>
           <table>
             <thead><tr><th>时间</th><th>响应耗时</th><th>输入</th><th>输出</th><th>缓存率</th><th>模型</th><th>思考程度</th></tr></thead>
             <tbody>
-              {rows.map((call) => {
+              {data.items.map((call) => {
                 const cacheBasis = call.tokens.input + call.tokens.cacheRead
                 const cacheRate = cacheBasis > 0 ? Math.round(call.tokens.cacheRead / cacheBasis * 100) : 0
                 return (
@@ -953,8 +1180,8 @@ function CallDetailsPanel({ rangeDays }: { readonly rangeDays: UsageStatsRangeDa
       )}
       <div className={css.tfoot}>
         <span>{data.total === 0 ? '0 条' : `${start}-${end} / 共 ${data.total} 条`}</span>
-        <button disabled={data.page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)) }} type="button">‹</button>
-        <button disabled={!data.hasMore} onClick={() => { setPage(p => p + 1) }} type="button">›</button>
+        <button aria-label="上一页" disabled={data.page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)) }} type="button">‹</button>
+        <button aria-label="下一页" disabled={!data.hasMore} onClick={() => { setPage(p => p + 1) }} type="button">›</button>
       </div>
     </section>
   )
@@ -1000,7 +1227,7 @@ export function MonitorPanel({ appPanels, useProjection, useConversation, effort
         <UsageStatsTrendChart state={usageStats} />
         <UsageStatsModelUsagePanel state={usageStats} />
         <UsageStatsTokenComposition state={usageStats} />
-        <CallDetailsPanel rangeDays={rangeDays} />
+        <CallDetailsPanel rangeDays={rangeDays} usageStats={usageStats} />
 
         <h2 className={`${css.sectionLabel} ${css.sectionLabelMuted}`}>原生扩展 · 超出 usage-stats 范围（已实现，非本轮改动）</h2>
         <div className={css.grid}>

@@ -165,7 +165,65 @@
   font-weight: 900;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.action {
+  border: 2px solid currentcolor;
+  padding: 5px 9px;
+  color: var(--dsw-specific-agent-text);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--ds-font-family-code);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.action:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.draft {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  border: 2px solid currentcolor;
+  padding: 8px;
+  color: inherit;
+  background: rgb(25 28 35 / 22%);
+  font-family: var(--dsw-font-family);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.alertLine {
+  margin: 9px 0 0;
+  color: var(--dsw-specific-agent-pink);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* The goal block is the acid hero card, so its own controls invert onto the dark canvas ink. */
+.section:first-of-type .action,
+.section:first-of-type .draft {
+  color: var(--dsw-specific-agent-canvas);
+}
+
+.section:first-of-type .alertLine {
+  color: var(--dsw-specific-agent-canvas);
+  font-weight: 800;
+}
+
 .meter {
+  display: flex;
   height: 9px;
   margin-top: 12px;
   overflow: hidden;
@@ -179,6 +237,85 @@
   height: 100%;
   background: repeating-linear-gradient(90deg, var(--dsw-specific-agent-cyan) 0 14px, var(--dsw-specific-agent-blue) 14px 18px);
   transition: width var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+/* Composition tints double as the legend swatches, so a colour is read once. */
+.partSystem { background: var(--dsw-specific-agent-blue); }
+.partTools { background: var(--dsw-specific-agent-pink); }
+.partMessages { background: var(--dsw-specific-agent-cyan); }
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 10px 0 0;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.legendRow dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--dsw-specific-agent-muted);
+  font-size: 11px;
+}
+
+.legendRow dd {
+  margin: 0;
+  color: var(--dsw-specific-agent-text);
+  font-family: var(--ds-font-family-code);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border: 1px solid rgb(25 28 35 / 55%);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 2px solid var(--dsw-specific-agent-line);
+  padding-left: 7px;
+}
+
+.figure span {
+  color: var(--dsw-specific-agent-muted);
+  font-family: var(--ds-font-family-code);
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.figure b {
+  color: var(--dsw-specific-agent-text);
+  font-family: var(--ds-font-family-code);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.figure[data-alert] {
+  border-left-color: var(--dsw-specific-agent-pink);
+}
+
+.figure[data-alert] b {
+  color: var(--dsw-specific-agent-pink);
 }
 
 .caption {

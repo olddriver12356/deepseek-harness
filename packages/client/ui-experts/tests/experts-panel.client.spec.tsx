@@ -50,6 +50,46 @@ describe('ExpertsPanel', () => {
     expect(within(dialog).getByText('产品战略专家')).toBeTruthy()
   })
 
+  it('opens the create-expert form from the giant add button', () => {
+    renderExperts()
+    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByRole('heading', { name: '新增专家' })).toBeTruthy()
+    expect(within(dialog).getByLabelText('名称')).toBeTruthy()
+    expect(within(dialog).getByLabelText('分类')).toBeTruthy()
+    expect(within(dialog).getByLabelText('一句话说明')).toBeTruthy()
+    expect(within(dialog).getByLabelText('模型')).toBeTruthy()
+    expect(within(dialog).getByLabelText('推理强度')).toBeTruthy()
+    expect(within(dialog).getByLabelText('权限预设')).toBeTruthy()
+    expect(within(dialog).getByLabelText('系统指令')).toBeTruthy()
+    expect(within(dialog).getByLabelText('附加技能（用逗号分隔）')).toBeTruthy()
+  })
+
+  it('rejects an empty create-expert submit with a required-field message', () => {
+    renderExperts()
+    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
+    fireEvent.click(screen.getByRole('button', { name: '创建专家' }))
+    expect(screen.getByRole('alert').textContent).toBe('名称、分类、一句话说明和系统指令都是必填项。')
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('reports the honest not-wired state on a filled create-expert submit', () => {
+    renderExperts()
+    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
+    fireEvent.change(screen.getByLabelText('名称'), { target: { value: '迁移架构师' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: 'Architecture' } })
+    fireEvent.change(screen.getByLabelText('一句话说明'), { target: { value: '守护迁移契约' } })
+    fireEvent.change(screen.getByLabelText('系统指令'), { target: { value: '优先使用原生钩子服务。' } })
+    fireEvent.change(screen.getByLabelText('附加技能（用逗号分隔）'), { target: { value: 'brainstorming, frontend-design' } })
+    fireEvent.click(screen.getByRole('button', { name: '创建专家' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('status').textContent).toBe('创建功能还没有接入数据服务，这个专家不会被保存。')
+    expect(screen.getByText('brainstorming')).toBeTruthy()
+    expect(screen.getByText('frontend-design')).toBeTruthy()
+    // the honest failure must not silently add a fake record to the roster
+    expect(screen.queryByRole('heading', { name: '迁移架构师' })).toBeNull()
+  })
+
   it('stays mounted and preserves search when another app panel becomes active', () => {
     const { appPanels, container } = renderExperts()
     const panel = container.querySelector<HTMLElement>('[data-experts-panel]')!

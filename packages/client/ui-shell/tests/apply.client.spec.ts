@@ -27,9 +27,13 @@ async function bench() {
   // seam for persistence; model this bench as a remote, memory-only browser.
   ctx.provide('locale', new LocaleRuntime(ctx))
   ctx.provide('connection', { api: { settings: {} }, isLoopback: false } as never)
-  // ui-theme's Appearance row binds a durable scope through these two.
+  // ui-theme's Appearance row binds a durable scope through these two. `goals` rides the same
+  // remote face: the activity card's goal verbs address the generated Goal Remote through it.
   ctx.provide('remote', { $on: () => () => {} } as never)
+  ctx.provide('remote.goals', { edit: vi.fn(), pause: vi.fn(), resume: vi.fn(), clear: vi.fn() } as never)
   ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
+  // The activity card reads the goal CAS ref through the sessions service.
+  ctx.provide('sessions', { binding: () => undefined } as never)
   await ctx.plugin({ inject: themeInject, apply: themeApply }).await()
   await slotsFiber.await()
   return { ctx, slots: ctx.get('slots') as SlotRegistry }
@@ -37,7 +41,7 @@ async function bench() {
 
 describe('ui-shell client apply', () => {
   it('declares its service dependencies', () => {
-    expect(inject).toEqual(['slots', 'theme'])
+    expect(inject).toEqual(['slots', 'theme', 'sessions', 'remote', 'remote.goals'])
   })
 
   it('ships shell-owned effect labels', () => {

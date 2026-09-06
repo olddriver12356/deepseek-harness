@@ -36,7 +36,16 @@
       "path": "../ui-conversation"
     },
     {
+      "path": "../ui-trajectory"
+    },
+    {
+      "path": "../../api/remotes/tsconfig.client.json"
+    },
+    {
       "path": "../../api/session-controller/tsconfig.client.json"
+    },
+    {
+      "path": "../../goal/goal"
     },
     {
       "path": "../../api/workspace-controller/tsconfig.client.json"

@@ -121,6 +121,11 @@
 .dialog input:not([type='checkbox']), .dialog textarea, .dialog select { width: 100%; margin-top: 7px; padding: 11px 12px; resize: vertical; border: 1px solid var(--line); color: #f5efdf; background: rgb(255 255 255 / 5%); font: 500 14px var(--dsw-font-family, sans-serif); line-height: 1.6; }
 .checkRow { display: flex !important; align-items: center; gap: 8px; }
 .checkRow input { accent-color: var(--acid); }
+.skillChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.skillChip { padding: 4px 8px; border: 2px solid currentColor; border-radius: 999px; color: var(--cyan); font: 800 11px var(--ds-font-family-code, monospace); }
+.formError, .formNotice { margin: 16px 0 0; padding: 10px 12px; border: 2px solid currentColor; border-radius: 8px; font: 800 12px var(--dsw-font-family, sans-serif); }
+.formError { color: var(--pink); }
+.formNotice { color: var(--cyan); }
 .dialog footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 17px; border-top: 1px solid var(--line); background: none; }
 .dialog footer button { padding: 10px 16px; }
 .ghostButton, .primaryCut { border: 2px solid currentColor; font: 900 13px var(--dsw-font-family, sans-serif); }

@@ -11,6 +11,13 @@
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
+// Type-only: pulls the generated Remote API and the ctx.remote merge, for the activity card's goal verbs.
+import type { RemoteResult } from '@deepseek-ai/dsh-api-remotes/client'
+// Type-only: pulls the Session Controller service the goal CAS ref is read through.
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+// Type-only: the `goal` SessionProjectionMap key merge, owned by the goal domain.
+import type { GoalProjection, GoalRef } from '@deepseek-ai/dsh-goal/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { PanelActions } from './service.ts'
 import { AppPanelsController } from './app-panels.ts'
 import { AppFrame } from './AppFrame.tsx'
@@ -124,11 +131,37 @@ export interface ConvOwnerProps {}
 /** Details owner share: empty — sessionId arrives as a framework-standard prop. */
 export interface DetailsOwnerProps {}
 
+/**
+ * Settled outcome of one goal mutation. Declared structurally rather than imported from ui-goal:
+ * the two plugins share the Remote API plane, never each other's values.
+ */
+export type GoalActionResult = RemoteResult<unknown> | {
+  readonly ok: false
+  readonly error: { readonly code: 'no-current-goal'; readonly message: string }
+}
+
 /** Activity owner share: the shell supplies no extra data. */
 export interface ActivityOwnerProps {}
 
+/**
+ * Injected business face of the activity registrant: the four goal mutation verbs the Live
+ * Signal card offers over the session's projected goal. The live goal value itself arrives
+ * through `useProjection('goal')`, so it is deliberately absent here. There is no create verb:
+ * the Goal Remote has none, and goal creation stays with the `/goal` command.
+ */
+export interface ActivityInjected {
+  /** Replace the current goal's objective (CAS on the projected ref). */
+  onEditGoal: (objective: string) => Promise<GoalActionResult>
+  /** Pause an active goal. */
+  onPauseGoal: () => Promise<GoalActionResult>
+  /** Resume a paused goal. */
+  onResumeGoal: () => Promise<GoalActionResult>
+  /** Clear the current goal (tombstone). */
+  onClearGoal: () => Promise<GoalActionResult>
+}
+
 /** Required services (cordis fiber inject — the loader passes all module exports as an object plugin). */
-export const inject = ['slots', 'theme']
+export const inject = ['slots', 'theme', 'sessions', 'remote', 'remote.goals']
 
 /**
  * Client plugin body: provide the shell services, then one register() call — AppFrame
@@ -182,9 +215,46 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'ui-shell: theme presenter')
 
+  const sessions = ctx.sessions
+
+  /** The session's current projected CAS ref, read at verb call time; the RPC's own CAS is the staleness guard. */
+  const goalRefOf = (sessionId: SessionId): GoalRef | undefined => {
+    const face = sessions.binding(sessionId)?.session.projections.faceOf('goal')
+    const projection = face?.getSnapshot() as GoalProjection | null | undefined
+    if (projection == null) return undefined
+    return { id: projection.goal.id, revision: projection.goal.revision }
+  }
+
+  const noCurrentGoal: GoalActionResult = {
+    ok: false,
+    error: { code: 'no-current-goal', message: 'no current goal to mutate' },
+  }
+
   ctx.effect(
     () => ctx.slots.inject('shell.activity', () => ctx.slots.register({
       name: 'shell.activity',
+      inject: (sessionId: SessionId): ActivityInjected => ({
+        onEditGoal: async (objective) => {
+          const ref = goalRefOf(sessionId)
+          if (ref === undefined) return noCurrentGoal
+          return await ctx.remote.goals.edit(sessionId, ref, { objective })
+        },
+        onPauseGoal: async () => {
+          const ref = goalRefOf(sessionId)
+          if (ref === undefined) return noCurrentGoal
+          return await ctx.remote.goals.pause(sessionId, ref)
+        },
+        onResumeGoal: async () => {
+          const ref = goalRefOf(sessionId)
+          if (ref === undefined) return noCurrentGoal
+          return await ctx.remote.goals.resume(sessionId, ref)
+        },
+        onClearGoal: async () => {
+          const ref = goalRefOf(sessionId)
+          if (ref === undefined) return noCurrentGoal
+          return await ctx.remote.goals.clear(sessionId, ref)
+        },
+      }),
     }, LiveSignalPanel)),
     'ui-shell: activity slot registration',
   )

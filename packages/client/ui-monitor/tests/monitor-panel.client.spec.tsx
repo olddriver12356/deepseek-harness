@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import {
   MonitorPanel,
@@ -235,14 +235,47 @@ describe('MonitorPanel', () => {
       expect(within(row).getByText('gpt-5.6-luna')).toBeTruthy()
       expect(within(row).getByText('中')).toBeTruthy()
       expect(within(table).getByText('1-20 / 共 21 条')).toBeTruthy()
-      expect(within(table).getByRole('button', { name: '‹' }).hasAttribute('disabled')).toBe(true)
-      expect(within(table).getByRole('button', { name: '›' }).hasAttribute('disabled')).toBe(false)
+      expect(within(table).getByRole('button', { name: '上一页' }).hasAttribute('disabled')).toBe(true)
+      expect(within(table).getByRole('button', { name: '下一页' }).hasAttribute('disabled')).toBe(false)
 
       calls.length = 0
-      act(() => { within(table).getByRole('button', { name: '›' }).click() })
+      act(() => { within(table).getByRole('button', { name: '下一页' }).click() })
       await act(async () => {})
       const nextPageCall = calls.find(url => url.includes('/usage-stats/v1/calls?') && url.includes('page=2'))
       expect(nextPageCall).toBeTruthy()
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('sends the full call-details toolbar as server-side query params, matching the original usage-stats page', async () => {
+    const originalFetch = globalThis.fetch
+    const { mock, calls } = fetchStub(TWO_DAYS)
+    globalThis.fetch = mock
+    try {
+      renderMonitor()
+      await act(async () => {})
+
+      const table = screen.getByRole('region', { name: '调用明细' })
+      expect(within(table).getByLabelText('按模型筛选').querySelectorAll('option').length).toBeGreaterThan(1)
+      expect(within(table).getByLabelText('按提供商筛选').querySelectorAll('option').length).toBeGreaterThan(1)
+
+      calls.length = 0
+      fireEvent.change(within(table).getByLabelText('输入 Token 下限'), { target: { value: '250' } })
+      fireEvent.change(within(table).getByLabelText('输出 Token 下限'), { target: { value: '50' } })
+      fireEvent.change(within(table).getByLabelText('每页条数'), { target: { value: '5' } })
+      fireEvent.change(within(table).getByLabelText('明细上限'), { target: { value: '500' } })
+
+      await waitFor(() => {
+        const lastQuery = new URL(calls.filter(url => url.includes('/usage-stats/v1/calls?')).at(-1)!, 'http://localhost').searchParams
+        expect(Object.fromEntries(lastQuery)).toMatchObject({ minInputTokens: '250', minOutputTokens: '50', pageSize: '5', maxRecords: '500', page: '1' })
+      })
+
+      const clear = within(table).getByRole('button', { name: '清除筛选' })
+      expect(clear.hasAttribute('disabled')).toBe(false)
+      act(() => { clear.click() })
+      expect(within(table).getByLabelText<HTMLInputElement>('输入 Token 下限').value).toBe('')
+      expect(within(table).getByLabelText<HTMLInputElement>('输出 Token 下限').value).toBe('')
     } finally {
       globalThis.fetch = originalFetch
     }
@@ -353,6 +386,55 @@ describe('MonitorPanel', () => {
     renderMonitor()
 
     expect(screen.getByText('— 无活跃会话，或 trajectory view target 尚未装载')).toBeTruthy()
+  })
+
+  it('reads a heatmap day on hover: totals, call count and that day own busiest model', async () => {
+    const originalFetch = globalThis.fetch
+    const { mock } = fetchStub(TWO_DAYS)
+    globalThis.fetch = mock
+    try {
+      renderMonitor()
+      await act(async () => {})
+
+      const heatmap = screen.getByRole('heading', { name: '活跃热力图' }).closest('section') as HTMLElement
+      const cells = heatmap.querySelectorAll('[class*="week"] [class*="heatCell"]')
+      fireEvent.mouseEnter(cells[1] as Element, { clientX: 40, clientY: 20 })
+
+      expect(within(heatmap).getByText('2026-09-04')).toBeTruthy()
+      expect(within(heatmap).getByText(formatTokensLike(600))).toBeTruthy()
+      expect(within(heatmap).getByText('调用')).toBeTruthy()
+      expect(within(heatmap).getByText('6')).toBeTruthy()
+      expect(within(heatmap).getByText('deepseek-reasoner')).toBeTruthy()
+
+      fireEvent.mouseLeave(cells[1] as Element)
+      expect(within(heatmap).queryByText('调用')).toBeNull()
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  // The hit area covers the whole column, so the card must list every non-zero series for that day, not one segment.
+  it('reads the whole hovered day on the trend chart, largest series first', async () => {
+    const originalFetch = globalThis.fetch
+    const { mock } = fetchStub(TWO_DAYS)
+    globalThis.fetch = mock
+    try {
+      renderMonitor()
+      await act(async () => {})
+
+      const chart = screen.getByRole('heading', { name: '按天 Token 趋势' }).closest('section') as HTMLElement
+      const hitAreas = chart.querySelectorAll('[class*="hitArea"]')
+      expect(hitAreas.length).toBe(2)
+      fireEvent.mouseEnter(hitAreas[0] as Element, { clientX: 20, clientY: 30 })
+
+      const card = chart.querySelector('[class*="hoverCard"]') as HTMLElement
+      expect(card.textContent).toContain('2026-09-03')
+      expect(card.textContent).toContain(formatTokensLike(400))
+      const labels = [...card.querySelectorAll('[class*="hoverCardLabel"]')].map(node => node.textContent)
+      expect(labels).toEqual(['deepseek-reasoner', 'deepseek-chat'])
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
 
