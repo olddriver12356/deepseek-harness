@@ -104,6 +104,8 @@
 .recordActions { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
 .recordActions button { padding: 7px 9px; border: 2px solid currentColor; border-radius: 8px; color: inherit; background: transparent; font: 900 11px var(--ds-font-family-code, monospace); }
 .recordActions button:hover { color: var(--ink); background: var(--cyan); }
+.recordActions button:disabled { cursor: not-allowed; opacity: .45; }
+.recordActions button:disabled:hover { color: inherit; background: transparent; }
 .call { color: var(--paper) !important; background: var(--ink) !important; }
 .recordCard:nth-child(3n + 3) .call { color: var(--ink) !important; background: var(--acid) !important; }
 .emptyRecords { grid-column: 1 / -1; padding: 70px 30px; border: 3px dashed rgb(255 255 255 / 38%); border-radius: 14px; color: rgb(255 255 255 / 68%); text-align: center; }
@@ -131,6 +133,7 @@
 .ghostButton, .primaryCut { border: 2px solid currentColor; font: 900 13px var(--dsw-font-family, sans-serif); }
 .ghostButton { color: inherit; background: transparent; }
 .primaryCut { color: var(--ink); background: var(--acid); box-shadow: 4px 4px 0 var(--blue); }
+.primaryCut:disabled { cursor: wait; opacity: .58; }
 .dispatchBadge { margin: 16px 0 0; padding: 13px; border: 2px solid var(--ink); color: var(--ink); background: var(--yellow); box-shadow: 4px 4px 0 var(--pink); font: 900 13px var(--dsw-font-family, sans-serif); }
 
 @container (max-width: 1180px) { .expertGrid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }

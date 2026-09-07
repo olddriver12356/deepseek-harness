@@ -858,6 +858,19 @@ export interface Config {
 
 Source: [`packages/host/directory-picker-browse/src/index.ts:181`](../packages/host/directory-picker-browse/src/index.ts)
 
+<a id="deepseek-aidsh-host-experts"></a>
+
+## `@deepseek-ai/dsh-host-experts`
+
+```ts config-catalog
+export interface Config {
+  /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
+  readonly vaultRoot: string
+}
+```
+
+Source: [`packages/host/experts/src/index.ts:10`](../packages/host/experts/src/index.ts)
+
 <a id="deepseek-aidsh-host-frontend-static"></a>
 
 ## `@deepseek-ai/dsh-host-frontend-static`

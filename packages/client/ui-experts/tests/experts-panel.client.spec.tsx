@@ -1,104 +1,111 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
-import { ExpertsPanel } from '../src/client/ExpertsPanel.tsx'
+import type { ExpertDraft, ExpertRecord } from '@deepseek-ai/dsh-host-experts/types'
+import { ExpertsPanel, type ExpertApi } from '../src/client/ExpertsPanel.tsx'
+import { zh } from '../src/client/locales.ts'
 
 afterEach(cleanup)
+beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value(this: HTMLDialogElement) { this.open = true },
+  })
+})
 
-function renderExperts() {
+const t = (key: keyof typeof zh, params?: Record<string, unknown>): string =>
+  zh[key].replace(/\{(\w+)\}/gu, (match, name: string) => name in (params ?? {}) ? String(params?.[name]) : match)
+
+const APPROVED: ExpertRecord = {
+  id: 'agent-approved', name: '代码审查专家', category: 'Engineering', description: '沿真实调用链审查代码。',
+  instructions: '先复现，再给证据。', status: 'approved', model: 'inherit', reasoning: 'high', permission: 'inherit', skills: [], updatedAt: '2026-09-06',
+}
+const DRAFT: ExpertRecord = {
+  id: 'agent-draft', name: '研究专家', category: 'Research', description: '寻找证据。', instructions: '区分事实和推断。',
+  status: 'draft', model: 'inherit', reasoning: 'inherit', permission: 'inherit', skills: [], updatedAt: '2026-09-06',
+}
+
+function renderExperts(initial: readonly ExpertRecord[] = [APPROVED, DRAFT]) {
+  let records = [...initial]
+  const dispatch = vi.fn<ExpertApi['dispatch']>().mockResolvedValue(undefined)
+  const create = vi.fn(async (draft: ExpertDraft): Promise<ExpertRecord> => {
+    const record: ExpertRecord = { ...draft, id: 'agent-created', updatedAt: '2026-09-06' }
+    records = [...records, record]
+    return record
+  })
+  const api: ExpertApi = {
+    list: vi.fn(async () => records),
+    create,
+    update: vi.fn(async (id: string, draft: ExpertDraft): Promise<ExpertRecord> => {
+      const record: ExpertRecord = { ...draft, id, updatedAt: '2026-09-06' }
+      records = records.map(item => item.id === id ? record : item)
+      return record
+    }),
+    remove: vi.fn(async (id: string) => { records = records.filter(item => item.id !== id) }),
+    dispatch,
+  }
   const appPanels = new AppPanelsController()
   appPanels.setActive('experts')
-  const view = render(<ExpertsPanel appPanels={appPanels} />)
-  return { ...view, appPanels }
+  const view = render(<ExpertsPanel api={api} appPanels={appPanels} t={t} />)
+  return { ...view, api, appPanels, create, dispatch }
 }
 
 describe('ExpertsPanel', () => {
-  it('renders the approved Boujoy roster layout and records', () => {
+  it('loads the Vault roster and disables draft dispatch', async () => {
     renderExperts()
-
+    expect(await screen.findByText('2 位专家')).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Experts / 专家调用阵容' })).toBeTruthy()
-    expect(screen.getByText('CALL THE RIGHT BRAIN')).toBeTruthy()
-    expect(screen.getByText('专家不是头像，')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /新增专家/ })).toBeTruthy()
-    expect(screen.getByText('4 位专家')).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: /调用专家/ })).toHaveLength(4)
+    const calls = screen.getAllByRole('button', { name: '调用专家 →' })
+    expect(calls).toHaveLength(2)
+    expect(calls[0]?.hasAttribute('disabled')).toBe(false)
+    expect(calls[1]?.hasAttribute('disabled')).toBe(true)
   })
 
-  it('filters records case-insensitively and keeps the approved empty copy', () => {
-    renderExperts()
-    fireEvent.change(screen.getByRole('textbox', { name: '搜索专家' }), { target: { value: '代码' } })
+  it('filters loaded records and preserves search across panel changes', async () => {
+    const { appPanels, container } = renderExperts()
+    await screen.findByText('2 位专家')
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索专家' }), { target: { value: '研究' } })
     expect(screen.getByText('1 位专家')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '代码审查专家' })).toBeTruthy()
-
-    fireEvent.change(screen.getByRole('textbox', { name: '搜索专家' }), { target: { value: '没有这个专家' } })
-    expect(screen.getByText('0 位专家')).toBeTruthy()
-    expect(screen.getByText('专家阵容还是空的')).toBeTruthy()
+    act(() => { appPanels.setActive('knowledge') })
+    expect(container.querySelector<HTMLElement>('[data-experts-panel]')?.hidden).toBe(true)
+    act(() => { appPanels.setActive('experts') })
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '搜索专家' }).value).toBe('研究')
   })
 
-  it('opens the approved record and dispatch dialogs', () => {
-    renderExperts()
-    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
-    expect(screen.getByRole('dialog')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '新增专家' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '取消' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
-
-    fireEvent.click(screen.getAllByRole('button', { name: '调用专家 →' })[0]!)
-    const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByRole('heading', { name: '调用专家' })).toBeTruthy()
-    expect(within(dialog).getByText('产品战略专家')).toBeTruthy()
-  })
-
-  it('opens the create-expert form from the giant add button', () => {
-    renderExperts()
-    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
-    const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByRole('heading', { name: '新增专家' })).toBeTruthy()
-    expect(within(dialog).getByLabelText('名称')).toBeTruthy()
-    expect(within(dialog).getByLabelText('分类')).toBeTruthy()
-    expect(within(dialog).getByLabelText('一句话说明')).toBeTruthy()
-    expect(within(dialog).getByLabelText('模型')).toBeTruthy()
-    expect(within(dialog).getByLabelText('推理强度')).toBeTruthy()
-    expect(within(dialog).getByLabelText('权限预设')).toBeTruthy()
-    expect(within(dialog).getByLabelText('系统指令')).toBeTruthy()
-    expect(within(dialog).getByLabelText('附加技能（用逗号分隔）')).toBeTruthy()
-  })
-
-  it('rejects an empty create-expert submit with a required-field message', () => {
-    renderExperts()
-    fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
-    fireEvent.click(screen.getByRole('button', { name: '创建专家' }))
-    expect(screen.getByRole('alert').textContent).toBe('名称、分类、一句话说明和系统指令都是必填项。')
-    expect(screen.queryByRole('status')).toBeNull()
-  })
-
-  it('reports the honest not-wired state on a filled create-expert submit', () => {
-    renderExperts()
+  it('creates a draft through the Vault API and reloads the roster', async () => {
+    const { create } = renderExperts([])
+    await screen.findByText('0 位专家')
     fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
     fireEvent.change(screen.getByLabelText('名称'), { target: { value: '迁移架构师' } })
     fireEvent.change(screen.getByLabelText('分类'), { target: { value: 'Architecture' } })
     fireEvent.change(screen.getByLabelText('一句话说明'), { target: { value: '守护迁移契约' } })
-    fireEvent.change(screen.getByLabelText('系统指令'), { target: { value: '优先使用原生钩子服务。' } })
-    fireEvent.change(screen.getByLabelText('附加技能（用逗号分隔）'), { target: { value: 'brainstorming, frontend-design' } })
-    fireEvent.click(screen.getByRole('button', { name: '创建专家' }))
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.getByRole('status').textContent).toBe('创建功能还没有接入数据服务，这个专家不会被保存。')
-    expect(screen.getByText('brainstorming')).toBeTruthy()
-    expect(screen.getByText('frontend-design')).toBeTruthy()
-    // the honest failure must not silently add a fake record to the roster
-    expect(screen.queryByRole('heading', { name: '迁移架构师' })).toBeNull()
+    fireEvent.change(screen.getByLabelText('系统指令'), { target: { value: '优先使用原生服务。' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存到 Vault' }))
+    await waitFor(() => { expect(create).toHaveBeenCalledOnce() })
+    expect(await screen.findByRole('heading', { name: '迁移架构师' })).toBeTruthy()
   })
 
-  it('stays mounted and preserves search when another app panel becomes active', () => {
-    const { appPanels, container } = renderExperts()
-    const panel = container.querySelector<HTMLElement>('[data-experts-panel]')!
-    fireEvent.change(screen.getByRole('textbox', { name: '搜索专家' }), { target: { value: '研究' } })
-    act(() => { appPanels.setActive('knowledge') })
-    expect(panel.hidden).toBe(true)
-    expect(container.querySelector('[data-experts-panel]')).toBe(panel)
-    act(() => { appPanels.setActive('experts') })
-    expect(panel.hidden).toBe(false)
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '搜索专家' }).value).toBe('研究')
+  it('opens the Expert editor in the browser modal layer', async () => {
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
+    try {
+      renderExperts([])
+      await screen.findByText('0 位专家')
+      fireEvent.click(screen.getByRole('button', { name: /新增专家/ }))
+      await waitFor(() => { expect(showModal).toHaveBeenCalledOnce() })
+    } finally {
+      showModal.mockRestore()
+    }
+  })
+
+  it('dispatches an approved Expert task to the current Session API', async () => {
+    const { dispatch } = renderExperts([APPROVED])
+    await screen.findByText('1 位专家')
+    fireEvent.click(screen.getByRole('button', { name: '调用专家 →' }))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('本次任务'), { target: { value: '审查这个变更' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: '送进 Agent →' }))
+    await waitFor(() => { expect(dispatch).toHaveBeenCalledWith(APPROVED, '审查这个变更', '') })
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

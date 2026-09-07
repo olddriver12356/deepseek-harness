@@ -49,6 +49,9 @@
       "path": "../../host/news"
     },
     {
+      "path": "../../host/experts"
+    },
+    {
       "path": "../../interaction/commands"
     },
     {

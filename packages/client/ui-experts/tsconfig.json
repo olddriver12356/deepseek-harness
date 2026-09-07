@@ -18,7 +18,19 @@
       "path": "../ui-renderer"
     },
     {
-      "path": "../../runtime-diagnostics/invariants"
+      "path": "../locale"
+    },
+    {
+      "path": "../ui-slots"
+    },
+    {
+      "path": "../../api/remotes/tsconfig.client.json"
+    },
+    {
+      "path": "../../api/session-controller/tsconfig.client.json"
+    },
+    {
+      "path": "../../host/experts"
     }
   ]
 }

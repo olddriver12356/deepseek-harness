@@ -92,6 +92,11 @@
       config:
         cacheDir: !!js dshHomePath('news-cache')
 
+    - id: experts
+      name: '@deepseek-ai/dsh-host-experts'
+      config:
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+
     # Session commands, cold reads, and live control over Typert Remote.
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'

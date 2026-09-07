@@ -1,7 +1,1 @@
-export interface ExpertRecord {
-  readonly id: string
-  readonly name: string
-  readonly description: string
-  readonly instructions: string
-  readonly enabled: boolean
-}
+export type { ExpertDraft, ExpertRecord, ExpertStatus } from '@deepseek-ai/dsh-host-experts/types'

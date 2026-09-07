@@ -1,222 +1,261 @@
-import { useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
-import { EXPERT_FIXTURE } from './fixture.ts'
-import type { ExpertRecord } from './types.ts'
+import type { ExpertDraft, ExpertRecord, ExpertStatus } from '@deepseek-ai/dsh-host-experts/types'
+import type { ExpertLocaleKey } from './locales.ts'
 import css from './ExpertsPanel.module.css'
+
+export type ExpertTranslate = (key: ExpertLocaleKey, params?: Record<string, unknown>) => string
+
+export interface ExpertApi {
+  list(): Promise<readonly ExpertRecord[]>
+  create(expert: ExpertDraft): Promise<ExpertRecord>
+  update(id: string, expert: ExpertDraft): Promise<ExpertRecord>
+  remove(id: string): Promise<void>
+  dispatch(expert: ExpertRecord, task: string, style: string): Promise<void>
+}
 
 export interface ExpertsPanelProps {
   readonly appPanels: IAppPanels
+  readonly api: ExpertApi
+  readonly t: ExpertTranslate
 }
 
 type DialogState =
-  | { readonly kind: 'record'; readonly item: ExpertRecord; readonly copy: boolean }
-  | { readonly kind: 'create' }
+  | { readonly kind: 'record'; readonly item?: ExpertRecord; readonly copy?: boolean }
   | { readonly kind: 'dispatch'; readonly item: ExpertRecord }
   | undefined
 
-/** Reasoning-effort choices offered on the create-expert form. */
-const REASONING_LEVELS = ['低', '中', '高'] as const
+const REASONING_LEVELS = ['inherit', 'low', 'medium', 'high'] as const
+const PERMISSIONS = ['inherit', 'read-only', 'workspace-write', 'danger-full-access'] as const
+function statuses(t: ExpertTranslate): readonly { value: ExpertStatus; label: string }[] {
+  return [
+    { value: 'draft', label: t('draft') },
+    { value: 'approved', label: t('approved') },
+    { value: 'suspended', label: t('suspended') },
+  ]
+}
 
-/**
- * Built-in permission presets, mirrored from `@deepseek-ai/dsh-client-ui-permission-presets`
- * (machine value kept, label localized here) rather than imported: the create form has no
- * host remote to resolve a live preset catalog against, so it only offers the fixed product
- * preset set instead of pretending to read one.
- */
-const PERMISSION_PRESETS = [
-  { value: 'read-only', label: '只读' },
-  { value: 'workspace-write', label: '工作区可写' },
-  { value: 'danger-full-access', label: '完全访问（高风险）' },
-] as const
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
 
-function ExpertCard({ item, index, onOpen }: {
+function useModalDialog() {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (ref.current !== null && !ref.current.open) ref.current.showModal()
+  }, [])
+  return ref
+}
+
+function draftFromForm(form: HTMLFormElement): ExpertDraft {
+  const data = new FormData(form)
+  const value = (key: string): string => {
+    const entry = data.get(key)
+    return typeof entry === 'string' ? entry.trim() : ''
+  }
+  return {
+    name: value('name'),
+    category: value('category'),
+    description: value('description'),
+    instructions: value('instructions'),
+    status: value('status') as ExpertStatus,
+    model: value('model') || 'inherit',
+    reasoning: value('reasoning') || 'inherit',
+    permission: value('permission') || 'inherit',
+    skills: value('skills').split(',').map(skill => skill.trim()).filter(Boolean),
+  }
+}
+
+function ExpertCard({ item, index, onOpen, onDelete, t }: {
   readonly item: ExpertRecord
   readonly index: number
   readonly onOpen: (state: DialogState) => void
+  readonly onDelete: (item: ExpertRecord) => void
+  readonly t: ExpertTranslate
 }): ReactNode {
+  const callable = item.status === 'approved'
   return (
-    <article
-      className={`${css.recordCard} ${item.enabled ? '' : css.disabled}`}
-      data-index={String(index + 1).padStart(2, '0')}
-    >
+    <article className={`${css.recordCard} ${callable ? '' : css.disabled}`} data-index={String(index + 1).padStart(2, '0')}>
       <div className={css.recordTop}>
         <span className={css.recordAvatar}>{item.name.slice(0, 1)}</span>
-        <span className={css.recordStatus}>{item.enabled ? 'ON CALL' : 'OFF'}</span>
+        <span className={css.recordStatus}>{callable ? t('onCall') : t(item.status)}</span>
       </div>
       <h3>{item.name}</h3>
       <p>{item.description}</p>
       <div className={css.recordActions}>
-        <button className={css.call} type="button" onClick={() => { onOpen({ kind: 'dispatch', item }) }}>调用专家 →</button>
-        <button type="button" onClick={() => { onOpen({ kind: 'record', item, copy: false }) }}>编辑</button>
-        <button type="button" onClick={() => { onOpen({ kind: 'record', item, copy: true }) }}>复制</button>
-        <button type="button" onClick={() => { /* persistence is a later phase */ }}>删除</button>
+        <button className={css.call} disabled={!callable} type="button" onClick={() => { onOpen({ kind: 'dispatch', item }) }}>{t('call')}</button>
+        <button type="button" onClick={() => { onOpen({ kind: 'record', item }) }}>{t('edit')}</button>
+        <button type="button" onClick={() => { onOpen({ kind: 'record', item, copy: true }) }}>{t('copy')}</button>
+        <button type="button" onClick={() => { onDelete(item) }}>{t('delete')}</button>
       </div>
     </article>
   )
 }
 
-function RecordDialog({ state, onClose }: { readonly state: Extract<DialogState, { kind: 'record' }>; readonly onClose: () => void }): ReactNode {
-  const { item, copy } = state
-  const title = copy ? '复制专家' : '编辑专家'
-  return (
-    <dialog className={css.dialog} open aria-labelledby="experts-record-title">
-      <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onClose() }}>
-        <header><div><p>{copy ? 'COPY RECORD' : 'EDIT RECORD'}</p><h2 id="experts-record-title">{title}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label="关闭">×</button></header>
-        <label>名称<input defaultValue={`${item.name}${copy ? ' 副本' : ''}`} maxLength={80} placeholder="例如：产品战略专家" required /></label>
-        <label>一句话说明<input defaultValue={item.description} maxLength={180} placeholder="擅长什么，什么时候调用" /></label>
-        <label>系统指令<textarea defaultValue={item.instructions} rows={10} placeholder="写下角色、判断标准、工作流程和输出要求…" required /></label>
-        <label className={css.checkRow}><input defaultChecked={item.enabled} type="checkbox" /><span>启用这个配置</span></label>
-        <footer><button type="button" className={css.ghostButton} onClick={onClose}>取消</button><button type="submit" className={css.primaryCut}>保存到 Markdown</button></footer>
-      </form>
-    </dialog>
-  )
-}
-
-/**
- * New-expert creation form (matches the mockup's expert-card field set: name, category,
- * description, model, reasoning, permission, instructions, attached skills).
- *
- * There is no create path anywhere in this client or its host remotes: `EXPERT_FIXTURE` is a
- * static array, `IAppPanels` only tracks which panel is visible, and the sibling `RecordDialog`
- * form already discarded its input on submit before this change. So this form validates and
- * builds a real payload, then reports honestly that nothing wired can save it, instead of
- * quietly closing or stashing the entry in local state as a stand-in for persistence.
- */
-function CreateExpertDialog({ onClose }: { readonly onClose: () => void }): ReactNode {
+function RecordDialog({ state, onClose, onSave, t }: {
+  readonly state: Extract<DialogState, { kind: 'record' }>
+  readonly onClose: () => void
+  readonly onSave: (draft: ExpertDraft, id?: string) => Promise<void>
+  readonly t: ExpertTranslate
+}): ReactNode {
+  const dialogRef = useModalDialog()
+  const item = state.item
+  const copy = state.copy === true
   const [error, setError] = useState('')
-  const [skillsText, setSkillsText] = useState('')
-  const [notWired, setNotWired] = useState(false)
-  const skills = skillsText.split(',').map(skill => skill.trim()).filter(skill => skill !== '')
+  const [saving, setSaving] = useState(false)
+  const [skillsText, setSkillsText] = useState(item?.skills.join(', ') ?? '')
+  const title = item === undefined ? t('createTitle') : copy ? t('copyTitle') : t('editTitle')
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    // FormData.get widens to string | File; every field here is a text input, so a non-string reads as empty.
-    const field = (key: string): string => {
-      const value = data.get(key)
-      return typeof value === 'string' ? value.trim() : ''
-    }
-    const name = field('name')
-    const category = field('category')
-    const description = field('description')
-    const instructions = field('instructions')
-    if (name === '' || category === '' || description === '' || instructions === '') {
-      setError('名称、分类、一句话说明和系统指令都是必填项。')
-      return
-    }
+    setSaving(true)
     setError('')
-    setNotWired(true)
+    try { await onSave(draftFromForm(event.currentTarget), copy ? undefined : item?.id) }
+    catch (reason) { setError(errorMessage(reason)); setSaving(false) }
   }
 
   return (
-    <dialog className={css.dialog} open aria-labelledby="experts-create-title">
-      <form onSubmit={handleSubmit}>
-        <header>
-          <div><p>NEW RECORD</p><h2 id="experts-create-title">新增专家</h2></div>
-          <button type="button" className={css.dialogClose} onClick={onClose} aria-label="关闭">×</button>
-        </header>
-        <label>名称<input name="name" maxLength={80} placeholder="例如：迁移架构师" /></label>
-        <label>分类<input name="category" maxLength={40} placeholder="例如：Architecture" /></label>
-        <label>一句话说明<input name="description" maxLength={180} placeholder="擅长什么，什么时候调用" /></label>
-        <label>模型<input name="model" maxLength={60} placeholder="例如：DeepSeek-V4-Flash" /></label>
-        <label>推理强度
-          <select name="reasoning" defaultValue="高">
-            {REASONING_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}
-          </select>
+    <dialog className={css.dialog} ref={dialogRef} aria-labelledby="experts-record-title">
+      <form onSubmit={(event) => { void submit(event) }}>
+        <header><div><p>{item === undefined ? t('newRecord') : copy ? t('copyRecord') : t('editRecord')}</p><h2 id="experts-record-title">{title}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label={t('close')}>×</button></header>
+        <label>{t('name')}<input name="name" defaultValue={item === undefined ? '' : `${item.name}${copy ? t('copySuffix') : ''}`} maxLength={80} required /></label>
+        <label>{t('category')}<input name="category" defaultValue={item?.category ?? ''} maxLength={40} required /></label>
+        <label>{t('description')}<input name="description" defaultValue={item?.description ?? ''} maxLength={180} required /></label>
+        <label>{t('status')}<select name="status" defaultValue={copy ? 'draft' : item?.status ?? 'draft'}>{statuses(t).map(status => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
+        <label>{t('model')}<input name="model" defaultValue={item?.model ?? 'inherit'} maxLength={60} /></label>
+        <label>{t('reasoning')}<select name="reasoning" defaultValue={item?.reasoning ?? 'inherit'}>{REASONING_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}</select></label>
+        <label>{t('permission')}<select name="permission" defaultValue={item?.permission ?? 'inherit'}>{PERMISSIONS.map(permission => <option key={permission} value={permission}>{permission}</option>)}</select></label>
+        <label>{t('instructions')}<textarea name="instructions" defaultValue={item?.instructions ?? ''} rows={9} required /></label>
+        <label>{t('skills')}
+          <input name="skills" maxLength={300} onChange={(event) => { setSkillsText(event.currentTarget.value) }} value={skillsText} />
         </label>
-        <label>权限预设
-          <select name="permission" defaultValue="workspace-write">
-            {PERMISSION_PRESETS.map(preset => <option key={preset.value} value={preset.value}>{preset.label}</option>)}
-          </select>
-        </label>
-        <label>系统指令<textarea name="instructions" rows={8} placeholder="写下角色、判断标准、工作流程和输出要求…" /></label>
-        <label>附加技能（用逗号分隔）
-          <input
-            name="skills"
-            maxLength={200}
-            onChange={(event) => { setSkillsText(event.currentTarget.value) }}
-            placeholder="brainstorming, frontend-design"
-            value={skillsText}
-          />
-        </label>
-        {skills.length > 0 && (
+        {skillsText.trim() !== '' && (
           <div className={css.skillChips}>
-            {skills.map(skill => <span className={css.skillChip} key={skill}>{skill}</span>)}
+            {skillsText.split(',').map(skill => skill.trim()).filter(Boolean)
+              .map(skill => <span className={css.skillChip} key={skill}>{skill}</span>)}
           </div>
         )}
+        <p className={css.formNotice}>{t('capabilityNotice')}</p>
         {error !== '' && <p className={css.formError} role="alert">{error}</p>}
-        {notWired && (
-          <p className={css.formNotice} role="status">
-            创建功能还没有接入数据服务，这个专家不会被保存。
-          </p>
-        )}
-        <footer>
-          <button type="button" className={css.ghostButton} onClick={onClose}>取消</button>
-          <button type="submit" className={css.primaryCut}>创建专家</button>
-        </footer>
+        <footer><button type="button" className={css.ghostButton} onClick={onClose}>{t('cancel')}</button><button type="submit" className={css.primaryCut} disabled={saving}>{saving ? t('saving') : t('save')}</button></footer>
       </form>
     </dialog>
   )
 }
 
-function DispatchDialog({ item, onClose }: { readonly item: ExpertRecord; readonly onClose: () => void }): ReactNode {
+function DispatchDialog({ item, onClose, onDispatch, t }: {
+  readonly item: ExpertRecord
+  readonly onClose: () => void
+  readonly onDispatch: (task: string, style: string) => Promise<void>
+  readonly t: ExpertTranslate
+}): ReactNode {
+  const dialogRef = useModalDialog()
+  const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    const taskValue = data.get('task')
+    const styleValue = data.get('style')
+    const task = typeof taskValue === 'string' ? taskValue.trim() : ''
+    const style = typeof styleValue === 'string' ? styleValue.trim() : ''
+    if (task === '') return
+    setSending(true)
+    setError('')
+    try { await onDispatch(task, style) }
+    catch (reason) { setError(errorMessage(reason)); setSending(false) }
+  }
   return (
-    <dialog className={css.dialog} open aria-labelledby="experts-dispatch-title">
-      <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onClose() }}>
-        <header><div><p>DISPATCH TO AGENT</p><h2 id="experts-dispatch-title">调用专家</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label="关闭">×</button></header>
+    <dialog className={css.dialog} ref={dialogRef} aria-labelledby="experts-dispatch-title">
+      <form onSubmit={(event) => { void submit(event) }}>
+        <header><div><p>{t('dispatchKicker')}</p><h2 id="experts-dispatch-title">{t('dispatchTitle')}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label={t('close')}>×</button></header>
         <div className={css.dispatchBadge}>{item.name}</div>
-        <label>叠加输出风格<select defaultValue=""><option value="">不叠加风格</option><option value="concise">简洁清晰</option><option value="deep">深度分析</option></select></label>
-        <label>本次任务<textarea rows={7} placeholder="告诉它这次要解决什么…" required /></label>
-        <footer><button type="button" className={css.ghostButton} onClick={onClose}>取消</button><button type="submit" className={css.primaryCut}>送进 Agent →</button></footer>
+        <label>{t('style')}<select name="style" defaultValue=""><option value="">{t('styleNone')}</option><option value={t('styleConciseValue')}>{t('styleConcise')}</option><option value={t('styleDeepValue')}>{t('styleDeep')}</option></select></label>
+        <label>{t('task')}<textarea name="task" rows={7} required /></label>
+        <p className={css.formNotice}>{t('dispatchNotice')}</p>
+        {error !== '' && <p className={css.formError} role="alert">{error}</p>}
+        <footer><button type="button" className={css.ghostButton} onClick={onClose}>{t('cancel')}</button><button type="submit" className={css.primaryCut} disabled={sending}>{sending ? t('sending') : t('send')}</button></footer>
       </form>
     </dialog>
   )
 }
 
-export function ExpertsPanel({ appPanels }: ExpertsPanelProps): ReactNode {
+export function ExpertsPanel({ appPanels, api, t }: ExpertsPanelProps): ReactNode {
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
+  const [records, setRecords] = useState<readonly ExpertRecord[]>([])
   const [query, setQuery] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const [dialog, setDialog] = useState<DialogState>()
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try { setRecords(await api.list()) }
+    catch (reason) { setError(errorMessage(reason)) }
+    finally { setLoading(false) }
+  }, [api])
+  useEffect(() => { if (activePanel === 'experts') void refresh() }, [activePanel, refresh])
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return EXPERT_FIXTURE.filter(item => needle === '' || `${item.name} ${item.description}`.toLowerCase().includes(needle))
-  }, [query])
+    return records.filter(item => needle === '' || `${item.name} ${item.category} ${item.description}`.toLowerCase().includes(needle))
+  }, [query, records])
+
+  async function save(draft: ExpertDraft, id?: string): Promise<void> {
+    if (id === undefined) await api.create(draft)
+    else await api.update(id, draft)
+    await refresh()
+    setDialog(undefined)
+  }
+
+  async function remove(item: ExpertRecord): Promise<void> {
+    if (!window.confirm(t('deleteConfirm', { name: item.name }))) return
+    try { await api.remove(item.id); await refresh() }
+    catch (reason) { setError(errorMessage(reason)) }
+  }
+
   return (
-    <section className={css.panel} data-experts-panel hidden={activePanel !== 'experts'} aria-label="Experts / 专家调用阵容">
+    <section className={css.panel} data-experts-panel hidden={activePanel !== 'experts'} aria-label={t('regionAria')}>
       <header className={css.header}>
         <div className={css.titleLockup}>
           <span className={css.titleMark}>03</span>
-          <div><strong>Experts</strong><small>专家调用阵容</small></div>
+          <div><strong>{t('title')}</strong><small>{t('subtitle')}</small></div>
         </div>
-        <span className={css.readOnly}>UI SHELL / FUNCTIONALITY NEXT</span>
+        <span className={css.readOnly}>{t('live')}</span>
       </header>
       <div className={css.viewport}><main className={css.content}>
-        <section className={css.collectionHero}>
-          <div>
-            <p className={css.sectionKicker}>CALL THE RIGHT BRAIN</p>
-            <h1>专家不是头像，<br /><span>是可调用的方法。</span></h1>
-            <p>创建、组合并直接派发到 Agent。所有配置保存在本地 Markdown。</p>
-          </div>
-          <button className={css.giantAdd} type="button" onClick={() => { setDialog({ kind: 'create' }) }}>
-            ＋<span>新增专家</span>
-          </button>
-        </section>
+        <section className={css.collectionHero}><div><p className={css.sectionKicker}>{t('heroKicker')}</p><h1>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h1><p>{t('heroBody')}</p></div><button className={css.giantAdd} type="button" onClick={() => { setDialog({ kind: 'record' }) }}>＋<span>{t('add')}</span></button></section>
         <div className={css.collectionToolbar}>
           <label className={css.searchCut}>
             <span>⌕</span>
-            <input aria-label="搜索专家" onChange={(event) => { setQuery(event.currentTarget.value) }} placeholder="搜索专家…" value={query} />
+            <input
+              aria-label={t('searchAria')}
+              onChange={(event) => { setQuery(event.currentTarget.value) }}
+              placeholder={t('searchPlaceholder')}
+              value={query}
+            />
           </label>
-          <span>{visible.length} 位专家</span>
+          <span>{t('count', { count: visible.length })}</span>
         </div>
+        {error !== '' && <p className={css.formError} role="alert">{error}</p>}
         <div className={css.expertGrid}>
-          {visible.length === 0
-            ? <div className={css.emptyRecords}><strong>专家阵容还是空的</strong><p>点击右上角新增，配置会保存为本地 Markdown。</p></div>
-            : visible.map((item, index) => <ExpertCard item={item} index={index} key={item.id} onOpen={setDialog} />)}
+          {loading
+            ? <div className={css.emptyRecords}><strong>{t('loading')}</strong></div>
+            : visible.length === 0
+              ? <div className={css.emptyRecords}><strong>{t('empty')}</strong><p>{t('emptyHint')}</p></div>
+              : visible.map((item, index) => (
+                <ExpertCard
+                  item={item}
+                  index={index}
+                  key={item.id}
+                  onDelete={(selected) => { void remove(selected) }}
+                  onOpen={setDialog}
+                  t={t}
+                />
+              ))}
         </div>
       </main></div>
-      {dialog?.kind === 'record' && <RecordDialog onClose={() => { setDialog(undefined) }} state={dialog} />}
-      {dialog?.kind === 'create' && <CreateExpertDialog onClose={() => { setDialog(undefined) }} />}
-      {dialog?.kind === 'dispatch' && <DispatchDialog item={dialog.item} onClose={() => { setDialog(undefined) }} />}
+      {dialog?.kind === 'record' && <RecordDialog onClose={() => { setDialog(undefined) }} onSave={save} state={dialog} t={t} />}
+      {dialog?.kind === 'dispatch' && <DispatchDialog item={dialog.item} onClose={() => { setDialog(undefined) }} onDispatch={async (task, style) => { await api.dispatch(dialog.item, task, style); setDialog(undefined) }} t={t} />}
     </section>
   )
 }

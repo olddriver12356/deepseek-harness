@@ -333,6 +333,7 @@
     { "path": "./packages/host/frontend-static" },
     { "path": "./packages/host/plugin-inventory" },
     { "path": "./packages/host/news" },
+    { "path": "./packages/host/experts" },
     { "path": "./packages/llm/plugin-package-inventory-deepseek" },
     { "path": "./packages/host/webserver" },
     { "path": "./packages/sdk/client" },
