@@ -12,6 +12,8 @@ The Host checks the feed on startup and then through the Cordis timer while the 
 
 ## Model Experience
 
+Every archive operation also creates missing Markdown article notes beside `news.jsonl` and refreshes the `DSH-NEWS` marked region in `AI News.md`. Existing notes are matched by their `url` and `kind` frontmatter and never overwritten, including the earlier manual exports. Retained records are retried even when a refresh adds no new items, so missing notes recover after an interrupted export. New filenames use a sanitized title and a URL/category hash. Text is escaped for Markdown; this is feed metadata, not full article retrieval. Writes are serialized per archive within one Host process; run only one Host writer per Vault archive.
+
 None. This package exposes a browser-facing News feed and does not assemble model input, tools, or provider requests.
 
 #### KV Cache effect

@@ -12,6 +12,8 @@ Host 在启动时检查 feed，之后只要 Host 仍在运行，就通过 Cordis
 
 ## Model Experience
 
+每次 archive 操作还会在 `news.jsonl` 旁创建缺失的 Markdown 新闻笔记，并更新 `AI News.md` 的 `DSH-NEWS` 标记区域。已有笔记通过 frontmatter 的 `url` 与 `kind` 匹配，绝不覆盖，包括之前手动导出的笔记。即使刷新没有新增条目，仍会重试已有记录，因此中断导出后可以补回缺失笔记。新文件名使用清理后的标题及 URL/栏目 hash。文本会做 Markdown 转义；保存的是 feed metadata，不是文章全文。同一 Host process 内按 archive 串行写入；每个 Vault archive 只运行一个 Host writer。
+
 None。此包只提供浏览器 News feed，不组装模型输入、工具或 provider 请求。
 
 #### KV Cache effect

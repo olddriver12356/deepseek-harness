@@ -1,5 +1,6 @@
 import { appendFile, mkdir, readFile } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { syncNewsNotes } from './notes.ts'
+import { dirname, resolve } from 'node:path'
 import type { CachedNewsItem } from './feed.ts'
 
 export interface NewsArchiveBatch {
@@ -7,7 +8,7 @@ export interface NewsArchiveBatch {
   readonly tools: readonly CachedNewsItem[]
 }
 
-interface ArchivedNewsItem {
+export interface ArchivedNewsItem {
   readonly schema: 1
   readonly kind: 'news' | 'tools'
   readonly fetchedAt: string
@@ -22,8 +23,8 @@ function archiveKey(kind: ArchivedNewsItem['kind'], url: string): string {
   return `${kind}\u0000${url}`
 }
 
-function parseArchive(value: string): Set<string> {
-  const keys = new Set<string>()
+function parseArchive(value: string): ArchivedNewsItem[] {
+  const records: ArchivedNewsItem[] = []
   const lines = value.split('\n')
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]?.trim() ?? ''
@@ -39,9 +40,16 @@ function parseArchive(value: string): Set<string> {
     if (record.schema !== 1 || (record.kind !== 'news' && record.kind !== 'tools') || typeof record.url !== 'string') {
       throw new Error(`news archive: invalid record at line ${String(index + 1)}`)
     }
-    keys.add(archiveKey(record.kind, record.url))
+    if (typeof record.title !== 'string' || typeof record.source !== 'string' || typeof record.summary !== 'string'
+      || typeof record.fetchedAt !== 'string' || !Number.isFinite(Date.parse(record.fetchedAt))
+      || (record.publishedAt !== null && (typeof record.publishedAt !== 'string' || !Number.isFinite(Date.parse(record.publishedAt))))) {
+      throw new Error(`news archive: invalid record at line ${String(index + 1)}`)
+    }
+    const url = new URL(record.url)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('news archive: invalid article URL')
+    records.push(record as unknown as ArchivedNewsItem)
   }
-  return keys
+  return records
 }
 
 async function readArchive(path: string): Promise<string> {
@@ -67,9 +75,25 @@ function archivedItem(kind: ArchivedNewsItem['kind'], item: CachedNewsItem, fetc
 }
 
 /** Append newly observed feed entries to one deduplicated Vault JSONL archive. */
+const pending = new Map<string, Promise<number>>()
+
 export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, fetchedAt: string): Promise<number> {
+  const target = resolve(path)
+  const previous = pending.get(target)
+  const task = (previous ?? Promise.resolve(0)).catch(() => 0).then(async () => await append(target, batch, fetchedAt))
+  pending.set(target, task)
+  try {
+    return await task
+  } finally {
+    if (pending.get(target) === task) pending.delete(target)
+  }
+}
+
+async function append(path: string, batch: NewsArchiveBatch, fetchedAt: string): Promise<number> {
   // ponytail: one sequential scan per crawl; add a side index only when archive size makes this measurable.
-  const known = parseArchive(await readArchive(path))
+  const retained = await readArchive(path)
+  const records = parseArchive(retained)
+  const known = new Set(records.map(item => archiveKey(item.kind, item.url)))
   const fresh: ArchivedNewsItem[] = []
   for (const [kind, items] of [['news', batch.news], ['tools', batch.tools]] as const) {
     for (const item of items) {
@@ -79,8 +103,11 @@ export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, f
       fresh.push(archivedItem(kind, item, fetchedAt))
     }
   }
-  if (fresh.length === 0) return 0
   await mkdir(dirname(path), { recursive: true })
-  await appendFile(path, `${fresh.map(item => JSON.stringify(item)).join('\n')}\n`, 'utf8')
+  if (fresh.length > 0) {
+    const separator = retained !== '' && !retained.endsWith('\n') ? '\n' : ''
+    await appendFile(path, `${separator}${fresh.map(item => JSON.stringify(item)).join('\n')}\n`, 'utf8')
+  }
+  await syncNewsNotes(dirname(path), [...records, ...fresh])
   return fresh.length
 }
