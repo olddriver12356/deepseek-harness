@@ -50,4 +50,11 @@ describe('ExpertStore', () => {
     await writeFile(path, text.replace('title: "Mismatch"', 'title: "Other"'))
     await expect(store.list()).rejects.toThrow('title does not match package directory')
   })
+
+  it('rejects a configured path that is not an Agent Layer Vault, not a raw fs error', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-experts-'))
+    roots.push(root)
+    const store = new ExpertStore(join(root, 'no-such-vault'))
+    await expect(store.list()).rejects.toThrow('configured path is not an Agent Layer Vault')
+  })
 })

@@ -238,7 +238,8 @@ export class ExpertStore {
 
   private async assertVault(): Promise<void> {
     const schema = join(this.vaultRoot, 'Agents', 'Artifact Schema v1.md')
-    if (!(await stat(schema)).isFile()) throw new Error('experts: configured path is not an Agent Layer Vault')
+    const info = await stat(schema).catch(() => undefined)
+    if (info === undefined || !info.isFile()) throw new Error('experts: configured path is not an Agent Layer Vault')
   }
 
   private async beforeMutation(): Promise<void> {
