@@ -1,21 +1,17 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { readFile, writeFile } from 'node:fs/promises'
 import { afterEach, describe, expect, it } from 'vitest'
 import { appendNewsArchive } from '../src/archive.ts'
 import type { CachedNewsItem } from '../src/feed.ts'
+import { createTempArchive, removeTempArchives } from './support/archive-fixture.ts'
 
-const directories: string[] = []
 const FETCHED_AT = '2026-09-07T12:00:00.000Z'
 
 afterEach(async () => {
-  await Promise.all(directories.splice(0).map(path => rm(path, { recursive: true, force: true })))
+  await removeTempArchives()
 })
 
 async function archivePath(): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), 'dsh-news-archive-'))
-  directories.push(directory)
-  return join(directory, 'Resources', 'AI News', 'news.jsonl')
+  return (await createTempArchive()).archivePath
 }
 
 function item(url: string): CachedNewsItem {
