@@ -903,6 +903,19 @@ export interface Config {
 
 Source: [`packages/host/news/src/index.ts:16`](../packages/host/news/src/index.ts)
 
+<a id="deepseek-aidsh-host-styles"></a>
+
+## `@deepseek-ai/dsh-host-styles`
+
+```ts config-catalog
+export interface Config {
+  /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
+  readonly vaultRoot: string
+}
+```
+
+Source: [`packages/host/styles/src/index.ts:10`](../packages/host/styles/src/index.ts)
+
 <a id="deepseek-aidsh-host-webserver"></a>
 
 ## `@deepseek-ai/dsh-host-webserver`
@@ -3433,6 +3446,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-shell` ([`packages/client/ui-shell/src/index.ts`](../packages/client/ui-shell/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-sidebar` ([`packages/client/ui-sidebar/src/index.ts`](../packages/client/ui-sidebar/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-skill` ([`packages/client/ui-skill/src/index.ts`](../packages/client/ui-skill/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-styles` ([`packages/client/ui-styles/src/index.ts`](../packages/client/ui-styles/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-subagent` ([`packages/client/ui-subagent/src/index.ts`](../packages/client/ui-subagent/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-theme` ([`packages/client/ui-theme/src/index.ts`](../packages/client/ui-theme/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-tool` ([`packages/client/ui-tool/src/index.ts`](../packages/client/ui-tool/src/index.ts))

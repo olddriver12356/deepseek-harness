@@ -69,6 +69,7 @@
     { "path": "./packages/client/ui-knowledge" },
     { "path": "./packages/client/ui-monitor" },
     { "path": "./packages/client/ui-experts" },
+    { "path": "./packages/client/ui-styles" },
     { "path": "./packages/client/ui-news" },
     { "path": "./packages/client/ui-sidebar" },
     { "path": "./packages/client/ui-brand-official" },

@@ -52,6 +52,9 @@
       "path": "../../host/experts"
     },
     {
+      "path": "../../host/styles"
+    },
+    {
       "path": "../../interaction/commands"
     },
     {

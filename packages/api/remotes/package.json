@@ -73,6 +73,7 @@
     "@deepseek-ai/dsh-host-plugin-inventory": "workspace:^",
     "@deepseek-ai/dsh-host-news": "workspace:^",
     "@deepseek-ai/dsh-host-experts": "workspace:^",
+    "@deepseek-ai/dsh-host-styles": "workspace:^",
     "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-llm": "workspace:^",
     "@deepseek-ai/dsh-message-feedback": "workspace:^",

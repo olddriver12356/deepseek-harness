@@ -97,6 +97,11 @@
       config:
         vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
 
+    - id: styles
+      name: '@deepseek-ai/dsh-host-styles'
+      config:
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+
     # Session commands, cold reads, and live control over Typert Remote.
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
@@ -205,6 +210,9 @@
 
     - id: ui-experts
       name: '@deepseek-ai/dsh-client-ui-experts'
+
+    - id: ui-styles
+      name: '@deepseek-ai/dsh-client-ui-styles'
 
     - id: ui-knowledge
       name: '@deepseek-ai/dsh-client-ui-knowledge'

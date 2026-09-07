@@ -176,6 +176,7 @@ flowchart TD
     pkg_client_ui_sidebar["client-ui-sidebar"]
     pkg_client_ui_skill["client-ui-skill"]
     pkg_client_ui_slots["client-ui-slots"]
+    pkg_client_ui_styles["client-ui-styles"]
     pkg_client_ui_subagent["client-ui-subagent"]
     pkg_client_ui_theme["client-ui-theme"]
     pkg_client_ui_tool["client-ui-tool"]
@@ -247,6 +248,7 @@ flowchart TD
     pkg_host_frontend_static["host-frontend-static"]
     pkg_host_news["host-news"]
     pkg_host_plugin_inventory["host-plugin-inventory"]
+    pkg_host_styles["host-styles"]
     pkg_host_webserver["host-webserver"]
   end
   subgraph group_identity["packages/identity"]
@@ -395,6 +397,7 @@ flowchart TD
   pkg_host_frontend_static --> pkg_host_webserver
   pkg_host_news --> pkg_host_webserver
   pkg_host_news --> pkg_typert_protocol
+  pkg_host_styles --> pkg_typert_protocol
   pkg_anonymous_user_id --> pkg_brand
   pkg_anonymous_user_id --> pkg_home_paths
   pkg_lsp --> pkg_brand
@@ -1236,6 +1239,7 @@ flowchart TD
 | [`client-ui-sidebar`](../packages/client/ui-sidebar) | `client` | — |
 | [`client-ui-skill`](../packages/client/ui-skill) | `client` | — |
 | [`client-ui-slots`](../packages/client/ui-slots) | `client` | — |
+| [`client-ui-styles`](../packages/client/ui-styles) | `client` | — |
 | [`client-ui-subagent`](../packages/client/ui-subagent) | `client` | — |
 | [`client-ui-theme`](../packages/client/ui-theme) | `client` | — |
 | [`client-ui-tool`](../packages/client/ui-tool) | `client` | — |
@@ -1277,6 +1281,7 @@ flowchart TD
 | [`host-experts`](../packages/host/experts) | `host` | [`typert-protocol`](../packages/typert/protocol) |
 | [`host-frontend-static`](../packages/host/frontend-static) | `host` | [`client-connection`](../packages/client/connection), [`host-webserver`](../packages/host/webserver) |
 | [`host-news`](../packages/host/news) | `host` | [`host-webserver`](../packages/host/webserver), [`typert-protocol`](../packages/typert/protocol) |
+| [`host-styles`](../packages/host/styles) | `host` | [`typert-protocol`](../packages/typert/protocol) |
 | [`anonymous-user-id`](../packages/identity/anonymous-user-id) | `identity` | [`brand`](../packages/util/brand), [`home-paths`](../packages/util/home-paths) |
 | [`lsp`](../packages/lsp/lsp) | `lsp` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm) |
 | [`storage-domain`](../packages/storage/storage-domain) | `storage` | [`invariants`](../packages/runtime-diagnostics/invariants), [`storage`](../packages/storage/storage) |
