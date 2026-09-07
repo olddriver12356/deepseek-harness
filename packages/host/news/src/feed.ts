@@ -16,6 +16,12 @@ export interface CachedNewsItem {
   readonly sourceImageUrl: string | null
 }
 
+/** Full deduplicated feed for archival plus the enriched UI window. */
+export interface CollectedFeed {
+  readonly archive: readonly CachedNewsItem[]
+  readonly visible: readonly CachedNewsItem[]
+}
+
 const MAX_TEXT_BYTES = 1_000_000
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 18_000
@@ -192,8 +198,8 @@ export async function fetchText(url: string): Promise<string> {
   }
 }
 
-/** Collect and enrich one column, retaining the newest ten entries. */
-export async function collectFeed(sources: readonly FeedSource[], now: number): Promise<CachedNewsItem[]> {
+/** Collect one column for archival and enrich its newest ten entries for the UI. */
+export async function collectFeed(sources: readonly FeedSource[], now: number): Promise<CollectedFeed> {
   const cutoff = now - THREE_DAYS_MS
   const results = await Promise.all(sources.map(async (source) => {
     try {
@@ -210,8 +216,9 @@ export async function collectFeed(sources: readonly FeedSource[], now: number): 
   for (const item of parsed.sort((left, right) => (right.publishedAt ?? '').localeCompare(left.publishedAt ?? ''))) {
     if (!unique.has(item.url)) unique.set(item.url, item)
   }
-  const selected = [...unique.values()].slice(0, 10)
-  return await Promise.all(selected.map(async (item) => {
+  const archive = [...unique.values()]
+  const selected = archive.slice(0, 10)
+  const visible = await Promise.all(selected.map(async (item) => {
     if (item.sourceImageUrl !== null) return item
     try {
       const cover = parseArticleCover(await fetchText(item.url), item.url)
@@ -220,6 +227,7 @@ export async function collectFeed(sources: readonly FeedSource[], now: number): 
       return item
     }
   }))
+  return { archive, visible }
 }
 
 /** Stable thumbnail filename prefix for one exact source image URL. */

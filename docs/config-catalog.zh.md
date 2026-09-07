@@ -860,6 +860,19 @@ export interface Config {
 
 来源：[`packages/host/directory-picker-browse/src/index.ts:181`](../packages/host/directory-picker-browse/src/index.ts)
 
+<a id="deepseek-aidsh-host-experts"></a>
+
+## `@deepseek-ai/dsh-host-experts`
+
+```ts config-catalog
+export interface Config {
+  /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
+  readonly vaultRoot: string
+}
+```
+
+来源：[`packages/host/experts/src/index.ts:10`](../packages/host/experts/src/index.ts)
+
 <a id="deepseek-aidsh-host-frontend-static"></a>
 
 ## `@deepseek-ai/dsh-host-frontend-static`
@@ -880,17 +893,34 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-host-news`
 
-依赖：`webServer`
+依赖：`timer` · `webServer`
 
 ```ts config-catalog
 /** Host configuration for the local News cache. */
 export interface Config {
   /** Absolute or cwd-relative directory holding the feed and thumbnail cache. */
   readonly cacheDir: string
+  /** Root of the Obsidian Vault that receives the append-only News archive. */
+  readonly vaultRoot: string
+  /** Background feed refresh cadence in milliseconds. */
+  readonly refreshIntervalMs: number
 }
 ```
 
-来源：[`packages/host/news/src/index.ts:16`](../packages/host/news/src/index.ts)
+来源：[`packages/host/news/src/index.ts:20`](../packages/host/news/src/index.ts)
+
+<a id="deepseek-aidsh-host-styles"></a>
+
+## `@deepseek-ai/dsh-host-styles`
+
+```ts config-catalog
+export interface Config {
+  /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
+  readonly vaultRoot: string
+}
+```
+
+来源：[`packages/host/styles/src/index.ts:10`](../packages/host/styles/src/index.ts)
 
 <a id="deepseek-aidsh-host-webserver"></a>
 
@@ -3422,6 +3452,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-ui-shell`（[`packages/client/ui-shell/src/index.ts`](../packages/client/ui-shell/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-sidebar`（[`packages/client/ui-sidebar/src/index.ts`](../packages/client/ui-sidebar/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-skill`（[`packages/client/ui-skill/src/index.ts`](../packages/client/ui-skill/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-styles`（[`packages/client/ui-styles/src/index.ts`](../packages/client/ui-styles/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-subagent`（[`packages/client/ui-subagent/src/index.ts`](../packages/client/ui-subagent/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-theme`（[`packages/client/ui-theme/src/index.ts`](../packages/client/ui-theme/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-tool`（[`packages/client/ui-tool/src/index.ts`](../packages/client/ui-tool/src/index.ts)）

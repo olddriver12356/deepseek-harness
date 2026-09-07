@@ -1,4 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { appendNewsArchive } from '../src/archive.ts'
 import type { CachedNewsItem } from '../src/feed.ts'
@@ -41,6 +42,7 @@ describe('News archive', () => {
 
   it('rejects malformed retained data instead of appending behind it', async () => {
     const path = await archivePath()
+    await mkdir(dirname(path), { recursive: true })
     await writeFile(path, '{broken\n', 'utf8')
 
     await expect(appendNewsArchive(path, { news: [item('https://example.com/new')], tools: [] }, FETCHED_AT))

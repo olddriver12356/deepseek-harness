@@ -4,26 +4,35 @@ import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promi
 import { extname, join, resolve } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/cordis-plugin-timer'
 import z from '@deepseek-ai/schemastery'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { appendNewsArchive, type NewsArchiveBatch } from './archive.ts'
 import { collectFeed, imageCacheKey, NEWS_IMAGE_LIMIT, NEWS_SOURCES, readResponse, TOOLS_SOURCES, type CachedNewsItem } from './feed.ts'
 import type { NewsListRequest, NewsItem, NewsSnapshot } from './types.ts'
 
 export type * from './types.ts'
 
+const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000
+
 /** Host configuration for the local News cache. */
 export interface Config {
   /** Absolute or cwd-relative directory holding the feed and thumbnail cache. */
   readonly cacheDir: string
+  /** Root of the Obsidian Vault that receives the append-only News archive. */
+  readonly vaultRoot: string
+  /** Background feed refresh cadence in milliseconds. */
+  readonly refreshIntervalMs: number
 }
 
 export const Config: z<Config> = z.object({
   cacheDir: z.string().required(),
+  vaultRoot: z.string().required(),
+  refreshIntervalMs: z.number().step(1).min(60_000).default(CACHE_MAX_AGE_MS),
 })
 
 const CACHE_SCHEMA = 1
-const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000
 const THUMB_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const IMAGE_TIMEOUT_MS = 18_000
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif'])
@@ -102,13 +111,21 @@ function sourceCache(news: readonly CachedNewsItem[], tools: readonly CachedNews
   return { schema: CACHE_SCHEMA, fetchedAt, news, tools }
 }
 
-async function crawl(): Promise<StoredNewsCache> {
+interface CrawlResult {
+  readonly archive: NewsArchiveBatch
+  readonly cache: StoredNewsCache
+}
+
+async function crawl(): Promise<CrawlResult> {
   const fetchedAt = new Date().toISOString()
   const [news, tools] = await Promise.all([
     collectFeed(NEWS_SOURCES, Date.now()),
     collectFeed(TOOLS_SOURCES, Date.now()),
   ])
-  return sourceCache(news, tools, fetchedAt)
+  return {
+    archive: { news: news.archive, tools: tools.archive },
+    cache: sourceCache(news.visible, tools.visible, fetchedAt),
+  }
 }
 
 function isFresh(cache: StoredNewsCache | undefined): boolean {
@@ -160,16 +177,21 @@ async function imageResponse(url: string, article: string, directory: string): P
 
 /** Host service for the News Remote and cache-bound thumbnail route. */
 export class NewsService extends TypertRemoteService {
-  static inject = ['webServer']
+  static inject = ['timer', 'webServer']
+  private readonly archivePath: string
   private readonly cachePath: string
   private readonly thumbnailDir: string
+  private refreshTask: Promise<StoredNewsCache> | undefined
 
   constructor(ctx: Context, config: Config) {
     super(ctx, 'news')
     this.cachePath = join(resolve(config.cacheDir), 'news.json')
     this.thumbnailDir = join(resolve(config.cacheDir), 'news-thumbs')
+    this.archivePath = join(resolve(config.vaultRoot), 'Resources', 'AI News', 'news.jsonl')
     const route: WebRoute = { kind: 'exact', path: '/news/image', handler: this.handleImage }
     ctx.effect(() => ctx.webServer.register(route), 'news: image route')
+    ctx.interval(() => { void this.backgroundRefresh() }, config.refreshIntervalMs)
+    void this.backgroundRefresh()
   }
 
   /** Read the six-hour cache or crawl both feed columns. */
@@ -177,17 +199,44 @@ export class NewsService extends TypertRemoteService {
   async list(request: NewsListRequest): Promise<NewsSnapshot> {
     const cache = await readCache(this.cachePath)
     if (!request.refresh && isFresh(cache)) return publicSnapshot(cache)
+    return publicSnapshot(await this.refresh(cache))
+  }
+
+  private async performRefresh(cache: StoredNewsCache | undefined): Promise<StoredNewsCache> {
+    let fresh: CrawlResult
     try {
-      const fresh = await crawl()
-      try {
-        await writeCache(this.cachePath, fresh)
-      } catch {
-        // A read-only cache directory must not hide a successful live crawl.
-      }
-      return publicSnapshot(fresh)
+      fresh = await crawl()
     } catch (error) {
-      if (cache !== undefined) return publicSnapshot(cache)
+      if (cache !== undefined) return cache
       throw error
+    }
+    await appendNewsArchive(this.archivePath, fresh.archive, fresh.cache.fetchedAt)
+    try {
+      await writeCache(this.cachePath, fresh.cache)
+    } catch {
+      // A read-only cache directory must not hide a successful archived crawl.
+    }
+    return fresh.cache
+  }
+
+  private async refresh(cache: StoredNewsCache | undefined): Promise<StoredNewsCache> {
+    if (this.refreshTask !== undefined) return await this.refreshTask
+    const task = this.performRefresh(cache)
+    this.refreshTask = task
+    try {
+      return await task
+    } finally {
+      if (this.refreshTask === task) this.refreshTask = undefined
+    }
+  }
+
+  private async backgroundRefresh(): Promise<void> {
+    try {
+      const cache = await readCache(this.cachePath)
+      if (cache !== undefined) await appendNewsArchive(this.archivePath, { news: cache.news, tools: cache.tools }, cache.fetchedAt)
+      if (!isFresh(cache)) await this.refresh(cache)
+    } catch (error) {
+      this.ctx.logger.warn(`news: background refresh failed: ${String(error)}`)
     }
   }
 

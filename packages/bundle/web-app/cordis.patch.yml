@@ -91,6 +91,7 @@
       name: '@deepseek-ai/dsh-host-news'
       config:
         cacheDir: !!js dshHomePath('news-cache')
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
 
     - id: experts
       name: '@deepseek-ai/dsh-host-experts'

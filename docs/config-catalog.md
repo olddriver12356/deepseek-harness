@@ -891,17 +891,21 @@ Source: [`packages/host/frontend-static/src/index.ts:30`](../packages/host/front
 
 ## `@deepseek-ai/dsh-host-news`
 
-Requires: `webServer`
+Requires: `timer` · `webServer`
 
 ```ts config-catalog
 /** Host configuration for the local News cache. */
 export interface Config {
   /** Absolute or cwd-relative directory holding the feed and thumbnail cache. */
   readonly cacheDir: string
+  /** Root of the Obsidian Vault that receives the append-only News archive. */
+  readonly vaultRoot: string
+  /** Background feed refresh cadence in milliseconds. */
+  readonly refreshIntervalMs: number
 }
 ```
 
-Source: [`packages/host/news/src/index.ts:16`](../packages/host/news/src/index.ts)
+Source: [`packages/host/news/src/index.ts:20`](../packages/host/news/src/index.ts)
 
 <a id="deepseek-aidsh-host-styles"></a>
 
