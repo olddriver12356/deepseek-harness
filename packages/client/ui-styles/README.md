@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders the Styles application panel, manages Style Method records through the Host Styles Remote, and dispatches an approved Style into the current Session. Style definitions remain Markdown packages under the configured Vault Agent Layer, mirroring `@deepseek-ai/dsh-client-ui-experts`.
+This package renders the Styles application panel, manages Style Method records through the Host Styles Remote, and dispatches an approved Style into the current Session. Style definitions remain Markdown packages under the configured Vault Agent Layer, mirroring `@deepseek-ai/dsh-client-ui-experts`. `@deepseek-ai/dsh-client-ui-experts`'s own dispatch dialog also reads the approved Styles this package's Remote exposes, so a Style authored here can layer as an output-voice overlay on an Expert dispatch.
 
 ## Table of Contents
 
@@ -41,7 +41,6 @@ The message uses the ordinary Session prompt path. Changing the Style or task ch
 <a id="known-limitations-and-deferred-work"></a>
 
 - **Single-Session execution**: dispatch runs in the current Session; subagent execution and automatic Vault knowledge retrieval remain deferred.
-- **No cross-panel overlay yet**: the Expert dispatch dialog's own style selector still offers two hardcoded choices rather than reading approved Styles from this package; wiring that up is a separate follow-up.
 
 <a id="dev-note"></a>
 ### Dev Note

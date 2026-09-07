@@ -2562,6 +2562,9 @@ importers:
       '@deepseek-ai/dsh-host-experts':
         specifier: workspace:^
         version: link:../../host/experts
+      '@deepseek-ai/dsh-host-styles':
+        specifier: workspace:^
+        version: link:../../host/styles
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31

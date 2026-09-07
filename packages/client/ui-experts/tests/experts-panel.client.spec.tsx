@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import type { ExpertDraft, ExpertRecord } from '@deepseek-ai/dsh-host-experts/types'
+import type { StyleRecord } from '@deepseek-ai/dsh-host-styles/types'
 import { ExpertsPanel, type ExpertApi } from '../src/client/ExpertsPanel.tsx'
 import { zh } from '../src/client/locales.ts'
 
@@ -25,8 +26,11 @@ const DRAFT: ExpertRecord = {
   id: 'agent-draft', name: '研究专家', category: 'Research', description: '寻找证据。', instructions: '区分事实和推断。',
   status: 'draft', model: 'inherit', reasoning: 'inherit', permission: 'inherit', skills: [], updatedAt: '2026-09-06',
 }
+const CONCISE_STYLE: StyleRecord = {
+  id: 'style-concise', name: '简洁清晰', description: '简洁、清晰、直接。', instructions: '短句优先，先给结论。', status: 'approved', updatedAt: '2026-09-06',
+}
 
-function renderExperts(initial: readonly ExpertRecord[] = [APPROVED, DRAFT]) {
+function renderExperts(initial: readonly ExpertRecord[] = [APPROVED, DRAFT], styles: readonly StyleRecord[] = [CONCISE_STYLE]) {
   let records = [...initial]
   const dispatch = vi.fn<ExpertApi['dispatch']>().mockResolvedValue(undefined)
   const create = vi.fn(async (draft: ExpertDraft): Promise<ExpertRecord> => {
@@ -43,6 +47,7 @@ function renderExperts(initial: readonly ExpertRecord[] = [APPROVED, DRAFT]) {
       return record
     }),
     remove: vi.fn(async (id: string) => { records = records.filter(item => item.id !== id) }),
+    listStyles: vi.fn(async () => styles),
     dispatch,
   }
   const appPanels = new AppPanelsController()
@@ -105,7 +110,19 @@ describe('ExpertsPanel', () => {
     const dialog = screen.getByRole('dialog')
     fireEvent.change(within(dialog).getByLabelText('本次任务'), { target: { value: '审查这个变更' } })
     fireEvent.click(within(dialog).getByRole('button', { name: '送进 Agent →' }))
-    await waitFor(() => { expect(dispatch).toHaveBeenCalledWith(APPROVED, '审查这个变更', '') })
+    await waitFor(() => { expect(dispatch).toHaveBeenCalledWith(APPROVED, '审查这个变更', undefined) })
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('lists approved Styles in the dispatch dialog and forwards the selected record', async () => {
+    const { dispatch } = renderExperts([APPROVED])
+    await screen.findByText('1 位专家')
+    fireEvent.click(screen.getByRole('button', { name: '调用专家 →' }))
+    const dialog = screen.getByRole('dialog')
+    await waitFor(() => { expect(within(dialog).getByText('简洁清晰')).toBeTruthy() })
+    fireEvent.change(within(dialog).getByLabelText('叠加输出风格'), { target: { value: CONCISE_STYLE.id } })
+    fireEvent.change(within(dialog).getByLabelText('本次任务'), { target: { value: '审查这个变更' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: '送进 Agent →' }))
+    await waitFor(() => { expect(dispatch).toHaveBeenCalledWith(APPROVED, '审查这个变更', CONCISE_STYLE) })
   })
 })

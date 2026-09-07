@@ -5,6 +5,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type { ExpertDraft, ExpertRecord } from '@deepseek-ai/dsh-host-experts/types'
+import type { StyleRecord } from '@deepseek-ai/dsh-host-styles/types'
 import { ExpertsPanel } from './ExpertsPanel.tsx'
 import { en, zh, type ExpertLocaleKey } from './locales.ts'
 
@@ -20,7 +21,7 @@ export type { ExpertApi, ExpertsPanelProps, ExpertTranslate } from './ExpertsPan
 export type { ExpertLocaleKey } from './locales.ts'
 export type { ExpertDraft, ExpertRecord, ExpertStatus } from './types.ts'
 
-export const inject = ['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'locale']
+export const inject = ['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale']
 
 const NS = 'experts'
 
@@ -47,14 +48,15 @@ export function apply(ctx: ClientContext): void {
           create: async (expert: ExpertDraft) => remoteValue(await ctx.remote.experts.create({ expert })),
           update: async (id: string, expert: ExpertDraft) => remoteValue(await ctx.remote.experts.update({ id, expert })),
           remove: async (id: string) => { remoteValue(await ctx.remote.experts.delete({ id })) },
-          dispatch: async (expert: ExpertRecord, task: string, style: string) => {
+          listStyles: async () => remoteValue(await ctx.remote.styles.list()),
+          dispatch: async (expert: ExpertRecord, task: string, style: StyleRecord | undefined) => {
             const current = ctx.sessions.list.getSnapshot().current
             if (current === undefined) throw new Error(t('noSession'))
             const session = ctx.sessions.binding(current)?.session
             if (session === undefined) throw new Error(t('sessionNotReady'))
             const text = [
               `Use the following approved Expert Method for this task.\n\n## Expert\n${expert.name}\n\n## Instructions\n${expert.instructions}`,
-              style === '' ? '' : `## Output style\n${style}`,
+              style === undefined ? '' : `## Output style\n${style.name}\n\n${style.instructions}`,
               `## Task\n${task}`,
             ].filter(Boolean).join('\n\n')
             const submission = session.beginSubmission({ mode: 'queue', text, attachments: [] })

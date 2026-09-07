@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-此包渲染 Styles 应用面板，通过 Host Styles Remote 管理 Style Method 记录，并将已批准的 Style 派发到当前会话。Style 定义仍是配置 Vault Agent Layer 下的 Markdown 包，镜像 `@deepseek-ai/dsh-client-ui-experts` 的做法。
+此包渲染 Styles 应用面板，通过 Host Styles Remote 管理 Style Method 记录，并将已批准的 Style 派发到当前会话。Style 定义仍是配置 Vault Agent Layer 下的 Markdown 包，镜像 `@deepseek-ai/dsh-client-ui-experts` 的做法。`@deepseek-ai/dsh-client-ui-experts` 自身的派发对话框也会读取本包 Remote 暴露的已批准 Style，因此在此创作的 Style 可以作为输出声线叠加到 Expert 派发之上。
 
 ## 目录
 
@@ -41,7 +41,6 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **单会话执行**：派发在当前会话中运行；subagent 执行与自动 Vault 知识检索仍延后。
-- **尚无跨面板叠加**：Expert 派发对话框自身的风格下拉框目前仍是两个写死的选项，尚未读取本包的已批准 Style；接通这一点是单独的后续工作。
 
 <a id="dev-note"></a>
 ### 开发说明

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
 import type { ExpertDraft, ExpertRecord, ExpertStatus } from '@deepseek-ai/dsh-host-experts/types'
+import type { StyleRecord } from '@deepseek-ai/dsh-host-styles/types'
 import type { ExpertLocaleKey } from './locales.ts'
 import css from './ExpertsPanel.module.css'
 
@@ -11,7 +12,8 @@ export interface ExpertApi {
   create(expert: ExpertDraft): Promise<ExpertRecord>
   update(id: string, expert: ExpertDraft): Promise<ExpertRecord>
   remove(id: string): Promise<void>
-  dispatch(expert: ExpertRecord, task: string, style: string): Promise<void>
+  listStyles(): Promise<readonly StyleRecord[]>
+  dispatch(expert: ExpertRecord, task: string, style: StyleRecord | undefined): Promise<void>
 }
 
 export interface ExpertsPanelProps {
@@ -143,26 +145,33 @@ function RecordDialog({ state, onClose, onSave, t }: {
   )
 }
 
-function DispatchDialog({ item, onClose, onDispatch, t }: {
+function DispatchDialog({ item, onClose, onDispatch, listStyles, t }: {
   readonly item: ExpertRecord
   readonly onClose: () => void
-  readonly onDispatch: (task: string, style: string) => Promise<void>
+  readonly onDispatch: (task: string, style: StyleRecord | undefined) => Promise<void>
+  readonly listStyles: () => Promise<readonly StyleRecord[]>
   readonly t: ExpertTranslate
 }): ReactNode {
   const dialogRef = useModalDialog()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [styles, setStyles] = useState<readonly StyleRecord[]>([])
+  useEffect(() => {
+    let cancelled = false
+    listStyles().then((loaded) => { if (!cancelled) setStyles(loaded.filter(style => style.status === 'approved')) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [listStyles])
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const taskValue = data.get('task')
     const styleValue = data.get('style')
     const task = typeof taskValue === 'string' ? taskValue.trim() : ''
-    const style = typeof styleValue === 'string' ? styleValue.trim() : ''
+    const styleId = typeof styleValue === 'string' ? styleValue : ''
     if (task === '') return
     setSending(true)
     setError('')
-    try { await onDispatch(task, style) }
+    try { await onDispatch(task, styles.find(style => style.id === styleId)) }
     catch (reason) { setError(errorMessage(reason)); setSending(false) }
   }
   return (
@@ -170,7 +179,10 @@ function DispatchDialog({ item, onClose, onDispatch, t }: {
       <form onSubmit={(event) => { void submit(event) }}>
         <header><div><p>{t('dispatchKicker')}</p><h2 id="experts-dispatch-title">{t('dispatchTitle')}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label={t('close')}>×</button></header>
         <div className={css.dispatchBadge}>{item.name}</div>
-        <label>{t('style')}<select name="style" defaultValue=""><option value="">{t('styleNone')}</option><option value={t('styleConciseValue')}>{t('styleConcise')}</option><option value={t('styleDeepValue')}>{t('styleDeep')}</option></select></label>
+        <label>{t('style')}<select name="style" defaultValue="">
+          <option value="">{t('styleNone')}</option>
+          {styles.map(style => <option key={style.id} value={style.id}>{style.name}</option>)}
+        </select></label>
         <label>{t('task')}<textarea name="task" rows={7} required /></label>
         <p className={css.formNotice}>{t('dispatchNotice')}</p>
         {error !== '' && <p className={css.formError} role="alert">{error}</p>}
@@ -255,7 +267,15 @@ export function ExpertsPanel({ appPanels, api, t }: ExpertsPanelProps): ReactNod
         </div>
       </main></div>
       {dialog?.kind === 'record' && <RecordDialog onClose={() => { setDialog(undefined) }} onSave={save} state={dialog} t={t} />}
-      {dialog?.kind === 'dispatch' && <DispatchDialog item={dialog.item} onClose={() => { setDialog(undefined) }} onDispatch={async (task, style) => { await api.dispatch(dialog.item, task, style); setDialog(undefined) }} t={t} />}
+      {dialog?.kind === 'dispatch' && (
+        <DispatchDialog
+          item={dialog.item}
+          listStyles={() => api.listStyles()}
+          onClose={() => { setDialog(undefined) }}
+          onDispatch={async (task, style) => { await api.dispatch(dialog.item, task, style); setDialog(undefined) }}
+          t={t}
+        />
+      )}
     </section>
   )
 }

@@ -28,13 +28,17 @@ async function bench() {
     delete: vi.fn(async () => ({ ok: true, value: undefined })),
   }
   ctx.provide('remote.experts', experts as never)
+  const styles = {
+    list: vi.fn(async () => ({ ok: true, value: [] })),
+  }
+  ctx.provide('remote.styles', styles as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
-  return { ctx, slots, appPanels, sessions, experts }
+  return { ctx, slots, appPanels, sessions, experts, styles }
 }
 
 describe('Experts plugin apply', () => {
   it('declares the slot, app-panel, session, remote, and locale dependencies', () => {
-    expect(inject).toEqual(['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'locale'])
+    expect(inject).toEqual(['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale'])
   })
 
   it('registers one persistent Experts overlay', async () => {
@@ -51,7 +55,18 @@ describe('Experts plugin apply', () => {
     expect(typeof injected.api.create).toBe('function')
     expect(typeof injected.api.update).toBe('function')
     expect(typeof injected.api.remove).toBe('function')
+    expect(typeof injected.api.listStyles).toBe('function')
     expect(typeof injected.api.dispatch).toBe('function')
+  })
+
+  it('surfaces the Remote value for a successful listStyles call', async () => {
+    const { ctx, slots, styles } = await bench()
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.overlay')[0]!
+    const injected = (entry.inject as () => { api: ExpertApi })()
+    await expect(injected.api.listStyles()).resolves.toEqual([])
+    expect(styles.list).toHaveBeenCalledTimes(1)
   })
 
   it('surfaces the Remote value for a successful list call', async () => {
@@ -74,6 +89,6 @@ describe('Experts plugin apply', () => {
       id: 'e1', name: 'Reviewer', category: 'Engineering', description: '', instructions: 'do it',
       status: 'approved', model: 'inherit', reasoning: 'inherit', permission: 'inherit', skills: [], updatedAt: '2026-09-06',
     } as Parameters<ExpertApi['dispatch']>[0]
-    await expect(injected.api.dispatch(expert, 'task', '')).rejects.toThrow()
+    await expect(injected.api.dispatch(expert, 'task', undefined)).rejects.toThrow()
   })
 })
