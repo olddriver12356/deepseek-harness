@@ -30,8 +30,8 @@ describe('News feed collection', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(`<rss><channel>${items}<item><title>Duplicate</title><link>https://example.com/0</link></item></channel></rss>`, { status: 200, headers: { 'content-type': 'application/rss+xml' } })))
 
     const result = await collectFeed([SOURCE, { ...SOURCE, name: 'Mirror' }], NOW)
-    expect(result).toHaveLength(10)
-    expect(result[0]?.title).toBe('Item 0')
-    expect(new Set(result.map(item => item.url)).size).toBe(10)
+    expect({ archived: result.archive.length, visible: result.visible.length }).toEqual({ archived: 11, visible: 10 })
+    expect(result.visible[0]?.title).toBe('Item 0')
+    expect(new Set(result.archive.map(item => item.url)).size).toBe(11)
   })
 })
