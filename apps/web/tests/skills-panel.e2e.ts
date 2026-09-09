@@ -19,7 +19,7 @@ it('edits real nested skill files in a browser and renders both panel background
   await writeFile(join(skillRoot, 'review-code/SKILL.md'), '---\nname: review-code\ndescription: Review correctness and maintenance costs.\nmetadata:\n  category: development\n---\nRead callers first.\n')
   const store = new SkillFileStore(async () => [{ path: skillRoot, source: 'project-agents', rank: 200 }])
   const server = await createServer({
-    configFile: false, root: fileURLToPath(new URL('../../../packages/client/ui-skill/tests/browser', import.meta.url)),
+    configFile: false, root: fileURLToPath(new URL('./fixtures/skills-panel', import.meta.url)),
     plugins: [tsconfigPaths({ projects: [fileURLToPath(new URL('../../../tsconfig.base.client.json', import.meta.url))] }), {
       name: 'skill-files-fixture',
       configureServer(server) { server.middlewares.use('/api', async (request, response) => {

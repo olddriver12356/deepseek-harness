@@ -1,12 +1,12 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { SkillsPanel, type SkillsApi } from '../../src/client/SkillsPanel.tsx'
-import { AppPanelsController } from '../../../ui-shell/src/client/app-panels.ts'
-import { AppRail } from '../../../ui-app-rail/src/client/AppRail.tsx'
-import { ExpertsPanel } from '../../../ui-experts/src/client/ExpertsPanel.tsx'
-import { en as expertEn } from '../../../ui-experts/src/client/locales.ts'
-import { en as railEn } from '../../../ui-app-rail/src/client/locales.ts'
-import { panelEn, type PanelTranslate } from '../../src/client/panel-locales.ts'
+import { SkillsPanel, type SkillsApi } from '../../../../../packages/client/ui-skill/src/client/SkillsPanel.tsx'
+import { AppPanelsController } from '../../../../../packages/client/ui-shell/src/client/app-panels.ts'
+import { AppRail } from '../../../../../packages/client/ui-app-rail/src/client/AppRail.tsx'
+import { ExpertsPanel } from '../../../../../packages/client/ui-experts/src/client/ExpertsPanel.tsx'
+import { en as expertEn } from '../../../../../packages/client/ui-experts/src/client/locales.ts'
+import { en as railEn } from '../../../../../packages/client/ui-app-rail/src/client/locales.ts'
+import { panelEn, type PanelTranslate } from '../../../../../packages/client/ui-skill/src/client/panel-locales.ts'
 import type { IWorkspaces } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 
@@ -28,7 +28,7 @@ const experts = [
   { name: 'Systems thinker', description: 'Trace dependencies. Make tradeoffs explicit.' },
   { name: 'Research partner', description: 'Follow evidence. Keep uncertainty visible.' },
   { name: 'Writing editor', description: 'Find the central idea. Say it clearly.' },
-].map((item, i) => ({ ...item, id: `expert-${i}`, category: 'Thinking', instructions: item.description, status: 'approved' as const, skills: [], model: 'inherit', reasoning: 'inherit', permission: 'inherit', created: '', updated: '' }))
+].map((item, i) => ({ ...item, id: `expert-${i}`, category: 'Thinking', instructions: item.description, status: 'approved' as const, skills: [], model: 'inherit', reasoning: 'inherit', permission: 'inherit', updatedAt: '' }))
 createRoot(document.getElementById('root')!).render(<div style={{ display: 'grid', gridTemplateColumns: '104px minmax(0, 1fr)', height: '100vh' }}><AppRail appPanels={panels} t={key => railEn[key]} /><div style={{ minWidth: 0, minHeight: 0 }}><SkillsPanel appPanels={panels} workspaces={workspaces} sessions={sessions} api={api} t={t} /><ExpertsPanel appPanels={panels} t={(key, params) => Object.entries(params ?? {}).reduce((text, [name, value]) => text.replace(`{${name}}`, String(value)), expertEn[key])} api={{ list: async () => experts, listStyles: async () => [], create: async () => { throw new Error('Fixture is read-only') }, update: async () => { throw new Error('Fixture is read-only') }, remove: async () => {}, dispatch: async () => {} }} /></div></div>)
 document.body.style.margin = '0'
 document.body.style.background = '#101416'

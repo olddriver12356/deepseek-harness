@@ -1,5 +1,7 @@
 # Skills page and collage backgrounds
 
+Live activation follow-up: the user's `deepseek` PowerShell alias resolves to `C:/Projects/deepseek-harness/scripts/web.ps1`, which serves that checkout's built artifacts. Fast-forwarding `master` in another worktree does not update that running checkout. The feature was therefore applied to the actual launch checkout with a reviewed three-way file merge preserving its pre-existing edits and index. Browser fixtures now live under `apps/web/tests/fixtures/skills-panel` and follow the existing Web e2e exclusions from the production TypeScript program; including them in the Client aggregate incorrectly pulled Host filesystem sources across compiler boundaries. The relocated browser-to-disk test passed in the launch checkout.
+
 Final review also aligned inventory invocation flags with the filesystem provider's existing legacy boolean grammar and rejects invalid skill names. All five storage tests and the Host leaf build passed after this change. Legacy non-boolean YAML spellings remain editable through Source; the structured editor requires canonical YAML booleans.
 
 Implemented on `feat/skills-panel`, starting from a clean worktree at `bf11bb9962`. The original checkout's Knowledge and News changes belong to another task and were not imported.
