@@ -11,7 +11,7 @@
  */
 
 /** Identifies a shell-level panel whose visibility `ctx.appPanels` controls. */
-export type PanelId = 'agent' | 'knowledge' | 'experts' | 'styles' | 'monitor' | 'news'
+export type PanelId = 'agent' | 'knowledge' | 'skills' | 'experts' | 'styles' | 'monitor' | 'news'
 
 /** Active app-panel visibility; slot registration owns render authority and lifecycle. */
 export interface IAppPanels {

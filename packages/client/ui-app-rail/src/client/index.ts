@@ -10,9 +10,12 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import { AppRail } from './AppRail.tsx'
 import { ProofPanel } from './ProofPanel.tsx'
+import type {} from '@deepseek-ai/dsh-client-locale/client'
+import { en, zh, type RailKey } from './locales.ts'
+declare module '@deepseek-ai/dsh-client-ui-slots' { interface LocaleNamespaceMap { appRail: RailKey } }
 
 /** Required services (cordis fiber inject). */
-export const inject = ['slots', 'appPanels']
+export const inject = ['slots', 'appPanels', 'locale']
 
 /**
  * Client plugin body: contribute the rail into the shell's rail slot, plus a
@@ -20,11 +23,12 @@ export const inject = ['slots', 'appPanels']
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
+  ctx.effect(() => ctx.locale.register('appRail', { en, zh }), 'ui-app-rail: dictionaries')
   ctx.effect(
     () => ctx.slots.register(
       {
         name: 'app.rail',
-        inject: () => ({ appPanels: ctx.appPanels }),
+        inject: () => ({ appPanels: ctx.appPanels, t: ctx.locale.bind('appRail') }),
       },
       AppRail,
     ),

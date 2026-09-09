@@ -1,11 +1,11 @@
 .panel {
-  --ink: #080a0d;
-  --paper: #f1eadc;
-  --acid: #d2ff00;
-  --blue: #2439ff;
-  --pink: #ff2b8b;
-  --cyan: #32e4d2;
-  --yellow: #ffd629;
+  --ink: #101416;
+  --paper: #e9dfce;
+  --acid: #a594d8;
+  --blue: #819dc1;
+  --pink: #bc7f97;
+  --cyan: #c5b9e5;
+  --yellow: #e9dfce;
   --muted: #8f928f;
   --line: rgb(255 255 255 / 13%);
   --panel-solid: #0d1015;
@@ -16,7 +16,7 @@
   overflow: hidden;
   isolation: isolate;
   color: #f5efdf;
-  background: linear-gradient(135deg, rgb(36 57 255 / 94%) 0 36%, rgb(9 11 15 / 92%) 36.2% 100%);
+  background: var(--ink);
   font-family: var(--dsw-font-family, 'Segoe UI', 'PingFang SC', sans-serif);
 }
 
@@ -39,11 +39,10 @@
 }
 
 .panel::before {
-  background-image: linear-gradient(rgb(9 11 15 / 70%), rgb(9 11 15 / 92%)), url('./assets/punk-collage-dark.png');
+  background-image: url('./assets/common-room-collage.png');
   background-position: center;
   background-size: cover;
-  filter: saturate(.86) contrast(1.01);
-  opacity: .28;
+  opacity: .9;
 }
 
 .panel::after {
@@ -74,7 +73,7 @@
 .readOnly { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--cyan); background: rgb(13 16 21 / 88%); font: 700 11px/1 var(--dsw-font-family, sans-serif); letter-spacing: .06em; }
 
 .viewport { height: calc(100% - 72px); overflow: auto; scrollbar-color: var(--blue) transparent; scrollbar-width: thin; }
-.content { width: min(100%, 1480px); min-height: 100%; margin: 0 auto; padding: clamp(28px, 4cqw, 60px); background: rgb(9 11 15 / 45%); backdrop-filter: blur(10px); }
+.content { width: min(100%, 1480px); min-height: 100%; margin: 0 auto; padding: clamp(28px, 4cqw, 60px); background: transparent; }
 .collectionHero { display: flex; align-items: end; justify-content: space-between; gap: 40px; }
 .sectionKicker { margin: 0 0 12px; color: var(--cyan); font: 900 12px/1.3 var(--dsw-font-family, sans-serif); letter-spacing: .18em; }
 .collectionHero h1 { margin: 0; font: 1000 clamp(40px, 5cqw, 60px)/.98 var(--dsw-font-family, 'PingFang SC', sans-serif); letter-spacing: 0; }
@@ -135,6 +134,19 @@
 .primaryCut { color: var(--ink); background: var(--acid); box-shadow: 4px 4px 0 var(--blue); }
 .primaryCut:disabled { cursor: wait; opacity: .58; }
 .dispatchBadge { margin: 16px 0 0; padding: 13px; border: 2px solid var(--ink); color: var(--ink); background: var(--yellow); box-shadow: 4px 4px 0 var(--pink); font: 900 13px var(--dsw-font-family, sans-serif); }
+
+.panel[hidden] { display: none; }
+.panel :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+.collectionHero { padding: 20px; border-radius: 12px; background: rgb(16 20 22 / 90%); }
+.collectionHero h1 span { text-shadow: none; }
+.giantAdd { border: 1px solid var(--line); box-shadow: 0 4px 18px rgb(0 0 0 / 18%); transform: none; }
+.giantAdd:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgb(0 0 0 / 24%); }
+.searchCut { border: 1px solid var(--line); box-shadow: none; background: var(--ink); }
+.recordCard, .recordCard:nth-child(3n + 2), .recordCard:nth-child(3n + 3) { color: var(--paper); background: rgb(25 31 34 / 97%); border: 1px solid var(--line); box-shadow: 0 5px 18px rgb(0 0 0 / 15%); transform: none; }
+.recordAvatar, .recordCard:nth-child(3n + 3) .recordAvatar { color: var(--ink); background: var(--acid); border: 1px solid var(--line); box-shadow: none; transform: none; }
+.recordStatus, .recordActions button { border-width: 1px; }
+.titleMark, .primaryCut, .dispatchBadge { box-shadow: none; }
+.dialog { border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 20px 80px rgb(0 0 0 / 45%); }
 
 @container (max-width: 1180px) { .expertGrid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
 @container (max-width: 760px) {

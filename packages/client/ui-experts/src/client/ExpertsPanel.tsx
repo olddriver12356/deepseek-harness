@@ -229,7 +229,7 @@ export function ExpertsPanel({ appPanels, api, t }: ExpertsPanelProps): ReactNod
     <section className={css.panel} data-experts-panel hidden={activePanel !== 'experts'} aria-label={t('regionAria')}>
       <header className={css.header}>
         <div className={css.titleLockup}>
-          <span className={css.titleMark}>03</span>
+          <span className={css.titleMark}>04</span>
           <div><strong>{t('title')}</strong><small>{t('subtitle')}</small></div>
         </div>
         <span className={css.readOnly}>{t('live')}</span>

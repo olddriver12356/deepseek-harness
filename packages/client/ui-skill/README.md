@@ -29,6 +29,14 @@ Type `/` in the composer and pick a skill from the suggestions, or type `/name` 
 
 ### What the source offers
 
+The app rail also opens a Workspace-level Skills page immediately below Knowledge. Its default category groups come from `metadata.category` in each skill's own frontmatter. Search and filters narrow the physical inventory by category, project/personal scope, and invocation mode. The index includes invalid and shadowed copies so users can repair the actual source instead of guessing from a Session's resolved catalog.
+
+Selecting a skill opens its real file tree and an explicit-save editor. `SKILL.md` has fields for name, description, category, invocation, and instructions, plus a source view. YAML edits preserve unknown keys and comments. Supporting UTF-8 files can be edited or created; binary and oversized files remain read-only. Unsaved edits require a choice before navigation, and conflicting external edits leave the buffer intact.
+
+Create skill collects optional name and references, required instructions, scope, category, and invocation. It opens a fresh Session in the current Workspace and submits a drafting prompt through the existing Session API. A failed submit retries the same Session and request identity. The agent creates supporting files before `SKILL.md`; the UI does not claim that a queued prompt is a completed skill.
+
+The management panel is a separate child plugin requiring `workspaces`, `sessions`, `appPanels`, `slots`, `locale`, and `remote.skillFiles`. The existing slash catalog stays Session-scoped. The physical page uses standard Host filesystem roots and does not aggregate provider-specific or preset-specific Session overrides. Refresh reloads the inventory; this first version does not persist filter state or watch the editor's open file.
+
 Ordinary-session candidates come from the `skills/list` Remote; the host serves every user-invocable skill, and a `modelInvocable: false` entry (a `disable-model-invocation` skill, whose only entry point is this path) wears the user-only marker as a description prefix in the active language. Results rank through the `/` menu's shared name ranker, `rankByName` from ui-primitives: the query matches a case-insensitive ordered subsequence of the skill name, prefix hits rank first, and ties keep the host order ([ranking decision](../../../.agents/notes/implemented/feature/2026-08-04-web-slash-command-fuzzy-discovery.md)). A failed `skills/list` call is logged and folded into a silent menu-group drop — the menu shows only pending/ready states.
 
 ### The skill tool row

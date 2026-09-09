@@ -10,29 +10,31 @@
 import { useSyncExternalStore } from 'react'
 import type { IAppPanels, PanelId } from '@deepseek-ai/dsh-client-ui-shell/client'
 import css from './AppRail.module.css'
+import { zh, type RailKey } from './locales.ts'
 
 interface RailEntry {
   id: PanelId
   number: string
-  label: string
-  caption: string
+  label: RailKey
+  caption: RailKey
 }
 
 /** Entry order, numbers, and copy are the legacy client's, which is the source of truth. */
 const ENTRIES: readonly RailEntry[] = [
-  { id: 'agent', number: '01', label: 'AGENT', caption: '执行现场' },
-  { id: 'knowledge', number: '02', label: '知识库', caption: '第二大脑' },
-  { id: 'experts', number: '03', label: '专家', caption: '调用阵容' },
-  { id: 'styles', number: '04', label: '风格', caption: '输出声线' },
-  { id: 'monitor', number: '05', label: '监控', caption: '用量与轨迹' },
-  { id: 'news', number: '06', label: '新闻', caption: 'AI 动态与工具' },
+  { id: 'agent', number: '01', label: 'agent', caption: 'agentCaption' },
+  { id: 'knowledge', number: '02', label: 'knowledge', caption: 'knowledgeCaption' },
+  { id: 'skills', number: '03', label: 'skills', caption: 'skillsCaption' },
+  { id: 'experts', number: '04', label: 'experts', caption: 'expertsCaption' },
+  { id: 'styles', number: '05', label: 'styles', caption: 'stylesCaption' },
+  { id: 'monitor', number: '06', label: 'monitor', caption: 'monitorCaption' },
+  { id: 'news', number: '07', label: 'news', caption: 'newsCaption' },
 ]
 
 /** Rail occupant. `appPanels` is passed in so the component stays testable without cordis. */
-export function AppRail({ appPanels }: { appPanels: IAppPanels }) {
+export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanels: IAppPanels; t?: (key: RailKey) => string }) {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   return (
-    <nav className={css.rail} role="tablist" aria-label="主要导航">
+    <nav className={css.rail} role="tablist" aria-label={t('navigation')}>
       {ENTRIES.map(entry => (
         <button
           key={entry.id}
@@ -44,8 +46,8 @@ export function AppRail({ appPanels }: { appPanels: IAppPanels }) {
           onClick={() => { appPanels.setActive(entry.id) }}
         >
           <span className={css.number}>{entry.number}</span>
-          <strong>{entry.label}</strong>
-          <small>{entry.caption}</small>
+          <strong>{t(entry.label)}</strong>
+          <small>{t(entry.caption)}</small>
         </button>
       ))}
     </nav>

@@ -192,7 +192,7 @@ export function StylesPanel({ appPanels, api, t }: StylesPanelProps): ReactNode 
     <section className={css.panel} data-styles-panel hidden={activePanel !== 'styles'} aria-label={t('regionAria')}>
       <header className={css.header}>
         <div className={css.titleLockup}>
-          <span className={css.titleMark}>04</span>
+          <span className={css.titleMark}>05</span>
           <div><strong>{t('title')}</strong><small>{t('subtitle')}</small></div>
         </div>
         <span className={css.readOnly}>{t('live')}</span>

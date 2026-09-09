@@ -23,6 +23,7 @@ import type { RemoteFailure } from '@deepseek-ai/dsh-api-remotes/client'
 import type { ClientSessionContext, InputTriggerSource } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 import { apply, inject } from '../src/client/index.ts'
 import { SkillRow as SkillToolRow } from '../src/client/SkillRow.tsx'
+import * as panelPlugin from '../src/client/panel-plugin.ts'
 
 type SkillRow = { name: string; description: string; whenToUse?: string; modelInvocable?: boolean }
 type ListResult =
@@ -41,7 +42,7 @@ function providePresentation(ctx: Context): PresentationCapture {
   const slots = new SlotRegistry(ctx)
   slots.register({
     name: 'root',
-    children: { 'tool.call.toolview': { kind: 'keyed', scope: 'session' } },
+    children: { 'tool.call.toolview': { kind: 'keyed', scope: 'session' }, 'shell.overlay': { kind: 'list' } },
   } as never, () => null)
   const capture: PresentationCapture = {
     slots,
@@ -101,6 +102,21 @@ const req = (query: string, signal?: AbortSignal) =>
   ({ query, position: 'leading' as const, drilled: false, signal: signal ?? new AbortController().signal })
 
 describe('apply', () => {
+  it('removes the management panel contribution when its plugin is disposed', async () => {
+    const ctx = new Context()
+    const presentation = providePresentation(ctx)
+    ctx.provide('sessions', {})
+    ctx.provide('workspaces', {})
+    ctx.provide('appPanels', {})
+    new TestRemote(ctx, { skillFiles: { list: async () => ({ ok: true, value: {} }) } })
+    const fiber = ctx.plugin(panelPlugin)
+    await fiber.await()
+    expect(presentation.slots.entries('shell.overlay')).toHaveLength(1)
+    await fiber.dispose()
+    expect(presentation.slots.entries('shell.overlay')).toEqual([])
+    expect(presentation.localeDisposed).toBe(true)
+    await ctx.fiber.dispose()
+  })
   it('declares the services it binds', () => {
     expect(inject).toEqual(['inputTriggers', 'sessions', 'slots', 'locale', 'remote', 'remote.skills'])
   })
