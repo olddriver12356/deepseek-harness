@@ -1,6 +1,6 @@
 # News to Knowledge Intake design
 
-Status: approved by Denny, 2026-09-08.
+Status: approved by Denny, 2026-09-08. Revised the same day during planning, after reading the vault bridge showed it was not source agnostic; the bridge now gains a `kind` discriminator. Implementation plan: `docs/superpowers/plans/2026-09-08-news-knowledge-intake.md`.
 
 ## Why
 
@@ -12,7 +12,9 @@ One button per News item in `NewsPanel.tsx`. Clicking it captures that single ar
 
 ## Current relevant state
 
-`store.save(sessionId, title, content)` (`packages/host/knowledge/src/store.ts:76`) is already a generic Intake writer: any string id, any title, any raw content string, filed as a `1 Intake` `KnowledgeRecord` through `DshKnowledge.ps1`. It does not parse or assume anything about the content's shape.
+`store.save(sessionId, title, content)` (`packages/host/knowledge/src/store.ts:76`) is a generic Intake writer on the TypeScript side: any string id, any title, any raw content string, filed as a `1 Intake` `KnowledgeRecord` through `DshKnowledge.ps1`. It does not parse or assume anything about the content's shape.
+
+The vault side bridge it delegates to is not source agnostic, which this design's first draft got wrong. `DshKnowledge.ps1`'s `save` block (lines 268 to 313) hardcodes conversation labeling into every artifact it writes: evidence always lands at `Evidence/session.jsonl`, `topics` is always `@('dsh', 'conversation')`, the body reads "Saved conversation evidence", and the provenance statement reads "Owner saved a DSH conversation". Reusing it unchanged for a News article would write false provenance metadata into an artifact schema whose purpose is auditable provenance, so the bridge gains an optional `kind` discriminator instead. See the corresponding note under Design.
 
 `KnowledgeService.save` (`index.ts:58`) is the only caller today, and it is conversation specific: it takes a `SessionId`, flushes and reads that live Session's log, and derives `content` itself before calling `store.save`. There is no existing entry point that accepts caller supplied text directly.
 
@@ -26,7 +28,15 @@ One button per News item in `NewsPanel.tsx`. Clicking it captures that single ar
 
 Add `saveText(request: { title: string; content: string })` to `KnowledgeService`, alongside the existing `save`. It generates a stable id by hashing the caller supplied identity (for a News article, the article URL) the same way `imageCacheKey` hashes image URLs, sanitizes the title using the same control character and path character stripping `notes.ts` already applies to note filenames (`notes.ts:30`), then calls `store.save(id, sanitizedTitle, content)` unchanged.
 
-This is a new method rather than an overload of `save`, because `save`'s contract is specifically about deriving content from a live Session; blending the two would blur that guarantee for its existing caller. `store.save` itself needs no change since it is already content agnostic.
+This is a new method rather than an overload of `save`, because `save`'s contract is specifically about deriving content from a live Session; blending the two would blur that guarantee for its existing caller.
+
+### Bridge: an optional source kind
+
+`DshKnowledge.ps1`'s `save` command gains an optional `kind` field, valid values `conversation` and `news`, defaulting to `conversation` when absent. The value selects four things that are hardcoded today: the evidence filename (`Evidence/session.jsonl` or `Evidence/article.txt`), the second topic tag (`conversation` or `news-article`), the artifact body's lead sentence, and the provenance `original_statement`. The artifact frontmatter gains a `source_evidence_path` field recording which filename was used, and the bridge's reader honors that field with a fallback to the old hardcoded path, so artifacts written before this change keep reading correctly.
+
+Defaulting to the current behavior when the field is absent is what keeps this backward compatible in both directions: an older DSH client talking to a newer bridge is unchanged, and `KnowledgeStore.save` only sends the field when a caller supplies it, so the existing conversation request stays byte identical.
+
+`KnowledgeStore.save` gains a matching optional fourth parameter, appended so its existing three argument call sites are untouched.
 
 ### Content shape for a News article
 
@@ -50,7 +60,7 @@ Review, shelve, preview, and promote are untouched. They already operate on `Kno
 
 ## Explicitly out of scope
 
-Any background or scheduled sweep of the News folder. Any change to `store.ts`'s PowerShell bridge or its request schema. Any change to the tool restriction or untrusted evidence guard in `runDistillation`. Any change to how captured conversations are saved. Bulk selection of multiple News items in one action.
+Any background or scheduled sweep of the News folder. Any change to the tool restriction or untrusted evidence guard in `runDistillation`. Any behavior change to how captured conversations are saved; the bridge's `kind` default exists precisely so that path stays identical. Bulk selection of multiple News items in one action.
 
 ## Testing
 
