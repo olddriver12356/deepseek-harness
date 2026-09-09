@@ -31,7 +31,7 @@ export interface NewsPanelProps {
   readonly appPanels: IAppPanels
   readonly read: NewsReader
   /** Absent when no Knowledge Remote is composed; the capture button is then not rendered. */
-  readonly saveToKnowledge?: NewsCapture
+  readonly saveToKnowledge?: NewsCapture | undefined
 }
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
@@ -52,7 +52,7 @@ function NewsCard({ item, kind, retrievedAt, saveToKnowledge }: {
   readonly item: NewsItem
   readonly kind: string
   readonly retrievedAt: string | null
-  readonly saveToKnowledge?: NewsCapture
+  readonly saveToKnowledge?: NewsCapture | undefined
 }): ReactNode {
   const [failed, setFailed] = useState(false)
   const [capture, setCapture] = useState<CaptureState>('idle')
@@ -112,7 +112,7 @@ function NewsColumn({ title, kind, items, state, retrievedAt, saveToKnowledge }:
   readonly items: readonly NewsItem[]
   readonly state: LoadState
   readonly retrievedAt: string | null
-  readonly saveToKnowledge?: NewsCapture
+  readonly saveToKnowledge?: NewsCapture | undefined
 }): ReactNode {
   return (
     <section className={css.column}>
