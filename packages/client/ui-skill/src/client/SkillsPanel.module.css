@@ -28,7 +28,7 @@
 .panel textarea { resize: vertical; line-height: 1.7; }
 .panel label { display: grid; gap: 7px; color: var(--skill-muted); }
 .panel fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
-.header { display: flex; align-items: center; gap: 16px; padding: 24px 28px; min-height: 118px; background: linear-gradient(90deg, var(--skill-ink) 30%, transparent); }
+.header { display: flex; align-items: center; gap: 16px; padding: 12px 28px; min-height: 72px; background: linear-gradient(90deg, var(--skill-ink) 30%, transparent); }
 .header > div { flex: 1; }
 .header small { letter-spacing: .13em; color: var(--skill-accent); }
 .header h1 { margin: 0; font-size: 24px; letter-spacing: .02em; line-height: 1.25; }
@@ -99,3 +99,12 @@
   .fieldGrid { grid-template-columns: 1fr; }
   .header > label { max-width: none; flex: 1; }
 }
+
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex: 0 0 auto; margin: 0 22px 18px; padding: 22px 28px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 94%) 15%, rgb(28 45 42 / 68%) 60%, rgb(16 20 22 / 10%)); }
+.heroKicker { margin: 0 0 10px; color: var(--skill-accent); font-weight: 700; letter-spacing: .15em; }
+.hero h2 { margin: 0; font-size: clamp(28px, 3.5cqw, 48px); line-height: 1.15; letter-spacing: .01em; }
+.hero h2 span { color: #b7d3bb; background: linear-gradient(100deg, #9ecfbd, #dfc69f 52%, #d5a4b9); background-clip: text; -webkit-text-fill-color: transparent; }
+.heroBody { max-width: 580px; margin: 14px 0 0; color: var(--skill-paper); line-height: 1.7; }
+.panel .heroCreate { display: grid; place-items: center; gap: 6px; flex: 0 0 130px; min-height: 112px; color: var(--skill-ink); background: radial-gradient(ellipse at top left, #a5d4bd, transparent 75%), linear-gradient(125deg, #d8c39e, #d6a7bb); border-color: rgb(233 223 206 / 40%); font-weight: 800; }
+.heroCreate > span { font-size: 36px; line-height: 1; }
+@container (max-width: 620px) { .hero { padding: 18px; margin: 0 12px 12px; gap: 12px; } .hero h2 { font-size: 24px; } .heroBody { display: none; } .panel .heroCreate { flex-basis: 92px; min-height: 96px; } }
