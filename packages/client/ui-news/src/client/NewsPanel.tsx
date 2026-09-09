@@ -6,9 +6,32 @@ import css from './NewsPanel.module.css'
 /** Client-side reader over the mounted News Remote. */
 export type NewsReader = (request: { readonly refresh: boolean }) => Promise<NewsSnapshot>
 
+/** Client-side capture into Knowledge Intake over the mounted Knowledge Remote. */
+export type NewsCapture = (request: {
+  readonly sourceUrl: string
+  readonly publisher: string
+  readonly retrievedAt: string
+  readonly title: string
+  readonly content: string
+}) => Promise<void>
+
+/** Plain-text evidence for one article, built from fields the feed already returned. */
+export function newsEvidence(item: NewsItem): string {
+  return [
+    `Title: ${item.title}`,
+    `Source: ${item.source}`,
+    `Published: ${item.publishedAt ?? 'unknown'}`,
+    `URL: ${item.url}`,
+    '',
+    item.summary,
+  ].join('\n')
+}
+
 export interface NewsPanelProps {
   readonly appPanels: IAppPanels
   readonly read: NewsReader
+  /** Absent when no Knowledge Remote is composed; the capture button is then not rendered. */
+  readonly saveToKnowledge?: NewsCapture
 }
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
@@ -19,9 +42,37 @@ function formatTime(value: string | null): string {
   return Number.isNaN(date.valueOf()) ? 'TIME UNKNOWN' : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function NewsCard({ item, kind }: { readonly item: NewsItem; readonly kind: string }): ReactNode {
+type CaptureState = 'idle' | 'saving' | 'saved' | 'failed'
+
+const CAPTURE_LABEL: Record<CaptureState, string> = {
+  idle: '收入 Knowledge', saving: '收入中…', saved: '已收入', failed: '收入失败，重试',
+}
+
+function NewsCard({ item, kind, retrievedAt, saveToKnowledge }: {
+  readonly item: NewsItem
+  readonly kind: string
+  readonly retrievedAt: string | null
+  readonly saveToKnowledge?: NewsCapture
+}): ReactNode {
   const [failed, setFailed] = useState(false)
+  const [capture, setCapture] = useState<CaptureState>('idle')
   const showImage = item.imageUrl !== null && !failed
+  const onCapture = useCallback(async (): Promise<void> => {
+    if (saveToKnowledge === undefined) return
+    setCapture('saving')
+    try {
+      await saveToKnowledge({
+        sourceUrl: item.url,
+        publisher: item.source,
+        retrievedAt: retrievedAt ?? new Date().toISOString(),
+        title: item.title,
+        content: newsEvidence(item),
+      })
+      setCapture('saved')
+    } catch {
+      setCapture('failed')
+    }
+  }, [item, retrievedAt, saveToKnowledge])
   return (
     <article className={css.card}>
       <div className={css.cover} data-fallback={!showImage} aria-hidden={showImage}>
@@ -36,30 +87,45 @@ function NewsCard({ item, kind }: { readonly item: NewsItem; readonly kind: stri
         </div>
         <h3>{item.title}</h3>
         {item.summary !== '' && <p className={css.summary}>{item.summary}</p>}
-        <a className={css.sourceLink} href={item.url} rel="noreferrer" target="_blank">阅读原文 ↗</a>
+        <div className={css.actions}>
+          <a className={css.sourceLink} href={item.url} rel="noreferrer" target="_blank">阅读原文 ↗</a>
+          {saveToKnowledge !== undefined && (
+            <button
+              className={css.capture}
+              data-capture-state={capture}
+              disabled={capture === 'saving' || capture === 'saved'}
+              onClick={() => { void onCapture() }}
+              type="button"
+            >
+              {CAPTURE_LABEL[capture]}
+            </button>
+          )}
+        </div>
       </div>
     </article>
   )
 }
 
-function NewsColumn({ title, kind, items, state }: {
+function NewsColumn({ title, kind, items, state, retrievedAt, saveToKnowledge }: {
   readonly title: string
   readonly kind: string
   readonly items: readonly NewsItem[]
   readonly state: LoadState
+  readonly retrievedAt: string | null
+  readonly saveToKnowledge?: NewsCapture
 }): ReactNode {
   return (
     <section className={css.column}>
       <header className={css.columnHeader}><h2>{title}</h2><b>{kind} / {items.length} ITEMS</b></header>
       {state === 'loading' && <p className={css.state}>正在抓取最近三天的更新…</p>}
       {state === 'ready' && items.length === 0 && <p className={css.state}>最近三天没有可展示的内容。</p>}
-      {state === 'ready' && items.length > 0 && <div className={css.cards}>{items.map(item => <NewsCard item={item} key={item.url} kind={kind} />)}</div>}
+      {state === 'ready' && items.length > 0 && <div className={css.cards}>{items.map(item => <NewsCard item={item} key={item.url} kind={kind} retrievedAt={retrievedAt} saveToKnowledge={saveToKnowledge} />)}</div>}
     </section>
   )
 }
 
 /** News surface matching the approved two-column editorial mockup. */
-export function NewsPanel({ appPanels, read }: NewsPanelProps): ReactNode {
+export function NewsPanel({ appPanels, read, saveToKnowledge }: NewsPanelProps): ReactNode {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   const [state, setState] = useState<LoadState>('idle')
   const [snapshot, setSnapshot] = useState<NewsSnapshot>({ fetchedAt: null, news: [], tools: [] })
@@ -97,8 +163,8 @@ export function NewsPanel({ appPanels, read }: NewsPanelProps): ReactNode {
           </section>
           {error !== null && <p className={css.error} role="alert">{error}</p>}
           <div className={css.columns}>
-            <NewsColumn items={snapshot.news} kind="NEWS" state={state} title="AI 实时新闻" />
-            <NewsColumn items={snapshot.tools} kind="TOOLS" state={state} title="工具与模型动态" />
+            <NewsColumn items={snapshot.news} kind="NEWS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} state={state} title="AI 实时新闻" />
+            <NewsColumn items={snapshot.tools} kind="TOOLS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} state={state} title="工具与模型动态" />
           </div>
         </div>
       </div>
