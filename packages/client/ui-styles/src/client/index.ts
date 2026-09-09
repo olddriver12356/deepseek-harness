@@ -3,9 +3,13 @@ import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
+import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { StyleDraft, StyleRecord } from '@deepseek-ai/dsh-host-styles/types'
 import { StylesPanel } from './StylesPanel.tsx'
+import { StyleSelect } from './StyleSelect.tsx'
+import type { StyleSelectInjected } from './StyleSelect.tsx'
 import { en, zh, type StyleLocaleKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -20,7 +24,7 @@ export type { StyleApi, StylesPanelProps, StyleTranslate } from './StylesPanel.t
 export type { StyleLocaleKey } from './locales.ts'
 export type { StyleDraft, StyleRecord, StyleStatus } from './types.ts'
 
-export const inject = ['slots', 'appPanels', 'sessions', 'remote', 'remote.styles', 'locale']
+export const inject = ['slots', 'appPanels', 'sessions', 'remote', 'remote.styles', 'locale', 'conversation']
 
 const NS = 'styles'
 
@@ -68,5 +72,24 @@ export function apply(ctx: ClientContext): void {
       }),
     },
     StylesPanel,
+  ))
+
+  ctx.slots.inject('shell.activity.selectors', () => ctx.slots.register(
+    {
+      name: 'shell.activity.selectors',
+      id: 'styles',
+      locale: NS,
+      inject: (sessionId: SessionId): StyleSelectInjected => ({
+        listStyles: async () => remoteValue(await ctx.remote.styles.list()),
+        setSelection: (style: StyleRecord | undefined) => {
+          ctx.conversation.prefixes.set(
+            sessionId,
+            'styles',
+            style === undefined ? undefined : { text: `## Output style\n${style.name}\n\n${style.instructions}` },
+          )
+        },
+      }),
+    },
+    StyleSelect,
   ))
 }

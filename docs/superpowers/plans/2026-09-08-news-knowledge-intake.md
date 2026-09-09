@@ -62,7 +62,11 @@ This task makes those four values depend on an optional `kind` field, defaulting
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: the `save` command accepts an optional `kind` field whose value is `'conversation'` or `'news'`. Any other value is rejected with the message `Unsupported source kind.` When `kind` is `'news'`: evidence is written to `Evidence/article.txt`, `topics` is `@('dsh', 'news-article')`, `source_kind` frontmatter is `owner_input`, and a new `source_evidence_path` frontmatter field records the relative evidence path. When `kind` is absent or `'conversation'`, everything is exactly as it is today, and `source_evidence_path` is written as `Evidence/session.jsonl`.
+- Produces: the `save` command accepts an optional `kind` field whose value is `'conversation'` or `'news'`. Any other value is rejected with the message `Unsupported source kind.` When `kind` is `'news'` the command additionally requires `canonicalUrl`, `publisher`, and `retrievedAt`, and rejects a request missing any of them with `News capture requires canonicalUrl, publisher, and retrievedAt.`
+  - When `kind` is `'news'`: evidence is written to `Evidence/article.txt`, `topics` is `@('dsh', 'news-article')`, `source_kind` is `external_source` in both the frontmatter and the provenance block, the provenance block carries `canonical_url`, `retrieved_at`, `publisher`, and `retrieval_tool`, and a new `source_evidence_path` frontmatter field records the relative evidence path.
+  - When `kind` is absent or `'conversation'`, everything is exactly as it is today, including `source_kind = 'owner_input'` and its `original_statement`/`captured_at`/`origin_run` provenance, and `source_evidence_path` is written as `Evidence/session.jsonl`.
+
+**Why `external_source` and not `owner_input` (Ruling R2).** `source_kind` is not a label, it selects a provenance contract. `provenance_valid` is one of six required gates (`AgentLayer.ps1:527`) and is evaluated mechanically (`AgentLayer.ps1:1024-1037`): `external_source` requires one of `canonical_url`/`platform_id`, one of `retrieved_at`/`retrieval_time`, one of `author`/`publisher`, and `retrieval_tool`, while `owner_input` requires `original_statement`, whose contract is the owner's own words. A public RSS article is not the owner's statement, so labeling it `owner_input` writes exactly the false provenance this task exists to prevent, in the one field the pipeline gates on. Emitting the wrong field set for the declared kind fails that gate and blocks promotion.
 
 - [ ] **Step 1: Write the failing self-check assertions**
 
@@ -70,18 +74,30 @@ Open `C:\SecondBrain\Agents\Tools\Test-DshKnowledge.ps1`. Immediately after the 
 
 ```powershell
     $newsText = "Title: Fresh story`nSource: Test`nURL: https://example.com/story`n`nSummary text."
-    $newsSaved = Invoke-DshKnowledge -Root $testRoot -Request @{ command = 'save'; sessionId = 'news-abc123'; title = 'Fresh story'; content = $newsText; kind = 'news' }
+    $newsRequest = @{
+        command = 'save'; sessionId = 'news-abc123'; title = 'Fresh story'; content = $newsText; kind = 'news'
+        canonicalUrl = 'https://example.com/story'; publisher = 'Test'; retrievedAt = '2026-09-08T10:00:00.0000000+00:00'
+    }
+    $newsSaved = Invoke-DshKnowledge -Root $testRoot -Request $newsRequest
     if ($newsSaved.layer -ne '1 Intake') { throw 'News capture escaped Intake.' }
     if ($newsSaved.topics -notcontains 'news-article') { throw 'News capture was not labeled as a news article.' }
     if ($newsSaved.topics -contains 'conversation') { throw 'News capture was mislabeled as a conversation.' }
     $newsRead = Invoke-DshKnowledge -Root $testRoot -Request @{ command = 'read'; id = $newsSaved.id }
     if ($newsRead.evidence -cne $newsText) { throw 'News capture lost source bytes.' }
     if ($newsRead.markdown -like '*Saved conversation evidence*') { throw 'News artifact body claims it is a conversation.' }
-    $newsEvidence = Join-Path (Split-Path -Parent (Join-Path $testRoot $newsRead.path)) 'Evidence/article.txt'
-    if (-not [IO.File]::Exists($newsEvidence)) { throw 'News evidence was not written to Evidence/article.txt.' }
+    if ($newsRead.markdown -notlike '*external_source*') { throw 'News artifact is not labeled as an external source.' }
+    if ($newsRead.markdown -notlike '*canonical_url*') { throw 'News provenance is missing its canonical URL.' }
+    $newsEvidenceFile = Join-Path (Split-Path -Parent (Join-Path $testRoot $newsRead.path)) 'Evidence/article.txt'
+    if (-not [IO.File]::Exists($newsEvidenceFile)) { throw 'News evidence was not written to Evidence/article.txt.' }
+    $newsArtifact = Get-AgentArtifactRecordById -Root $testRoot -ArtifactId $newsSaved.id
+    $newsGate = Invoke-AgentMechanicalGateEvaluation -Path $newsArtifact.Path -GateName 'provenance_valid' -Evaluator 'Test-DshKnowledge.ps1'
+    if ($newsGate.state -ne 'pass') { throw ('News provenance failed its required gate: ' + $newsGate.rationale) }
     $badKind = $false
     try { Invoke-DshKnowledge -Root $testRoot -Request @{ command = 'save'; sessionId = 'x'; title = 'x'; content = 'x'; kind = 'podcast' } } catch { $badKind = $_.Exception.Message -like '*source kind*' }
     if (-not $badKind) { throw 'Bridge accepted an unknown source kind.' }
+    $missingMeta = $false
+    try { Invoke-DshKnowledge -Root $testRoot -Request @{ command = 'save'; sessionId = 'y'; title = 'y'; content = 'y'; kind = 'news' } } catch { $missingMeta = $_.Exception.Message -like '*canonicalUrl*' }
+    if (-not $missingMeta) { throw 'Bridge accepted a News capture with no source metadata.' }
     $valid = Test-AgentLayer -Root $testRoot
     if (-not $valid.Valid) { throw ($valid.Issues | ConvertTo-Json -Depth 8) }
 ```
@@ -112,13 +128,16 @@ with:
             if ([string]::IsNullOrWhiteSpace([string]$Request.sessionId) -or [string]::IsNullOrWhiteSpace([string]$Request.content)) { throw 'Session identity and evidence are required.' }
             $kind = if ([string]::IsNullOrWhiteSpace([string]$Request.kind)) { 'conversation' } else { [string]$Request.kind }
             if ($kind -cne 'conversation' -and $kind -cne 'news') { throw 'Unsupported source kind.' }
+            if ($kind -ceq 'news' -and ([string]::IsNullOrWhiteSpace([string]$Request.canonicalUrl) -or [string]::IsNullOrWhiteSpace([string]$Request.publisher) -or [string]::IsNullOrWhiteSpace([string]$Request.retrievedAt))) {
+                throw 'News capture requires canonicalUrl, publisher, and retrievedAt.'
+            }
             $evidenceName = if ($kind -ceq 'news') { 'Evidence/article.txt' } else { 'Evidence/session.jsonl' }
             $kindTopic = if ($kind -ceq 'news') { 'news-article' } else { 'conversation' }
             $defaultTitle = if ($kind -ceq 'news') { 'Article' } else { 'Conversation' }
             $bodyLead = if ($kind -ceq 'news') { 'Saved News article evidence. No AI processing or owner approval has occurred.' } else { 'Saved conversation evidence. No AI processing or owner approval has occurred.' }
             $sourceLabel = if ($kind -ceq 'news') { 'Full article capture' } else { 'Full session log' }
-            $originalStatement = if ($kind -ceq 'news') { 'Owner saved a public News feed article; its claims are unverified.' } else { 'Owner saved a DSH conversation; assistant statements are unverified.' }
             $pointerId = if ($kind -ceq 'news') { 'article' } else { 'session' }
+            $sourceKind = if ($kind -ceq 'news') { 'external_source' } else { 'owner_input' }
 ```
 
 Then in the same block, replace the deduplication evidence path at line 278:
@@ -157,18 +176,22 @@ with:
                     layer = '1 Intake'; status = 'intake'; topics = @('dsh', $kindTopic)
 ```
 
-Add the evidence path to the same `$data` hashtable by replacing line 299:
+Set the frontmatter's source kind and add the evidence path, by replacing lines 298 and 299 of the same `$data` hashtable:
 
 ```powershell
+                    source_kind = 'owner_input'; provenance = @{ body_section = 'Provenance record' }; derived_from = @()
                     source_session_id = [string]$Request.sessionId; source_sha256 = $digest
 ```
 
 with:
 
 ```powershell
+                    source_kind = $sourceKind; provenance = @{ body_section = 'Provenance record' }; derived_from = @()
                     source_session_id = [string]$Request.sessionId; source_sha256 = $digest
                     source_evidence_path = $evidenceName
 ```
+
+The frontmatter `source_kind` and the provenance block's `source_kind` must agree; the gate reads the frontmatter's value and validates the provenance block against it.
 
 Replace the provenance line 302:
 
@@ -179,8 +202,15 @@ Replace the provenance line 302:
 with:
 
 ```powershell
-                $provenance = ConvertTo-AgentCanonicalJson -Value @{ source_kind = 'owner_input'; original_statement = $originalStatement; captured_at = $now; origin_run = [string]$Request.sessionId } -Depth 8
+                $provenanceData = if ($kind -ceq 'news') {
+                    @{ source_kind = $sourceKind; canonical_url = [string]$Request.canonicalUrl; retrieved_at = [string]$Request.retrievedAt; publisher = [string]$Request.publisher; retrieval_tool = 'DSH News'; captured_at = $now }
+                } else {
+                    @{ source_kind = $sourceKind; original_statement = 'Owner saved a DSH conversation; assistant statements are unverified.'; captured_at = $now; origin_run = [string]$Request.sessionId }
+                }
+                $provenance = ConvertTo-AgentCanonicalJson -Value $provenanceData -Depth 8
 ```
+
+The two field sets are not interchangeable: each is the exact contract `Invoke-AgentMechanicalGateEvaluation` requires for its `source_kind` (`AgentLayer.ps1:1026-1037`). Emitting the conversation field set under an `external_source` label, or the reverse, fails the `provenance_valid` gate.
 
 Replace the pointer line 303:
 
@@ -274,9 +304,10 @@ This task adds an optional `kind` pass-through on the store and a new `saveText`
 **Interfaces:**
 - Consumes: the bridge's `kind` field from Task 1.
 - Produces:
-  - `KnowledgeSaveTextRequest` exported from `packages/host/knowledge/src/types.ts`, shape `{ readonly sourceUrl: string; readonly title: string; readonly content: string }`.
-  - `KnowledgeStore.save(sessionId: string, title: string, content: string, kind?: 'conversation' | 'news'): Promise<KnowledgeRecord>` — a fourth optional parameter, appended so existing calls are unchanged.
-  - `KnowledgeService.saveText(request: KnowledgeSaveTextRequest): Promise<KnowledgeRecord>`, registered as Remote method `'saveText'`, so browser clients reach it as `ctx.remote.knowledge.saveText({ sourceUrl, title, content })`.
+  - `KnowledgeSaveTextRequest` exported from `packages/host/knowledge/src/types.ts`, shape `{ readonly sourceUrl: string; readonly publisher: string; readonly retrievedAt: string; readonly title: string; readonly content: string }`.
+  - `KnowledgeNewsSource` exported from the same file, shape `{ readonly kind: 'news'; readonly canonicalUrl: string; readonly publisher: string; readonly retrievedAt: string }`.
+  - `KnowledgeStore.save(sessionId: string, title: string, content: string, source?: KnowledgeNewsSource): Promise<KnowledgeRecord>` — a fourth optional parameter, appended so existing calls are unchanged.
+  - `KnowledgeService.saveText(request: KnowledgeSaveTextRequest): Promise<KnowledgeRecord>`, registered as Remote method `'saveText'`, so browser clients reach it as `ctx.remote.knowledge.saveText({ sourceUrl, publisher, retrievedAt, title, content })`.
 
 - [ ] **Step 1: Add the wire type**
 
@@ -286,8 +317,20 @@ In `packages/host/knowledge/src/types.ts`, immediately after the existing `Knowl
 /** Save caller-supplied text as Intake evidence; sourceUrl is the stable capture identity. */
 export interface KnowledgeSaveTextRequest {
   readonly sourceUrl: string
+  /** Feed or site that published the article; the provenance gate requires an author or publisher. */
+  readonly publisher: string
+  /** ISO 8601 time the feed was fetched, not the time the owner clicked capture. */
+  readonly retrievedAt: string
   readonly title: string
   readonly content: string
+}
+
+/** External-source provenance the bridge needs to satisfy the provenance_valid gate. */
+export interface KnowledgeNewsSource {
+  readonly kind: 'news'
+  readonly canonicalUrl: string
+  readonly publisher: string
+  readonly retrievedAt: string
 }
 ```
 
@@ -297,12 +340,14 @@ In `packages/host/knowledge/tests/store.spec.ts`, inside the existing `it.skipIf
 
 ```typescript
     const article = 'Title: Fresh story\nSource: Test\nURL: https://example.com/story\n\nSummary text.'
-    const news = await store.save('news-fixed-key', 'Fresh story', article, 'news')
+    const source = { kind: 'news', canonicalUrl: 'https://example.com/story', publisher: 'Test', retrievedAt: '2026-09-08T10:00:00.000Z' } as const
+    const news = await store.save('news-fixed-key', 'Fresh story', article, source)
     expect(news.layer).toBe('1 Intake')
     expect(news.topics).toContain('news-article')
     expect(news.topics).not.toContain('conversation')
     expect((await store.read(news.id)).evidence).toBe(article)
-    expect((await store.save('news-fixed-key', 'Fresh story', article, 'news')).id).toBe(news.id)
+    expect((await store.read(news.id)).markdown).toContain('external_source')
+    expect((await store.save('news-fixed-key', 'Fresh story', article, source)).id).toBe(news.id)
 ```
 
 Note this must go before the existing write-lock assertions at the end of the test, because those deliberately leave a lock file in place and every later save would fail.
@@ -336,15 +381,17 @@ with:
    * @param sessionId - stable capture identity; a Session id, or a hashed source URL for other kinds.
    * @param title - display title, sanitized by the package writer.
    * @param content - complete source evidence; passed to a model only through an explicit distillation.
-   * @param kind - source labeling; omitted means a captured conversation.
+   * @param source - external-source provenance; omitted means a captured conversation.
    * @returns the saved Intake artifact, reusing an identical source snapshot.
    */
-  async save(sessionId: string, title: string, content: string, kind?: 'conversation' | 'news'): Promise<KnowledgeRecord> {
-    return record.array().length(1).parse(await this.command({ command: 'save', sessionId, title, content, ...kind === undefined ? {} : { kind } }))[0] as KnowledgeRecord
+  async save(sessionId: string, title: string, content: string, source?: KnowledgeNewsSource): Promise<KnowledgeRecord> {
+    return record.array().length(1).parse(await this.command({ command: 'save', sessionId, title, content, ...source ?? {} }))[0] as KnowledgeRecord
   }
 ```
 
-Spreading conditionally rather than always sending `kind` keeps the request byte-identical for the existing caller, which is what keeps the bridge's default branch provably untouched.
+Spreading conditionally rather than always sending the source fields keeps the request byte-identical for the existing caller, which is what keeps the bridge's default branch provably untouched.
+
+Add `KnowledgeNewsSource` to this file's type import from `./types.ts`, keeping the existing names and their order and inserting the new one alphabetically.
 
 - [ ] **Step 5: Run the store test to verify it passes**
 
@@ -375,12 +422,15 @@ import type { KnowledgeDocument, KnowledgeReadRequest, KnowledgeRecord, Knowledg
 Then immediately after the existing `save` method (which ends at line 64 with its closing brace), add:
 
 ```typescript
-  /** @param request - caller-supplied source text and its stable source URL. @returns saved evidence in Intake, without AI or promotion. */
+  /** @param request - caller-supplied source text and its external-source provenance. @returns saved evidence in Intake, without AI or promotion. */
   @Remote('saveText')
   async saveText(request: KnowledgeSaveTextRequest): Promise<KnowledgeRecord> {
     if (request.sourceUrl === '' || request.content === '') throw new Error('knowledge: source URL and content are required')
+    if (request.publisher === '' || request.retrievedAt === '') throw new Error('knowledge: publisher and retrievedAt are required')
     const identity = `news-${createHash('sha256').update(request.sourceUrl, 'utf8').digest('hex')}`
-    return this.store.save(identity, request.title, request.content, 'news')
+    return this.store.save(identity, request.title, request.content, {
+      kind: 'news', canonicalUrl: request.sourceUrl, publisher: request.publisher, retrievedAt: request.retrievedAt,
+    })
   }
 ```
 
@@ -510,9 +560,10 @@ The prop is optional so the panel still renders when the Knowledge Remote is not
 **Interfaces:**
 - Consumes: `KnowledgeService.saveText`'s request shape from Task 2, reached through the prop rather than directly.
 - Produces:
-  - `export type NewsCapture = (request: { readonly sourceUrl: string; readonly title: string; readonly content: string }) => Promise<void>` from `NewsPanel.tsx`.
+  - `export type NewsCapture = (request: { readonly sourceUrl: string; readonly publisher: string; readonly retrievedAt: string; readonly title: string; readonly content: string }) => Promise<void>` from `NewsPanel.tsx`. The field set matches `KnowledgeSaveTextRequest` exactly.
   - `NewsPanelProps` gains `readonly saveToKnowledge?: NewsCapture`.
-  - `export function newsEvidence(item: NewsItem): string` from `NewsPanel.tsx`, the evidence text builder, exported so the composition root and tests share one definition.
+  - `export function newsEvidence(item: NewsItem): string` from `NewsPanel.tsx`, the evidence text builder, exported so tests can assert against one definition.
+  - `retrievedAt` is the feed's own `snapshot.fetchedAt`, threaded from `NewsPanel` through `NewsColumn` to `NewsCard`, because that is when the article was actually retrieved. It falls back to capture time only when `fetchedAt` is null.
 
 - [ ] **Step 1: Write the failing UI test**
 
@@ -546,6 +597,8 @@ Then add two tests inside the existing `describe('NewsPanel', ...)` block, after
 
     expect(saveToKnowledge).toHaveBeenCalledWith({
       sourceUrl: 'https://example.com/story',
+      publisher: 'Test',
+      retrievedAt: '2026-09-04T10:00:00.000Z',
       title: 'Fresh story',
       content: 'Title: Fresh story\nSource: Test\nPublished: 2026-09-04T09:00:00.000Z\nURL: https://example.com/story\n\nSummary',
     })
@@ -589,7 +642,13 @@ In `packages/client/ui-news/src/client/NewsPanel.tsx`, add the capture type and 
 
 ```typescript
 /** Client-side capture into Knowledge Intake over the mounted Knowledge Remote. */
-export type NewsCapture = (request: { readonly sourceUrl: string; readonly title: string; readonly content: string }) => Promise<void>
+export type NewsCapture = (request: {
+  readonly sourceUrl: string
+  readonly publisher: string
+  readonly retrievedAt: string
+  readonly title: string
+  readonly content: string
+}) => Promise<void>
 
 /** Plain-text evidence for one article, built from fields the feed already returned. */
 export function newsEvidence(item: NewsItem): string {
@@ -624,9 +683,10 @@ const CAPTURE_LABEL: Record<CaptureState, string> = {
   idle: '收入 Knowledge', saving: '收入中…', saved: '已收入', failed: '收入失败，重试',
 }
 
-function NewsCard({ item, kind, saveToKnowledge }: {
+function NewsCard({ item, kind, retrievedAt, saveToKnowledge }: {
   readonly item: NewsItem
   readonly kind: string
+  readonly retrievedAt: string | null
   readonly saveToKnowledge?: NewsCapture
 }): ReactNode {
   const [failed, setFailed] = useState(false)
@@ -636,12 +696,18 @@ function NewsCard({ item, kind, saveToKnowledge }: {
     if (saveToKnowledge === undefined) return
     setCapture('saving')
     try {
-      await saveToKnowledge({ sourceUrl: item.url, title: item.title, content: newsEvidence(item) })
+      await saveToKnowledge({
+        sourceUrl: item.url,
+        publisher: item.source,
+        retrievedAt: retrievedAt ?? new Date().toISOString(),
+        title: item.title,
+        content: newsEvidence(item),
+      })
       setCapture('saved')
     } catch {
       setCapture('failed')
     }
-  }, [item, saveToKnowledge])
+  }, [item, retrievedAt, saveToKnowledge])
   return (
     <article className={css.card}>
       <div className={css.cover} data-fallback={!showImage} aria-hidden={showImage}>
@@ -679,11 +745,12 @@ function NewsCard({ item, kind, saveToKnowledge }: {
 Thread the prop through `NewsColumn` by replacing its signature and card mapping (lines 45-59):
 
 ```tsx
-function NewsColumn({ title, kind, items, state, saveToKnowledge }: {
+function NewsColumn({ title, kind, items, state, retrievedAt, saveToKnowledge }: {
   readonly title: string
   readonly kind: string
   readonly items: readonly NewsItem[]
   readonly state: LoadState
+  readonly retrievedAt: string | null
   readonly saveToKnowledge?: NewsCapture
 }): ReactNode {
   return (
@@ -691,7 +758,7 @@ function NewsColumn({ title, kind, items, state, saveToKnowledge }: {
       <header className={css.columnHeader}><h2>{title}</h2><b>{kind} / {items.length} ITEMS</b></header>
       {state === 'loading' && <p className={css.state}>正在抓取最近三天的更新…</p>}
       {state === 'ready' && items.length === 0 && <p className={css.state}>最近三天没有可展示的内容。</p>}
-      {state === 'ready' && items.length > 0 && <div className={css.cards}>{items.map(item => <NewsCard item={item} key={item.url} kind={kind} saveToKnowledge={saveToKnowledge} />)}</div>}
+      {state === 'ready' && items.length > 0 && <div className={css.cards}>{items.map(item => <NewsCard item={item} key={item.url} kind={kind} retrievedAt={retrievedAt} saveToKnowledge={saveToKnowledge} />)}</div>}
     </section>
   )
 }
@@ -706,8 +773,8 @@ export function NewsPanel({ appPanels, read, saveToKnowledge }: NewsPanelProps):
 and replace the two column elements at lines 100-101 with:
 
 ```tsx
-            <NewsColumn items={snapshot.news} kind="NEWS" saveToKnowledge={saveToKnowledge} state={state} title="AI 实时新闻" />
-            <NewsColumn items={snapshot.tools} kind="TOOLS" saveToKnowledge={saveToKnowledge} state={state} title="工具与模型动态" />
+            <NewsColumn items={snapshot.news} kind="NEWS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} state={state} title="AI 实时新闻" />
+            <NewsColumn items={snapshot.tools} kind="TOOLS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} state={state} title="工具与模型动态" />
 ```
 
 - [ ] **Step 4: Add the button styling**
@@ -805,17 +872,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-knowledge/client'
 
 If that module specifier does not resolve, open `packages/client/ui-knowledge/package.json` and use the exact `exports` subpath it publishes for its client half; the Knowledge panel's own composition root at `packages/client/ui-knowledge/src/client/index.ts` shows the working import shape.
 
-Import the evidence builder by changing line 6 from:
-
-```typescript
-import { NewsPanel } from './NewsPanel.tsx'
-```
-
-to:
-
-```typescript
-import { newsEvidence, NewsPanel } from './NewsPanel.tsx'
-```
+Leave the `NewsPanel` import on line 6 exactly as it is. Do not import `newsEvidence` here: the evidence text is built inside `NewsCard`, which already holds the item, so this file has no use for it and an unused import would fail lint.
 
 Extend the re-export on line 8 to carry the new type:
 
@@ -846,7 +903,13 @@ export function apply(ctx: ClientContext): void {
         },
         saveToKnowledge: ctx.remote.knowledge === undefined
           ? undefined
-          : async (request: { readonly sourceUrl: string; readonly title: string; readonly content: string }) => {
+          : async (request: {
+            readonly sourceUrl: string
+            readonly publisher: string
+            readonly retrievedAt: string
+            readonly title: string
+            readonly content: string
+          }) => {
             const result = await ctx.remote.knowledge.saveText(request)
             if (!result.ok) throw new Error(`${result.error.code}: ${result.error.message}`)
           },
@@ -859,7 +922,7 @@ export function apply(ctx: ClientContext): void {
 
 Note the `inject` shape changes from a plain array to the required/optional object form. If this Cordis version does not support that object form, keep the original array unchanged and rely solely on the `ctx.remote.knowledge === undefined` check, which is what actually guards the call at runtime. Confirm by checking how another plugin in `packages/client` or `packages/extensions` declares an optional dependency before choosing.
 
-`newsEvidence` is imported here but not called: the content is built inside `NewsCard`, which already holds the item. If the import is unused after Step 2, remove it rather than leaving a dead import for oxlint to flag.
+The inline request type is written out rather than imported from `NewsPanel.tsx` because this object is the Remote's wire shape, and the composition root is where the two independently-declared shapes are checked against each other by the compiler. If they drift, this file is where the type error surfaces.
 
 - [ ] **Step 3: Run TypeScript and the full ui-news suite**
 

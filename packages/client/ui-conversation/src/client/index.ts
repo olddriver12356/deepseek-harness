@@ -66,6 +66,7 @@ export type {
   SubmitOutcome, TokenSpan,
 } from './contract/input.ts'
 export type { ComposerBlock, ComposerBlocks } from './contract/composer-blocks.ts'
+export type { ComposerPrefixContribution, ComposerPrefixes } from './contract/composer-prefixes.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {

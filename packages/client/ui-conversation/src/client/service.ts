@@ -26,6 +26,7 @@ import type {
 } from './contract/slots.ts'
 import type { QueueAction, QueueItemId } from './contract/queue.ts'
 import type { ComposerBlocks } from './contract/composer-blocks.ts'
+import type { ComposerPrefixes } from './contract/composer-prefixes.ts'
 import type {
   DraftAttachmentId, DraftAttachmentSerializationResult, SessionInputResolver, SubmitAttachment, SubmitOutcome,
 } from './contract/input.ts'
@@ -44,6 +45,8 @@ export interface IConversation {
    * cannot import makes a session's input inert with its own reason.
    */
   readonly blocks: ComposerBlocks
+  /** The per-session send-prefix registry (see `ComposerPrefixes`). */
+  readonly prefixes: ComposerPrefixes
   /**
    * Send a prompt into the caller scope's session (queued turn).
    * @param text - prompt text, sent verbatim as one text block.
@@ -154,6 +157,8 @@ export class ConversationController extends Service implements IConversation {
   readonly input: SessionInputResolver
   /** The per-session composer-block registry. */
   readonly blocks: ComposerBlocks
+  /** The per-session send-prefix registry. */
+  readonly prefixes: ComposerPrefixes
   /** Live upload state per file-kind draft; images never appear here. */
   readonly fileUploads: SnapshotStore<Record<string, DraftFileUpload>> = createSnapshotStore<Record<string, DraftFileUpload>>({})
   private readonly draftAttachments = new Map<DraftAttachmentId, ComposerAttachment>()
@@ -179,11 +184,13 @@ export class ConversationController extends Service implements IConversation {
   constructor(ctx: Context, config: {
     input: SessionInputResolver
     blocks: ComposerBlocks
+    prefixes: ComposerPrefixes
     maxConcurrentFileUploads: number
   }) {
     super(ctx, 'conversation')
     this.input = config.input
     this.blocks = config.blocks
+    this.prefixes = config.prefixes
     this.maxConcurrentFileUploads = config.maxConcurrentFileUploads
     ctx.effect(() => async () => {
       const operations = [...this.fileUploadOperations.values()]
@@ -207,7 +214,9 @@ export class ConversationController extends Service implements IConversation {
    */
   async send(text: string): Promise<void> {
     const session = this.scopedSession('send')
-    const result = await session.prompt([{ type: 'text', text }], 'queue')
+    const prefix = this.prefixes.resolve(session.sessionId)
+    const promptText = prefix === '' ? text : `${prefix}\n\n${text}`
+    const result = await session.prompt([{ type: 'text', text: promptText }], 'queue')
     if (!result.ok) throw new Error(`conversation.send failed: ${result.error.code}: ${result.error.message}`)
   }
 
@@ -232,6 +241,8 @@ export class ConversationController extends Service implements IConversation {
     mode: InputSubmitMode,
     signal?: AbortSignal,
   ): Promise<SubmitOutcome> {
+    const prefix = this.prefixes.resolve(session.sessionId)
+    const promptText = prefix === '' ? text : `${prefix}\n\n${text}`
     const attachments = this.resolveDraftAttachments(attachmentIds)
     if (attachments.length !== attachmentIds.length) {
       throw new Error('conversation.sendSession: one or more draft attachments are no longer available')
@@ -263,7 +274,7 @@ export class ConversationController extends Service implements IConversation {
     const snapshot = session.getSnapshot()
     if (snapshot.subagent !== null) {
       const uploaded = await serializeAttachments()
-      const content = [...uploaded, ...(text === '' ? [] : [{ type: 'text' as const, text }])]
+      const content = [...uploaded, ...(promptText === '' ? [] : [{ type: 'text' as const, text: promptText }])]
       const result = await session.prompt(content, mode, signal)
       return result.ok ? { kind: 'success' } : { kind: 'error' }
     }
@@ -284,7 +295,7 @@ export class ConversationController extends Service implements IConversation {
     try {
       await nextPaint()
       const uploaded = await serializeAttachments()
-      content = [...uploaded, ...(text === '' ? [] : [{ type: 'text' as const, text }])]
+      content = [...uploaded, ...(promptText === '' ? [] : [{ type: 'text' as const, text: promptText }])]
     } catch (error) {
       submission.abandon()
       throw error

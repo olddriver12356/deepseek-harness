@@ -57,6 +57,11 @@ export const zh = {
   deleteConfirm: '确定删除 Expert「{name}」？此操作会删除它的 ARTIFACT.md。',
   noSession: '请先打开一个会话。',
   sessionNotReady: '当前会话尚未就绪。',
+  selectorTitle: '专家',
+  selectorEmpty: '暂无已批准的专家',
+  selectorPlaceholder: '选择专家',
+  selectorCount: '已选 {count} 位',
+  selectorSearchPlaceholder: '搜索专家…',
 } satisfies Record<string, string>
 
 /** Experts dictionary key union. */
@@ -119,4 +124,9 @@ export const en = {
   deleteConfirm: 'Delete Expert “{name}”? This removes its ARTIFACT.md.',
   noSession: 'Open a Session first.',
   sessionNotReady: 'The current Session is not ready.',
+  selectorTitle: 'Experts',
+  selectorEmpty: 'No approved Experts yet',
+  selectorPlaceholder: 'Select Experts',
+  selectorCount: '{count} selected',
+  selectorSearchPlaceholder: 'Search Experts…',
 } satisfies Record<ExpertLocaleKey, string>

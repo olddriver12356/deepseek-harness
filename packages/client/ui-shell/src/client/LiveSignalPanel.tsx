@@ -2,17 +2,17 @@
  * the cross-surface commands (goal, trajectory, pending takeover, capture) have
  * explicit contracts. */
 import { useState } from 'react'
-import type { InjectFace, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ActivityInjected, GoalActionResult } from './index.ts'
 import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
 import { contextOccupancy } from '@deepseek-ai/dsh-token-meter/client'
 import css from './LiveSignalPanel.module.css'
 import type {} from '@deepseek-ai/dsh-token-meter/client'
-// Type-only: merges ui-trajectory's ConversationViewSnapshotMap row so
-// `views.get('trajectory')` reads the canonical trajectory target.
-import type {} from '@deepseek-ai/dsh-client-ui-trajectory/client'
 
-type LiveSignalProps = PropsRuntime<'shell.activity'> & InjectFace<ActivityInjected>
+type LiveSignalProps =
+  PropsRuntime<'shell.activity'>
+  & PropsRenderSlots<'shell.activity.selectors'>
+  & InjectFace<ActivityInjected>
 
 /** The slice of the `goal` projection this card reads; the goal domain owns the full shape. */
 interface GoalProjectionLike {
@@ -136,7 +136,7 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
 }
 
 export function LiveSignalPanel({
-  sessionId, useProjection, useSessions, useSessionPendingInteraction, useConversation,
+  sessionId, useProjection, useSessions, useSessionPendingInteraction, renderSlot,
   onEditGoal, onPauseGoal, onResumeGoal, onClearGoal,
 }: LiveSignalProps) {
   const goal = useProjection('goal') as GoalProjectionLike | null | undefined
@@ -145,7 +145,6 @@ export function LiveSignalPanel({
   const usage = useProjection('tokenUsage')
   const pending = useSessionPendingInteraction(map => map.get(sessionId))
   const session = useSessions(snapshot => snapshot.byId[sessionId])
-  const trajectory = useConversation(snapshot => snapshot.views.get('trajectory'))
   const context = contextOccupancy(pressure)
   const contextPercent = context?.percent
 
@@ -162,13 +161,6 @@ export function LiveSignalPanel({
       .filter(part => part.width > 0)
 
   const cacheBase = usage === undefined ? 0 : usage.uncachedInputTokens + usage.cacheReadTokens
-  const trajectoryFigures = trajectory === undefined ? undefined : {
-    events: trajectory.eventNodes.length,
-    requests: trajectory.requests.length,
-    running: trajectory.requests.filter(r => r.status === 'running').length + trajectory.runningCalls.length,
-    failed: trajectory.requests.filter(r => r.status === 'error').length,
-    latest: trajectory.eventNodes.reduce((max, node) => Math.max(max, node.time), 0),
-  }
 
   return (
     <aside className={css.panel} aria-label="活动信号" data-live-signal>
@@ -185,6 +177,13 @@ export function LiveSignalPanel({
         onPauseGoal={onPauseGoal}
         onResumeGoal={onResumeGoal}
       />
+
+      {renderSlot('shell.activity.selectors', {})}
+
+      <section className={css.section} aria-labelledby="signal-pending">
+        <div className={css.sectionHeader}><span id="signal-pending">待处理</span><span className={pending === undefined ? css.mono : css.alert}>{pending === undefined ? 0 : 1}</span></div>
+        <p className={pending === undefined ? css.muted : css.value}>{pendingLabel(pending)}</p>
+      </section>
 
       <section className={css.section} aria-labelledby="signal-context">
         <div className={css.sectionHeader}><span id="signal-context">上下文</span><span className={css.mono}>{contextPercent === undefined ? '等待数据' : `${contextPercent}%`}</span></div>
@@ -223,38 +222,6 @@ export function LiveSignalPanel({
               <div className={css.legendRow}><dt>输出</dt><dd>{formatTokens(usage.outputTokens)}</dd></div>
               <div className={css.legendRow}><dt>缓存读 / 写</dt><dd>{`${formatTokens(usage.cacheReadTokens)} / ${formatTokens(usage.cacheWriteTokens)}`}</dd></div>
             </dl>
-          )}
-      </section>
-
-      <section className={css.section} aria-labelledby="signal-pending">
-        <div className={css.sectionHeader}><span id="signal-pending">待处理</span><span className={pending === undefined ? css.mono : css.alert}>{pending === undefined ? 0 : 1}</span></div>
-        <p className={pending === undefined ? css.muted : css.value}>{pendingLabel(pending)}</p>
-      </section>
-
-      <section className={css.section} aria-labelledby="signal-inspector">
-        <div className={css.sectionHeader}><span id="signal-inspector">运行轨迹</span><span className={css.mono}>CONVERSATION.VIEW</span></div>
-        {trajectoryFigures === undefined
-          ? <p className={css.muted}>轨迹 view target 尚未装载</p>
-          : (
-            <>
-              <div className={css.figures}>
-                {([
-                  ['事件', trajectoryFigures.events],
-                  ['请求', trajectoryFigures.requests],
-                  ['进行中', trajectoryFigures.running],
-                  ['失败', trajectoryFigures.failed, trajectoryFigures.failed > 0],
-                ] as const).map(([label, value, alert]) => (
-                  <div className={css.figure} key={label} data-alert={alert === true || undefined}>
-                    <span>{label}</span><b>{value}</b>
-                  </div>
-                ))}
-              </div>
-              <div className={css.caption}>
-                {trajectoryFigures.latest === 0
-                  ? '尚无轨迹事件 · 完整三模式轨迹见上方「轨迹」标签'
-                  : `最近事件 ${new Date(trajectoryFigures.latest).toLocaleTimeString()} · 完整三模式轨迹见上方「轨迹」标签`}
-              </div>
-            </>
           )}
       </section>
 

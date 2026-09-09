@@ -95,6 +95,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     /** Session-aware right activity surface; independent from tool details. */
     'shell.activity': { kind: 'single'; scope: 'session'; owner: ActivityOwnerProps }
     /**
+     * Session-scoped selector row inside the Live Signal card, between the
+     * Goal and Pending sections. A Session-scoped selection plugin (Expert,
+     * Style, ...) registers here; the card itself carries no opinion about
+     * what a selector does with its choice.
+     */
+    'shell.activity.selectors': { kind: 'list'; scope: 'session' }
+    /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
      * toast stack or a status pill all belong here, and entries order among
@@ -233,6 +240,9 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(
     () => ctx.slots.inject('shell.activity', () => ctx.slots.register({
       name: 'shell.activity',
+      children: {
+        'shell.activity.selectors': { kind: 'list', scope: 'session' },
+      },
       inject: (sessionId: SessionId): ActivityInjected => ({
         onEditGoal: async (objective) => {
           const ref = goalRefOf(sessionId)

@@ -11,7 +11,6 @@ interface MountOptions {
   pressure?: unknown
   breakdown?: unknown
   usage?: unknown
-  trajectory?: unknown
   pending?: Pick<SessionPendingInteraction, 'key' | 'kind' | 'sessionId'>
   running?: boolean
   verbs?: Partial<Record<'onEditGoal' | 'onPauseGoal' | 'onResumeGoal' | 'onClearGoal', unknown>>
@@ -37,8 +36,7 @@ function mount(options: MountOptions = {}) {
     useSessionPendingInteraction: ((select: (map: Map<string, Pick<SessionPendingInteraction, 'key' | 'kind' | 'sessionId'>>) => unknown) =>
       select(new Map(options.pending === undefined ? [] : [['s-test', options.pending]]))) as never,
     useSessions: ((select: (snapshot: { byId: Record<string, unknown> }) => unknown) => select({ byId: { 's-test': { displayTitle: '测试会话', running: options.running ?? false } } })) as never,
-    useConversation: ((select: (snapshot: { views: Map<string, unknown> }) => unknown) =>
-      select({ views: new Map(options.trajectory === undefined ? [] : [['trajectory', options.trajectory]]) })) as never,
+    renderSlot: (() => null) as never,
     onEditGoal: (options.verbs?.onEditGoal ?? OK) as never,
     onPauseGoal: (options.verbs?.onPauseGoal ?? OK) as never,
     onResumeGoal: (options.verbs?.onResumeGoal ?? OK) as never,
@@ -49,6 +47,8 @@ function mount(options: MountOptions = {}) {
     useTrajectory: undefined as never,
     useInput: undefined as never,
     inputActions: undefined as never,
+    useConversation: undefined as never,
+    SessionProvider: (({ children }: { children: unknown }) => children) as never,
   }
   return render(<LiveSignalPanel {...props} />)
 }
@@ -99,25 +99,6 @@ describe('LiveSignalPanel', () => {
     })
     expect(getByText('缓存命中 90%')).toBeTruthy()
     expect(getByText('9K / 200')).toBeTruthy()
-  })
-
-  it('summarises the canonical trajectory view target', () => {
-    const { getByText } = mount({
-      trajectory: {
-        eventNodes: [{ time: 1_700_000_000_000 }, { time: 1_700_000_001_000 }],
-        requests: [{ status: 'running' }, { status: 'error' }, { status: 'done' }],
-        runningCalls: [{}],
-      },
-    })
-    expect(getByText('事件').nextElementSibling?.textContent).toBe('2')
-    expect(getByText('请求').nextElementSibling?.textContent).toBe('3')
-    expect(getByText('进行中').nextElementSibling?.textContent).toBe('2')
-    expect(getByText('失败').nextElementSibling?.textContent).toBe('1')
-  })
-
-  it('says so when the trajectory view target is not mounted', () => {
-    const { getByText } = mount()
-    expect(getByText('轨迹 view target 尚未装载')).toBeTruthy()
   })
 
   // Creation is absent on purpose: the Goal Remote carries no create verb, so the card points at /goal.

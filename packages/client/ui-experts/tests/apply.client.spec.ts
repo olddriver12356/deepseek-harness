@@ -10,7 +10,13 @@ async function bench() {
   const ctx = new Context()
   await ctx.plugin(SlotRegistry).await()
   const slots = ctx.get('slots') as SlotRegistry
-  slots.register({ name: 'root', children: { 'shell.overlay': { kind: 'list', scope: 'root' } } } as never, () => null)
+  slots.register({
+    name: 'root',
+    children: {
+      'shell.overlay': { kind: 'list', scope: 'root' },
+      'shell.activity.selectors': { kind: 'list', scope: 'session' },
+    },
+  } as never, () => null)
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
   const sessions = { list: { getSnapshot: () => ({ current: undefined }) }, binding: () => undefined }
@@ -33,12 +39,16 @@ async function bench() {
   }
   ctx.provide('remote.styles', styles as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
-  return { ctx, slots, appPanels, sessions, experts, styles }
+  const conversation = { prefixes: { set: vi.fn(), resolve: () => '', forget: vi.fn() } }
+  ctx.provide('conversation', conversation as never)
+  return { ctx, slots, appPanels, sessions, experts, styles, conversation }
 }
 
 describe('Experts plugin apply', () => {
   it('declares the slot, app-panel, session, remote, and locale dependencies', () => {
-    expect(inject).toEqual(['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale'])
+    expect(inject).toEqual([
+      'slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale', 'conversation',
+    ])
   })
 
   it('registers one persistent Experts overlay', async () => {

@@ -49,6 +49,11 @@ export const zh = {
   deleteConfirm: '确定删除 Style「{name}」？此操作会删除它的 ARTIFACT.md。',
   noSession: '请先打开一个会话。',
   sessionNotReady: '当前会话尚未就绪。',
+  selectorTitle: '风格',
+  selectorEmpty: '暂无已批准的风格',
+  selectorPlaceholder: '选择风格',
+  selectorNone: '不叠加风格',
+  selectorSearchPlaceholder: '搜索风格…',
 } satisfies Record<string, string>
 
 /** Styles dictionary key union. */
@@ -103,4 +108,9 @@ export const en = {
   deleteConfirm: 'Delete Style “{name}”? This removes its ARTIFACT.md.',
   noSession: 'Open a Session first.',
   sessionNotReady: 'The current Session is not ready.',
+  selectorTitle: 'Style',
+  selectorEmpty: 'No approved Styles yet',
+  selectorPlaceholder: 'Select a Style',
+  selectorNone: 'No Style',
+  selectorSearchPlaceholder: 'Search Styles…',
 } satisfies Record<StyleLocaleKey, string>

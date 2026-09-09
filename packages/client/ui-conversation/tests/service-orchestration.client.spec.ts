@@ -11,6 +11,7 @@ import type {
 } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { ComposerBlockRegistry } from '../src/client/input/blocks.ts'
+import { ComposerPrefixRegistry } from '../src/client/input/prefixes.ts'
 import { InputHub } from '../src/client/input/hub.ts'
 import { ConversationController } from '../src/client/service.ts'
 import { zh } from '../src/client/locales.ts'
@@ -41,6 +42,7 @@ async function bench(maxConcurrentFileUploads = 2) {
   const fiber = runtime.ctx.plugin(ConversationController, {
     input: hub,
     blocks: new ComposerBlockRegistry(),
+    prefixes: new ComposerPrefixRegistry(),
     maxConcurrentFileUploads,
   })
   await fiber.await()
@@ -454,6 +456,7 @@ describe('ConversationController', () => {
     await bare.plugin(ConversationController, {
       input: new InputHub(bare, makeTranslate(zh, {})),
       blocks: new ComposerBlockRegistry(),
+      prefixes: new ComposerPrefixRegistry(),
       maxConcurrentFileUploads: 2,
     }).await()
     const orphan = bare.get('conversation') as ConversationController

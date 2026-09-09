@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders the Experts application panel, manages Expert Method records through the Host Experts Remote, and dispatches an approved Expert into the current Session. Expert definitions remain Markdown packages under the configured Vault Agent Layer.
+This package renders the Experts application panel, manages Expert Method records through the Host Experts Remote, and dispatches an approved Expert into the current Session. Expert definitions remain Markdown packages under the configured Vault Agent Layer. A second, standing entry point lives in the Live Signal card's `shell.activity.selectors` seat: a multi-select of approved Experts that stays active across ordinary sends until cleared, rather than a one-time dispatch.
 
 ## Table of Contents
 
@@ -35,6 +35,20 @@ The complete Expert instructions, optional style, and task add input tokens to t
 #### KV Cache effect
 
 The message uses the ordinary Session prompt path. Changing the Expert, style, or task changes the prompt suffix and may reduce cache reuse; this package adds no separate cache policy.
+
+### Live Signal Expert selector
+
+#### What the model sees
+
+Every Expert checked in the Live Signal card's selector composes into `ctx.conversation.prefixes` under the `'experts'` source. `@deepseek-ai/dsh-client-ui-conversation`'s composer prepends the joined text ahead of the user's own words on every ordinary send for that Session, until the selection changes or is cleared.
+
+#### Token effect
+
+The composed Expert block adds input tokens to every send while any Expert is checked, not just one dispatch; unchecking every Expert removes the block from the next send.
+
+#### KV Cache effect
+
+Checking or unchecking an Expert changes the prompt prefix on the very next send, which can reduce cache reuse the same way switching Experts through the dispatch dialog does.
 
 ## Known Limitations and Deferred Work
 

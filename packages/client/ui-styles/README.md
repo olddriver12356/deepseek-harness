@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders the Styles application panel, manages Style Method records through the Host Styles Remote, and dispatches an approved Style into the current Session. Style definitions remain Markdown packages under the configured Vault Agent Layer, mirroring `@deepseek-ai/dsh-client-ui-experts`. `@deepseek-ai/dsh-client-ui-experts`'s own dispatch dialog also reads the approved Styles this package's Remote exposes, so a Style authored here can layer as an output-voice overlay on an Expert dispatch.
+This package renders the Styles application panel, manages Style Method records through the Host Styles Remote, and dispatches an approved Style into the current Session. Style definitions remain Markdown packages under the configured Vault Agent Layer, mirroring `@deepseek-ai/dsh-client-ui-experts`. `@deepseek-ai/dsh-client-ui-experts`'s own dispatch dialog also reads the approved Styles this package's Remote exposes, so a Style authored here can layer as an output-voice overlay on an Expert dispatch. A second, standing entry point lives in the Live Signal card's `shell.activity.selectors` seat: a single-select of approved Styles that stays active across ordinary sends until cleared or replaced, rather than a one-time dispatch.
 
 ## Table of Contents
 
@@ -35,6 +35,20 @@ The complete Style instructions and task add input tokens to that Session submis
 #### KV Cache effect
 
 The message uses the ordinary Session prompt path. Changing the Style or task changes the prompt suffix and may reduce cache reuse; this package adds no separate cache policy.
+
+### Live Signal Style selector
+
+#### What the model sees
+
+The Style checked in the Live Signal card's selector composes into `ctx.conversation.prefixes` under the `'styles'` source. `@deepseek-ai/dsh-client-ui-conversation`'s composer prepends this text ahead of the user's own words (and after any Live Signal Expert selection) on every ordinary send for that Session, until the selection changes or is cleared. Only one Style can be active this way at a time.
+
+#### Token effect
+
+The composed Style block adds input tokens to every send while a Style is selected, not just one dispatch; clearing the selection removes the block from the next send.
+
+#### KV Cache effect
+
+Selecting, switching, or clearing the Style changes the prompt prefix on the very next send, which can reduce cache reuse the same way switching Styles through the dispatch dialog does.
 
 ## Known Limitations and Deferred Work
 
