@@ -26,7 +26,9 @@ The vault side bridge it delegates to is not source agnostic, which this design'
 
 ### New Remote method: `KnowledgeService.saveText`
 
-Add `saveText(request: { title: string; content: string })` to `KnowledgeService`, alongside the existing `save`. It generates a stable id by hashing the caller supplied identity (for a News article, the article URL) the same way `imageCacheKey` hashes image URLs, sanitizes the title using the same control character and path character stripping `notes.ts` already applies to note filenames (`notes.ts:30`), then calls `store.save(id, sanitizedTitle, content)` unchanged.
+Add `saveText(request: { sourceUrl: string; title: string; content: string })` to `KnowledgeService`, alongside the existing `save`. It generates a stable id by hashing `sourceUrl` the same way `imageCacheKey` hashes image URLs, then calls `store.save(id, title, content, 'news')`. A stable id is what makes repeat captures of the same article deduplicate, since the bridge matches an existing artifact on the source identity plus the content digest.
+
+Title sanitization stays in the bridge rather than being repeated here. `DshKnowledge.ps1` already strips control and path characters and truncates to 60 characters (lines 285 to 286), and a second implementation in TypeScript would be two rules free to drift apart.
 
 This is a new method rather than an overload of `save`, because `save`'s contract is specifically about deriving content from a live Session; blending the two would blur that guarantee for its existing caller.
 
@@ -64,7 +66,7 @@ Any background or scheduled sweep of the News folder. Any change to the tool res
 
 ## Testing
 
-A focused test for `saveText` mirroring `store.spec` coverage of `save`, confirming a generated id is stable for the same URL and that title sanitization strips the same character classes `notes.ts` already strips. A focused test on the reworded distillation prompt confirming it still refuses tool execution and still completes for a plain text evidence string that is not JSONL shaped. A UI test on `NewsPanel.tsx` confirming the new button calls `saveText` with the expected title and content shape.
+The bridge's own PowerShell self-check (`Agents/Tools/Test-DshKnowledge.ps1`) covers a News kind round trip: correct topics, evidence at `Evidence/article.txt`, lossless bytes, and a rejected unknown kind. Its existing conversation assertions stay untouched, which is what proves the default path is unchanged. A focused store test covers a News save against the real bridge and confirms a repeat save returns the same artifact id. A focused test on the reworded distillation prompt confirms it still refuses tool execution and still completes for a plain text evidence string that is not JSONL shaped. UI tests on `NewsPanel.tsx` cover a successful capture, a failed capture, and the absence of the button when no capture capability is composed.
 
 ## Review checklist
 
@@ -74,8 +76,8 @@ Does the untrusted evidence guard still apply to the new source. Yes, unchanged,
 
 Is any interface duplicated rather than extended without cause. No, `saveText` is added because `save`'s contract is intentionally tied to a live Session; the two are different intents with the same underlying store call.
 
-Is this reversible. Yes, one new method, one new UI button, and a two line prompt wording change; none of them touch persisted data shape.
+Is this reversible. Yes, one new method, one new UI button, a prompt wording change, and one additive optional bridge field; none of them change the shape of already persisted artifacts, and the bridge reader keeps a fallback for artifacts written before the change.
 
 ## Next step
 
-Hand this spec to the writing-plans skill to produce an ordered, file by file implementation plan.
+Execute `docs/superpowers/plans/2026-09-08-news-knowledge-intake.md`.
