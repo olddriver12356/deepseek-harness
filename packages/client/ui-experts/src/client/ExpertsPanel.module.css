@@ -39,9 +39,10 @@
 }
 
 .panel::before {
-  background-image: url('./assets/common-room-collage.png');
-  background-position: center;
-  background-size: cover;
+  background-image: radial-gradient(ellipse at 80% 10%, rgb(151 127 195 / 18%), transparent 55%), radial-gradient(ellipse at 10% 85%, rgb(91 162 151 / 16%), transparent 50%), url('./assets/common-room-collage.png');
+  background-position: center, center, right top;
+  background-size: cover, cover, auto 100%;
+  background-repeat: no-repeat;
   opacity: .9;
 }
 
@@ -137,7 +138,7 @@
 
 .panel[hidden] { display: none; }
 .panel :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
-.collectionHero { padding: 20px; border-radius: 12px; background: rgb(16 20 22 / 90%); }
+.collectionHero { padding: 20px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 94%) 20%, rgb(30 27 41 / 70%) 60%, rgb(16 20 22 / 12%)); }
 .collectionHero h1 span { text-shadow: none; }
 .giantAdd { border: 1px solid var(--line); box-shadow: 0 4px 18px rgb(0 0 0 / 18%); transform: none; }
 .giantAdd:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgb(0 0 0 / 24%); }

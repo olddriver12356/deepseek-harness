@@ -2,8 +2,8 @@
   --skill-ink: #101416;
   --skill-surface: #191f22;
   --skill-paper: #e9dfce;
-  --skill-accent: #58b9ac;
-  --skill-brass: #d3ad6b;
+  --skill-accent: #87c9b4;
+  --skill-brass: #d9adbd;
   --skill-error: #f3a99a;
   --skill-muted: #a4b3b0;
   --skill-line: rgb(190 213 207 / 19%);
@@ -14,7 +14,7 @@
   overflow: hidden;
   container-type: inline-size;
   color: var(--skill-paper);
-  background: var(--skill-ink) url('./assets/workbench-collage.png') center / cover;
+  background: radial-gradient(ellipse at 12% 0%, rgb(115 143 197 / 23%), transparent 55%), radial-gradient(ellipse at 90% 100%, rgb(171 108 139 / 20%), transparent 55%), var(--skill-ink) url('./assets/workbench-collage.png') center / cover;
   font: 14px/1.5 var(--dsw-font-family, sans-serif);
 }
 .panel[hidden] { display: none; }
@@ -31,7 +31,9 @@
 .header { display: flex; align-items: center; gap: 16px; padding: 24px 28px; min-height: 118px; background: linear-gradient(90deg, var(--skill-ink) 30%, transparent); }
 .header > div { flex: 1; }
 .header small { letter-spacing: .13em; color: var(--skill-accent); }
-.header h1 { margin: 0; font-size: 32px; letter-spacing: .06em; line-height: 1.25; }
+.header h1 { margin: 0; font-size: 24px; letter-spacing: .02em; line-height: 1.25; }
+.titleLockup { display: flex; align-items: center; gap: 12px; }
+.titleMark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid rgb(233 223 206 / 30%); border-radius: 12px; color: var(--skill-ink); background: linear-gradient(135deg, #87c9b4, #9baed8 65%, #d9adbd); font-weight: 800; }
 .header > label { max-width: 240px; font-size: 11px; }
 .panel .primary { color: var(--skill-ink); background: var(--skill-accent); border-color: var(--skill-accent); font-weight: 700; }
 .workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 0; flex: 1; }
