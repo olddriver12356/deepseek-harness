@@ -913,7 +913,7 @@ Expected: build completes. The runtime loads `lib/`, not `src/`, so a passing te
 
 Run: `powershell.exe -NoProfile -Command "Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, StartTime, Path | Format-Table -AutoSize; Get-NetTCPConnection -LocalPort 3910 -State Listen -ErrorAction SilentlyContinue | Select-Object OwningProcess"`
 
-Expected: identifies the process listening on 3910 and when it started. Today's log records PID 8964 started at 12:05:04, which predates every change in this plan; any process older than the Step 1 build is stale.
+Expected: identifies the process listening on 3910 and when it started. Compare that start time against the Step 1 build; any process older than the build is serving stale bytes. Do not trust a PID recorded in the project log, since other agents restart this Host during the day; read the live process.
 
 - [ ] **Step 3: Ask the owner before stopping the running Host**
 
