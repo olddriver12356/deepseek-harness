@@ -69,8 +69,8 @@ export class KnowledgeService extends TypertRemoteService {
    */
   @Remote('saveText')
   async saveText(request: KnowledgeSaveTextRequest): Promise<KnowledgeRecord> {
-    if (request.sourceUrl === '' || request.content === '') throw new Error('knowledge: source URL and content are required')
-    if (request.publisher === '' || request.retrievedAt === '') throw new Error('knowledge: publisher and retrievedAt are required')
+    if (!request.sourceUrl || !request.content) throw new Error('knowledge: source URL and content are required')
+    if (!request.publisher || !request.retrievedAt) throw new Error('knowledge: publisher and retrievedAt are required')
     const identity = `news-${createHash('sha256').update(request.sourceUrl, 'utf8').digest('hex')}`
     return this.store.save(identity, request.title, request.content, {
       kind: 'news', canonicalUrl: request.sourceUrl, publisher: request.publisher, retrievedAt: request.retrievedAt,
