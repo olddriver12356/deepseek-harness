@@ -5,7 +5,7 @@
   height: 100%;
   overflow: hidden;
   color: var(--dsw-specific-knowledge-text);
-  background: var(--dsw-specific-knowledge-canvas);
+  background: #101416;
   font-family: var(--dsw-font-family);
   isolation: isolate;
 }
@@ -29,11 +29,10 @@
 }
 
 .panel::before {
-  background-image: linear-gradient(var(--dsw-specific-knowledge-collage-fade-top), var(--dsw-specific-knowledge-collage-fade-bottom)), url('./assets/punk-collage-dark.png');
-  background-position: center;
+  background-image: linear-gradient(rgb(16 20 22 / 8%), rgb(16 20 22 / 18%)), url('./assets/field-notes.png');
+  background-position: right top;
   background-size: cover;
-  filter: saturate(0.92) contrast(1.06);
-  transform: scale(1.012);
+  background-repeat: no-repeat;
 }
 
 .panel::after {
@@ -117,7 +116,7 @@
   margin: 0 auto;
   padding: clamp(28px, 4cqw, 60px);
   background: color-mix(in srgb, var(--dsw-specific-knowledge-canvas) 78%, transparent);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
 }
 
 .hero {

@@ -3,7 +3,7 @@
   --skill-surface: #191f22;
   --skill-paper: #e9dfce;
   --skill-accent: #87c9b4;
-  --skill-brass: #d9adbd;
+  --skill-brass: #d7b77f;
   --skill-error: #f3a99a;
   --skill-muted: #a4b3b0;
   --skill-line: rgb(190 213 207 / 19%);
@@ -11,10 +11,12 @@
   flex-direction: column;
   height: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow: auto;
+  scrollbar-color: var(--skill-accent) var(--skill-ink);
+  scrollbar-gutter: stable;
   container-type: inline-size;
   color: var(--skill-paper);
-  background: radial-gradient(ellipse at 12% 0%, rgb(115 143 197 / 23%), transparent 55%), radial-gradient(ellipse at 90% 100%, rgb(171 108 139 / 20%), transparent 55%), var(--skill-ink) url('./assets/workbench-collage.png') center / cover;
+  background: radial-gradient(ellipse at 12% 0%, rgb(66 150 134 / 16%), transparent 55%), radial-gradient(ellipse at 90% 100%, rgb(184 145 72 / 14%), transparent 55%), var(--skill-ink) url('./assets/workbench-collage.png') right top / cover no-repeat;
   font: 14px/1.5 var(--dsw-font-family, sans-serif);
 }
 .panel[hidden] { display: none; }
@@ -28,16 +30,16 @@
 .panel textarea { resize: vertical; line-height: 1.7; }
 .panel label { display: grid; gap: 7px; color: var(--skill-muted); }
 .panel fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
-.header { display: flex; align-items: center; gap: 16px; padding: 12px 28px; min-height: 72px; background: linear-gradient(90deg, var(--skill-ink) 30%, transparent); }
+.header { flex: 0 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px 28px; min-height: 72px; background: linear-gradient(90deg, var(--skill-ink) 30%, transparent); }
 .header > div { flex: 1; }
 .header small { letter-spacing: .13em; color: var(--skill-accent); }
 .header h1 { margin: 0; font-size: 24px; letter-spacing: .02em; line-height: 1.25; }
 .titleLockup { display: flex; align-items: center; gap: 12px; }
-.titleMark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid rgb(233 223 206 / 30%); border-radius: 12px; color: var(--skill-ink); background: linear-gradient(135deg, #87c9b4, #9baed8 65%, #d9adbd); font-weight: 800; }
+.titleMark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid rgb(233 223 206 / 30%); border-radius: 12px; color: var(--skill-ink); background: linear-gradient(135deg, #79c4b0, #bacb9c 65%, #d7b77f); font-weight: 800; }
 .header > label { max-width: 240px; font-size: 11px; }
 .panel .primary { color: var(--skill-ink); background: var(--skill-accent); border-color: var(--skill-accent); font-weight: 700; }
-.workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 0; flex: 1; }
-.index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 96%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
+.workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 480px; flex: 1 0 75vh; }
+.index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 90%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .index { display: flex; flex-direction: column; padding: 14px; }
 .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 11px; }
 .filters select { padding: 7px; }
@@ -64,7 +66,8 @@
 .editor > header > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .editor > header small { display: block; color: var(--skill-muted); font-size: 10px; }
 .editor > header > span { font-size: 10px; color: var(--skill-brass); }
-.panel .document { overflow: auto; flex: 1; padding: 24px; }
+.panel .document { overflow: auto; min-height: 0; flex: 1; padding: 24px; }
+.list, .files, .document { scrollbar-width: auto; scrollbar-color: var(--skill-accent) var(--skill-ink); scrollbar-gutter: stable; }
 .document > label, .document > div { margin-bottom: 18px; }
 .fieldGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .source { height: 100%; min-height: 360px; grid-template-rows: auto 1fr; }
@@ -100,11 +103,11 @@
   .header > label { max-width: none; flex: 1; }
 }
 
-.hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex: 0 0 auto; margin: 0 22px 18px; padding: 22px 28px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 94%) 15%, rgb(28 45 42 / 68%) 60%, rgb(16 20 22 / 10%)); }
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex: 0 0 auto; margin: 0 22px 18px; padding: 22px 28px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 86%) 15%, rgb(28 45 42 / 40%) 60%, transparent); }
 .heroKicker { margin: 0 0 10px; color: var(--skill-accent); font-weight: 700; letter-spacing: .15em; }
 .hero h2 { margin: 0; font-size: clamp(28px, 3.5cqw, 48px); line-height: 1.15; letter-spacing: .01em; }
-.hero h2 span { color: #b7d3bb; background: linear-gradient(100deg, #9ecfbd, #dfc69f 52%, #d5a4b9); background-clip: text; -webkit-text-fill-color: transparent; }
+.hero h2 span { color: #b7d3bb; background: linear-gradient(100deg, #83cbb4, #c7d2a2 52%, #dfb976); background-clip: text; -webkit-text-fill-color: transparent; }
 .heroBody { max-width: 580px; margin: 14px 0 0; color: var(--skill-paper); line-height: 1.7; }
-.panel .heroCreate { display: grid; place-items: center; gap: 6px; flex: 0 0 130px; min-height: 112px; color: var(--skill-ink); background: radial-gradient(ellipse at top left, #a5d4bd, transparent 75%), linear-gradient(125deg, #d8c39e, #d6a7bb); border-color: rgb(233 223 206 / 40%); font-weight: 800; }
+.panel .heroCreate { display: grid; place-items: center; gap: 6px; flex: 0 0 130px; min-height: 112px; color: var(--skill-ink); background: radial-gradient(ellipse at top left, #8acdb6, transparent 75%), linear-gradient(125deg, #b8cfa0, #dfb976); border-color: rgb(233 223 206 / 40%); font-weight: 800; }
 .heroCreate > span { font-size: 36px; line-height: 1; }
 @container (max-width: 620px) { .hero { padding: 18px; margin: 0 12px 12px; gap: 12px; } .hero h2 { font-size: 24px; } .heroBody { display: none; } .panel .heroCreate { flex-basis: 92px; min-height: 96px; } }

@@ -1,7 +1,7 @@
 .panel {
   --ink: #101416;
   --paper: #e9dfce;
-  --acid: #a6cbb9;
+  --acid: #d1a7b5;
   --blue: #9eb9c7;
   --pink: #d0a0ac;
   --cyan: #dec8a4;
@@ -39,9 +39,9 @@
 }
 
 .panel::before {
-  background-image: radial-gradient(ellipse at 85% 12%, rgb(216 168 120 / 30%), transparent 60%), radial-gradient(ellipse at 18% 75%, rgb(80 176 153 / 30%), transparent 65%), url('./assets/common-room-collage.png');
+  background-image: radial-gradient(ellipse at 85% 12%, rgb(206 138 160 / 22%), transparent 60%), radial-gradient(ellipse at 18% 75%, rgb(109 148 187 / 22%), transparent 65%), url('./assets/common-room-collage.png');
   background-position: center, center, right top;
-  background-size: cover, cover, auto 100%;
+  background-size: cover, cover, cover;
   background-repeat: no-repeat;
   opacity: .9;
 }
@@ -139,11 +139,11 @@
 .panel[hidden] { display: none; }
 .panel :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
 .collectionHero { padding: 20px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 94%) 20%, rgb(30 27 41 / 70%) 60%, rgb(16 20 22 / 12%)); }
-.collectionHero h1 span { text-shadow: none; background: linear-gradient(100deg, #a3d1be, #e0c29e 52%, #d7a3b8); background-clip: text; -webkit-text-fill-color: transparent; }
+.collectionHero h1 span { text-shadow: none; background: linear-gradient(100deg, #a7c1db, #d4b5cd 52%, #e4aea8); background-clip: text; -webkit-text-fill-color: transparent; }
 .giantAdd { border: 1px solid var(--line); box-shadow: 0 4px 18px rgb(0 0 0 / 18%); transform: none; }
 .giantAdd:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgb(0 0 0 / 24%); }
 .searchCut { border: 1px solid var(--line); box-shadow: none; background: var(--ink); }
-.recordCard, .recordCard:nth-child(3n + 2), .recordCard:nth-child(3n + 3) { color: var(--paper); background: rgb(25 31 34 / 97%); border: 1px solid var(--line); box-shadow: 0 5px 18px rgb(0 0 0 / 15%); transform: none; }
+.recordCard, .recordCard:nth-child(3n + 2), .recordCard:nth-child(3n + 3) { color: var(--paper); background: rgb(25 31 34 / 92%); border: 1px solid var(--line); box-shadow: 0 5px 18px rgb(0 0 0 / 15%); transform: none; }
 .recordAvatar, .recordCard:nth-child(3n + 3) .recordAvatar { color: var(--ink); background: var(--acid); border: 1px solid var(--line); box-shadow: none; transform: none; }
 .recordStatus, .recordActions button { border-width: 1px; }
 .titleMark, .primaryCut, .dispatchBadge { box-shadow: none; }
@@ -160,7 +160,7 @@
   .dialog { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; margin: 0; position: fixed; right: 0; bottom: 0; left: 0; top: auto; border-radius: 14px 14px 0 0; }
 }
 
-.giantAdd, .titleMark, .primaryCut { background: radial-gradient(ellipse at top left, #a4d1ba, transparent 72%), linear-gradient(125deg, #ddc49f, #d1a1b6); }
-.recordAvatar { background: linear-gradient(135deg, #a4cdbc, #d8c19f); }
+.giantAdd, .titleMark, .primaryCut { background: radial-gradient(ellipse at top left, #a8c3d9, transparent 72%), linear-gradient(125deg, #d4b5cc, #e0ada8); }
+.recordAvatar { background: linear-gradient(135deg, #adc6dc, #d3b5cc); }
 .recordCard:nth-child(3n + 2) .recordAvatar { background: linear-gradient(135deg, #cbb4cb, #dfb7a0); }
-.recordCard:nth-child(3n + 3) .recordAvatar { background: linear-gradient(135deg, #a2becb, #b5c9a6); }
+.recordCard:nth-child(3n + 3) .recordAvatar { background: linear-gradient(135deg, #a2becb, #c5b5d4); }

@@ -15,10 +15,7 @@
   overflow: hidden;
   isolation: isolate;
   color: #f5efdf;
-  background:
-    radial-gradient(circle at 88% 5%, rgb(50 228 210 / 12%), transparent 24%),
-    linear-gradient(145deg, rgb(255 43 139 / 12%), transparent 28%),
-    #080d11;
+  background: #101416;
   font-family: var(--dsw-font-family, 'Segoe UI', 'PingFang SC', sans-serif);
 }
 
@@ -41,7 +38,10 @@
 }
 
 .panel::before {
-  background-image: repeating-linear-gradient(0deg, transparent 0 5px, rgb(50 228 210 / 3.5%) 5px 6px), radial-gradient(circle at 70% 35%, rgb(210 255 0 / 5.5%), transparent 30%);
+  background-image: linear-gradient(rgb(16 20 22 / 8%), rgb(16 20 22 / 18%)), url('./assets/press-room.png');
+  background-position: right top;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .panel::after { display: none; }
