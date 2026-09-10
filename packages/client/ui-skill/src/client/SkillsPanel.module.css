@@ -38,7 +38,7 @@
 .titleMark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid rgb(233 223 206 / 30%); border-radius: 12px; color: var(--skill-ink); background: linear-gradient(135deg, #79c4b0, #bacb9c 65%, #d7b77f); font-weight: 800; }
 .header > label { max-width: 240px; font-size: 11px; }
 .panel .primary { color: var(--skill-ink); background: var(--skill-accent); border-color: var(--skill-accent); font-weight: 700; }
-.workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 480px; flex: 1 0 75vh; }
+.workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 360px; height: calc(100dvh - 32px); flex: 0 0 auto; }
 .index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 90%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .index { display: flex; flex-direction: column; padding: 14px; }
 .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 11px; }
@@ -96,9 +96,9 @@
 }
 @container (max-width: 620px) {
   .workbench { display: flex; flex-direction: column; overflow: auto; }
-  .index { max-height: 300px; flex: 0 0 auto; }
-  .files { max-height: 160px; flex: 0 0 auto; }
-  .editor { min-height: 600px; flex: 0 0 auto; }
+  .index { max-height: none; min-height: 320px; flex: 0 0 clamp(320px, 45dvh, 420px); }
+  .files { max-height: 18dvh; flex: 0 0 auto; }
+  .editor { min-height: 0; flex: 1 0 45dvh; }
   .fieldGrid { grid-template-columns: 1fr; }
   .header > label { max-width: none; flex: 1; }
 }
@@ -111,3 +111,5 @@
 .panel .heroCreate { display: grid; place-items: center; gap: 6px; flex: 0 0 130px; min-height: 112px; color: var(--skill-ink); background: radial-gradient(ellipse at top left, #8acdb6, transparent 75%), linear-gradient(125deg, #b8cfa0, #dfb976); border-color: rgb(233 223 206 / 40%); font-weight: 800; }
 .heroCreate > span { font-size: 36px; line-height: 1; }
 @container (max-width: 620px) { .hero { padding: 18px; margin: 0 12px 12px; gap: 12px; } .hero h2 { font-size: 24px; } .heroBody { display: none; } .panel .heroCreate { flex-basis: 92px; min-height: 96px; } }
+
+.panel .instructions, .panel .source textarea { min-height: max(320px, calc(100dvh - 150px)); }
