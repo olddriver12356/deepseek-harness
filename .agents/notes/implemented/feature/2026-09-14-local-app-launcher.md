@@ -12,6 +12,8 @@ The Apps page registers explicitly selected project directories, reads package s
 
 The page uses the approved torn-paper background, warm `#EDE9DF` card faces, repeating three-color backplates, outlined controls, and a 14px text minimum. Apps precedes News; navigation always places News last.
 
+The native page reproduces the approved mockup's split print-offset title, stamped collection labels, counted filters, layered SVG initials, status dots, and irregular outlined actions. Filters preserve each record's color assignment, and the running filter includes externally confirmed applications. Container queries adapt the grid when the Files sidebar reduces available width. The optional Cyberdeck scanline overlay and button clipping are suppressed only while this page is visible so they do not distort the approved artwork.
+
 ## Alternatives considered
 
 **Automatic directory discovery** was rejected because registration should remain explicit and avoid exposing unrelated projects. **Editing dependencies** was rejected because this feature launches existing scripts rather than maintaining project installations. **A separate process manager** was rejected in favor of the existing managed subprocess service.
