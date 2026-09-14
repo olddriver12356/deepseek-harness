@@ -23,7 +23,7 @@ it('persists explicit registrations and removes only the registry record', async
     expect((await service.list()).apps[0]?.id).toBe(saved.id)
     await expect(service.save({ registration })).rejects.toThrow('already registered')
     expect((ctx.settings as MemorySettings).persisted.length).toBe(1)
-    await service.remove({ id: saved.id })
+    await service.unregister({ id: saved.id })
     expect((await service.list()).apps).toEqual([])
     expect(await readFile(join(directory, 'package.json'), 'utf8')).toBe(manifest)
   } finally {
