@@ -1,4 +1,7 @@
 export const zh = {
+  collection: 'YOUR LOCAL COLLECTION / 07', collectionSummary: 'REGISTERED APPS · LOCAL MACHINE',
+  headingLead: '选择工具，', headingAccent: '立即开工', runningFilter: '运行中',
+  scriptLabel: 'SCRIPT', urlLabel: 'URL', portLabel: 'PORT', registrationHint: '选择 Workspace · 读取 package.json',
   chooseManager: '检测到多个包管理器，请选择',
   title: '本地应用', heading: '选择工具，立即开工', intro: '喜欢的工具，都在这里。选一个应用，在浏览器里继续你的工作。',
   register: '注册应用', empty: '还没有应用，请选择项目目录开始注册。', pick: '选择项目目录',
@@ -11,6 +14,9 @@ export const zh = {
 } as const
 export type AppsKey = keyof typeof zh
 export const en: Record<AppsKey, string> = {
+  collection: 'YOUR LOCAL COLLECTION / 07', collectionSummary: 'REGISTERED APPS · LOCAL MACHINE',
+  headingLead: 'Your tools,', headingAccent: 'ready to go', runningFilter: 'Running',
+  scriptLabel: 'SCRIPT', urlLabel: 'URL', portLabel: 'PORT', registrationHint: 'Choose Workspace · Read package.json',
   chooseManager: 'Multiple package managers detected; choose one',
   title: 'Local apps', heading: 'Your tools, ready to go', intro: 'Choose a registered local app and continue in your browser.',
   register: 'Register app', empty: 'No apps yet. Choose a project directory to register one.', pick: 'Choose project directory',
