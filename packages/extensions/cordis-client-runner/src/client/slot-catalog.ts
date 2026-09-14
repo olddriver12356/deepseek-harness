@@ -1952,6 +1952,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'root\' (client-ui-shell), so it exists while that entry is mounted',
     occupants: [
       'client-ui-app-rail ProofPanel id \'ui-app-rail-proof-panel\'',
+      'client-ui-apps AppsPanel id \'apps-panel\'',
       'client-ui-experts ExpertsPanel id \'experts-panel\'',
       'client-ui-knowledge KnowledgePanel id \'knowledge-panel\'',
       'client-ui-monitor MonitorPanel id \'monitor-panel\'',

@@ -27,15 +27,21 @@ const ENTRIES: readonly RailEntry[] = [
   { id: 'experts', number: '04', label: 'experts', caption: 'expertsCaption' },
   { id: 'styles', number: '05', label: 'styles', caption: 'stylesCaption' },
   { id: 'monitor', number: '06', label: 'monitor', caption: 'monitorCaption' },
-  { id: 'news', number: '07', label: 'news', caption: 'newsCaption' },
+  { id: 'apps', number: '07', label: 'apps', caption: 'appsCaption' },
+  { id: 'news', number: '08', label: 'news', caption: 'newsCaption' },
 ]
 
 /** Rail occupant. `appPanels` is passed in so the component stays testable without cordis. */
+/** Keep News last when future pages are added. */
+export function newsLast<T extends { id: string }>(entries: readonly T[]): T[] {
+  return [...entries.filter(entry => entry.id !== 'news'), ...entries.filter(entry => entry.id === 'news')]
+}
+
 export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanels: IAppPanels; t?: (key: RailKey) => string }) {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   return (
     <nav className={css.rail} role="tablist" aria-label={t('navigation')}>
-      {ENTRIES.map(entry => (
+      {newsLast(ENTRIES).map((entry, index) => (
         <button
           key={entry.id}
           type="button"
@@ -45,7 +51,7 @@ export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanel
           className={css.entry}
           onClick={() => { appPanels.setActive(entry.id) }}
         >
-          <span className={css.number}>{entry.number}</span>
+          <span className={css.number}>{String(index + 1).padStart(2, '0')}</span>
           <strong>{t(entry.label)}</strong>
           <small>{t(entry.caption)}</small>
         </button>
