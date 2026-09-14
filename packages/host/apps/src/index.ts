@@ -68,8 +68,8 @@ export class AppsService extends TypertRemoteService {
       return saved
     })
   }
-  @Remote('remove')
-  async remove(request: AppIdRequest): Promise<void> {
+  @Remote('unregister')
+  async unregister(request: AppIdRequest): Promise<void> {
     return this.write(async () => {
       this.find(request.id)
       if (this.runtime.busy(request.id)) throw new Error('Stop the application before removing it')

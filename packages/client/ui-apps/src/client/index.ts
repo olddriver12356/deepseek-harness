@@ -18,7 +18,7 @@ export function apply(ctx: Context): void {
     list: async () => value(await ctx.remote.apps.list()),
     inspect: async directory => value(await ctx.remote.apps.inspect({ directory })),
     save: async registration => value(await ctx.remote.apps.save({ registration })),
-    remove: async id => value(await ctx.remote.apps.remove({ id })),
+    remove: async id => value(await ctx.remote.apps.unregister({ id })),
     start: async (id, script) => value(await ctx.remote.apps.start({ id, ...(script ? { script } : {}) })),
     stop: async id => value(await ctx.remote.apps.stop({ id })),
     logs: async id => value(await ctx.remote.apps.logs({ id })),
