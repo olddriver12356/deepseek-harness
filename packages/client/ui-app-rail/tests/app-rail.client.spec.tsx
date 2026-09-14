@@ -6,16 +6,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
-import { AppRail } from '@deepseek-ai/dsh-client-ui-app-rail/src/client/AppRail.tsx'
+import { AppRail, newsLast } from '@deepseek-ai/dsh-client-ui-app-rail/src/client/AppRail.tsx'
 import { ProofPanel } from '@deepseek-ai/dsh-client-ui-app-rail/src/client/ProofPanel.tsx'
 
 afterEach(cleanup)
 
 describe('AppRail', () => {
-  it('renders six entries in order with their two-digit numbers', () => {
+  it('renders apps before news with their two-digit numbers', () => {
     render(<AppRail appPanels={new AppPanelsController()} />)
     const labels = screen.getAllByRole('tab').map(node => node.getAttribute('data-panel'))
-    expect(labels).toEqual(['agent', 'knowledge', 'skills', 'experts', 'styles', 'monitor', 'news'])
+    expect(labels).toEqual(['agent', 'knowledge', 'skills', 'experts', 'styles', 'monitor', 'apps', 'news'])
     expect(screen.getByText('01')).toBeTruthy()
     expect(screen.getByText('06')).toBeTruthy()
   })
@@ -32,6 +32,9 @@ describe('AppRail', () => {
     fireEvent.click(screen.getByRole('tab', { name: /新闻/ }))
     expect(appPanels.getSnapshot()).toBe('news')
     expect(screen.getByRole('tab', { selected: true }).getAttribute('data-panel')).toBe('news')
+  })
+  it('keeps news last when a future page is appended', () => {
+    expect(newsLast([{ id: 'apps' }, { id: 'news' }, { id: 'future' }]).map(x => x.id)).toEqual(['apps', 'future', 'news'])
   })
 })
 
