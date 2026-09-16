@@ -79,7 +79,7 @@
 }
 
 .activityCol {
-  padding-bottom: 52px;
+  padding-bottom: 128px;
   position: absolute;
   top: 0;
   right: 0;
@@ -101,7 +101,8 @@
 .activityToggle {
   position: absolute;
   right: calc(var(--dsh-sidebar-width, 0px) + 12px);
-  bottom: 12px;
+  /* Keep the control above the theme's bottom-right sound/settings buttons. */
+  bottom: 88px;
   z-index: 16;
   display: inline-flex;
   align-items: center;
