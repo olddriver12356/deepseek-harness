@@ -14,6 +14,7 @@ export interface KnowledgeArtifact {
   readonly title: string
   readonly summary: string
   readonly updatedAt: string
+  readonly topics?: readonly string[]
 }
 
 export interface KnowledgeSnapshot {

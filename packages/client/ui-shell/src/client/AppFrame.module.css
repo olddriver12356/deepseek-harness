@@ -99,15 +99,16 @@
 
 .activityToggle {
   position: absolute;
-  right: calc(var(--dsh-sidebar-width, 0px) + 12px);
-  /* Keep the control above the theme's bottom-right sound/settings buttons. */
-  bottom: 88px;
+  right: calc(var(--dsh-sidebar-width, 0px) + 10px);
+  top: 48px;
   z-index: 16;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 4px 10px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  box-sizing: border-box;
   border: 1px solid var(--dsw-alias-border-l2);
   border-radius: 8px;
   background: var(--dsw-specific-agent-canvas);

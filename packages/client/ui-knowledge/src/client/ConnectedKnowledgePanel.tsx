@@ -96,6 +96,7 @@ export function ConnectedKnowledgePanel({ appPanels, api, t }: {
     artifacts: records.map(record => ({
       id: record.id, title: record.title, updatedAt: record.updatedAt,
       summary: `${t(`state_${record.workflow}`)} · ${record.topics.join(', ')}`,
+      topics: record.topics,
       layerId: record.layer === '1 Intake' ? 'intake' : record.layer === '2 AI Processing' ? 'ai-processing' : 'knowledge',
       state: record.status === 'rejected' ? 'REJECTED'
         : record.layer === '3 Knowledge' ? 'ACTIVE' : record.layer === '2 AI Processing' ? 'PROCESSING' : 'PENDING',

@@ -236,9 +236,15 @@ export function AppFrame({
         <ActivityColumn width={activityWidth}><SessionProvider>{renderSlot('shell.activity', {})}</SessionProvider></ActivityColumn>
         {activityAvailable && <button
           type="button" className={css.activityToggle}
-          aria-label={t('activity')} aria-expanded={panels.activityOpen} aria-controls="live-signal-panel"
+          aria-label={t('activity')} title={t('activity')} aria-expanded={panels.activityOpen} aria-controls="live-signal-panel"
           onClick={() => { actions.toggleActivity() }}
-        ><span aria-hidden="true">{panels.activityOpen ? '›' : '‹'}</span>{t('activity')}</button>}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M15 4v16" />
+            <path d={panels.activityOpen ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>}
       </>
       <div className={css.overlayLayer} data-shell-overlay>
         {renderSlot('shell.overlay', {})}
