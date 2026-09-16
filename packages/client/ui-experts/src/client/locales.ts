@@ -43,7 +43,7 @@ export const zh = {
   sending: '发送中…',
   send: '送进 Agent →',
   regionAria: 'Experts / 专家调用阵容',
-  title: 'Experts',
+  title: '专家',
   subtitle: '专家调用阵容',
   live: 'VAULT / 实时',
   heroKicker: '调用合适的大脑',
