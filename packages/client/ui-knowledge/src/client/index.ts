@@ -11,6 +11,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { CaptureButton, ConnectedKnowledgePanel } from './ConnectedKnowledgePanel.tsx'
 import { en, zh, type KnowledgeLocaleKey } from './locales.ts'
+import { openDistillationDraft } from './distillation.ts'
 
 export type {
   KnowledgeArtifact, KnowledgeArtifactState, KnowledgeLayer, KnowledgeLayerId, KnowledgeSnapshot,
@@ -19,7 +20,7 @@ export { KNOWLEDGE_FIXTURE } from './fixture.ts'
 export { KnowledgePanel } from './KnowledgePanel.tsx'
 
 /** Required services: slot composition and active application-panel state. */
-export const inject = ['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale']
+export const inject = ['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces']
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap { knowledge: KnowledgeLocaleKey }
@@ -57,8 +58,11 @@ export function apply(ctx: ClientContext): void {
   ctx.slots.inject('shell.activity.capture', () => ctx.slots.register(
     { name: 'shell.activity.capture', locale: 'knowledge', inject: (sessionId: SessionId) => ({
       t,
-      save: async () => { value(await ctx.remote.knowledge.save({ sessionId, title: sessionId })) },
-      open: () => { ctx.appPanels.setActive('knowledge') },
+      createDraft: async () => {
+        await openDistillationDraft(ctx, sessionId, t('distillationPrompt', {
+          sessionId: JSON.stringify(sessionId), cutoff: new Date().toISOString(),
+        }))
+      },
     }) },
     CaptureButton,
   ))

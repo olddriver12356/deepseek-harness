@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概要
 
-Knowledge 列出 Intake、Processed 和 Knowledge · To learn 中的真实 Agent Layer 产物。持久覆盖层隐藏时保留搜索和筛选状态。Live Signal 保存操作不调用模型，保存当前对话成功后打开 Knowledge。
+Knowledge 列出 Intake、Processed 和 Knowledge · To learn 中的真实 Agent Layer 产物。持久覆盖层隐藏时保留搜索和筛选状态。Live Signal 蒸馏操作在原工作区打开新会话，填入引用原会话日志的未发送草稿。它不调用模型，也不写入知识产物。草稿要求先展示候选知识供用户审阅，再创建获批内容。
 
 ## 目录
 
@@ -36,7 +36,7 @@ collage 和 Fusion Pixel 字体是包拥有的受跟踪资产，由相对 CSS UR
 
 ## Model Experience
 
-无，因为此浏览器包把模型请求委托给 Knowledge Host，不注册面向模型的输入。
+蒸馏草稿要求模型使用现有会话查询工具读取原会话，引用事件序号，将日志内容视为证据，并先展示候选卡片请求用户批准。用户必须发送草稿才会启动模型轮次。其他 Knowledge 面板操作将模型请求委托给 Knowledge Host。
 
 #### KV Cache effect
 

@@ -242,10 +242,9 @@ function PromotionControls({ document, api, t, busy, act }: {
   </fieldset>
 }
 
-/** Capture has no model side effects; the next workflow starts from the saved artifact. */
-export function CaptureButton({ save, open, t, className }: {
-  readonly save: () => Promise<void>
-  readonly open: () => void
+/** Opens an unsent draft; the button never writes a knowledge artifact or calls a model. */
+export function CaptureButton({ createDraft, t, className }: {
+  readonly createDraft: () => Promise<void>
   readonly t: Translate
   readonly className?: string | undefined
 }) {
@@ -257,14 +256,14 @@ export function CaptureButton({ save, open, t, className }: {
     if (saving.current) return
     saving.current = true
     setPending(true); setError(''); setMessage('')
-    try { await save(); setMessage(t('saved')); open() }
+    try { await createDraft(); setMessage(t('saved')) }
     catch (cause) { setError(String(cause)) }
     finally { saving.current = false; setPending(false) }
   }
   return <div>
     <button
       type="button" className={className} disabled={pending}
-      title={t('notice')} aria-label={t(pending ? 'saving' : 'capture')}
+      title={t('captureHint')} aria-label={t(pending ? 'saving' : 'capture')}
       onClick={() => { void capture() }}
     >
       {t(pending ? 'saving' : 'capture')}<span>{t('captureHint')}</span>

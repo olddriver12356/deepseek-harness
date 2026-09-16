@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Knowledge lists real Agent Layer artifacts in Intake, Processed, and Knowledge · To learn. The persistent overlay retains its search and filter state when hidden. The Live Signal capture action saves the current conversation without calling a model, then opens Knowledge.
+Knowledge lists real Agent Layer artifacts in Intake, Processed, and Knowledge · To learn. The persistent overlay retains its search and filter state when hidden. The Live Signal distillation action opens a new session in the source workspace with an unsent draft referencing the source session log. It neither calls a model nor writes knowledge artifacts. The draft requests candidate knowledge for owner review before any approved content is created.
 
 ## Table of Contents
 
@@ -36,7 +36,7 @@ The collage and Fusion Pixel font are package-owned tracked assets referenced by
 
 ## Model Experience
 
-None, as this browser package delegates model requests to the Knowledge Host and registers no model-facing input.
+The distillation draft instructs the model to read the source session through existing session-query tools, cite event sequence numbers, treat log contents as evidence, and present proposed cards before requesting approval. The user must send the draft to start a model turn. Other Knowledge panel operations delegate model requests to the Knowledge Host.
 
 #### KV Cache effect
 

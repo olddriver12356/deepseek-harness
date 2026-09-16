@@ -78,6 +78,7 @@ function mountFrame() {
   }
   const element = () => (
     <AppFrame
+      t={() => 'Live Signal'}
       useStore={hookOf(instance)}
       actions={instance.actions}
       renderSlot={renderSlot}
@@ -134,6 +135,22 @@ afterEach(() => {
 })
 
 describe('AppFrame', () => {
+  it('collapses Live Signal and releases conversation space, then restores it', () => {
+    const { frame, getByRole, getByTestId } = mountFrame()
+    const toggle = getByRole('button', { name: 'Live Signal' })
+    const panel = frame.querySelector('#live-signal-panel') as HTMLElement
+    act(() => { toggle.click() })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(panel.hidden).toBe(true)
+    expect(panel.style.width).toBe('0px')
+    expect(getByTestId('center-content').parentElement!.style.paddingRight)
+      .toBe('max(0px, calc(0px - var(--dsh-sidebar-width, 0px)))')
+    act(() => { toggle.click() })
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(panel.hidden).toBe(false)
+    expect(panel.style.width).toBe('320px')
+  })
+
   it('renders the app rail slot in a fixed leftmost track', () => {
     const { slotCalls, container } = mountFrame()
     expect(slotCalls.map(c => c.key)).toContain('app.rail')

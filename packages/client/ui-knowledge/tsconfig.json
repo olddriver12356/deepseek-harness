@@ -8,6 +8,8 @@
     "src"
   ],
   "references": [
+    { "path": "../../api/workspace-controller/tsconfig.client.json" },
+    { "path": "../ui-conversation" },
     { "path": "../ui-primitives" },
     { "path": "../../api/remotes/tsconfig.client.json" },
     { "path": "../../host/knowledge" },

@@ -178,19 +178,17 @@ it('keeps a failed distillation visible after refreshing the artifact list', asy
   expect((await screen.findByRole('alert')).textContent).toContain('Model unavailable')
 })
 
-it('saves once while pending and opens Knowledge only after success', async () => {
+it('creates one unsent session draft while pending without saving knowledge', async () => {
   let finish!: () => void
-  const save = vi.fn(() => new Promise<void>((resolve) => { finish = resolve }))
-  const open = vi.fn()
-  render(<CaptureButton save={save} open={open} t={t} />)
+  const createDraft = vi.fn(() => new Promise<void>((resolve) => { finish = resolve }))
+  render(<CaptureButton createDraft={createDraft} t={t} />)
   expect(screen.getByText('⇣ 沉淀本次对话')).toBeTruthy()
-  expect(screen.getByText('先保存至 Intake')).toBeTruthy()
-  expect(screen.getByRole('button').getAttribute('title')).toBe(zh.notice)
+  expect(screen.getByText(zh.captureHint)).toBeTruthy()
+  expect(screen.getByRole('button').getAttribute('title')).toBe(zh.captureHint)
   fireEvent.click(screen.getByRole('button', { name: zh.capture }))
   expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.saving }).disabled).toBe(true)
-  expect(open).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: zh.saving }))
   finish()
   expect(await screen.findByText(zh.saved)).toBeTruthy()
-  expect(save).toHaveBeenCalledOnce()
-  expect(open).toHaveBeenCalledOnce()
+  expect(createDraft).toHaveBeenCalledOnce()
 })
