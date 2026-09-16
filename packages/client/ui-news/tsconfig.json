@@ -3,6 +3,8 @@
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
   "include": ["src"],
   "references": [
+    { "path": "../ui-primitives" },
+    { "path": "../locale" },
     { "path": "../../../vendor/cordis" },
     { "path": "../ui-shell" },
     { "path": "../ui-renderer" },

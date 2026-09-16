@@ -206,9 +206,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ownerProps: [
       '/** Owner currency of finalized-assistant actions. */\nexport interface AssistantActionOwnerProps {\n  messageId: MessageId\n}',
     ],
-    ownerPropsReferences: [
-      'MessageId',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
       'useSessions: UseSessions',
@@ -407,7 +405,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Owner values used to elect a composer takeover. */\nexport interface ComposerChainProps {\n  /** Current Session identity used by temporary business-owned entries. */\n  sessionId: SessionId | undefined\n  /** Current Session lifecycle state, absent without a selected Session. */\n  session: SessionSnapshot | undefined\n  /** Effective business-owned interaction awaiting the user in this Session. */\n  pendingInteraction: SessionPendingInteraction | undefined\n}',
     ],
     ownerPropsReferences: [
-      'SessionId',
       'SessionPendingInteraction',
       'SessionSnapshot',
     ],
@@ -448,9 +445,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ownerProps: [
       '/** Owner share of the resident composer bar. */\nexport interface ComposerBarOwnerProps {\n  /** Hero uses centered placement; composer uses the active bottom placement. */\n  variant: \'hero\' | \'composer\'\n  /** A feature-owned reason that makes message input inert while leaving model selection live. */\n  blocked?: { readonly reason: string }\n  /** Lock all message actions while preserving the resident composer surface. */\n  disabled?: boolean\n  /** Whether the shared Workspace picker is expanded. */\n  workspacePickerOpen?: boolean\n  /** Open the Workspace picker from the inert composer surface. */\n  onRequestWorkspace?: () => void\n  placeholder?: string\n  /** Optional content rendered above the composer surface. */\n  accessory?: ReactNode\n}',
     ],
-    ownerPropsReferences: [
-      'Workspace',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
       'useSessions: UseSessions',
@@ -627,9 +622,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ownerProps: [
       '/** Owner share common to blank-session Workspace pickers. */\nexport interface EmptyWorkspaceOwnerProps {\n  open: boolean\n  anchorRef?: RefObject<HTMLElement>\n  /** Currently selected Workspace, when available. */\n  selectedId?: WorkspaceId | undefined\n  onPick: (workspaceId: WorkspaceId) => void\n  onClose: () => void\n}',
     ],
-    ownerPropsReferences: [
-      'Workspace',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
       'useSessions: UseSessions',
@@ -1013,7 +1006,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Message image group handed to the optional attachment presentation plugin. */\nexport interface MessageImagesOwnerProps {\n  /** Durable references or submission-echo previews in source order. */\n  images: readonly MessageImageSource[]\n  /** Session-authorized image URL loader for the durable arm. */\n  loadImage: MessageImageLoader\n  /** Horizontal placement inside the owning record. */\n  align: \'start\' | \'end\'\n  /** Force every image into the compact message-attachment tile size. */\n  compact?: boolean\n}',
     ],
     ownerPropsReferences: [
-      'Message',
       'MessageImageLoader',
       'MessageImageSource',
     ],
@@ -1178,9 +1170,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ownerProps: [
       '/** Plain breadcrumb data handed to the optional lineage renderer. */\nexport interface ConversationHeaderLineageOwnerProps {\n  /** Session represented by this breadcrumb title. */\n  lineageSessionId: SessionId\n  /** Display title available to a combined title/control renderer. */\n  displayTitle: string\n  /** Navigate to an ancestor title when present. */\n  openTitle?: () => void\n}',
     ],
-    ownerPropsReferences: [
-      'SessionId',
-    ],
+    ownerPropsReferences: [],
     standardProps: [
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
       'useSessions: UseSessions',
@@ -1272,7 +1262,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       '/** Message image group handed to the optional attachment presentation plugin. */\nexport interface MessageImagesOwnerProps {\n  /** Durable references or submission-echo previews in source order. */\n  images: readonly MessageImageSource[]\n  /** Session-authorized image URL loader for the durable arm. */\n  loadImage: MessageImageLoader\n  /** Horizontal placement inside the owning record. */\n  align: \'start\' | \'end\'\n  /** Force every image into the compact message-attachment tile size. */\n  compact?: boolean\n}',
     ],
     ownerPropsReferences: [
-      'Message',
       'MessageImageLoader',
       'MessageImageSource',
     ],
@@ -1907,6 +1896,94 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     source: 'packages/client/ui-shell/src/client/index.ts:96',
   },
   {
+    key: 'shell.activity.capture',
+    kind: 'single',
+    scope: 'session',
+    summary: 'Explicit conversation capture contributed by the Knowledge plugin.',
+    doc: 'Explicit conversation capture contributed by the Knowledge plugin.',
+    registerOptions: [],
+    ownerProps: [],
+    ownerPropsReferences: [],
+    standardProps: [
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+      'useSessions: UseSessions',
+      'useSessionPendingInteraction: UseSessionPendingInteraction',
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+      'useChat: UseChat',
+      'useConversation: UseConversation',
+      'useInput: SnapshotSelectorHook<InputState>',
+      'inputActions: InputActions',
+      'useSession: SessionSnapshotSelector',
+      'sessionId: SessionId',
+      'useProjection: UseProjection',
+      'useTrajectory: UseTrajectory',
+    ],
+    keyDomain: '',
+    hookContext: '',
+    slotInject: '',
+    declaredBy: 'an entry in \'shell.activity\' (client-ui-shell), so it exists while that entry is mounted',
+    occupants: [
+      'client-ui-knowledge CaptureButton',
+    ],
+    replaceRisk: 'shadows-shipped-ui',
+    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'shell.activity.capture\', () => ctx.slots.register(\n      { name: \'shell.activity.capture\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
+    source: 'packages/client/ui-shell/src/client/index.ts:105',
+  },
+  {
+    key: 'shell.activity.selectors',
+    kind: 'list',
+    scope: 'session',
+    summary: 'Session-scoped selector row inside the Live Signal card, between the Goal and Pending sections.',
+    doc: 'Session-scoped selector row inside the Live Signal card, between the\nGoal and Pending sections. A Session-scoped selection plugin (Expert,\nStyle, ...) registers here; the card itself carries no opinion about\nwhat a selector does with its choice.',
+    registerOptions: [
+      {
+        name: 'id',
+        requirement: 'required',
+        type: 'string',
+        doc: 'Your cell key. Use an id of your own: a fresh id is added beside the shipped entries, while reusing a shipped id puts you in THAT cell and replaces it. Owners that filter by id address you by it.',
+      },
+      {
+        name: 'order',
+        requirement: 'optional',
+        type: 'number',
+        doc: 'Position among the entries, ascending (default 0).',
+      },
+      {
+        name: 'label',
+        requirement: 'optional',
+        type: 'string | (() => string)',
+        doc: 'Display text where the owner projects one (nav rows, tabs). A thunk is re-read on every projection, so localized text follows the active locale without re-registering.',
+      },
+    ],
+    ownerProps: [],
+    ownerPropsReferences: [],
+    standardProps: [
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+      'useSessions: UseSessions',
+      'useSessionPendingInteraction: UseSessionPendingInteraction',
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+      'useChat: UseChat',
+      'useConversation: UseConversation',
+      'useInput: SnapshotSelectorHook<InputState>',
+      'inputActions: InputActions',
+      'useSession: SessionSnapshotSelector',
+      'sessionId: SessionId',
+      'useProjection: UseProjection',
+      'useTrajectory: UseTrajectory',
+    ],
+    keyDomain: '',
+    hookContext: '',
+    slotInject: '',
+    declaredBy: 'an entry in \'shell.activity\' (client-ui-shell), so it exists while that entry is mounted',
+    occupants: [
+      'client-ui-experts ExpertSelect id \'experts\'',
+      'client-ui-styles StyleSelect id \'styles\'',
+    ],
+    replaceRisk: 'none',
+    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'shell.activity.selectors\', () => ctx.slots.register(\n      { name: \'shell.activity.selectors\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
+    source: 'packages/client/ui-shell/src/client/index.ts:103',
+  },
+  {
     key: 'shell.overlay',
     kind: 'list',
     scope: 'session-maybe',
@@ -1952,15 +2029,17 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'root\' (client-ui-shell), so it exists while that entry is mounted',
     occupants: [
       'client-ui-app-rail ProofPanel id \'ui-app-rail-proof-panel\'',
+      'client-ui-apps AppsPanel id \'apps-panel\'',
       'client-ui-experts ExpertsPanel id \'experts-panel\'',
-      'client-ui-knowledge KnowledgePanel id \'knowledge-panel\'',
+      'client-ui-knowledge ConnectedKnowledgePanel id \'knowledge-panel\'',
       'client-ui-monitor MonitorPanel id \'monitor-panel\'',
       'client-ui-news NewsPanel id \'news-panel\'',
+      'client-ui-skill SkillsPanel id \'skills-panel\'',
       'client-ui-styles StylesPanel id \'styles-panel\'',
     ],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'shell.overlay\', () => ctx.slots.register(\n      { name: \'shell.overlay\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-shell/src/client/index.ts:107',
+    source: 'packages/client/ui-shell/src/client/index.ts:116',
   },
   {
     key: 'sidebar',

@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto'
+import { fetchPublic } from './public-fetch.ts'
+import { extractHtmlText } from '@deepseek-ai/dsh-web-fetch-http'
 
 /** Public feed definition retained from the Boujoy News surface. */
 export interface FeedSource {
@@ -54,7 +56,7 @@ function decodeEntities(value: string): string {
 }
 
 function textValue(value: string): string {
-  return decodeEntities(value.replace(/^<!\[CDATA\[|\]\]>$/g, '').replace(/<[^>]+>/g, ' '))
+  return extractHtmlText(decodeEntities(value.replace(/^<!\[CDATA\[|\]\]>$/g, '')))
     .replace(/\s+/g, ' ').trim()
 }
 
@@ -154,7 +156,7 @@ export function parseArticleCover(html: string, articleUrl: string): string | nu
 }
 
 /** Read a fetch response with a byte ceiling. */
-export async function readResponse(response: Response, limit: number): Promise<Uint8Array> {
+export async function readResponse(response: Response | Awaited<ReturnType<typeof fetchPublic>>['response'], limit: number): Promise<Uint8Array> {
   if (response.body === null) {
     const body = new Uint8Array(await response.arrayBuffer())
     if (body.byteLength > limit) throw new Error('news: response exceeds size limit')
@@ -166,12 +168,14 @@ export async function readResponse(response: Response, limit: number): Promise<U
   while (true) {
     const next = await reader.read()
     if (next.done) break
-    total += next.value.byteLength
+    const bytes: unknown = next.value
+    if (!(bytes instanceof Uint8Array)) throw new Error('news: invalid response body chunk')
+    total += bytes.byteLength
     if (total > limit) {
       await reader.cancel()
       throw new Error('news: response exceeds size limit')
     }
-    chunks.push(next.value)
+    chunks.push(bytes)
   }
   const result = new Uint8Array(total)
   let offset = 0
@@ -187,12 +191,17 @@ export async function fetchText(url: string): Promise<string> {
   const controller = new AbortController()
   const timer = setTimeout(() => { controller.abort() }, FETCH_TIMEOUT_MS)
   try {
-    const response = await fetch(url, {
-      headers: { 'user-agent': 'DeepSeekHarness/0.1', accept: 'application/rss+xml, application/atom+xml, text/html' },
-      signal: controller.signal,
-    })
-    if (!response.ok) throw new Error(`news: source returned HTTP ${String(response.status)}`)
-    return new TextDecoder().decode(await readResponse(response, MAX_TEXT_BYTES))
+    const result = await fetchPublic(url, controller.signal, 'application/rss+xml, application/atom+xml, text/html, text/plain')
+    try {
+      const { response } = result
+      if (!response.ok) throw new Error(`news: source returned HTTP ${String(response.status)}`)
+      const type = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
+      if (!type || !['application/rss+xml', 'application/atom+xml', 'application/xml', 'text/xml', 'text/html', 'text/plain'].includes(type)) {
+        await response.body?.cancel()
+        throw new Error('news: unsupported text content type')
+      }
+      return new TextDecoder('utf-8', { fatal: true }).decode(await readResponse(response, MAX_TEXT_BYTES))
+    } finally { await result.close() }
   } finally {
     clearTimeout(timer)
   }

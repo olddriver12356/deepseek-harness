@@ -10,6 +10,7 @@
   "exports": {
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
     "./types": { "types": "./lib/types/types.d.ts", "default": "./lib/types/types.js" },
+    "./tool": { "types": "./lib/types/tool.d.ts", "default": "./lib/types/tool.js" },
     "./typert": { "types": "./lib/typert.host.d.ts", "default": "./lib/typert.host.js" },
     "./remote": { "types": "./lib/typert.remote-client.d.ts", "default": "./lib/typert.remote-client.js" },
     "./src/*": "./src/*",
@@ -19,6 +20,8 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-subagent": "workspace:^",
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-typert-protocol": "workspace:^"
   },
   "dependencies": {
@@ -27,6 +30,8 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-subagent": "workspace:^",
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-typert-protocol": "workspace:^"
   }
 }

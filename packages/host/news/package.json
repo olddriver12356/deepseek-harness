@@ -24,6 +24,8 @@
     "@deepseek-ai/dsh-typert-protocol": "workspace:^"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-host-knowledge": "workspace:^",
+    "@deepseek-ai/dsh-web-fetch-http": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^",
     "zod": "^4.4.3"
   },

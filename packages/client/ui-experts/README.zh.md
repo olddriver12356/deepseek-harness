@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-此包渲染 Experts 应用面板，通过 Host Experts Remote 管理 Expert Method 记录，并将已批准的 Expert 派发到当前会话。Expert 定义仍是配置 Vault Agent Layer 下的 Markdown 包。
+此包渲染 Experts 应用面板，通过 Host Experts Remote 管理 Expert Method 记录，并将已批准的 Expert 派发到当前会话。Expert 定义仍是配置 Vault Agent Layer 下的 Markdown 包。Live Signal 卡片的 `shell.activity.selectors` 位还提供第二个入口：一个已批准 Expert 的多选区域，选中后在被清除前持续作用于每次普通发送，而不是一次性派发。
 
 ## 目录
 
@@ -35,6 +35,20 @@ kind: "package-reference"
 #### KV Cache 影响
 
 该消息使用普通会话提示词路径。更换 Expert、风格或任务会改变提示词后缀，并可能降低缓存复用；此包不添加独立缓存策略。
+
+### Live Signal Expert 选择器
+
+#### 模型看到的内容
+
+Live Signal 卡片选择器中每个勾选的 Expert 都会拼装进 `ctx.conversation.prefixes` 的 `'experts'` 来源。`@deepseek-ai/dsh-client-ui-conversation` 的输入框会在该会话每次普通发送时，把拼接后的文本前置到用户自己的文字之前，直到选择变化或被清空。
+
+#### Token 影响
+
+只要有 Expert 处于勾选状态，拼装的 Expert 内容就会给每一次发送增加输入 token，而不只是一次派发；取消勾选全部 Expert 后，下一次发送即不再带有该内容。
+
+#### KV Cache 影响
+
+勾选或取消勾选 Expert 会在下一次发送时改变提示词前缀，与通过派发对话框切换 Expert 一样，可能降低缓存复用。
 
 ## 已知限制与延后工作
 

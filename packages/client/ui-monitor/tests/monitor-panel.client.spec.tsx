@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import {
@@ -10,7 +11,10 @@ import {
 } from '../src/client/MonitorPanel.tsx'
 import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
 
-afterEach(cleanup)
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+})
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 function renderMonitor(options: {
   readonly projection?: Record<string, unknown>

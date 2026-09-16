@@ -2,6 +2,7 @@
    font-weight: 500 in this UI — non-variable webfonts snap intermediate
    weights unpredictably across platforms. */
 body {
+  --dsw-alias-button-call-hover-fill: var(--dsw-static-neutral-00);
   --dsw-static-amber-100: rgb(254, 245, 231);
   --dsw-static-amber-400: rgb(247, 173, 49);
   --dsw-static-amber-500: rgb(245, 158, 11);
@@ -76,6 +77,14 @@ body {
   --dsw-static-red-600: rgb(236, 19, 19);
   --dsw-static-red-900: rgb(87, 12, 12);
   --dsw-specific-knowledge-canvas: rgb(25, 28, 35);
+  --dsw-specific-knowledge-reader-ink: #080a0d;
+  --dsw-specific-knowledge-reader-paper: #191c23;
+  --dsw-specific-knowledge-reader-text: #eeeae2;
+  --dsw-specific-knowledge-reader-raised: #232832;
+  --dsw-specific-knowledge-reader-muted: #b3b9c5;
+  --dsw-specific-knowledge-reader-header-text: #f1eadc;
+  --dsw-specific-knowledge-reader-line: rgb(238 234 226 / 18%);
+  --dsw-specific-knowledge-reader-backdrop: rgb(3 4 7 / 74%);
   --dsw-specific-knowledge-surface: rgb(34, 38, 46);
   --dsw-specific-knowledge-surface-raised: rgb(41, 46, 55);
   --dsw-specific-knowledge-text: rgb(241, 234, 220);

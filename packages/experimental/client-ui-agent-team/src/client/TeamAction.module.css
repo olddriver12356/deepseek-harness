@@ -20,7 +20,7 @@
   gap: 5px;
   min-height: 28px;
   padding: 3px 7px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .trigger:hover,
@@ -88,7 +88,7 @@
 .panel h3 {
   margin: 12px 0 6px;
   color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -125,7 +125,7 @@
 .memberText small,
 .meta {
   color: var(--dsw-alias-label-tertiary);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .diagnostic,
@@ -140,7 +140,7 @@
   gap: 4px;
   margin-left: auto;
   padding: 4px 7px;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .tasks {
@@ -160,13 +160,13 @@
 .taskTitle span {
   margin-left: auto;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .task p {
   margin: 5px 0;
   color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
+  font-size: 14px;
   white-space: pre-wrap;
 }
 
@@ -186,7 +186,7 @@
   align-items: center;
   gap: 4px;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .taskActions select,
@@ -206,7 +206,7 @@
   align-items: center;
   gap: 3px;
   padding: 4px 6px;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .taskActions button:disabled,
@@ -225,7 +225,7 @@
 .form textarea {
   width: 100%;
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .form textarea {
@@ -236,5 +236,5 @@
 .notice,
 .error {
   padding: 9px;
-  font-size: 12px;
+  font-size: 14px;
 }

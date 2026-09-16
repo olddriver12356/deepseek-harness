@@ -44,6 +44,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  * blocks. A package moves on or off this list with its context behavior.
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
+  'packages/host/news': { kind: 'none', reason: 'Deterministic feed capture registers no model input; explicit processing belongs to host Knowledge.' },
   'packages/attachment/attachment': { kind: 'indirect', reason: 'The storage seam delegates model request rendering to provider adapters.' },
   'packages/attachment/attachment-local': { kind: 'indirect', reason: 'The local backend delegates model request rendering to provider adapters.' },
   'packages/shell/shell': { kind: 'indirect', reason: 'The service interface delegates all model rendering to dsh-tool-bash.' },
@@ -84,7 +85,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/experimental/client-ui-agent-team': { kind: 'none', reason: 'The browser projection and task controls register no model-facing input.' },
   'packages/client/ui-layout': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/ui-app-rail': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
-  'packages/client/ui-knowledge': { kind: 'none', reason: 'Browser-side read-only knowledge surface; registers nothing model-facing.' },
+  'packages/client/ui-knowledge': { kind: 'none', reason: 'Browser controls delegate model requests to the Knowledge Host; register nothing model-facing.' },
   'packages/client/ui-monitor': { kind: 'none', reason: 'Browser-side read-only monitoring surface; registers nothing model-facing.' },
   'packages/client/ui-shell': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/ui-sidebar': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },

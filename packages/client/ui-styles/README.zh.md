@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-此包渲染 Styles 应用面板，通过 Host Styles Remote 管理 Style Method 记录，并将已批准的 Style 派发到当前会话。Style 定义仍是配置 Vault Agent Layer 下的 Markdown 包，镜像 `@deepseek-ai/dsh-client-ui-experts` 的做法。`@deepseek-ai/dsh-client-ui-experts` 自身的派发对话框也会读取本包 Remote 暴露的已批准 Style，因此在此创作的 Style 可以作为输出声线叠加到 Expert 派发之上。
+此包渲染 Styles 应用面板，通过 Host Styles Remote 管理 Style Method 记录，并将已批准的 Style 派发到当前会话。Style 定义仍是配置 Vault Agent Layer 下的 Markdown 包，镜像 `@deepseek-ai/dsh-client-ui-experts` 的做法。`@deepseek-ai/dsh-client-ui-experts` 自身的派发对话框也会读取本包 Remote 暴露的已批准 Style，因此在此创作的 Style 可以作为输出声线叠加到 Expert 派发之上。Live Signal 卡片的 `shell.activity.selectors` 位还提供第二个入口：一个已批准 Style 的单选区域，选中后在被清除或替换前持续作用于每次普通发送，而不是一次性派发。
 
 ## 目录
 
@@ -35,6 +35,20 @@ kind: "package-reference"
 #### KV Cache 影响
 
 该消息使用普通会话提示词路径。更换 Style 或任务会改变提示词后缀，并可能降低缓存复用；此包不添加独立缓存策略。
+
+### Live Signal Style 选择器
+
+#### 模型看到的内容
+
+Live Signal 卡片选择器中勾选的 Style 会拼装进 `ctx.conversation.prefixes` 的 `'styles'` 来源。`@deepseek-ai/dsh-client-ui-conversation` 的输入框会在该会话每次普通发送时，把这段文本前置到用户自己的文字之前（并跟在 Live Signal Expert 选择内容之后），直到选择变化或被清空。这种方式下同一时间只能有一个 Style 生效。
+
+#### Token 影响
+
+只要选中了 Style，拼装内容就会给每一次发送增加输入 token，而不只是一次派发；清空选择后，下一次发送即不再带有该内容。
+
+#### KV Cache 影响
+
+选中、切换或清空 Style 会在下一次发送时改变提示词前缀，与通过派发对话框切换 Style 一样，可能降低缓存复用。
 
 ## 已知限制与延后工作
 

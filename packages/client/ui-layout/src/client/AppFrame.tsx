@@ -101,10 +101,6 @@ export function AppFrame({
     const current = s.current
     return current !== undefined && s.byId[current]?.blank === false ? current : undefined
   })
-  const documentTitle = useSessions((s) => {
-    const current = s.current
-    return current === undefined ? undefined : s.byId[current]?.title
-  })
   const frameRef = useRef<HTMLDivElement | null>(null)
   const [viewport, setViewport] = useState(() => window.innerWidth)
 
@@ -181,10 +177,7 @@ export function AppFrame({
       data-details-collapsed={cols.details === 0 || undefined}
       data-dragging={dragging || undefined}
     >
-      <DocumentTitle
-        productTitle={productTitle}
-        {...documentTitle === undefined ? {} : { title: documentTitle }}
-      />
+      <DocumentTitle productTitle={productTitle} />
       <div className={css.sidebarCol}>
         {/* Render-site slot call with live concession output: a closed
             sidebar keeps the mounted slot at the compact-rail width, and the

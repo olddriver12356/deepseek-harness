@@ -1,0 +1,20 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src"],
+  "references": [
+    { "path": "../../web/web-fetch-http" },
+    { "path": "../../core/agent" },
+    { "path": "../../core/agent-default-model" },
+    { "path": "../../core/tools" },
+    { "path": "../../llm/llm" },
+    { "path": "../../subagent/subagent" },
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../util/brand" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../core/session" },
+    { "path": "../../session/session-persistence" },
+    { "path": "../../session-query/session-log-export/tsconfig.host.json" }
+  ]
+}

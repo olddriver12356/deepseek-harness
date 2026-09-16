@@ -222,7 +222,7 @@
   /* Base background, not bg-overlay: the overlay token reads too heavy. */
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-secondary);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
   cursor: pointer;
   opacity: 0;

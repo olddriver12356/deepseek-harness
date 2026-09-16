@@ -158,15 +158,15 @@ describe('AppFrame', () => {
     expect(document.title).toBe('DSH Local Build')
   })
 
-  it('projects the selected durable Session title', () => {
+  it('keeps the browser title on the product title when the selected Session changes', () => {
     vi.stubEnv('DSH_CLIENT_TITLE', 'Product')
-    selectedSessionTitle.current = 'First'
+    selectedSessionTitle.current = 'alpha-1234'
     const { rerenderFrame } = mountFrame()
-    expect(document.title).toBe('First — Product')
+    expect(document.title).toBe('Product')
 
-    selectedSessionTitle.current = 'Revised'
+    selectedSessionTitle.current = 'Revised Session Title'
     act(() => { rerenderFrame() })
-    expect(document.title).toBe('Revised — Product')
+    expect(document.title).toBe('Product')
 
     selectedSession.current = undefined
     act(() => { rerenderFrame() })

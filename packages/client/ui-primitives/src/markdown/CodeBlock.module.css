@@ -44,7 +44,7 @@
 .infostring {
   color: var(--dsw-alias-label-primary);
   font-family: var(--ds-font-family-code);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 18px;
   min-width: 0;
   overflow: hidden;

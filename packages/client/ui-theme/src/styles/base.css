@@ -13,3 +13,29 @@
   --ds-transition-duration-fast: 0.1s;
   --ds-transition-duration-slow: 0.3s;
 }
+
+/* Installed plugin controls have independent sheets and inline styles. */
+.cm-peak-rail-label,
+.us-export,
+.us-card-detail,
+.us-panel-note,
+.us-heat-week,
+.us-floating-tip,
+.us-date-label,
+.us-legend,
+.us-donut-center small,
+.us-model-meta,
+.us-model-percent,
+.us-break-item span,
+.us-calls-number-field > span,
+.us-calls-table,
+.us-calls-table th,
+.us-calls-pager,
+#cp2077-snd-toggle,
+#cp2077-deck-toggle,
+[style*="font-size: 13px"],
+[style*="font-size: 12px"],
+[style*="font-size: 11px"],
+[style*="font-size: 10px"] {
+  font-size: 14px !important;
+}

@@ -101,6 +101,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * what a selector does with its choice.
      */
     'shell.activity.selectors': { kind: 'list'; scope: 'session' }
+    /** Explicit conversation capture contributed by the Knowledge plugin. */
+    'shell.activity.capture': { kind: 'single'; scope: 'session'; owner: { readonly className: string | undefined } }
     /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
@@ -242,6 +244,7 @@ export function apply(ctx: ClientContext): void {
       name: 'shell.activity',
       children: {
         'shell.activity.selectors': { kind: 'list', scope: 'session' },
+        'shell.activity.capture': { kind: 'single', scope: 'session' },
       },
       inject: (sessionId: SessionId): ActivityInjected => ({
         onEditGoal: async (objective) => {

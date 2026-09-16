@@ -42,7 +42,7 @@
    composer-stack cards read as one family. */
 .label {
   flex: none;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 24px;
   font-weight: 500;
   color: var(--dsw-alias-label-primary);
@@ -52,7 +52,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--dsw-alias-label-primary-dimmed);
   text-overflow: ellipsis;
@@ -64,7 +64,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--dsw-alias-state-error-primary);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -80,7 +80,7 @@
   border: 0.5px solid var(--dsw-alias-border-l4);
   border-radius: 6px;
   background: var(--dsw-alias-bg-base);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--dsw-alias-label-primary);
   outline: none;

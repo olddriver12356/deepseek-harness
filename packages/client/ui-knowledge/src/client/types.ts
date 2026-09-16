@@ -1,5 +1,5 @@
 export type KnowledgeLayerId = 'intake' | 'ai-processing' | 'knowledge' | 'personal' | 'methods' | 'feedback'
-export type KnowledgeArtifactState = 'ACTIVE' | 'READY' | 'REJECTED'
+export type KnowledgeArtifactState = 'ACTIVE' | 'READY' | 'REJECTED' | 'PENDING' | 'PROCESSING'
 
 export interface KnowledgeLayer {
   readonly id: KnowledgeLayerId

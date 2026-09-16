@@ -32,6 +32,7 @@ async function bench() {
     create: vi.fn(async () => ({ ok: true, value: {} })),
     update: vi.fn(async () => ({ ok: true, value: {} })),
     delete: vi.fn(async () => ({ ok: true, value: undefined })),
+    dispatch: vi.fn(async () => ({ ok: true, value: { text: 'child result' } })),
   }
   ctx.provide('remote.experts', experts as never)
   const styles = {
@@ -97,8 +98,56 @@ describe('Experts plugin apply', () => {
     const injected = (entry.inject as () => { api: ExpertApi })()
     const expert = {
       id: 'e1', name: 'Reviewer', category: 'Engineering', description: '', instructions: 'do it',
-      status: 'approved', model: 'inherit', reasoning: 'inherit', permission: 'inherit', skills: [], updatedAt: '2026-09-06',
+      status: 'approved', execution: 'conversational', model: 'inherit', reasoning: 'inherit', updatedAt: '2026-09-06',
     } as Parameters<ExpertApi['dispatch']>[0]
     await expect(injected.api.dispatch(expert, 'task', undefined)).rejects.toThrow()
+  })
+
+  it('never injects a delegated Expert into the Session, because the Agent dispatches it as a tool', async () => {
+    const { ctx, slots, sessions } = await bench()
+    const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
+    sessions.list.getSnapshot = () => ({ current: 'session-1' as never })
+    sessions.binding = (() => ({
+      session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
+    })) as never
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
+    const injected = (slots.entries('shell.overlay')[0]!.inject as () => { api: ExpertApi })()
+    const expert = {
+      id: 'e1', name: 'Root Cause Expert', category: 'Engineering', description: '',
+      instructions: 'Reproduce before changing code.', status: 'approved', execution: 'delegated',
+      model: 'inherit', reasoning: 'inherit', updatedAt: '2026-09-06',
+    } as Parameters<ExpertApi['dispatch']>[0]
+
+    // The panel gives a delegated Expert no Call button, so this path is not
+    // reachable from the UI. The guarantee that still matters is the negative
+    // one: its instructions must never be injected as a user message, because
+    // that is exactly the hollow "Expert as prompt text" this design removed.
+    await expect(injected.api.dispatch(expert, 'Why does login fail?', undefined)).rejects.toThrow()
+    expect(prompt).not.toHaveBeenCalled()
+  })
+
+  it('keeps injecting a conversational Expert into the current Session', async () => {
+    const { ctx, slots, sessions } = await bench()
+    const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
+    sessions.list.getSnapshot = () => ({ current: 'session-1' as never })
+    sessions.binding = (() => ({
+      session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
+    })) as never
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
+    const injected = (slots.entries('shell.overlay')[0]!.inject as () => { api: ExpertApi })()
+    const expert = {
+      id: 'e2', name: 'Socratic Expert', category: 'Learning', description: '',
+      instructions: 'Ask, do not answer.', status: 'approved', execution: 'conversational',
+      model: 'inherit', reasoning: 'inherit', updatedAt: '2026-09-06',
+    } as Parameters<ExpertApi['dispatch']>[0]
+
+    await injected.api.dispatch(expert, 'Teach me closures.', undefined)
+
+    expect(prompt).toHaveBeenCalledTimes(1)
+    const [parts] = prompt.mock.calls[0] as unknown as [{ type: string; text: string }[]]
+    expect(parts[0]?.text).toContain('Ask, do not answer.')
+    expect(parts[0]?.text).toContain('Teach me closures.')
   })
 })

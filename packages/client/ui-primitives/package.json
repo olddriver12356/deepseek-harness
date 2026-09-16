@@ -25,6 +25,7 @@
   "dependencies": {
     "@shikijs/langs": "^4.3.1",
     "@types/mdast": "^4.0.4",
+    "animejs": "4.5.0",
     "anser": "^2.3.5",
     "clsx": "^2.0.0",
     "katex": "^0.16.47",
@@ -45,9 +46,9 @@
     "shiki": "^4.3.1"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
     "@types/react": "~18.3.1",
-    "@types/react-dom": "~18.3.0",
-    "@deepseek-ai/cordis": "workspace:^"
+    "@types/react-dom": "~18.3.0"
   },
   "files": [
     "lib/index.js",

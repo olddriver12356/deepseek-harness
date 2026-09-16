@@ -222,6 +222,13 @@ export function installAssembledBootEnv(): void {
     document.title = 'DeepSeek Harness'
     vi.stubGlobal('ResizeObserver', ResizeObserverStub)
     vi.stubGlobal('EventSource', EventSourceStub)
+    // Geometry-free assembled fixtures keep motion disabled; Chromium owns motion checks.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }))
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
       setTimeout(() => { callback(0) }, 0) as unknown as number)
     vi.stubGlobal('cancelAnimationFrame', (id: number) => { clearTimeout(id) })

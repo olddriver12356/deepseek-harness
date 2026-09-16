@@ -36,6 +36,8 @@ None until a user dispatches an Expert through a Session.
 - **Conservative deletion**: an Expert package containing files besides `ARTIFACT.md` must be cleaned up manually before deletion.
 
 <a id="dev-note"></a>
+`dispatch_expert` registers raw JSON Schema for both input and output. Its input is an object with required `expert` and `task` string properties; author-facing property maps must be converted before registration because model adapters forward the registered schema unchanged.
+
 ### Dev Note
 
 <details>

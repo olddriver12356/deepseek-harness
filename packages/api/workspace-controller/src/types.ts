@@ -7,6 +7,63 @@
 
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
+import type { Branded } from '@deepseek-ai/dsh-brand'
+
+/** Opaque physical skill identity; never an invocation name. */
+export type SkillArtifactId = Branded<'SkillArtifactId'>
+export interface SkillArtifact {
+  readonly id: SkillArtifactId
+  readonly name: string
+  readonly description: string
+  readonly category: string
+  readonly source: string
+  readonly path: string
+  readonly canonicalPath: string
+  readonly entryFile: string
+  readonly bundle: boolean
+  readonly scope: 'project' | 'personal' | 'other'
+  readonly userInvocable: boolean
+  readonly modelInvocable: boolean
+  readonly shadowed: boolean
+  readonly writable: boolean
+  readonly problem: string
+}
+export interface SkillInventory {
+  readonly skills: readonly SkillArtifact[]
+  readonly projectDestination: string
+  readonly personalDestination: string
+}
+export interface SkillFileRequest {
+  readonly workspaceId: WorkspaceId
+  readonly id: SkillArtifactId
+  readonly file: string
+}
+export interface SkillFileWriteRequest extends SkillFileRequest {
+  readonly content: string
+  /** Null means create exclusively; otherwise SHA-256 of the loaded bytes. */
+  readonly revision: string | null
+}
+export interface SkillFileContent {
+  readonly file: string
+  readonly content: string | null
+  readonly revision: string
+  readonly bytes: number
+}
+/** Delete the selected source entry without following its final symlink. */
+export interface SkillDeleteRequest {
+  readonly workspaceId: WorkspaceId
+  readonly id: SkillArtifactId
+  /** Refuse deletion if the entry was redirected after confirmation. */
+  readonly canonicalPath: string
+}
+/** Location of the recoverable source entry removed from discovery. */
+export interface SkillDeleteResult {
+  readonly recoveryPath: string
+}
+export interface SkillTreeEntry {
+  readonly path: string
+  readonly kind: 'directory' | 'file' | 'blocked'
+}
 
 export type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 export type { DirectoryEntry, DirectoryListing } from '@deepseek-ai/dsh-host-directory-picker/types'

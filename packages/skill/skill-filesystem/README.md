@@ -41,6 +41,8 @@ The catalog and the body have separate lifecycles: discovery parses frontmatter 
 
 ### Roots and priority
 
+`resolveSkillRoots(cwd, config, fs?)` exports the same ordered `SkillRoot[]` resolution used by the provider. Host file-management consumers reuse this helper instead of duplicating project-root discovery, environment defaults, or precedence. A caller must still pass its own provider configuration; resolving standard Host roots does not aggregate Session preset overrides.
+
 Default roots are scanned in this provider's rank order:
 
 | Rank | Source | Path |

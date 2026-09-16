@@ -116,7 +116,7 @@
 .diffStat {
   margin-left: 10px;
   font-family: var(--ds-font-family-code);
-  font-size: calc(var(--dsh-content-font-size-secondary, 13px) - 2px);
+  font-size: max(14px, calc(var(--dsh-content-font-size-secondary, 13px) - 2px));
   color: var(--dsw-alias-label-caption);
   transform: translateY(0.5px);
 }
@@ -182,7 +182,7 @@
      surface and reads too heavy for a quiet in-flow affordance. */
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-secondary);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
   cursor: pointer;
   opacity: 0;

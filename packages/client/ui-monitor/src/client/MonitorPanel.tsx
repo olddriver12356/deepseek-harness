@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
+import { useEntranceMotion } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MaybeSnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { contextOccupancy } from '@deepseek-ai/dsh-token-meter/client'
@@ -787,7 +788,7 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
                   y={0}
                 />
                 {i % labelEvery === 0 && (
-                  <text fill="var(--dsw-specific-agent-muted)" fontSize={11} textAnchor="middle" x={cx} y={height - 8}>{day.date.slice(5)}</text>
+                  <text fill="var(--dsw-specific-agent-muted)" fontSize={14} textAnchor="middle" x={cx} y={height - 8}>{day.date.slice(5)}</text>
                 )}
               </g>
             )
@@ -1192,6 +1193,7 @@ const HEATMAP_WINDOW_DAYS = 365
 
 export function MonitorPanel({ appPanels, useProjection, useConversation, effort }: MonitorPanelProps): ReactNode {
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
+  const entranceRef = useEntranceMotion<HTMLElement>(activePanel === 'monitor')
   const [rangeDays, setRangeDays] = useState<UsageStatsRangeDays>(30)
   const usageStats = useUsageStats(rangeDays)
   const heatmapStats = useUsageStats(HEATMAP_WINDOW_DAYS)
@@ -1204,7 +1206,7 @@ export function MonitorPanel({ appPanels, useProjection, useConversation, effort
         </div>
         <span className={css.readOnly}>UI SHELL / NATIVE DATA NEXT</span>
       </header>
-      <main className={css.content}>
+      <main ref={entranceRef} className={css.content}>
         <section className={css.hero}>
           <div>
             <p className={css.kicker}>USAGE / TRAJECTORY / EFFORT</p>

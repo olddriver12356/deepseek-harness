@@ -3,7 +3,13 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { ExpertStore } from './store.ts'
-import type { ExpertCreateRequest, ExpertDeleteRequest, ExpertDeleteValue, ExpertRecord, ExpertUpdateRequest } from './types.ts'
+import type {
+  ExpertCreateRequest,
+  ExpertDeleteRequest,
+  ExpertDeleteValue,
+  ExpertRecord,
+  ExpertUpdateRequest,
+} from './types.ts'
 
 export type * from './types.ts'
 

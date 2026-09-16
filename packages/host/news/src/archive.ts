@@ -77,10 +77,10 @@ function archivedItem(kind: ArchivedNewsItem['kind'], item: CachedNewsItem, fetc
 /** Append newly observed feed entries to one deduplicated Vault JSONL archive. */
 const pending = new Map<string, Promise<number>>()
 
-export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, fetchedAt: string): Promise<number> {
+export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, fetchedAt: string, projectNotes = true): Promise<number> {
   const target = resolve(path)
   const previous = pending.get(target)
-  const task = (previous ?? Promise.resolve(0)).catch(() => 0).then(async () => await append(target, batch, fetchedAt))
+  const task = (previous ?? Promise.resolve(0)).catch(() => 0).then(async () => await append(target, batch, fetchedAt, projectNotes))
   pending.set(target, task)
   try {
     return await task
@@ -89,7 +89,7 @@ export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, f
   }
 }
 
-async function append(path: string, batch: NewsArchiveBatch, fetchedAt: string): Promise<number> {
+async function append(path: string, batch: NewsArchiveBatch, fetchedAt: string, projectNotes: boolean): Promise<number> {
   // ponytail: one sequential scan per crawl; add a side index only when archive size makes this measurable.
   const retained = await readArchive(path)
   const records = parseArchive(retained)
@@ -108,6 +108,6 @@ async function append(path: string, batch: NewsArchiveBatch, fetchedAt: string):
     const separator = retained !== '' && !retained.endsWith('\n') ? '\n' : ''
     await appendFile(path, `${separator}${fresh.map(item => JSON.stringify(item)).join('\n')}\n`, 'utf8')
   }
-  await syncNewsNotes(dirname(path), [...records, ...fresh])
+  if (projectNotes) await syncNewsNotes(dirname(path), [...records, ...fresh])
   return fresh.length
 }

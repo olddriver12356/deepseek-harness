@@ -176,6 +176,11 @@ describe.skipIf(!requiredArtifacts)('Goal Remote built LIB chain', () => {
         identity: candidate => candidate.builtAgentId,
       })
 
+      // Mount the real generated Skills contribution, including its deletion endpoint.
+      if (typeof client.remote.skillFiles.deleteSkill !== 'function') {
+        throw new Error('Skills deletion Remote did not mount')
+      }
+
       let invalidRejected = false
       try {
         await client.remote.goals.create(rootAgent.id, { objective: 1 })

@@ -36,17 +36,6 @@ const AGENT_SKILLS_NOTICE = [
   'When you find a reusable procedure worth keeping, add or update a package there. After using one, self-improve it only by appending one line to its REFLECT/ file describing how it went; never rewrite the SKILL.md body yourself.',
 ].join('\n')
 
-const PERMISSION_NOTICE: Record<string, string> = {
-  'read-only': 'Treat this session as read-only for this task: inspect and analyze only, make no edits, run no mutating commands.',
-  'workspace-write': 'You may edit files and run commands scoped to this workspace for this task.',
-  'danger-full-access': 'Full access is granted for this task; still confirm before any irreversible action.',
-}
-
-function permissionNotice(permission: string): string {
-  const notice = PERMISSION_NOTICE[permission]
-  return notice === undefined ? '' : `## Permission\n${notice}`
-}
-
 function remoteValue<T>(result:
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } }): T {
@@ -72,13 +61,18 @@ export function apply(ctx: ClientContext): void {
           remove: async (id: string) => { remoteValue(await ctx.remote.experts.delete({ id })) },
           listStyles: async () => remoteValue(await ctx.remote.styles.list()),
           dispatch: async (expert: ExpertRecord, task: string, style: StyleRecord | undefined) => {
+            // A delegated Expert is started by the main Agent through the
+            // `dispatch_expert` tool inside a turn. Falling through to the
+            // injection path below would paste its instructions in as a user
+            // message — the hollow "Expert as prompt text" this design removed —
+            // so refuse loudly instead of degrading silently.
+            if (expert.execution === 'delegated') throw new Error(t('delegatedNotInjectable'))
             const current = ctx.sessions.list.getSnapshot().current
             if (current === undefined) throw new Error(t('noSession'))
             const session = ctx.sessions.binding(current)?.session
             if (session === undefined) throw new Error(t('sessionNotReady'))
             const text = [
               `Use the following approved Expert Method for this task.\n\n## Expert\n${expert.name}\n\n## Instructions\n${expert.instructions}`,
-              permissionNotice(expert.permission),
               style === undefined ? '' : `## Output style\n${style.name}\n\n${style.instructions}`,
               AGENT_SKILLS_NOTICE,
               `## Task\n${task}`,
@@ -100,10 +94,7 @@ export function apply(ctx: ClientContext): void {
   const composeExpertsText = (experts: readonly ExpertRecord[]): string => experts.length === 0
     ? ''
     : [
-      ...experts.map(expert => [
-        `## Expert\n${expert.name}\n\n## Instructions\n${expert.instructions}`,
-        permissionNotice(expert.permission),
-      ].filter(Boolean).join('\n\n')),
+      ...experts.map(expert => `## Expert\n${expert.name}\n\n## Instructions\n${expert.instructions}`),
       AGENT_SKILLS_NOTICE,
     ].join('\n\n')
 

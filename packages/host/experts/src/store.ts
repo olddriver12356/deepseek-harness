@@ -2,11 +2,12 @@ import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { access, mkdir, readFile, readdir, realpath, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import type { ExpertDraft, ExpertRecord, ExpertStatus } from './types.ts'
+import type { ExpertDraft, ExpertExecution, ExpertRecord, ExpertStatus } from './types.ts'
 
 const ARTIFACT = 'ARTIFACT.md'
 const TITLE_PATTERN = /^[^<>:"/\\|?*\u0000-\u001f]+$/u
 const STATUSES = new Set<ExpertStatus>(['draft', 'approved', 'suspended'])
+const EXECUTIONS = new Set<ExpertExecution>(['conversational', 'delegated'])
 
 interface ParsedArtifact {
   readonly data: Record<string, unknown>
@@ -17,8 +18,13 @@ function field(data: Record<string, unknown>, key: string): string {
   return typeof data[key] === 'string' ? data[key] : ''
 }
 
-function stringList(value: unknown): readonly string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+/**
+ * An absent or unrecognized mode reads as conversational, so legacy packages
+ * load unchanged and a malformed field never removes an Expert from the roster.
+ */
+function executionOf(data: Record<string, unknown>): ExpertExecution {
+  const value = field(data, 'execution')
+  return EXECUTIONS.has(value as ExpertExecution) ? value as ExpertExecution : 'conversational'
 }
 
 function parseFrontmatter(text: string): Record<string, unknown> {
@@ -60,10 +66,9 @@ function recordOf(directory: string, text: string): ExpertRecord {
     description: field(data, 'description'),
     instructions: instructionsOf(text),
     status: status as ExpertStatus,
+    execution: executionOf(data),
     model: field(data, 'model') || 'inherit',
     reasoning: field(data, 'reasoning') || 'inherit',
-    permission: field(data, 'permission') || 'inherit',
-    skills: stringList(data.skills),
     updatedAt: field(data, 'updated'),
   }
 }
@@ -77,8 +82,10 @@ function validateDraft(input: ExpertDraft): ExpertDraft {
     instructions: input.instructions.trim(),
     model: input.model.trim() || 'inherit',
     reasoning: input.reasoning.trim() || 'inherit',
-    permission: input.permission.trim() || 'inherit',
-    skills: [...new Set(input.skills.map(skill => skill.trim()).filter(Boolean))],
+    // The wire value is untrusted: an older client may omit it entirely, which
+    // defaults, while an unrecognized value is rejected below rather than
+    // silently normalized — tolerance belongs on the read path, not on writes.
+    execution: (input as { execution?: ExpertExecution }).execution ?? 'conversational',
   }
   if (draft.name.length === 0 || draft.name.length > 80 || !TITLE_PATTERN.test(draft.name) || draft.name.endsWith('.') || draft.name.endsWith(' ')) {
     throw new Error('experts: name is not a valid package title')
@@ -89,13 +96,14 @@ function validateDraft(input: ExpertDraft): ExpertDraft {
     throw new Error('experts: category, description, and instructions are required')
   }
   if (!STATUSES.has(draft.status)) throw new Error('experts: invalid status')
+  if (!EXECUTIONS.has(draft.execution)) throw new Error('experts: invalid execution mode')
   return draft
 }
 
 function frontmatter(data: Record<string, unknown>): string {
   const order = [
-    'schema_version', 'id', 'title', 'artifact_type', 'method_kind', 'layer', 'status', 'expert_status',
-    'owner_approved', 'topics', 'category', 'description', 'model', 'reasoning', 'permission', 'skills',
+    'schema_version', 'id', 'title', 'artifact_type', 'method_kind', 'execution', 'layer', 'status', 'expert_status',
+    'owner_approved', 'topics', 'category', 'description', 'model', 'reasoning',
     'knowledge_scopes', 'tool_policy', 'created', 'updated', 'created_by', 'source_kind', 'provenance', 'derived_from',
   ]
   const keys = [...order.filter(key => key in data), ...Object.keys(data).filter(key => !order.includes(key)).sort()]
@@ -110,6 +118,7 @@ function artifactText(id: string, draft: ExpertDraft, created: string): string {
     title: draft.name,
     artifact_type: 'Method',
     method_kind: 'Expert',
+    execution: draft.execution,
     layer: '5 Methods',
     status: 'active',
     expert_status: draft.status,
@@ -119,8 +128,6 @@ function artifactText(id: string, draft: ExpertDraft, created: string): string {
     description: draft.description,
     model: draft.model,
     reasoning: draft.reasoning,
-    permission: draft.permission,
-    skills: draft.skills,
     knowledge_scopes: [],
     tool_policy: 'inherit',
     created,

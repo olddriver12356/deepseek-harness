@@ -29,14 +29,14 @@
 
 .notice {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-yellow);
 }
 
 .savedNotice {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-cyan);
 }
@@ -92,7 +92,7 @@
   padding: 1px 6px;
   border: 1px solid var(--dsw-specific-agent-line);
   border-radius: 0;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--dsw-specific-agent-muted);
 }
@@ -195,7 +195,7 @@
   height: 28px;
   padding: 0 10px;
   border-radius: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 
@@ -247,7 +247,7 @@
 }
 
 .editorRoute {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-muted);
 }
@@ -262,7 +262,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   font-weight: 500;
   color: var(--dsw-specific-agent-muted);
@@ -279,7 +279,7 @@
   background: transparent;
   color: var(--dsw-specific-agent-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   cursor: pointer;
 }
@@ -291,7 +291,7 @@
 
 .advancedHint {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-muted);
 }
@@ -364,7 +364,7 @@
   margin-left: -4px;
   border-radius: 0;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   font-weight: 500;
   color: var(--dsw-specific-agent-muted);
@@ -420,7 +420,7 @@
 }
 
 .modelCatalogTitle {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   font-weight: 500;
   color: var(--dsw-specific-agent-muted);
@@ -430,7 +430,7 @@
 .modelEmpty {
   margin: 0;
   color: var(--dsw-specific-agent-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 
@@ -508,7 +508,7 @@
 
 .modelFieldLabel {
   color: var(--dsw-specific-agent-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 
@@ -532,7 +532,7 @@
   background: transparent;
   color: var(--dsw-specific-agent-text);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   cursor: pointer;
 }
@@ -592,7 +592,7 @@ select.input {
 
 .error {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-pink);
 }
@@ -677,14 +677,14 @@ select.input {
 .candidateId {
   flex: 1 1 auto;
   font-family: var(--ds-font-family-code);
-  font-size: 13px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
 .candidateEmpty {
   margin: 24px 0;
   color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   text-align: center;
 }

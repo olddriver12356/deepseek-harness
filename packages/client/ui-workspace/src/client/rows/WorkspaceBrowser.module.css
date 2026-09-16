@@ -28,7 +28,7 @@
   box-shadow: 5px 5px 0 var(--dsw-specific-agent-pink);
   color: var(--dsw-specific-agent-canvas);
   font-family: var(--dsw-specific-agent-display-font);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.09em;
   transform: rotate(-0.6deg);
@@ -45,7 +45,7 @@
   border-radius: 999px;
   box-sizing: border-box;
   font-family: var(--dsw-font-family);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
@@ -69,7 +69,7 @@
   border: 1px solid var(--dsw-specific-agent-line);
   border-radius: 3px;
   color: var(--dsw-specific-agent-text);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -139,7 +139,7 @@
 .currentWorkspaceEyebrow {
   color: var(--dsw-specific-agent-muted);
   font-family: var(--dsw-specific-agent-display-font);
-  font-size: 9px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -149,7 +149,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
 }
 
@@ -205,7 +205,7 @@
   line-height: 20px;
   color: var(--dsw-specific-agent-yellow);
   font-family: var(--dsw-specific-agent-display-font);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.11em;
   opacity: 1;
@@ -346,7 +346,7 @@
   background: transparent;
   opacity: 0;
   pointer-events: none;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-text);
   transition: opacity 120ms var(--ds-ease-in-out);
@@ -526,7 +526,7 @@
 .searchStatus,
 .searchWarning {
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-specific-agent-muted);
 }
@@ -601,7 +601,7 @@
   background: transparent;
   cursor: pointer;
   text-align: left;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--dsw-alias-label-tertiary);
 }
 
@@ -617,7 +617,7 @@
 .empty {
   padding: 16px 12px;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* Rename dialog form (same figma dialog family as the create modals). */
@@ -642,7 +642,7 @@
 
 .renameError {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-state-error-primary);
 }
@@ -652,7 +652,7 @@
 }
 
 .deleteStatus {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-label-secondary);
 }

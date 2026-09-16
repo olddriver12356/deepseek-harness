@@ -4,7 +4,16 @@ param(
 )
 
 $dshRoot = Split-Path -Parent $PSScriptRoot
+# Bitdefender blocks the exact path apps\cli\lib\bin.js on this machine, so tsdown cannot write
+# the bundle there and the build fails with access denied before emitting it. The unbundled
+# TypeScript compiler output under lib\types is the same entry and is not blocked, so fall back
+# to it when the bundle is absent. That entry also needs apps\cli\lib\package.json to exist,
+# because its readVersion resolves package.json one directory above the running file.
+# See the vault note 2026-09-14-dsh-autostart-bitdefender-path-block.
 $binJs = Join-Path $dshRoot 'apps\cli\lib\bin.js'
+if (-not (Test-Path $binJs)) {
+    $binJs = Join-Path $dshRoot 'apps\cli\lib\types\bin.js'
+}
 $distIndex = Join-Path $dshRoot 'apps\web\dist\index.html'
 
 if (-not (Test-Path $binJs)) {
@@ -24,17 +33,17 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 
 $orcaExe = Join-Path $env:LOCALAPPDATA 'Programs\orca\resources\bin\orca.exe'
-if (-not (Test-Path $orcaExe)) {
+
+# Orca routing (a managed terminal + tab in the calling room) only applies when actually
+# running inside an Orca pane. Any other terminal — a plain PowerShell window included —
+# just launches the server in the foreground here, no Orca dependency required.
+if ((-not (Test-Path $orcaExe)) -or (-not $env:ORCA_WORKTREE_ID)) {
     & node $binJs web --port $Port
     return
 }
 
 # --worktree current resolves by cwd, which lands in the plain worktree sharing this path
-# instead of the caller's workspace room, so require the explicit room id.
-if (-not $env:ORCA_WORKTREE_ID) {
-    Write-Error "ORCA_WORKTREE_ID is not set; cannot target the calling room. Run web from an Orca pane."
-    return
-}
+# instead of the caller's workspace room, so the explicit room id from Orca is required here.
 $room = "id:$($env:ORCA_WORKTREE_ID)"
 $command = "`$env:BROWSER='none'; node '$binJs' web --port $Port"
 $raw = & $orcaExe terminal create --worktree $room --command $command --title 'DeepSeek Harness' --json 2>&1 | Out-String

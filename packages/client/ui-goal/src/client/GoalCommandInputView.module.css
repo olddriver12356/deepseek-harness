@@ -32,7 +32,7 @@
      user bubble and rides the same Settings font-size axis (14/22 at the
      default); the `/goal` command chip, set in the code face by the shared
      projection, is what marks the line as a command. */
-  font-size: var(--dsh-content-font-size, 14px);
+  font-size: max(14px, var(--dsh-content-font-size, 14px));
   line-height: calc(22px + var(--dsh-content-font-delta, 0px));
   white-space: pre-wrap;
   clip-path: polygon(1% 2%, 100% 0, 98% 94%, 4% 100%);

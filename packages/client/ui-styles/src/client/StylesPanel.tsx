@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useEntranceMotion } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { IAppPanels } from '@deepseek-ai/dsh-client-ui-shell/client'
 import type { StyleDraft, StyleRecord, StyleStatus } from '@deepseek-ai/dsh-host-styles/types'
 import type { StyleLocaleKey } from './locales.ts'
@@ -38,9 +39,11 @@ function errorMessage(error: unknown): string {
 }
 
 function useModalDialog() {
-  const ref = useRef<HTMLDialogElement>(null)
+  const [opened, setOpened] = useState(false)
+  const ref = useEntranceMotion<HTMLDialogElement>(opened, 0, 'dialog')
   useEffect(() => {
     if (ref.current !== null && !ref.current.open) ref.current.showModal()
+    setOpened(true)
   }, [])
   return ref
 }
@@ -68,7 +71,7 @@ function StyleCard({ item, index, onOpen, onDelete, t }: {
 }): ReactNode {
   const callable = item.status === 'approved'
   return (
-    <article className={`${css.recordCard} ${callable ? '' : css.disabled}`} data-index={String(index + 1).padStart(2, '0')}>
+    <article data-entrance-card className={`${css.recordCard} ${callable ? '' : css.disabled}`} data-index={String(index + 1).padStart(2, '0')}>
       <div className={css.styleSwatch} />
       <div className={css.recordTop}>
         <span className={css.recordStatus}>{callable ? t('onCall') : t(item.status)}</span>
@@ -107,7 +110,7 @@ function RecordDialog({ state, onClose, onSave, t }: {
   }
 
   return (
-    <dialog className={css.dialog} ref={dialogRef} aria-labelledby="styles-record-title">
+    <dialog className={css.dialog} ref={dialogRef} onClose={onClose} aria-labelledby="styles-record-title">
       <form onSubmit={(event) => { void submit(event) }}>
         <header><div><p>{item === undefined ? t('newRecord') : copy ? t('copyRecord') : t('editRecord')}</p><h2 id="styles-record-title">{title}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label={t('close')}>×</button></header>
         <label>{t('name')}<input name="name" defaultValue={item === undefined ? '' : `${item.name}${copy ? t('copySuffix') : ''}`} maxLength={80} required /></label>
@@ -142,7 +145,7 @@ function DispatchDialog({ item, onClose, onDispatch, t }: {
     catch (reason) { setError(errorMessage(reason)); setSending(false) }
   }
   return (
-    <dialog className={css.dialog} ref={dialogRef} aria-labelledby="styles-dispatch-title">
+    <dialog className={css.dialog} ref={dialogRef} onClose={onClose} aria-labelledby="styles-dispatch-title">
       <form onSubmit={(event) => { void submit(event) }}>
         <header><div><p>{t('dispatchKicker')}</p><h2 id="styles-dispatch-title">{t('dispatchTitle')}</h2></div><button type="button" className={css.dialogClose} onClick={onClose} aria-label={t('close')}>×</button></header>
         <div className={css.dispatchBadge}>{item.name}</div>
@@ -157,6 +160,10 @@ function DispatchDialog({ item, onClose, onDispatch, t }: {
 
 export function StylesPanel({ appPanels, api, t }: StylesPanelProps): ReactNode {
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
+  const entranceRef = useEntranceMotion<HTMLElement>(activePanel === 'styles')
+  const [cardsReady, setCardsReady] = useState(false)
+  const cardsRef = useEntranceMotion<HTMLDivElement>(activePanel === 'styles' && cardsReady, 0, 'cards')
+  useEffect(() => { if (activePanel !== 'styles') setCardsReady(false) }, [activePanel])
   const [records, setRecords] = useState<readonly StyleRecord[]>([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -165,7 +172,7 @@ export function StylesPanel({ appPanels, api, t }: StylesPanelProps): ReactNode 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError('')
-    try { setRecords(await api.list()) }
+    try { setRecords(await api.list()); setCardsReady(true) }
     catch (reason) { setError(errorMessage(reason)) }
     finally { setLoading(false) }
   }, [api])
@@ -192,12 +199,12 @@ export function StylesPanel({ appPanels, api, t }: StylesPanelProps): ReactNode 
     <section className={css.panel} data-styles-panel hidden={activePanel !== 'styles'} aria-label={t('regionAria')}>
       <header className={css.header}>
         <div className={css.titleLockup}>
-          <span className={css.titleMark}>04</span>
+          <span className={css.titleMark}>05</span>
           <div><strong>{t('title')}</strong><small>{t('subtitle')}</small></div>
         </div>
         <span className={css.readOnly}>{t('live')}</span>
       </header>
-      <div className={css.viewport}><main className={css.content}>
+      <div className={css.viewport}><main ref={entranceRef} className={css.content}>
         <section className={css.collectionHero}><div><p className={css.sectionKicker}>{t('heroKicker')}</p><h1>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h1><p>{t('heroBody')}</p></div><button className={css.giantAdd} type="button" onClick={() => { setDialog({ kind: 'record' }) }}>＋<span>{t('add')}</span></button></section>
         <div className={css.collectionToolbar}>
           <label className={css.searchCut}>
@@ -212,7 +219,7 @@ export function StylesPanel({ appPanels, api, t }: StylesPanelProps): ReactNode 
           <span>{t('count', { count: visible.length })}</span>
         </div>
         {error !== '' && <p className={css.formError} role="alert">{error}</p>}
-        <div className={css.styleGrid}>
+        <div ref={cardsRef} className={css.styleGrid}>
           {loading
             ? <div className={css.emptyRecords}><strong>{t('loading')}</strong></div>
             : visible.length === 0

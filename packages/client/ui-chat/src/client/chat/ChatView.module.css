@@ -91,7 +91,7 @@
      on a 22px line inside a 26px row; both box heights shift by the same
      delta, preserving the 8px (22 − 14) leading and the 4px (26 − 22) row
      padding at every size. */
-  font-size: var(--dsh-content-font-size, 14px);
+  font-size: max(14px, var(--dsh-content-font-size, 14px));
   line-height: calc(22px + var(--dsh-content-font-delta, 0px));
   white-space: nowrap;
   background: linear-gradient(
@@ -162,7 +162,7 @@
   background: color-mix(in srgb, var(--dsw-specific-agent-acid) 8%, transparent);
   color: var(--dsw-specific-agent-muted);
   font-family: var(--ds-font-family-code);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.05em;
   cursor: pointer;
 }

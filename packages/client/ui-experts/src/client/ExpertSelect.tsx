@@ -1,7 +1,10 @@
 /**
  * Session-scoped Expert multi-select, seated inside the Live Signal card
  * (`shell.activity.selectors`). A searchable dropdown over the approved
- * roster: local render state tracks the checked ids, and every change
+ * CONVERSATIONAL roster — delegated Experts run as forked children with their
+ * own task and returned result, which this prefix surface cannot express, so
+ * they are dispatched from the Experts panel instead. Local render state
+ * tracks the checked ids, and every change
  * recomposes the full text and pushes it to `ctx.conversation.prefixes`
  * under the `'experts'` source, so it rides along on the Session's next
  * ordinary send without the composer importing this package.
@@ -34,7 +37,13 @@ export function ExpertSelect({ listExperts, setSelection, t }: ExpertSelectProps
   useEffect(() => {
     let cancelled = false
     listExperts().then((loaded) => {
-      if (!cancelled) setExperts(loaded.filter(expert => expert.status === 'approved'))
+      // Conversational only: this surface composes prefix text for the next
+      // ordinary send, which applies none of a delegated Expert's persona,
+      // route, or tool scoping. Offering one here would inject its instructions
+      // while silently skipping the fork that gives it its authority.
+      if (!cancelled) {
+        setExperts(loaded.filter(expert => expert.status === 'approved' && expert.execution === 'conversational'))
+      }
     }).catch(() => {})
     return () => { cancelled = true }
   }, [listExperts])

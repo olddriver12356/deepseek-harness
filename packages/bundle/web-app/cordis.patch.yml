@@ -87,6 +87,12 @@
     - id: plugin-inventory
       name: '@deepseek-ai/dsh-host-plugin-inventory'
 
+    - id: apps
+      name: '@deepseek-ai/dsh-host-apps'
+
+    - id: ui-apps
+      name: '@deepseek-ai/dsh-client-ui-apps'
+
     - id: news
       name: '@deepseek-ai/dsh-host-news'
       config:
@@ -97,6 +103,13 @@
       name: '@deepseek-ai/dsh-host-experts'
       config:
         vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+
+    - id: knowledge
+      name: '@deepseek-ai/dsh-host-knowledge'
+      config:
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+        distillTimeoutMs: 180000
+        maxInputBytes: 524288
 
     - id: styles
       name: '@deepseek-ai/dsh-host-styles'

@@ -29,6 +29,8 @@ kind: "package-reference"
 
 ### source 提供什么
 
+Markdown 文件默认使用 DSH 排版的阅读视图，技能名称、说明、分类和调用方式与指令正文分别呈现。字段和源码视图共享同一份未保存内容。每个列表项都有删除按钮，内置只读项禁用删除。确认后，Host 将选中的来源移到本地 `.dsh-skill-trash` 回收目录并显示恢复路径；链接来源只移动链接，保留共享原件。恢复时将该条目移回原位置，目前没有应用内恢复按钮。
+
 普通会话的候选来自 `skills/list` Remote；宿主提供每一个用户可调用的 skill，`modelInvocable: false` 的条目（即 `disable-model-invocation` skill，此路径是其唯一入口）会以当前语言把仅限用户标记作为描述前缀带上。结果经 `/` 菜单共享的名字排序器（ui-primitives 的 `rankByName`）排名：查询作为不区分大小写的有序子序列匹配 skill 名，前缀命中排最前，同分保持宿主顺序（[排名决策](../../../.agents/notes/implemented/feature/2026-08-04-web-slash-command-fuzzy-discovery.zh.md)）。`skills/list` 调用失败时会被记录并静默丢弃该菜单组——菜单只显示 pending/ready 状态。
 
 ### skill 工具行

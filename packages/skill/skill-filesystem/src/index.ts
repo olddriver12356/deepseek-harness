@@ -88,7 +88,7 @@ export const Config: Schema<Config> = z.object({
   bundledSkillDir: z.string(),
 })
 
-interface SkillRoot {
+export interface SkillRoot {
   path: string
   source: SkillSource
   rank: number
@@ -239,26 +239,46 @@ export class FileSystemSkillProvider implements SkillProvider {
   }
 
   private async roots(cwd: string | undefined): Promise<SkillRoot[]> {
-    const roots: SkillRoot[] = []
-    if (this.includeDefaultRoots && cwd !== undefined) {
-      const projectRoot = await findProjectRoot(resolve(cwd), optionalFileSystem(this.ctx))
-      roots.push(
-        { path: join(projectRoot, '.dsh/skills'), source: 'project-dsh', rank: PROJECT_DSH_RANK, projectRoot },
-        { path: join(projectRoot, '.agents/skills'), source: 'project-agents', rank: PROJECT_AGENTS_RANK, projectRoot },
-      )
-    }
-    roots.push(...this.customSkillDirs.map(path => ({ path, source: 'custom' as const, rank: CUSTOM_RANK })))
-    if (this.includeDefaultRoots) {
-      roots.push(
-        { path: join(this.dshHome, 'skills'), source: 'user-dsh', rank: USER_DSH_RANK, skipSystem: true },
-        { path: join(this.agentsHome, 'skills'), source: 'user-agents', rank: USER_AGENTS_RANK },
-      )
-    }
-    if (this.bundledSkillDir !== undefined) {
-      roots.push({ path: this.bundledSkillDir, source: 'bundled', rank: BUNDLED_SKILL_RANK, trustedHost: true })
-    }
-    return roots
+    return resolveSkillRoots(cwd, {
+      includeDefaultRoots: this.includeDefaultRoots,
+      dshHome: this.dshHome,
+      agentsHome: this.agentsHome,
+      customSkillDirs: this.customSkillDirs,
+      ...this.bundledSkillDir === undefined ? {} : { bundledSkillDir: this.bundledSkillDir },
+    }, optionalFileSystem(this.ctx))
   }
+}
+
+/** Resolve the ordered physical roots shared by discovery and the workspace editor.
+ * @param cwd - workspace directory.
+ * @param config - filesystem provider root configuration.
+ * @param fs - optional virtual filesystem used by provider discovery.
+ * @returns roots in runtime precedence order.
+ */
+export async function resolveSkillRoots(cwd: string | undefined, config: Config = {}, fs?: FileSystem): Promise<SkillRoot[]> {
+  const includeDefaultRoots = config.includeDefaultRoots ?? true
+  const dshHome = resolveDshHome(config.dshHome)
+  const agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), '.agents'))
+  const bundledSkillDir = config.bundledSkillDir ?? (includeDefaultRoots ? process.env.DSH_BUNDLED_SKILL_DIR : undefined)
+  const roots: SkillRoot[] = []
+  if (includeDefaultRoots && cwd !== undefined) {
+    const projectRoot = await findProjectRoot(resolve(cwd), fs)
+    roots.push(
+      { path: join(projectRoot, '.dsh/skills'), source: 'project-dsh', rank: PROJECT_DSH_RANK, projectRoot },
+      { path: join(projectRoot, '.agents/skills'), source: 'project-agents', rank: PROJECT_AGENTS_RANK, projectRoot },
+    )
+  }
+  roots.push(...(config.customSkillDirs ?? []).map(path => ({ path: resolve(path), source: 'custom' as const, rank: CUSTOM_RANK })))
+  if (includeDefaultRoots) {
+    roots.push(
+      { path: join(dshHome, 'skills'), source: 'user-dsh', rank: USER_DSH_RANK, skipSystem: true },
+      { path: join(agentsHome, 'skills'), source: 'user-agents', rank: USER_AGENTS_RANK },
+    )
+  }
+  if (bundledSkillDir !== undefined) {
+    roots.push({ path: resolve(bundledSkillDir), source: 'bundled', rank: BUNDLED_SKILL_RANK, trustedHost: true })
+  }
+  return roots
 }
 
 type SkillWatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
@@ -1007,7 +1027,8 @@ function rejectLegacyInvocationKey(data: Record<string, unknown>, legacy: string
   }
 }
 
-function frontmatterBoolean(data: Record<string, unknown>, key: string): boolean | undefined {
+/** Parse the invocation flag grammar shared by discovery and physical inventory. */
+export function frontmatterBoolean(data: Record<string, unknown>, key: string): boolean | undefined {
   if (!Object.hasOwn(data, key)) return undefined
   const value = data[key]
   if (typeof value === 'boolean') return value

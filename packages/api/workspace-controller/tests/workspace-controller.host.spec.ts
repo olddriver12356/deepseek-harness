@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import Loader from '@deepseek-ai/cordis-plugin-loader'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import Storage from '@deepseek-ai/dsh-storage'
 import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
@@ -41,7 +42,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve }
 }
 
-async function harness() {
+async function harness(loaded = false) {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'dsh-workspace-controller-')))
   tempDirs.push(root)
   const ctx = new Context()
@@ -59,7 +60,14 @@ async function harness() {
     lookups: { configure: () => dispose },
     contexts: { configureHost: () => dispose },
   } as never)
-  const controller = new WorkspaceController(ctx)
+  let controller: WorkspaceController
+  if (loaded) {
+    await ctx.plugin(Loader)
+    ctx.loader.internal = { version: 'v2', import: async () => WorkspaceController } as unknown as typeof ctx.loader.internal
+    await ctx.loader.create({ name: 'fixture:workspace-controller' })
+    await ctx.loader.await()
+    controller = ctx.workspaceController
+  } else controller = new WorkspaceController(ctx)
   return { controller, ctx, root, storageDomain }
 }
 
@@ -78,6 +86,22 @@ async function nextFrame(
 }
 
 describe('WorkspaceController commands', () => {
+  it('mounts skill file editing through Loader and writes inside a registered Workspace', async () => {
+    const { controller, ctx, root } = await harness(true)
+    const directory = stageDir(root, '.agents/skills/loader-skill')
+    const file = join(directory, 'SKILL.md')
+    writeFileSync(file, '---\nname: loader-skill\ndescription: Loader fixture\n---\nRead source.\n')
+    const { workspace } = await controller.create({ path: root })
+    const inventory = await ctx.skillFilesController.list(workspace.workspaceId)
+    const skill = inventory.skills.find(item => item.path === file)
+    expect(skill).toBeDefined()
+    const request = { workspaceId: workspace.workspaceId, id: skill!.id, file: 'SKILL.md' }
+    const loaded = await ctx.skillFilesController.read(request)
+    await ctx.skillFilesController.write({ ...request, revision: loaded.revision, content: loaded.content!.replace('Read source.', 'Read all source.') })
+    expect(readFileSync(file, 'utf8')).toContain('Read all source.')
+    await ctx.fiber.dispose()
+    expect(ctx.get('skillFilesController')).toBeUndefined()
+  })
   it('serializes concurrent path adoption and preserves an existing title', async () => {
     const { controller, root } = await harness()
     const path = stageDir(root, 'alpha')

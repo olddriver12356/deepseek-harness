@@ -55,7 +55,7 @@
   background: var(--dsw-alias-state-business-tertiary);
   color: var(--dsw-alias-label-primary-bluish);
   font-family: var(--ds-font-family-code);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   font-weight: 500;
   white-space: nowrap;
@@ -144,7 +144,7 @@
   border-radius: 16px;
   background: transparent;
   color: var(--dsw-alias-label-primary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   font-weight: 500;
   cursor: pointer;
@@ -209,7 +209,7 @@
 
 .modalError {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-state-error-primary);
 }

@@ -10,7 +10,9 @@ import dynamicRemote from '@deepseek-ai/dsh-cordis-host-runner/remote'
 import pluginInventoryRemote from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 import messageFeedbackRemote from '@deepseek-ai/dsh-message-feedback/remote'
 import newsRemote from '@deepseek-ai/dsh-host-news/remote'
+import appsRemote from '@deepseek-ai/dsh-host-apps/remote'
 import expertsRemote from '@deepseek-ai/dsh-host-experts/remote'
+import knowledgeRemote from '@deepseek-ai/dsh-host-knowledge/remote'
 import stylesRemote from '@deepseek-ai/dsh-host-styles/remote'
 import fileUploadsRemote from '@deepseek-ai/dsh-client-file-upload/remote'
 import sessionReferencesRemote from '@deepseek-ai/dsh-session-reference/remote'
@@ -29,7 +31,9 @@ export type {} from '@deepseek-ai/dsh-llm/remote'
 export type {} from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 export type {} from '@deepseek-ai/dsh-message-feedback/remote'
 export type {} from '@deepseek-ai/dsh-host-news/remote'
+export type {} from '@deepseek-ai/dsh-host-apps/remote'
 export type {} from '@deepseek-ai/dsh-host-experts/remote'
+export type {} from '@deepseek-ai/dsh-host-knowledge/remote'
 export type {} from '@deepseek-ai/dsh-host-styles/remote'
 export type {} from '@deepseek-ai/dsh-client-file-upload/remote'
 export type {} from '@deepseek-ai/dsh-session-reference/remote'
@@ -154,7 +158,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
     for (const contribution of [
       agentPresetsRemote, commandsRemote, settingsControllerRemote, goalsRemote, llmRemote, dynamicRemote,
       pluginInventoryRemote, messageFeedbackRemote, newsRemote, fileUploadsRemote, sessionReferencesRemote,
-      expertsRemote, stylesRemote,
+      expertsRemote, stylesRemote, knowledgeRemote, appsRemote,
       subagentsRemote, sessionRemote, workspaceRemote,
     ]) {
       disposers.push(await ctx.remote.$mount(contribution))

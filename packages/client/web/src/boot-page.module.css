@@ -39,7 +39,7 @@
 }
 
 .hint {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary, var(--dsh-boot-label-tertiary));
 }
@@ -98,7 +98,7 @@
     'PingFang SC',
     'Microsoft YaHei'
   );
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-label-secondary, var(--dsh-boot-label-secondary));
   white-space: pre-wrap;
