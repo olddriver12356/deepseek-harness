@@ -41,6 +41,7 @@
 .workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 360px; height: calc(100dvh - 32px); flex: 0 0 auto; }
 .index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 90%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .index { display: flex; flex-direction: column; padding: 14px; }
+.index > select { margin-bottom: 8px; }
 .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 11px; }
 .filters select { padding: 7px; }
 .count { color: var(--skill-muted); font-size: 11px; }

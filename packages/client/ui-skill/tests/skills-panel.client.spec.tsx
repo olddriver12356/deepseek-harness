@@ -28,7 +28,7 @@ function enableMotion() {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON() {} })
 }
 const t: PanelTranslate = (key, params) => Object.entries(params ?? {}).reduce((text, [name, value]) => text.replace(`{${name}}`, String(value)), panelEn[key])
-function setup() {
+function setup(extraSkills: Partial<SkillArtifact>[] = []) {
   HTMLDialogElement.prototype.showModal = function () { this.open = true }
   const workspaceId = 'workspace' as WorkspaceId
   const workspaceState = { items: [{ workspaceId, title: 'Example', path: '/project', sessionIds: ['session'] }] }
@@ -40,10 +40,28 @@ function setup() {
   const item: SkillArtifact = { id: 'capture' as SkillArtifact['id'], name: 'capture', description: 'Capture sources', category: 'writing', scope: 'project', source: 'project-agents', path: '/project/.agents/skills/capture/SKILL.md', canonicalPath: '/project/.agents/skills/capture/SKILL.md', entryFile: 'SKILL.md', bundle: true, userInvocable: true, modelInvocable: true, shadowed: false, writable: true, problem: '' }
   const content: SkillFileContent = { file: 'SKILL.md', content: '---\nname: capture\ndescription: Capture sources\nmetadata:\n  category: writing\n---\nRead source', revision: 'revision', bytes: 100 }
   const run = vi.fn().mockResolvedValue(undefined)
-  const api: SkillsApi = { list: vi.fn().mockResolvedValue({ skills: [item], projectDestination: '/project/.agents/skills', personalDestination: '/user/.agents/skills' }), tree: vi.fn().mockResolvedValue([{ path: 'SKILL.md', kind: 'file' }, { path: 'references', kind: 'directory' }, { path: 'references/note.md', kind: 'file' }]), read: vi.fn().mockImplementation(async request => ({ ...content, file: request.file })), write: vi.fn().mockImplementation(async request => ({ ...content, content: request.content })), remove: vi.fn().mockResolvedValue({ recoveryPath: '/recovery/capture' }), handoff: vi.fn().mockReturnValue(run) }
+  const api: SkillsApi = { list: vi.fn().mockResolvedValue({ skills: [item, ...extraSkills.map(skill => ({ ...item, ...skill }))], projectDestination: '/project/.agents/skills', personalDestination: '/user/.agents/skills' }), tree: vi.fn().mockResolvedValue([{ path: 'SKILL.md', kind: 'file' }, { path: 'references', kind: 'directory' }, { path: 'references/note.md', kind: 'file' }]), read: vi.fn().mockImplementation(async request => ({ ...content, file: request.file })), write: vi.fn().mockImplementation(async request => ({ ...content, content: request.content })), remove: vi.fn().mockResolvedValue({ recoveryPath: '/recovery/capture' }), handoff: vi.fn().mockReturnValue(run) }
   render(<SkillsPanel appPanels={appPanels} api={api} sessions={sessions} workspaces={workspaces} t={t} />)
   return { api, run }
 }
+it('searches names by default and includes descriptions only when selected', async () => {
+  setup([
+    { id: 'note' as SkillArtifact['id'], name: 'note', description: 'Polish writing', scope: 'personal' },
+    { id: 'writer' as SkillArtifact['id'], name: 'writer', description: 'Create a note' },
+  ])
+  await screen.findByRole('button', { name: /^note/ })
+  const search = screen.getByRole('textbox', { name: panelEn.search })
+  fireEvent.change(search, { target: { value: ' /NOTE ' } })
+  expect(screen.getByRole('button', { name: /^note/ })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /^writer/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: /^capture/ })).toBeNull()
+  fireEvent.change(screen.getByRole('combobox', { name: panelEn.searchFields }), { target: { value: 'all' } })
+  expect(screen.getByRole('button', { name: /^writer/ })).toBeTruthy()
+  expect(screen.getByRole('button', { name: /^note/ })).toBeTruthy()
+  fireEvent.change(screen.getByRole('combobox', { name: panelEn.scope }), { target: { value: 'personal' } })
+  expect(screen.queryByRole('button', { name: /^writer/ })).toBeNull()
+  expect(screen.getByRole('button', { name: /^note/ })).toBeTruthy()
+})
 it('animates the create dialog only after native opening and cancels without delaying reopening', async () => {
   enableMotion()
   setup()
