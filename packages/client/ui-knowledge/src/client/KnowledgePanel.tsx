@@ -16,12 +16,27 @@ export interface KnowledgePanelProps {
 }
 
 type ActiveLayer = 'all' | KnowledgeLayerId
+type ActiveKind = 'all' | 'news' | 'other'
 
-function visibleArtifacts(snapshot: KnowledgeSnapshot, activeLayer: ActiveLayer, query: string): readonly KnowledgeArtifact[] {
+const NEWS_TOPIC = 'news-article'
+const KIND_OPTIONS: readonly { readonly id: ActiveKind; readonly labelKey: KnowledgeLocaleKey }[] = [
+  { id: 'all', labelKey: 'kindAll' },
+  { id: 'news', labelKey: 'kindNews' },
+  { id: 'other', labelKey: 'kindOther' },
+]
+
+function isNewsArtifact(artifact: KnowledgeArtifact): boolean {
+  return (artifact.topics ?? []).includes(NEWS_TOPIC)
+}
+
+function visibleArtifacts(
+  snapshot: KnowledgeSnapshot, activeLayer: ActiveLayer, activeKind: ActiveKind, query: string,
+): readonly KnowledgeArtifact[] {
   const needle = query.trim().toLowerCase()
   const labels = new Map(snapshot.layers.map(layer => [layer.id, layer.label.toLowerCase()]))
   return snapshot.artifacts.filter((artifact) => {
     if (activeLayer !== 'all' && artifact.layerId !== activeLayer) return false
+    if (activeKind !== 'all' && isNewsArtifact(artifact) !== (activeKind === 'news')) return false
     if (needle === '') return true
     return [artifact.title, artifact.summary, artifact.state, labels.get(artifact.layerId) ?? '']
       .some(value => value.toLowerCase().includes(needle))
@@ -43,7 +58,7 @@ function KnowledgeHeader({ t }: { readonly t: Translate }): ReactNode {
     <header className={css.header}>
       <div className={css.titleLockup}>
         <span className={css.titleMark}>02</span>
-        <div><strong>Knowledge</strong><small>第二大脑</small></div>
+        <div><strong>{t('panelTitle')}</strong><small>第二大脑</small></div>
       </div>
       <span className={css.readOnly}>{t('workflowBoundary')}</span>
     </header>
@@ -72,16 +87,22 @@ interface KnowledgeControlsProps {
   readonly snapshot: KnowledgeSnapshot
   readonly query: string
   readonly activeLayer: ActiveLayer
+  readonly activeKind: ActiveKind
   readonly onQueryChange: (query: string) => void
   readonly onLayerChange: (layer: ActiveLayer) => void
+  readonly onKindChange: (kind: ActiveKind) => void
+  readonly t: Translate
 }
 
 function KnowledgeControls({
   snapshot,
   query,
   activeLayer,
+  activeKind,
   onQueryChange,
   onLayerChange,
+  onKindChange,
+  t,
 }: KnowledgeControlsProps): ReactNode {
   return (
     <>
@@ -99,6 +120,13 @@ function KnowledgeControls({
         {snapshot.layers.map(layer => (
           <button key={layer.id} type="button" aria-pressed={activeLayer === layer.id} onClick={() => { onLayerChange(layer.id) }}>
             {layer.ordinal} {layer.label}
+          </button>
+        ))}
+      </div>
+      <div className={css.filters} role="group" aria-label="Kind">
+        {KIND_OPTIONS.map(option => (
+          <button key={option.id} type="button" aria-pressed={activeKind === option.id} onClick={() => { onKindChange(option.id) }}>
+            {t(option.labelKey)}
           </button>
         ))}
       </div>
@@ -196,15 +224,16 @@ export function KnowledgePanel({
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   const [query, setQuery] = useState('')
   const [activeLayer, setActiveLayer] = useState<ActiveLayer>('all')
+  const [activeKind, setActiveKind] = useState<ActiveKind>('all')
   const entranceRef = useEntranceMotion<HTMLElement>(activePanel === 'knowledge')
-  const cardsRef = useEntranceMotion<HTMLElement>(activePanel === 'knowledge', activeLayer, 'cards')
+  const cardsRef = useEntranceMotion<HTMLElement>(activePanel === 'knowledge', `${activeLayer}:${activeKind}`, 'cards')
   const [selectedArtifactId, setSelectedArtifactId] = useState(snapshot.featuredArtifactId)
-  const visible = visibleArtifacts(snapshot, activeLayer, query)
+  const visible = visibleArtifacts(snapshot, activeLayer, activeKind, query)
   const layerById = new Map(snapshot.layers.map(layer => [layer.id, layer]))
   const selected = visible.find(artifact => artifact.id === selectedArtifactId) ?? visible[0]
 
   return (
-    <section className={css.panel} data-knowledge-panel hidden={activePanel !== 'knowledge'} aria-label="Knowledge / 第二大脑">
+    <section className={css.panel} data-knowledge-panel hidden={activePanel !== 'knowledge'} aria-label="知识库 / 第二大脑">
       <KnowledgeHeader t={t} />
       <div className={css.viewport}>
         <main ref={entranceRef} className={css.content}>
@@ -215,8 +244,11 @@ export function KnowledgePanel({
             snapshot={snapshot}
             query={query}
             activeLayer={activeLayer}
+            activeKind={activeKind}
             onQueryChange={setQuery}
             onLayerChange={setActiveLayer}
+            onKindChange={setActiveKind}
+            t={t}
           />
           <div className={css.topGrid}>
             <section aria-labelledby="knowledge-focus-heading">

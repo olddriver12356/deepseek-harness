@@ -1,4 +1,5 @@
 export const zh = {
+  panelTitle: '知识库',
   reviewed: '已审阅', unreviewed: '未审阅', learned: '已掌握', toLearn: '待掌握', markLearned: '标记已掌握',
   suggestedDestination: '建议归档位置', filed: '已归档', loadSource: '加载原始记录',
   copy: '复制', copied: '已复制', footnotes: '脚注', back: '返回', source: '原始 Markdown',
@@ -24,6 +25,7 @@ export const zh = {
 } as const
 export type KnowledgeLocaleKey = keyof typeof zh
 export const en: Record<KnowledgeLocaleKey, string> = {
+  panelTitle: 'Knowledge',
   reviewed: 'Reviewed', unreviewed: 'Not reviewed', learned: 'Learned', toLearn: 'To learn', markLearned: 'Mark learned',
   suggestedDestination: 'Suggested destination', filed: 'Filed', loadSource: 'Load original record',
   copy: 'Copy', copied: 'Copied', footnotes: 'Footnotes', back: 'Back', source: 'Raw Markdown',
@@ -46,4 +48,5 @@ export const en: Record<KnowledgeLocaleKey, string> = {
   loading: 'Loading…', refresh: 'Refresh', close: 'Close source', evidence: 'Complete session log',
   reader: 'Artifact source', retry: 'Retry',
   notice: 'First save the original conversation to Agent Intake without AI. Only committed records are saved; attachment files are not copied.',
+  kindAll: 'All kinds', kindNews: 'News', kindOther: 'Non-news',
 }

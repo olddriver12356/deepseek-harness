@@ -124,6 +124,28 @@ describe('KnowledgePanel', () => {
     expect(within(library).getByRole('button', { name: /PowerShell ConvertTo-Json Contract/ })).toBeTruthy()
   })
 
+  it('filters by Kind between News and non-News captures', () => {
+    const newsArtifact = {
+      id: 'news-capture', layerId: 'intake', state: 'READY', title: 'AI roundup',
+      summary: 'wire copy', updatedAt: '2026-09-10', topics: ['news-article'],
+    } as const
+    const snapshot = { ...KNOWLEDGE_FIXTURE, artifacts: [...KNOWLEDGE_FIXTURE.artifacts, newsArtifact] }
+    const appPanels = new AppPanelsController()
+    appPanels.setActive('knowledge')
+    render(<KnowledgePanel appPanels={appPanels} snapshot={snapshot} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '新闻' }))
+    expect(screen.getByText('01 RESULTS')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /AI roundup/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '非新闻' }))
+    expect(screen.getByText('05 RESULTS')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /AI roundup/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '全部类型' }))
+    expect(screen.getByText('06 RESULTS')).toBeTruthy()
+  })
+
   it('uses the empty Processed filter for the empty library and focus states', () => {
     renderKnowledge()
 

@@ -185,7 +185,7 @@ export function NewsPanel({ appPanels, read, saveToKnowledge, distillNews, t = k
   return (
     <main ref={panelRef} className={css.panel} data-news-panel data-news-state={state}>
       <header className={css.header}>
-        <div className={css.lockup}><span className={css.mark}>06</span><div><strong>News</strong><small>AI 实时动态</small></div></div>
+        <div className={css.lockup}><span className={css.mark}>06</span><div><strong>新闻</strong><small>AI 实时动态</small></div></div>
         <span className={css.status}>LIVE FEED · LAST 3 DAYS</span>
       </header>
       <div className={css.viewport}>

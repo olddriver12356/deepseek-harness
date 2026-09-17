@@ -1202,7 +1202,7 @@ export function MonitorPanel({ appPanels, useProjection, useConversation, effort
       <header className={css.header}>
         <div className={css.titleLockup}>
           <span className={css.titleMark}>05</span>
-          <div><strong>Monitor</strong><small>用量与轨迹</small></div>
+          <div><strong>监控</strong><small>用量与轨迹</small></div>
         </div>
         <span className={css.readOnly}>UI SHELL / NATIVE DATA NEXT</span>
       </header>
