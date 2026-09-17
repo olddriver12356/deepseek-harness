@@ -5,7 +5,7 @@ import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type { SkillFileRequest, SkillFileWriteRequest, SkillArtifactId, WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
+import type { SkillDeleteRequest, SkillFileRequest, SkillFileWriteRequest, SkillArtifactId, WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
 import { SkillsPanel } from './SkillsPanel.tsx'
 import { panelEn, panelZh, type PanelKey } from './panel-locales.ts'
 import { createDraftHandoff, draftingPrompt, type SkillDraft } from './creation.ts'
@@ -24,6 +24,7 @@ export function apply(ctx: Context): void {
     tree: async (workspaceId: WorkspaceId, id: SkillArtifactId) => unwrap(await ctx.remote.skillFiles.tree(workspaceId, id)),
     read: async (request: SkillFileRequest) => unwrap(await ctx.remote.skillFiles.read(request)),
     write: async (request: SkillFileWriteRequest) => unwrap(await ctx.remote.skillFiles.write(request)),
+    remove: async (request: SkillDeleteRequest) => unwrap(await ctx.remote.skillFiles.deleteSkill(request)),
     handoff: (workspaceId: WorkspaceId, draft: SkillDraft, destination: string) =>
       createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination)),
   }

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { collectFeed, parseFeed, type FeedSource } from '../src/feed.ts'
+import { fetchPublic } from '../src/public-fetch.ts'
+vi.mock('../src/public-fetch.ts', () => ({ fetchPublic: vi.fn() }))
 
 const SOURCE: FeedSource = { name: 'Test', url: 'https://example.com/feed.xml' }
 const NOW = Date.parse('2026-09-04T12:00:00.000Z')
@@ -27,7 +29,7 @@ describe('News feed collection', () => {
   it('deduplicates and limits the combined column to ten newest items', async () => {
     const items = Array.from({ length: 11 }, (_, index) => `
       <item><title>Item ${index}</title><link>https://example.com/${index}</link><pubDate>${new Date(NOW - index * 60_000).toUTCString()}</pubDate></item>`).join('')
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(`<rss><channel>${items}<item><title>Duplicate</title><link>https://example.com/0</link></item></channel></rss>`, { status: 200, headers: { 'content-type': 'application/rss+xml' } })))
+    vi.mocked(fetchPublic).mockImplementation(async () => ({ response: new Response(`<rss><channel>${items}<item><title>Duplicate</title><link>https://example.com/0</link></item></channel></rss>`, { status: 200, headers: { 'content-type': 'application/rss+xml' } }) as never, close: async () => {} }))
 
     const result = await collectFeed([SOURCE, { ...SOURCE, name: 'Mirror' }], NOW)
     expect({ archived: result.archive.length, visible: result.visible.length }).toEqual({ archived: 11, visible: 10 })

@@ -12,6 +12,7 @@ import type {} from '@deepseek-ai/dsh-token-meter/client'
 type LiveSignalProps =
   PropsRuntime<'shell.activity'>
   & PropsRenderSlots<'shell.activity.selectors'>
+  & PropsRenderSlots<'shell.activity.capture'>
   & InjectFace<ActivityInjected>
 
 /** The slice of the `goal` projection this card reads; the goal domain owns the full shape. */
@@ -225,7 +226,7 @@ export function LiveSignalPanel({
           )}
       </section>
 
-      <button type="button" className={css.capture} disabled title="Milestone 3 Vault Remote 尚未接入">⇣ 沉淀本次对话<span>暂不可用</span></button>
+      {renderSlot('shell.activity.capture', { className: css.capture })}
     </aside>
   )
 }

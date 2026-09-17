@@ -8,6 +8,7 @@
  * a command) marks the rail correctly without a second source of truth.
  */
 import { useSyncExternalStore } from 'react'
+import { useEntranceMotion } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { IAppPanels, PanelId } from '@deepseek-ai/dsh-client-ui-shell/client'
 import css from './AppRail.module.css'
 import { zh, type RailKey } from './locales.ts'
@@ -31,14 +32,15 @@ const ENTRIES: readonly RailEntry[] = [
   { id: 'news', number: '08', label: 'news', caption: 'newsCaption' },
 ]
 
-/** Rail occupant. `appPanels` is passed in so the component stays testable without cordis. */
-/** Keep News last when future pages are added. */
+/** News remains the final destination even when later pages are appended. */
 export function newsLast<T extends { id: string }>(entries: readonly T[]): T[] {
   return [...entries.filter(entry => entry.id !== 'news'), ...entries.filter(entry => entry.id === 'news')]
 }
 
+/** Rail occupant. `appPanels` is passed in so the component stays testable without cordis. */
 export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanels: IAppPanels; t?: (key: RailKey) => string }) {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
+  const markerRef = useEntranceMotion<HTMLSpanElement>(true, active)
   return (
     <nav className={css.rail} role="tablist" aria-label={t('navigation')}>
       {newsLast(ENTRIES).map((entry, index) => (
@@ -51,7 +53,7 @@ export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanel
           className={css.entry}
           onClick={() => { appPanels.setActive(entry.id) }}
         >
-          <span className={css.number}>{String(index + 1).padStart(2, '0')}</span>
+          <span ref={entry.id === active ? markerRef : undefined} className={css.number}>{String(index + 1).padStart(2, '0')}</span>
           <strong>{t(entry.label)}</strong>
           <small>{t(entry.caption)}</small>
         </button>

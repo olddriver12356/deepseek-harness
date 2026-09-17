@@ -3,6 +3,8 @@
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
   "include": ["src"],
   "references": [
+    { "path": "../knowledge" },
+    { "path": "../../web/web-fetch-http" },
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/timer" },
     { "path": "../../../vendor/schemastery" },

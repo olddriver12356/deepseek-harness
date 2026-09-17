@@ -55,7 +55,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 24px;
   color: var(--dsw-alias-label-tertiary);
 }
@@ -78,7 +78,7 @@
   margin-left: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 24px;
   color: var(--dsw-alias-state-error-primary);
 }
@@ -93,13 +93,13 @@
 /* Said once in the expanded body: this card records, the panel operates. */
 .panelHint {
   margin: 4px 0 2px 4px;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--dsw-alias-label-caption);
 }
 
 .statusLabel {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 24px;
   color: var(--dsw-alias-label-caption);
 }
@@ -112,7 +112,7 @@
   margin-left: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 24px;
   color: var(--dsw-alias-label-secondary);
 }
@@ -127,7 +127,7 @@
   margin-left: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 24px;
   color: var(--dsw-alias-label-caption);
 }
@@ -135,7 +135,7 @@
 .switch {
   height: 22px;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* Terminal definitions (unloaded, or lost to a host restart) stay in the flow
@@ -229,7 +229,7 @@
 .sectionLabel {
   flex: none;
   padding: 2px 0;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 16px;
   color: var(--dsw-alias-label-caption);
@@ -265,7 +265,7 @@
   corner-shape: round;
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-secondary);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
   cursor: pointer;
   opacity: 0;

@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { resolveSkillRoots, frontmatterBoolean, type SkillRoot } from '@deepseek-ai/dsh-skill-filesystem'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { SkillArtifact, SkillArtifactId, SkillFileContent, SkillFileRequest, SkillFileWriteRequest, SkillInventory, SkillTreeEntry } from './types.ts'
+import type { SkillArtifact, SkillArtifactId, SkillDeleteRequest, SkillDeleteResult, SkillFileContent, SkillFileRequest, SkillFileWriteRequest, SkillInventory, SkillTreeEntry } from './types.ts'
 
 const MAX_TEXT_BYTES = 2 * 1024 * 1024
 const MAX_TREE_ENTRIES = 5000
@@ -50,6 +50,7 @@ export class SkillFileStore {
       let entries
       try { entries = await readdir(root.path) } catch (error) { if (absent(error)) continue; throw error }
       for (const entry of entries.sort()) {
+        if (entry === '.dsh-skill-trash') continue
         if (root.skipSystem && entry === '.system') continue
         const candidate = join(root.path, entry)
         if (onlyId !== undefined && hash(candidate) !== onlyId && hash(join(candidate, 'SKILL.md')) !== onlyId) continue
@@ -184,6 +185,37 @@ export class SkillFileStore {
     return operation
   }
 
+  /** @param cwd - registered workspace directory. @param request - confirmed source identity. @returns recoverable entry location. */
+  async remove(cwd: string, request: SkillDeleteRequest): Promise<SkillDeleteResult> {
+    z.object({ workspaceId: z.string().min(1), id: z.string().min(1), canonicalPath: z.string().min(1) }).parse(request)
+    const operation = this.operations.then(async () => {
+      let { item } = await this.artifact(cwd, request.id)
+      if (!item.writable) throw new Error('Bundled skills are read-only')
+      if (item.canonicalPath !== request.canonicalPath) throw new Error('Skill source changed; refresh before deleting')
+      // Move the source entry, never resolve its final link into a shared target.
+      const entry = item.bundle ? dirname(item.path) : item.path
+      const parent = await realpath(dirname(entry))
+      const target = join(parent, basename(entry))
+      await this.guard(target)
+      ;({ item } = await this.artifact(cwd, request.id))
+      if (!item.writable || item.canonicalPath !== request.canonicalPath) throw new Error('Skill source changed; refresh before deleting')
+      if (await realpath(dirname(entry)) !== parent) throw new Error('Skill root changed; refresh before deleting')
+      const trash = join(parent, '.dsh-skill-trash')
+      try { await mkdir(trash, { mode: 0o700 }) } catch (error) {
+        if (!(error instanceof Error && 'code' in error && error.code === 'EEXIST')) throw error
+      }
+      const info = await lstat(trash)
+      if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Recovery directory must not be a link')
+      const container = join(trash, randomUUID())
+      await mkdir(container, { mode: 0o700 })
+      const recoveryPath = join(container, basename(entry))
+      await rename(target, recoveryPath)
+      return { recoveryPath }
+    })
+    this.operations = operation.then(() => undefined, () => undefined)
+    return operation
+  }
+
   private async guard(path: string): Promise<void> {
     let directory = dirname(path)
     while (true) {
@@ -226,4 +258,7 @@ export class SkillFilesController extends TypertRemoteService {
   /** @param request - scoped file and expected revision. @returns committed file readback. */
   @Remote('write')
   write(request: SkillFileWriteRequest): Promise<SkillFileContent> { return this.store.write(this.cwd(request.workspaceId), request) }
+  /** @param request - confirmed skill source identity. @returns recoverable entry location. */
+  @Remote('deleteSkill')
+  deleteSkill(request: SkillDeleteRequest): Promise<SkillDeleteResult> { return this.store.remove(this.cwd(request.workspaceId), request) }
 }

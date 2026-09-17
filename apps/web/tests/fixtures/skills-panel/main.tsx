@@ -23,7 +23,7 @@ async function call<T>(method: string, payload: unknown): Promise<T> {
   if (!response.ok) throw new Error(result.error)
   return result
 }
-const api: SkillsApi = { list: () => call('list', {}), tree: (_workspace, id) => call('tree', { id }), read: request => call('read', request), write: request => call('write', request), handoff: () => async () => {} }
+const api: SkillsApi = { list: () => call('list', {}), tree: (_workspace, id) => call('tree', { id }), read: request => call('read', request), write: request => call('write', request), remove: request => call('remove', request), handoff: () => async () => {} }
 const experts = [
   { name: 'Systems thinker', description: 'Trace dependencies. Make tradeoffs explicit.' },
   { name: 'Research partner', description: 'Follow evidence. Keep uncertainty visible.' },

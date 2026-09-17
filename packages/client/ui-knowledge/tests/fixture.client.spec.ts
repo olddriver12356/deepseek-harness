@@ -3,7 +3,7 @@ import { KNOWLEDGE_FIXTURE } from '../src/client/fixture.ts'
 
 describe('Knowledge fixture', () => {
   it('contains the approved read-only layer distribution', () => {
-    expect(KNOWLEDGE_FIXTURE.layers).toHaveLength(6)
+    expect(KNOWLEDGE_FIXTURE.layers).toHaveLength(3)
     expect(KNOWLEDGE_FIXTURE.artifacts).toHaveLength(5)
     expect(KNOWLEDGE_FIXTURE.artifacts.filter(artifact => artifact.layerId === 'intake')).toHaveLength(3)
     expect(KNOWLEDGE_FIXTURE.artifacts.filter(artifact => artifact.layerId === 'knowledge' && artifact.state === 'ACTIVE')).toHaveLength(2)

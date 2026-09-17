@@ -48,7 +48,7 @@
 .capture,
 .caption {
   font-family: var(--ds-font-family-code);
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
@@ -136,7 +136,7 @@
 .sectionHeader {
   color: var(--dsw-specific-agent-muted);
   font-family: var(--ds-font-family-code);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: .06em;
 }
@@ -161,7 +161,7 @@
   padding: 6px 8px;
   color: var(--dsw-specific-agent-muted);
   background: transparent;
-  cursor: not-allowed;
+  cursor: pointer;
   font-weight: 900;
 }
 
@@ -179,7 +179,7 @@
   background: transparent;
   cursor: pointer;
   font-family: var(--ds-font-family-code);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 900;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -199,7 +199,7 @@
   color: inherit;
   background: rgb(25 28 35 / 22%);
   font-family: var(--dsw-font-family);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   resize: vertical;
 }
@@ -207,7 +207,7 @@
 .alertLine {
   margin: 9px 0 0;
   color: var(--dsw-specific-agent-pink);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -263,14 +263,14 @@
   align-items: center;
   gap: 7px;
   color: var(--dsw-specific-agent-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .legendRow dd {
   margin: 0;
   color: var(--dsw-specific-agent-text);
   font-family: var(--ds-font-family-code);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -291,7 +291,7 @@
 .alert {
   color: var(--dsw-specific-agent-pink);
   font-family: var(--ds-font-family-code);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -302,7 +302,6 @@
   color: var(--dsw-specific-agent-acid);
   background: var(--dsw-specific-agent-canvas);
   box-shadow: 4px 4px 0 var(--dsw-specific-agent-pink);
-  cursor: not-allowed;
   font-weight: 900;
   text-align: left;
 }

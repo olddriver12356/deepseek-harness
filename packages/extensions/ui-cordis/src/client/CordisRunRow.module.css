@@ -41,7 +41,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -55,7 +55,7 @@
   flex: none;
   margin-left: 8px;
   color: var(--dsw-alias-label-caption);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 24px;
 }
 
@@ -103,7 +103,7 @@
   border-radius: 8px;
   background: var(--dsw-alias-button-ghost-active-fill);
   color: var(--dsw-alias-label-tertiary);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 

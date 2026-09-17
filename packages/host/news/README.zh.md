@@ -6,13 +6,13 @@ News Host 服务抓取 News 面板使用的公开 RSS 源，在本地保留六�
 
 图片路由是 `/news/image`。只有当 News 缓存中存在完全匹配的图片 URL 与文章 URL 时才会响应。下载图片缓存七天，大小上限为 6 MB，因此该路由不会成为开放代理。
 
-`cacheDir` 是 deployment-local feed 与 thumbnail cache。`vaultRoot` 选择 Obsidian Vault，服务会把记录追加到 `Resources/AI News/news.jsonl`。`refreshIntervalMs` 默认六小时，且不能低于一分钟。Web bundle 提供 `dshHomePath('news-cache')`，并从 `DSH_VAULT_ROOT` 读取 Vault root，未设置时回退到启动目录。
+`cacheDir` 是 deployment-local feed 与 thumbnail cache。`vaultRoot` 选择 Obsidian Vault，服务会把记录追加到 `Agents/.generated/news/news.jsonl`。`refreshIntervalMs` 默认六小时，且不能低于一分钟。Web bundle 提供 `dshHomePath('news-cache')`，并从 `DSH_VAULT_ROOT` 读取 Vault root，未设置时回退到启动目录。
 
 Host 在启动时检查 feed，之后只要 Host 仍在运行，就通过 Cordis timer 周期检查。Archive 只包含确定性的 feed metadata，不产生 model turn。记录按 feed 栏目与精确 article URL 去重。已有 JSONL archive 格式错误时会 fail closed，不会越过潜在损坏继续追加。抓取失败且存在有效 UI cache 时会返回旧 cache；archive 写入失败仍视为 refresh failure。
 
-## Model Experience
+每次刷新先把清理后的 feed 摘要送入 [Knowledge Intake](../knowledge/README.zh.md)，再归档该批记录。采集采用确定性去重，不调用模型。生产不会向 Resources 投影新闻笔记，已有 Resources 笔记保持不变。feed 和图片请求通过固定 DNS 解析结果的连接、限量读取及 MIME 检查，验证公网地址和每次重定向。清理来源文本不代表它成为可信指令。每个 Vault archive 只运行一个 Host writer。
 
-每次 archive 操作还会在 `news.jsonl` 旁创建缺失的 Markdown 新闻笔记，并更新 `AI News.md` 的 `DSH-NEWS` 标记区域。已有笔记通过 frontmatter 的 `url` 与 `kind` 匹配，绝不覆盖，包括之前手动导出的笔记。即使刷新没有新增条目，仍会重试已有记录，因此中断导出后可以补回缺失笔记。新文件名使用清理后的标题及 URL/栏目 hash。文本会做 Markdown 转义；保存的是 feed metadata，不是文章全文。同一 Host process 内按 archive 串行写入；每个 Vault archive 只运行一个 Host writer。
+## Model Experience
 
 None。此包只提供浏览器 News feed，不组装模型输入、工具或 provider 请求。
 

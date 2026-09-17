@@ -1,5 +1,7 @@
 /** Wire-safe Agent Layer Expert vocabulary. */
 export type ExpertStatus = 'draft' | 'approved' | 'suspended'
+/** How a dispatched Expert executes: injected into the current Session, or as a forked child. */
+export type ExpertExecution = 'conversational' | 'delegated'
 export interface ExpertRecord {
   readonly id: string
   readonly name: string
@@ -7,10 +9,9 @@ export interface ExpertRecord {
   readonly description: string
   readonly instructions: string
   readonly status: ExpertStatus
+  readonly execution: ExpertExecution
   readonly model: string
   readonly reasoning: string
-  readonly permission: string
-  readonly skills: readonly string[]
   readonly updatedAt: string
 }
 export interface ExpertDraft extends Omit<ExpertRecord, 'id' | 'updatedAt'> {}

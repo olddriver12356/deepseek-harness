@@ -8,6 +8,15 @@
     "src"
   ],
   "references": [
+    { "path": "../../api/workspace-controller/tsconfig.client.json" },
+    { "path": "../ui-conversation" },
+    { "path": "../ui-primitives" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../host/knowledge" },
+    { "path": "../locale" },
+    { "path": "../ui-slots" },
+    { "path": "../ui-session" },
+    { "path": "../../core/session" },
     {
       "path": "../../../vendor/cordis"
     },
@@ -16,9 +25,6 @@
     },
     {
       "path": "../ui-renderer"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
     }
   ]
 }

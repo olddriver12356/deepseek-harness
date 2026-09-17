@@ -9,7 +9,11 @@ kind: "package-reference"
 
 ## 概述
 
+应用文字最小为 14px，与 usage-stats 插件的工作区筛选器一致。更小的固定 CSS 字号和共享字体变量显示为 14px；对话文字和次级文字也限制在该下限，包括已保存的 12px 偏好。更大的文字保持不变。在仓库根目录运行 `node scripts/verify-min-font-size.mjs` 检查源 CSS；浏览器检查覆盖计算字号和布局。设置范围仍兼容已保存的偏好。局部主题覆盖处理已安装的 usage-stats 和附加控件，不修改第三方包。
+
 `dsh-client-ui-theme` 让 Web GUI 用户在设置中选择 `light`、`dark` 或 `system`，并把会话正文字号设为 12 至 17 px。回环客户端把两个值存入 `ui-theme` 设置命名空间，本地提供方默认将其持久化到 `$DSH_HOME/settings.yaml`。插件通过 `prefers-color-scheme` 解析 `system` 并发布不可变的 `ThemeSnapshot`；ui-layout 把每份快照应用到 document。本包还提供 `--dsw-*` token 样式表，并注入同步引导，使所选调色板与字号在外壳加载前生效。第三方主题可通过 `ctx.theme` 注册别名 token 覆盖。
+
+App Rail 和 News 保留紧凑字号，并明确排除在固定字号检查之外。
 
 ## 目录
 

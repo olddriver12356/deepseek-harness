@@ -106,6 +106,7 @@
     "@deepseek-ai/dsh-host-news": "workspace:^",
     "@deepseek-ai/dsh-host-apps": "workspace:^",
     "@deepseek-ai/dsh-host-experts": "workspace:^",
+    "@deepseek-ai/dsh-host-knowledge": "workspace:^",
     "@deepseek-ai/dsh-host-styles": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-file-reference": "workspace:^",

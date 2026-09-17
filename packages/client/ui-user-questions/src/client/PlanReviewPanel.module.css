@@ -43,7 +43,7 @@
   background: color-mix(in srgb, var(--dsw-specific-agent-yellow) 12%, transparent);
   color: var(--dsw-specific-agent-yellow);
   font-family: var(--ds-font-family-code);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.14em;
   line-height: 18px;
@@ -81,7 +81,7 @@
 .feedback {
   min-height: 16px;
   color: var(--dsw-alias-state-error-primary);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
 }
 

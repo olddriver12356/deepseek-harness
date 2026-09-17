@@ -78,7 +78,7 @@
 .snippet {
   margin-top: 2px;
   color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 19px;
   word-break: break-word;
 }
@@ -110,7 +110,7 @@
 .fetchUrl {
   color: var(--dsw-alias-link);
   font-family: var(--ds-font-family-code);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 19px;
   word-break: break-all;

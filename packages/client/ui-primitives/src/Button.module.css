@@ -29,7 +29,7 @@
  * 28x28 is the icon-only form) — geometry is ours. */
 .sm {
   height: 28px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   padding: 0 10px;
   border-radius: 14px;

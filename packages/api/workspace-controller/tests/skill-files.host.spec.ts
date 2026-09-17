@@ -25,6 +25,27 @@ async function fixture() {
   return { store, root, project, personal, inventory, item, request }
 }
 describe('physical skill editing', () => {
+  it('moves only the selected bundle into recovery storage and refuses stale identity', async () => {
+    const { store, root, project, item } = await fixture()
+    const request = { workspaceId: 'workspace' as WorkspaceId, id: item.id, canonicalPath: item.canonicalPath }
+    await expect(store.remove(root, { ...request, canonicalPath: join(root, 'wrong') })).rejects.toThrow('changed')
+    const result = await store.remove(root, request)
+    expect(await readFile(join(result.recoveryPath, 'references/example.txt'), 'utf8')).toBe('original')
+    expect((await store.inventory(root)).skills.some(skill => skill.id === item.id)).toBe(false)
+    expect(await readFile(join(project, 'broken.md'), 'utf8')).toContain('repair me')
+    await expect(store.remove(root, request)).rejects.toThrow('no longer exists')
+  })
+  it('moves an alias without modifying its target and rejects bundled sources', async () => {
+    const { root, project, personal } = await fixture()
+    await symlink(join(project, 'capture'), join(personal, 'alias'), process.platform === 'win32' ? 'junction' : 'dir')
+    const store = new SkillFileStore(async () => [{ path: personal, source: 'user-agents', rank: 500 }])
+    const item = (await store.inventory(root)).skills.find(skill => skill.path === join(personal, 'alias/SKILL.md'))!
+    await store.remove(root, { workspaceId: 'workspace' as WorkspaceId, id: item.id, canonicalPath: item.canonicalPath })
+    expect(await readFile(join(project, 'capture/references/example.txt'), 'utf8')).toBe('original')
+    const bundled = new SkillFileStore(async () => [{ path: project, source: 'bundled', rank: 1000 }])
+    const protectedItem = (await bundled.inventory(root)).skills[0]!
+    await expect(bundled.remove(root, { workspaceId: 'workspace' as WorkspaceId, id: protectedItem.id, canonicalPath: protectedItem.canonicalPath })).rejects.toThrow('read-only')
+  })
   it('keeps invalid and shadowed files visible and groups by file metadata', async () => {
     const { inventory, project, personal } = await fixture()
     expect(inventory.skills).toHaveLength(3)

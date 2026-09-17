@@ -3,8 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import { apply, inject } from '../src/client/index.ts'
-import { KNOWLEDGE_FIXTURE } from '../src/client/fixture.ts'
-import { KnowledgePanel } from '../src/client/KnowledgePanel.tsx'
+import { ConnectedKnowledgePanel } from '../src/client/ConnectedKnowledgePanel.tsx'
 
 async function bench() {
   const ctx = new Context()
@@ -16,23 +15,30 @@ async function bench() {
   )
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
+  ctx.provide('remote', { knowledge: {} })
+  ctx.provide('remote.knowledge', {})
+  ctx.provide('locale', { register: () => () => {}, bind: () => (key: string) => key })
   return { ctx, slots, appPanels }
 }
 
 describe('Knowledge plugin apply', () => {
   it('declares the slot and app-panel dependencies', () => {
-    expect(inject).toEqual(['slots', 'appPanels'])
+    expect(inject).toEqual(['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale'])
   })
 
-  it('registers one persistent overlay with only app panels and the frozen fixture', async () => {
+  it('registers the persistent overlay with the real Remote adapter', async () => {
     const { ctx, slots, appPanels } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
     await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
 
     const entry = slots.entries('shell.overlay')[0]!
     expect(entry.options.id).toBe('knowledge-panel')
-    expect(entry.component).toBe(KnowledgePanel)
-    expect((entry.inject as () => object)()).toEqual({ appPanels, snapshot: KNOWLEDGE_FIXTURE })
+    expect(entry.component).toBe(ConnectedKnowledgePanel)
+    const props = (entry.inject as () => { appPanels: unknown; api: { list: unknown; read: unknown }; t: unknown })()
+    expect(props.appPanels).toBe(appPanels)
+    expect(typeof props.api.list).toBe('function')
+    expect(typeof props.api.read).toBe('function')
+    expect(typeof props.t).toBe('function')
   })
 
   it('removes its overlay registration on fiber teardown', async () => {

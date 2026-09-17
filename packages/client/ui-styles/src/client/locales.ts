@@ -32,7 +32,7 @@ export const zh = {
   sending: '发送中…',
   send: '送进 Agent →',
   regionAria: 'Styles / 输出声线',
-  title: 'Styles',
+  title: '风格',
   subtitle: '输出声线',
   live: 'VAULT / 实时',
   heroKicker: '定义怎么说',

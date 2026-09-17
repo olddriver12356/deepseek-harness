@@ -55,7 +55,7 @@ function mount(options: MountOptions = {}) {
 
 describe('LiveSignalPanel', () => {
   it('shows native goal, context, and session status projections', () => {
-    const { getByText, getByRole } = mount({
+    const { getByText, queryByRole } = mount({
       goal: { goal: { objective: '完成界面' } },
       pressure: { projectedTokens: 250, contextWindow: 1_000 },
       running: true,
@@ -63,7 +63,7 @@ describe('LiveSignalPanel', () => {
     expect(getByText('完成界面')).toBeTruthy()
     expect(getByText('25%')).toBeTruthy()
     expect(getByText('运行中')).toBeTruthy()
-    expect((getByRole('button', { name: /沉淀本次对话/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect(queryByRole('button', { name: /沉淀本次对话/ })).toBeNull()
   })
 
   it('labels pending work from the carrier list', () => {

@@ -196,6 +196,14 @@
         toolName: subagent_fork
         backgroundMode: continuable
 
+    # Vault Experts are forked subagents whose persona comes from an approved
+    # Agent Layer record, resolved per call rather than fixed at mount time.
+    # Requires the `fork` provider above for its `persona` capability.
+    - id: tool-expert
+      name: '@deepseek-ai/dsh-host-experts/tool'
+      config:
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+
     # Production dsh does not install these optional providers. Install the
     # matching Bundle in this Profile and restart the Host, then copy this
     # preset and remove `disabled` from the matching tool row. Host availability

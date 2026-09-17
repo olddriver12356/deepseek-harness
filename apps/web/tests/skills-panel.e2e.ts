@@ -7,7 +7,7 @@ import { chromium } from 'playwright'
 import { createServer } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { SkillFileStore } from '../../../packages/api/workspace-controller/src/skill-files.ts'
-import type { SkillFileRequest, SkillFileWriteRequest, SkillArtifactId } from '../../../packages/api/workspace-controller/src/types.ts'
+import type { SkillDeleteRequest, SkillFileRequest, SkillFileWriteRequest, SkillArtifactId } from '../../../packages/api/workspace-controller/src/types.ts'
 
 it('edits real nested skill files in a browser and renders both panel backgrounds', async () => {
   const root = await mkdtemp(join(tmpdir(), 'dsh-skills-browser-'))
@@ -26,10 +26,10 @@ it('edits real nested skill files in a browser and renders both panel background
         try {
           const chunks: Buffer[] = []
           for await (const chunk of request) chunks.push(Buffer.from(chunk))
-          const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SkillFileRequest & SkillFileWriteRequest
+          const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SkillFileRequest & SkillFileWriteRequest & SkillDeleteRequest
           const value = request.url === '/list' ? await store.inventory(root)
             : request.url === '/tree' ? await store.tree(root, payload.id as SkillArtifactId)
-              : request.url === '/read' ? await store.read(root, payload) : await store.write(root, payload)
+              : request.url === '/read' ? await store.read(root, payload) : request.url === '/remove' ? await store.remove(root, payload) : await store.write(root, payload)
           response.setHeader('content-type', 'application/json'); response.end(JSON.stringify(value))
         } catch (error) { response.statusCode = 400; response.end(JSON.stringify({ error: String(error) })) }
       }) },
@@ -47,12 +47,16 @@ it('edits real nested skill files in a browser and renders both panel background
     page.on('console', (message) => { if (message.type() === 'error') console.error(message.text()) })
     page.on('response', (response) => { if (response.status() >= 400) console.error(response.status(), response.url()) })
     await page.goto(server.resolvedUrls!.local[0]!)
-    await page.getByRole('button', { name: /summarize/ }).click()
+    await page.getByRole('button', { name: /^summarize/ }).click()
+    await page.getByRole('heading', { name: 'Procedure', exact: true }).waitFor()
+    await page.getByRole('button', { name: 'Fields', exact: true }).click()
     await page.getByLabel('Name', { exact: true }).fill('summarize-sources')
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     await page.getByRole('status').filter({ hasText: /^Saved$/ }).waitFor()
     expect(await readFile(join(skillRoot, 'summarize/SKILL.md'), 'utf8')).toContain('name: summarize-sources')
     await page.getByRole('button', { name: 'example.md', exact: true }).click()
+    await page.getByRole('heading', { name: 'Example', exact: true }).waitFor()
+    await page.getByRole('button', { name: 'Source', exact: true }).click()
     await page.getByLabel('Source', { exact: true }).fill('# Example\nSaved through browser')
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     await page.getByRole('status').filter({ hasText: /^Saved$/ }).waitFor()
@@ -67,6 +71,10 @@ it('edits real nested skill files in a browser and renders both panel background
     await page.setViewportSize({ width: 600, height: 900 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     if (shots !== undefined) await page.screenshot({ path: join(shots, 'skills-mobile.png'), fullPage: true })
+    await page.getByRole('button', { name: 'Delete summarize-sources', exact: true }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await page.getByText('Skill removed. Recovery location:', { exact: false }).waitFor()
+    expect((await store.inventory(root)).skills.map(item => item.name)).toEqual(['review-code'])
     expect(failures).toEqual([])
   } finally {
     try { await browser?.close() } finally {

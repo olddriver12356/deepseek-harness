@@ -1,13 +1,31 @@
 // @vitest-environment jsdom
+// @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import { KNOWLEDGE_FIXTURE } from '../src/client/fixture.ts'
 import { KnowledgePanel } from '../src/client/KnowledgePanel.tsx'
 
-afterEach(cleanup)
+const { animationPath, animate } = await vi.hoisted(async () => {
+  const { createRequire } = await import('node:module')
+  const path = await import('node:path')
+  const require = createRequire(path.resolve('packages/client/ui-primitives/package.json'))
+  const manifest = require('animejs/package.json') as { module: string }
+  return { animationPath: path.resolve(path.dirname(require.resolve('animejs/package.json')), manifest.module), animate: vi.fn((_targets: unknown, _options: unknown) => ({ revert: vi.fn() })) }
+})
+vi.mock(animationPath, () => ({ animate, stagger: (delay: number) => (_target: unknown, index: number) => delay * index }))
+beforeEach(() => {
+  animate.mockClear()
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+})
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+function enableMotion() {
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON() {} })
+}
 
 function renderKnowledge() {
   const appPanels = new AppPanelsController()
@@ -17,32 +35,52 @@ function renderKnowledge() {
 }
 
 describe('KnowledgePanel', () => {
-  it('renders the approved read-only Knowledge structure from derived fixture counts', () => {
+  it('replays cards for a layer choice but keeps search and snapshot refresh still', () => {
+    enableMotion()
+    const { appPanels, rerender } = renderKnowledge()
+    expect(animate).toHaveBeenCalledTimes(2)
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'powershell' } })
+    expect(screen.getByText('01 RESULTS')).toBeTruthy()
+    rerender(<KnowledgePanel appPanels={appPanels} snapshot={{ ...KNOWLEDGE_FIXTURE }} />)
+    expect(animate).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: '3 Knowledge' }))
+    expect(screen.getByRole('button', { name: '3 Knowledge' }).getAttribute('aria-pressed')).toBe('true')
+    expect(animate).toHaveBeenCalledTimes(3)
+    act(() => { appPanels.setActive('news') })
+    act(() => { appPanels.setActive('knowledge') })
+    expect(screen.getByRole<HTMLInputElement>('searchbox').value).toBe('powershell')
+    expect(animate).toHaveBeenCalledTimes(5)
+  })
+  it('renders the original hero as the page heading', () => {
+    renderKnowledge()
+    expect(screen.getByRole('heading', { level: 1, name: '你的第二大脑，正在形成。' })).toBeTruthy()
+  })
+  it('renders the owner-approval Knowledge structure from derived fixture counts', () => {
     renderKnowledge()
 
     expect(screen.getByRole('region', { name: 'Knowledge / 第二大脑' })).toBeTruthy()
     expect(screen.getByText('第二大脑')).toBeTruthy()
-    expect(screen.getByText('READ ONLY · LOCAL AGENT LAYERS')).toBeTruthy()
+    expect(screen.getByText('用户审批 · LOCAL AGENT LAYERS')).toBeTruthy()
     const metrics = screen.getByLabelText('Knowledge metrics')
     expect(within(metrics).getByText('05')).toBeTruthy()
-    expect(within(metrics).getByText('06')).toBeTruthy()
+    expect(within(metrics).getByText('03')).toBeTruthy()
     expect(within(metrics).getByText('02')).toBeTruthy()
     const deferredAction = screen.getByRole<HTMLButtonElement>('button', { name: '打开 ARTIFACT →' })
     expect(deferredAction.disabled).toBe(true)
     expect(deferredAction.getAttribute('aria-disabled')).toBe('true')
   })
 
-  it('renders six Layer filters, three Layer summaries, and all five artifacts without cluster copy', () => {
+  it('renders three upstream Layer filters and summaries without retired layers', () => {
     renderKnowledge()
 
     const filters = screen.getByRole('group', { name: 'Layers' })
-    for (const name of ['1 Intake', '2 AI Processing', '3 Knowledge', '4 Personal', '5 Methods', '6 Feedback']) {
+    for (const name of ['1 Intake', '2 Processed', '3 Knowledge']) {
       expect(within(filters).getByRole('button', { name })).toBeTruthy()
     }
     const summaries = screen.getByRole('complementary', { name: '层级状态' })
     expect(within(summaries).getByRole('button', { name: /INTAKE LAYER/ })).toBeTruthy()
     expect(within(summaries).getByRole('button', { name: /KNOWLEDGE LAYER/ })).toBeTruthy()
-    expect(within(summaries).getByRole('button', { name: /METHODS LAYER/ })).toBeTruthy()
+    expect(within(summaries).getByRole('button', { name: /PROCESSED LAYER/ })).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Agent artifacts' })).getAllByRole('button')).toHaveLength(5)
     expect(screen.queryByText(/CLUSTER/i)).toBeNull()
   })
@@ -86,10 +124,32 @@ describe('KnowledgePanel', () => {
     expect(within(library).getByRole('button', { name: /PowerShell ConvertTo-Json Contract/ })).toBeTruthy()
   })
 
-  it('uses the top Methods filter for the empty library and focus states', () => {
+  it('filters by Kind between News and non-News captures', () => {
+    const newsArtifact = {
+      id: 'news-capture', layerId: 'intake', state: 'READY', title: 'AI roundup',
+      summary: 'wire copy', updatedAt: '2026-09-10', topics: ['news-article'],
+    } as const
+    const snapshot = { ...KNOWLEDGE_FIXTURE, artifacts: [...KNOWLEDGE_FIXTURE.artifacts, newsArtifact] }
+    const appPanels = new AppPanelsController()
+    appPanels.setActive('knowledge')
+    render(<KnowledgePanel appPanels={appPanels} snapshot={snapshot} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '新闻' }))
+    expect(screen.getByText('01 RESULTS')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /AI roundup/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '非新闻' }))
+    expect(screen.getByText('05 RESULTS')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /AI roundup/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '全部类型' }))
+    expect(screen.getByText('06 RESULTS')).toBeTruthy()
+  })
+
+  it('uses the empty Processed filter for the empty library and focus states', () => {
     renderKnowledge()
 
-    const methods = screen.getByRole('button', { name: '5 Methods' })
+    const methods = screen.getByRole('button', { name: '2 Processed' })
     fireEvent.click(methods)
 
     expect(methods.getAttribute('aria-pressed')).toBe('true')

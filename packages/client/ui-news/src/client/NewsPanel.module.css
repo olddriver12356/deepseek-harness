@@ -103,7 +103,7 @@
 .time { color: var(--muted); font: 750 8px var(--ds-font-family-code, monospace); white-space: nowrap; }
 .card h3 { display: -webkit-box; margin: 0; overflow: hidden; font: 700 13px/1.5 var(--dsw-font-family, sans-serif); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .summary { display: -webkit-box; margin: 8px 0 10px; overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.55; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.sourceLink { align-self: flex-start; margin-top: auto; padding-top: 5px; border-bottom: 1px solid currentColor; color: var(--acid); text-decoration: none; font: 850 9px var(--ds-font-family-code, monospace); }
+.sourceLink { align-self: flex-end; margin-top: auto; padding-top: 5px; border-bottom: 1px solid currentColor; color: var(--acid); text-decoration: none; font: 850 9px var(--ds-font-family-code, monospace); }
 
 .state { grid-column: 1 / -1; display: grid; place-items: center; min-height: 160px; padding: 30px; border: 1px dashed var(--line); color: var(--muted); text-align: center; font: 800 11px/1.7 var(--ds-font-family-code, monospace); }
 .error { margin: 0 0 16px; padding: 12px 14px; border: 1px solid rgb(255 43 139 / 75%); color: #f5efdf; background: rgb(255 43 139 / 14%); font: 800 10px var(--ds-font-family-code, monospace); }
@@ -117,8 +117,9 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 

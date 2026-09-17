@@ -33,6 +33,7 @@
     "@deepseek-ai/dsh-http-proxy": "workspace:^"
   },
   "dependencies": {
+    "parse5": "8.0.1",
     "@deepseek-ai/schemastery": "workspace:^",
     "ipaddr.js": "^2.5.0",
     "undici": "^8.10.0"

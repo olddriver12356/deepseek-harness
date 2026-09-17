@@ -6,15 +6,15 @@ The Host News service fetches the public RSS sources used by the News panel, kee
 
 The image route is `/news/image`. It serves an image only when the exact image URL and article URL pair exists in the News cache. Downloaded images are cached for seven days and capped at 6 MB, so the route cannot be used as an open proxy.
 
-`cacheDir` is the deployment-local feed and thumbnail cache. `vaultRoot` selects the Obsidian Vault, where the service appends records to `Resources/AI News/news.jsonl`. `refreshIntervalMs` defaults to six hours and cannot be lower than one minute. The Web bundle supplies `dshHomePath('news-cache')` and reads the Vault root from `DSH_VAULT_ROOT`, falling back to the launch directory.
+`cacheDir` is the deployment-local feed and thumbnail cache. `vaultRoot` selects the Obsidian Vault, where the service appends records to `Agents/.generated/news/news.jsonl`. `refreshIntervalMs` defaults to six hours and cannot be lower than one minute. The Web bundle supplies `dshHomePath('news-cache')` and reads the Vault root from `DSH_VAULT_ROOT`, falling back to the launch directory.
 
 The Host checks the feed on startup and then through the Cordis timer while the Host remains running. Archive records contain deterministic feed metadata only; no model turn is used. Records are deduplicated by feed column and exact article URL. A malformed existing JSONL archive fails closed instead of appending past possible corruption. A failed crawl returns the last valid UI cache when one exists, while an archive write failure remains a refresh failure.
 
+Each refresh sends cleaned feed summaries to [Knowledge Intake](../knowledge/README.md) before archiving the batch. Capture is deterministic and deduplicated, with no model call. Production does not project article notes into Resources; existing Resources notes remain untouched. Feed and image requests validate public addresses and each redirect using DNS-pinned connections, bounded reads, and MIME checks. Cleaning source text does not make it trusted instructions. Run only one Host writer per Vault archive.
+
 ## Model Experience
 
-Every archive operation also creates missing Markdown article notes beside `news.jsonl` and refreshes the `DSH-NEWS` marked region in `AI News.md`. Existing notes are matched by their `url` and `kind` frontmatter and never overwritten, including the earlier manual exports. Retained records are retried even when a refresh adds no new items, so missing notes recover after an interrupted export. New filenames use a sanitized title and a URL/category hash. Text is escaped for Markdown; this is feed metadata, not full article retrieval. Writes are serialized per archive within one Host process; run only one Host writer per Vault archive.
-
-None. This package exposes a browser-facing News feed and does not assemble model input, tools, or provider requests.
+None, as this package exposes a browser-facing News feed and does not assemble model input, tools, or provider requests.
 
 #### KV Cache effect
 

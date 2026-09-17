@@ -9,6 +9,8 @@ import z from '@deepseek-ai/schemastery'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { appendNewsArchive, type NewsArchiveBatch } from './archive.ts'
+import { fetchPublic } from './public-fetch.ts'
+import { KnowledgeStore } from '@deepseek-ai/dsh-host-knowledge'
 import { collectFeed, imageCacheKey, NEWS_IMAGE_LIMIT, NEWS_SOURCES, readResponse, TOOLS_SOURCES, type CachedNewsItem } from './feed.ts'
 import type { NewsListRequest, NewsItem, NewsSnapshot } from './types.ts'
 
@@ -160,16 +162,23 @@ async function imageResponse(url: string, article: string, directory: string): P
   const controller = new AbortController()
   const timer = setTimeout(() => { controller.abort() }, IMAGE_TIMEOUT_MS)
   try {
-    const response = await fetch(imageUrl, { headers: { referer: articleUrl.href, 'user-agent': 'DeepSeekHarness/0.1' }, signal: controller.signal })
-    if (!response.ok || !response.headers.get('content-type')?.toLowerCase().startsWith('image/')) throw new Error('news: remote response is not an image')
-    const body = await readResponse(response, NEWS_IMAGE_LIMIT)
-    const suffix = IMAGE_EXTENSIONS.has(extname(imageUrl.pathname).toLowerCase())
-      ? extname(imageUrl.pathname).toLowerCase()
-      : '.img'
-    await mkdir(directory, { recursive: true })
-    const path = join(directory, `${key}${suffix}`)
-    await writeFile(path, body)
-    return { body, type: response.headers.get('content-type')?.split(';', 1)[0] ?? 'application/octet-stream' }
+    const result = await fetchPublic(imageUrl.href, controller.signal, 'image/png, image/jpeg, image/webp, image/avif')
+    try {
+      const { response } = result
+      const mime = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
+      if (!response.ok || !mime || !Object.values(IMAGE_MIME).includes(mime)) {
+        await response.body?.cancel()
+        throw new Error('news: remote response is not a supported raster image')
+      }
+      const body = await readResponse(response, NEWS_IMAGE_LIMIT)
+      const suffix = IMAGE_EXTENSIONS.has(extname(imageUrl.pathname).toLowerCase())
+        ? extname(imageUrl.pathname).toLowerCase()
+        : '.img'
+      await mkdir(directory, { recursive: true })
+      const path = join(directory, `${key}${suffix}`)
+      await writeFile(path, body)
+      return { body, type: response.headers.get('content-type')?.split(';', 1)[0] ?? 'application/octet-stream' }
+    } finally { await result.close() }
   } finally {
     clearTimeout(timer)
   }
@@ -177,17 +186,21 @@ async function imageResponse(url: string, article: string, directory: string): P
 
 /** Host service for the News Remote and cache-bound thumbnail route. */
 export class NewsService extends TypertRemoteService {
+  static Config = Config
   static inject = ['timer', 'webServer']
   private readonly archivePath: string
+  private readonly intake: KnowledgeStore
   private readonly cachePath: string
   private readonly thumbnailDir: string
   private refreshTask: Promise<StoredNewsCache> | undefined
+  private archiveTask: Promise<void> = Promise.resolve()
 
   constructor(ctx: Context, config: Config) {
     super(ctx, 'news')
     this.cachePath = join(resolve(config.cacheDir), 'news.json')
     this.thumbnailDir = join(resolve(config.cacheDir), 'news-thumbs')
-    this.archivePath = join(resolve(config.vaultRoot), 'Resources', 'AI News', 'news.jsonl')
+    this.archivePath = join(resolve(config.vaultRoot), 'Agents', '.generated', 'news', 'news.jsonl')
+    this.intake = new KnowledgeStore(join(resolve(config.vaultRoot), 'Agents'))
     const route: WebRoute = { kind: 'exact', path: '/news/image', handler: this.handleImage }
     ctx.effect(() => ctx.webServer.register(route), 'news: image route')
     ctx.interval(() => { void this.backgroundRefresh() }, config.refreshIntervalMs)
@@ -202,6 +215,22 @@ export class NewsService extends TypertRemoteService {
     return publicSnapshot(await this.refresh(cache))
   }
 
+  private async archive(batch: NewsArchiveBatch, fetchedAt: string): Promise<void> {
+    await appendNewsArchive(this.archivePath, batch, fetchedAt, false)
+    await this.intake.saveFeed([...batch.news, ...batch.tools].map(item => ({
+      sourceUrl: item.url, publisher: item.source, retrievedAt: fetchedAt, title: item.title,
+      content: `${item.title}\n\n${item.summary}\n\nSource: ${item.url}`,
+    })))
+  }
+
+  private queueArchive(batch: NewsArchiveBatch, fetchedAt: string): void {
+    this.archiveTask = this.archiveTask.then(async () => {
+      await this.archive(batch, fetchedAt)
+    }).catch((error: unknown) => {
+      this.ctx.logger.warn(`news: archive failed; feed remains available: ${String(error)}`)
+    })
+  }
+
   private async performRefresh(cache: StoredNewsCache | undefined): Promise<StoredNewsCache> {
     let fresh: CrawlResult
     try {
@@ -210,12 +239,12 @@ export class NewsService extends TypertRemoteService {
       if (cache !== undefined) return cache
       throw error
     }
-    await appendNewsArchive(this.archivePath, fresh.archive, fresh.cache.fetchedAt)
     try {
       await writeCache(this.cachePath, fresh.cache)
     } catch {
-      // A read-only cache directory must not hide a successful archived crawl.
+      // A read-only cache directory must not hide a successful crawl.
     }
+    this.queueArchive(fresh.archive, fresh.cache.fetchedAt)
     return fresh.cache
   }
 
@@ -233,8 +262,8 @@ export class NewsService extends TypertRemoteService {
   private async backgroundRefresh(): Promise<void> {
     try {
       const cache = await readCache(this.cachePath)
-      if (cache !== undefined) await appendNewsArchive(this.archivePath, { news: cache.news, tools: cache.tools }, cache.fetchedAt)
       if (!isFresh(cache)) await this.refresh(cache)
+      else if (cache !== undefined) this.queueArchive({ news: cache.news, tools: cache.tools }, cache.fetchedAt)
     } catch (error) {
       this.ctx.logger.warn(`news: background refresh failed: ${String(error)}`)
     }

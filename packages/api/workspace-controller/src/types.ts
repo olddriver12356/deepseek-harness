@@ -49,6 +49,17 @@ export interface SkillFileContent {
   readonly revision: string
   readonly bytes: number
 }
+/** Delete the selected source entry without following its final symlink. */
+export interface SkillDeleteRequest {
+  readonly workspaceId: WorkspaceId
+  readonly id: SkillArtifactId
+  /** Refuse deletion if the entry was redirected after confirmation. */
+  readonly canonicalPath: string
+}
+/** Location of the recoverable source entry removed from discovery. */
+export interface SkillDeleteResult {
+  readonly recoveryPath: string
+}
 export interface SkillTreeEntry {
   readonly path: string
   readonly kind: 'directory' | 'file' | 'blocked'

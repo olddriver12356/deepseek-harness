@@ -23,7 +23,7 @@
   outline: none;
   background: transparent;
   color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   font-weight: 500;
   cursor: pointer;
@@ -101,7 +101,7 @@
 .empty {
   padding: 10px;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
 }
 
@@ -116,7 +116,7 @@
   border-radius: 8px;
   background: var(--dsw-alias-interactive-bg-hover-danger);
   color: var(--dsw-alias-state-error-primary);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 
@@ -152,7 +152,7 @@
   padding: 5px 8px 3px;
   background: var(--dsw-specific-menu);
   color: var(--dsw-alias-label-tertiary);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   font-weight: 500;
 }

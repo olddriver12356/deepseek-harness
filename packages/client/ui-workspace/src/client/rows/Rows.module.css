@@ -74,7 +74,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 17px;
 }
 
@@ -201,14 +201,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--dsw-specific-agent-muted);
 }
 
 .time {
   flex: none;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--dsw-alias-label-tertiary);
 }
@@ -318,14 +318,14 @@
 }
 
 .hoverPath {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: #CFD3D6;
   word-break: break-all;
 }
 
 .hoverTime {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: #CFD3D6;
 }
@@ -334,7 +334,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   color: #ADB2B8;
 }

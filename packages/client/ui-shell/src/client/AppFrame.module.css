@@ -93,6 +93,31 @@
   transition: width var(--ds-transition-duration-slow) var(--ds-ease-in-out);
 }
 
+.activityCol[hidden] {
+  display: none;
+}
+
+.activityToggle {
+  position: absolute;
+  right: calc(var(--dsh-sidebar-width, 0px) + 10px);
+  top: 48px;
+  z-index: 16;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-specific-agent-canvas);
+  color: var(--dsw-specific-agent-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 .frame[data-activity-collapsed] .activityCol {
   border-left: none;
   box-shadow: none;

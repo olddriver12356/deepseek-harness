@@ -25,6 +25,8 @@ import { LiveSignalPanel } from './LiveSignalPanel.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
 import { ThemePresenter } from './theme-presenter.ts'
+import { en, zh } from './locales.ts'
+import type {} from '@deepseek-ai/dsh-client-locale/client'
 
 // Contract exports only (export-convergence rule: cross-package consumers
 // keep a symbol exported; test-only/package-internal symbols live off /src).
@@ -46,6 +48,7 @@ declare module '@deepseek-ai/cordis' {
 }
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface LocaleNamespaceMap { shell: keyof typeof en }
   interface SlotMap {
     // The 'root' entry itself is the runtime's built-in slot (declared
     // there); these six are the frame's children, declared by the same
@@ -101,6 +104,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * what a selector does with its choice.
      */
     'shell.activity.selectors': { kind: 'list'; scope: 'session' }
+    /** Explicit conversation capture contributed by the Knowledge plugin. */
+    'shell.activity.capture': { kind: 'single'; scope: 'session'; owner: { readonly className: string | undefined } }
     /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
@@ -168,7 +173,7 @@ export interface ActivityInjected {
 }
 
 /** Required services (cordis fiber inject — the loader passes all module exports as an object plugin). */
-export const inject = ['slots', 'theme', 'sessions', 'remote', 'remote.goals']
+export const inject = ['slots', 'theme', 'sessions', 'remote', 'remote.goals', 'locale']
 
 /**
  * Client plugin body: provide the shell services, then one register() call — AppFrame
@@ -184,6 +189,7 @@ export function apply(ctx: ClientContext): void {
     const disposeAppPanelsService = ctx.reflect.provide('appPanels', appPanels)
     const disposeRegistration = ctx.slots.register({
       name: 'root',
+      locale: 'shell',
       children: {
         'app.rail': { kind: 'single', scope: 'root' },
         'sidebar': { kind: 'single', scope: 'root' },
@@ -222,6 +228,8 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'ui-shell: theme presenter')
 
+  ctx.effect(() => ctx.locale.register('shell', { en, zh }), 'ui-shell: dictionaries')
+
   const sessions = ctx.sessions
 
   /** The session's current projected CAS ref, read at verb call time; the RPC's own CAS is the staleness guard. */
@@ -242,6 +250,7 @@ export function apply(ctx: ClientContext): void {
       name: 'shell.activity',
       children: {
         'shell.activity.selectors': { kind: 'list', scope: 'session' },
+        'shell.activity.capture': { kind: 'single', scope: 'session' },
       },
       inject: (sessionId: SessionId): ActivityInjected => ({
         onEditGoal: async (objective) => {

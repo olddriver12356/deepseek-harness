@@ -9,7 +9,11 @@ English | [中文](README.zh.md)
 
 ## Summary
 
+Application text has a 14px minimum, matching the usage-stats plugin's workspace filter. Smaller fixed CSS fonts and shared font tokens render at 14px; conversation text and its secondary tier clamp at the same minimum, including saved 12px preferences. Larger text remains unchanged. Run `node scripts/verify-min-font-size.mjs` from the repository root to audit authored CSS; browser checks cover computed sizes and layout. The settings range remains compatible with existing stored preferences. Scoped theme overrides cover the installed usage-stats and accessory controls without editing third-party packages.
+
 `dsh-client-ui-theme` lets Web GUI users choose `light`, `dark`, or `system` and set conversation content text from 12 to 17 px in Settings. A loopback client stores both values in the `ui-theme` settings namespace, which the local provider persists in `$DSH_HOME/settings.yaml` by default. The plugin resolves `system` through `prefers-color-scheme` and publishes immutable `ThemeSnapshot`s; ui-layout applies each snapshot to the document. The package also ships the `--dsw-*` token stylesheets and injects a synchronous bootstrap so the selected palette and font size apply before the shell loads. Third-party themes can register alias-token overrides through `ctx.theme`.
+
+App Rail and News retain their compact typography and are explicitly excluded from the fixed-size audit.
 
 ## Table of Contents
 

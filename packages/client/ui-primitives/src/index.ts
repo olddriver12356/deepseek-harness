@@ -2,6 +2,7 @@
  * Cordis-free React primitives styled only through `--dsw-*` tokens.
  */
 
+export { useEntranceMotion } from './useEntranceMotion.ts'
 export { StateDot } from './StateDot.tsx'
 export type { StateDotState } from './StateDot.tsx'
 export { DisclosureRow } from './DisclosureRow.tsx'

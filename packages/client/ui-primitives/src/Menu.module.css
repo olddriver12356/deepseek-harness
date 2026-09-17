@@ -137,7 +137,7 @@
   gap: 6px;
   padding: 3px 7px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
 }
 
@@ -152,7 +152,7 @@
 
 .compactList .label {
   padding: 4px 7px;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 16px;
 }
 
@@ -206,7 +206,7 @@
 /* Heading row: non-interactive small grey text, padding aligned with items. */
 .label {
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--dsw-alias-label-tertiary);
 }

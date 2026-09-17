@@ -104,6 +104,13 @@
       config:
         vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
 
+    - id: knowledge
+      name: '@deepseek-ai/dsh-host-knowledge'
+      config:
+        vaultRoot: !!js process.env.DSH_VAULT_ROOT ?? process.cwd()
+        distillTimeoutMs: 180000
+        maxInputBytes: 524288
+
     - id: styles
       name: '@deepseek-ai/dsh-host-styles'
       config:

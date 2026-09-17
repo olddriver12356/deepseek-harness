@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
@@ -6,7 +7,24 @@ import type { StyleDraft, StyleRecord } from '@deepseek-ai/dsh-host-styles/types
 import { StylesPanel, type StyleApi } from '../src/client/StylesPanel.tsx'
 import { zh } from '../src/client/locales.ts'
 
-afterEach(cleanup)
+const { animationPath, animate } = await vi.hoisted(async () => {
+  const { createRequire } = await import('node:module')
+  const path = await import('node:path')
+  const require = createRequire(path.resolve('packages/client/ui-primitives/package.json'))
+  const manifest = require('animejs/package.json') as { module: string }
+  return { animationPath: path.resolve(path.dirname(require.resolve('animejs/package.json')), manifest.module), animate: vi.fn((_targets: unknown, _options: unknown) => ({ revert: vi.fn() })) }
+})
+vi.mock(animationPath, () => ({ animate, stagger: (delay: number) => (_target: unknown, index: number) => delay * index }))
+beforeEach(() => {
+  animate.mockClear()
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+})
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+function enableMotion() {
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON() {} })
+}
 beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
     configurable: true,
@@ -50,6 +68,29 @@ function renderStyles(initial: readonly StyleRecord[] = [APPROVED, DRAFT]) {
 }
 
 describe('StylesPanel', () => {
+  it('keeps filtering still and opens motion after showModal, including reopening after native cancel', async () => {
+    enableMotion()
+    renderStyles()
+    await screen.findByText('2 种风格')
+    expect(animate).toHaveBeenCalledTimes(2)
+    fireEvent.change(screen.getByRole('textbox', { name: '搜索风格' }), { target: { value: '深度' } })
+    expect(animate).toHaveBeenCalledTimes(2)
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
+    fireEvent.click(screen.getByRole('button', { name: /新增风格/ }))
+    const dialog = screen.getByRole<HTMLDialogElement>('dialog')
+    expect(dialog.open).toBe(true)
+    expect(showModal.mock.invocationCallOrder[0]).toBeLessThan(animate.mock.invocationCallOrder[2]!)
+    expect(animate).toHaveBeenCalledTimes(3)
+    fireEvent.change(screen.getByLabelText('名称'), { target: { value: 'New draft' } })
+    expect(animate).toHaveBeenCalledTimes(3)
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+    expect(dialog.isConnected).toBe(true)
+    fireEvent(dialog, new Event('close'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /新增风格/ }))
+    expect(screen.getByRole<HTMLDialogElement>('dialog').open).toBe(true)
+    expect(animate).toHaveBeenCalledTimes(4)
+  })
   it('loads the Vault roster and disables draft dispatch', async () => {
     renderStyles()
     expect(await screen.findByText('2 种风格')).toBeTruthy()

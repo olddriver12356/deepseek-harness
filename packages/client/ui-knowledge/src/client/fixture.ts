@@ -3,11 +3,8 @@ import type { KnowledgeSnapshot } from './types.ts'
 export const KNOWLEDGE_FIXTURE: KnowledgeSnapshot = Object.freeze({
   layers: Object.freeze([
     Object.freeze({ id: 'intake', ordinal: 1, label: 'Intake' }),
-    Object.freeze({ id: 'ai-processing', ordinal: 2, label: 'AI Processing' }),
+    Object.freeze({ id: 'ai-processing', ordinal: 2, label: 'Processed' }),
     Object.freeze({ id: 'knowledge', ordinal: 3, label: 'Knowledge' }),
-    Object.freeze({ id: 'personal', ordinal: 4, label: 'Personal' }),
-    Object.freeze({ id: 'methods', ordinal: 5, label: 'Methods' }),
-    Object.freeze({ id: 'feedback', ordinal: 6, label: 'Feedback' }),
   ]),
   artifacts: Object.freeze([
     Object.freeze({

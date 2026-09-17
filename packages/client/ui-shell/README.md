@@ -12,6 +12,8 @@ The `/client` exports are the plugin body (`apply`/`inject`), `LayoutController`
 
 The floating activity surface reserves only the portion of its width not already covered by the rendered details track or the external Files sidebar's `--dsh-sidebar-width` frame padding. Opening either right panel does not subtract a second 320px from the conversation; resizing or closing panels updates the remaining overlap without changing panel preferences. The external width defaults to zero when that plugin is absent.
 
+Live Signal starts expanded and has a keyboard-accessible toggle on non-blank sessions. Collapsing it hides the panel and releases its reserved width; the toggle remains reachable beside the external Files sidebar. The preference lasts for the current browser page lifetime and resets on reload.
+
 ## Model Experience
 
 None, as the layout shell manages browser viewing state; nothing here reaches a model request.

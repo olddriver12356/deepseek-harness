@@ -5,6 +5,11 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 export type KnowledgeId = string & Branded<'KnowledgeId'>
 export type KnowledgeWorkflow = 'pending' | 'processing' | 'processed' | 'shelved' | 'failed' | 'awaiting-review' | 'accepted' | 'rejected'
 export interface KnowledgeRecord {
+  readonly reviewed?: boolean
+  readonly learned?: boolean
+  readonly source?: string
+  readonly suggestedDestination?: string
+  readonly publishedTo?: string
   readonly id: KnowledgeId
   readonly title: string
   readonly layer: '1 Intake' | '2 AI Processing' | '3 Knowledge'
@@ -44,8 +49,8 @@ export interface KnowledgeNewsSource {
 export interface KnowledgeReviewRequest extends KnowledgeReadRequest {
   readonly revision: string
   readonly decision: 'accept' | 'reject'
-  readonly rationale: string
-  readonly gates: readonly string[]
+  readonly rationale?: string
+  readonly gates?: readonly string[]
 }
 export interface KnowledgePreviewRequest extends KnowledgeReadRequest { readonly destination: string }
 export interface KnowledgePromotionPreview extends KnowledgePreviewRequest {
@@ -55,3 +60,10 @@ export interface KnowledgePromotionPreview extends KnowledgePreviewRequest {
 }
 export interface KnowledgePromoteRequest extends KnowledgePreviewRequest { readonly token: string; readonly approved: boolean }
 export interface KnowledgeShelveRequest extends KnowledgeReadRequest { readonly revision: string; readonly shelved: boolean }
+export interface KnowledgeLearnRequest extends KnowledgeReadRequest { readonly revision: string; readonly learned: boolean }
+export interface KnowledgeDirectRequest {
+  readonly title: string
+  readonly content: string
+  readonly tags: readonly string[]
+  readonly suggestedDestination: string
+}

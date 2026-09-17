@@ -41,6 +41,7 @@
 .workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 360px; height: calc(100dvh - 32px); flex: 0 0 auto; }
 .index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 90%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .index { display: flex; flex-direction: column; padding: 14px; }
+.index > select { margin-bottom: 8px; }
 .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 11px; }
 .filters select { padding: 7px; }
 .count { color: var(--skill-muted); font-size: 11px; }
@@ -113,3 +114,33 @@
 @container (max-width: 620px) { .hero { padding: 18px; margin: 0 12px 12px; gap: 12px; } .hero h2 { font-size: 24px; } .heroBody { display: none; } .panel .heroCreate { flex-basis: 92px; min-height: 96px; } }
 
 .panel .instructions, .panel .source textarea { min-height: max(320px, calc(100dvh - 150px)); }
+
+.skillRow { display: flex; align-items: center; gap: 4px; }
+.skillRow .skill { flex: 1; min-width: 0; }
+.panel .deleteSkill { flex: 0 0 auto; padding: 6px; color: var(--skill-muted); background: transparent; font-size: 11px; }
+.panel .deleteSkill:hover:not(:disabled), .panel .deleteConfirm { color: var(--skill-error); border-color: currentColor; }
+.editor > header { flex-wrap: wrap; }
+.editor > header > .viewModes { display: flex; flex: 0 0 auto; gap: 3px; }
+.panel .viewModes button { padding: 6px 8px; font-size: 12px; background: transparent; }
+.panel .viewModes button[aria-pressed='true'] { color: var(--skill-accent); border-color: var(--skill-accent); background: color-mix(in srgb, var(--skill-accent) 10%, transparent); }
+.preview { flex: 1; min-height: 0; overflow: auto; padding: clamp(20px, 3cqw, 44px); scrollbar-color: var(--skill-accent) var(--skill-ink); scrollbar-gutter: stable; overflow-wrap: anywhere; }
+.documentHeader { padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid var(--skill-line); }
+.documentKicker { color: var(--skill-brass); font-size: 11px; letter-spacing: .08em; }
+.documentHeader h2 { margin: 10px 0; font-size: clamp(24px, 3cqw, 36px); line-height: 1.2; color: var(--skill-paper); }
+.documentDescription { color: var(--skill-muted); line-height: 1.8; }
+.modeBadge { display: inline-block; padding: 3px 9px; border: 1px solid var(--skill-line); border-radius: 20px; color: var(--skill-accent); font-size: 11px; }
+.prose { line-height: 1.85; font-size: 14px; }
+.prose :is(h1, h2, h3, h4, h5, h6) { color: var(--skill-paper); line-height: 1.35; margin: 1.5em 0 .65em; }
+.prose h1 { font-size: 1.8em; }
+.prose h2 { font-size: 1.45em; padding-bottom: .4em; border-bottom: 1px solid var(--skill-line); }
+.prose h3 { font-size: 1.2em; color: var(--skill-accent); }
+.prose a { color: var(--skill-accent); text-decoration: underline; text-underline-offset: 3px; }
+.prose blockquote { margin: 20px 0; padding: 4px 18px; border-left: 3px solid var(--skill-brass); color: var(--skill-muted); background: rgb(215 183 127 / 5%); }
+.prose :is(pre, table) { max-width: 100%; overflow: auto; }
+.prose pre { padding: 16px; border: 1px solid var(--skill-line); border-radius: 8px; background: var(--skill-surface); }
+.prose code { font-family: var(--ds-font-family-code, monospace); font-size: .9em; }
+.prose table { display: block; border-collapse: collapse; }
+.prose :is(th, td) { padding: 9px 12px; border: 1px solid var(--skill-line); }
+.prose th { color: var(--skill-brass); text-align: left; }
+.prose img { max-width: 100%; height: auto; }
+.recovery { margin: 0 24px 18px; color: var(--skill-accent); overflow-wrap: anywhere; }

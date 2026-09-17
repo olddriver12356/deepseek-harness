@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsLocale, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import {
   computeColumns, SIDEBAR_AUTO_COLLAPSE, SIDEBAR_COLLAPSED, SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN,
 } from './columns.ts'
@@ -30,6 +30,7 @@ export type AppFrameProps =
   & PropsRuntime<'root'>
   & PropsRenderSlots<'app.rail' | 'sidebar' | 'conversation' | 'details' | 'shell.activity' | 'shell.overlay'>
   & PropsStore<ReturnType<typeof createLayoutStore>>
+  & PropsLocale<'shell'>
 
 /** Persistent app-level navigation column. */
 function RailColumn(props: { children?: ReactNode }) {
@@ -50,7 +51,7 @@ function DetailsColumn(props: { children?: ReactNode }) {
 
 /** Session-aware activity column; unlike details it is not user-resizable. */
 function ActivityColumn(props: { children?: ReactNode; width: number }) {
-  return <div className={css.activityCol} style={{ width: props.width }}>{props.children}</div>
+  return <div id="live-signal-panel" className={css.activityCol} hidden={props.width === 0} style={{ width: props.width }}>{props.children}</div>
 }
 
 /**
@@ -105,6 +106,7 @@ function DragHandle(props: { side: 'sidebar' | 'details'; left: number; onStart:
 
 /** The shell frame (see module doc). */
 export function AppFrame({
+  t,
   useStore,
   useSessions,
   actions,
@@ -159,7 +161,8 @@ export function AppFrame({
   const sidebarDrawer = viewport <= SIDEBAR_DRAWER_MAX_VIEWPORT
   // The activity card floats over the right edge. It must not consume a grid
   // track, otherwise opening the top-right toolbar squeezes the conversation.
-  const activityWidth = detailsSession === undefined || sidebarDrawer ? 0 : 320
+  const activityAvailable = detailsSession !== undefined && !sidebarDrawer
+  const activityWidth = activityAvailable && panels.activityOpen ? 320 : 0
   useEffect(() => { actions.setNarrow(narrow) }, [actions, narrow])
   const sidebarCollapsed = narrow ? !panels.narrowExpanded : panels.sidebar === 0
   const sidebarPreference = sidebarCollapsed
@@ -231,6 +234,17 @@ export function AppFrame({
         <CenterColumn paddingRight={Math.max(0, activityWidth - cols.details)}>{renderSlot('conversation', {})}</CenterColumn>
         <DetailsColumn><SessionProvider>{renderSlot('details', {})}</SessionProvider></DetailsColumn>
         <ActivityColumn width={activityWidth}><SessionProvider>{renderSlot('shell.activity', {})}</SessionProvider></ActivityColumn>
+        {activityAvailable && <button
+          type="button" className={css.activityToggle}
+          aria-label={t('activity')} title={t('activity')} aria-expanded={panels.activityOpen} aria-controls="live-signal-panel"
+          onClick={() => { actions.toggleActivity() }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M15 4v16" />
+            <path d={panels.activityOpen ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>}
       </>
       <div className={css.overlayLayer} data-shell-overlay>
         {renderSlot('shell.overlay', {})}

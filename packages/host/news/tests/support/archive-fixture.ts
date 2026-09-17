@@ -14,7 +14,7 @@ export async function createTempArchive(): Promise<TempArchive> {
   const vaultRoot = await mkdtemp(join(tmpdir(), 'dsh-news-archive-'))
   directories.push(vaultRoot)
   return {
-    archivePath: join(vaultRoot, 'Resources', 'AI News', 'news.jsonl'),
+    archivePath: join(vaultRoot, 'Agents', '.generated', 'news', 'news.jsonl'),
     cacheDir: join(vaultRoot, 'cache'),
     vaultRoot,
   }

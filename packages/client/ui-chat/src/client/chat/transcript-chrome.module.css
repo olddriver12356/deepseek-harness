@@ -20,7 +20,7 @@
   margin-bottom: 7px;
   color: var(--dsw-specific-agent-acid);
   font-family: var(--ds-font-family-code);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
   background: color-mix(in srgb, var(--dsw-specific-agent-blue) 8%, transparent);
   color: var(--dsw-specific-agent-muted);
   font-family: var(--ds-font-family-code);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.05em;
 }
 
@@ -172,7 +172,7 @@
   margin-bottom: 7px;
   color: var(--dsw-specific-agent-muted);
   font-family: var(--ds-font-family-code);
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.035em;
 }
 
@@ -182,7 +182,7 @@
   background: var(--dsw-specific-agent-cyan);
   box-shadow: 2px 2px 0 var(--dsw-specific-agent-blue);
   color: var(--dsw-specific-agent-canvas);
-  font-size: 9px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
@@ -201,7 +201,7 @@
 .loadingKicker {
   color: var(--dsw-specific-agent-acid);
   font-family: var(--ds-font-family-code);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;

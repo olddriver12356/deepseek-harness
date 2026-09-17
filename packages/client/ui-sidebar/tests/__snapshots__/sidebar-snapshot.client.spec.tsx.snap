@@ -48,7 +48,7 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
               <span
                 class="fallbackBrandName"
               >
-                DSH Local Build
+                DSH
               </span>
               <span
                 class="buildRevision"
@@ -158,7 +158,7 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark and emp
                 <span
                   class="localBuildTitle"
                 >
-                  DSH Local Build
+                  DSH
                 </span>
                 <span
                   class="buildVersion"
@@ -269,7 +269,7 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
                 <span
                   class="localBuildTitle"
                 >
-                  DSH 本地构建
+                  DSH
                 </span>
                 <span
                   class="buildVersion"

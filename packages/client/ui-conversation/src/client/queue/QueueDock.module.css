@@ -85,7 +85,7 @@
   flex: 1 1 auto;
   min-width: 0;
   font-family: Inter, var(--dsw-font-family);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 24px;
 }
@@ -165,7 +165,7 @@
 .fileSize {
   flex: none;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 10px;
+  font-size: 14px;
   white-space: nowrap;
 }
 

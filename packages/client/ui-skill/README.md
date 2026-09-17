@@ -29,6 +29,8 @@ Type `/` in the composer and pick a skill from the suggestions, or type `/name` 
 
 ### What the source offers
 
+Markdown files open in a rendered reading view with DSH typography. Skill name, description, category, and invocation appear separately from the instructions. Fields and Source views share the same unsaved buffer. Every inventory row exposes deletion; bundled read-only entries disable it. After confirmation, the Host moves the selected source into a local `.dsh-skill-trash` recovery directory and reports its path. Linked entries move only the link, preserving shared originals. Restore by moving the entry back to its original location; there is no in-app restore action yet.
+
 The app rail also opens a Workspace-level Skills page immediately below Knowledge. Its default category groups come from `metadata.category` in each skill's own frontmatter. Search and filters narrow the physical inventory by category, project/personal scope, and invocation mode. The index includes invalid and shadowed copies so users can repair the actual source instead of guessing from a Session's resolved catalog.
 
 Selecting a skill opens its real file tree and an explicit-save editor. `SKILL.md` has fields for name, description, category, invocation, and instructions, plus a source view. YAML edits preserve unknown keys and comments. Supporting UTF-8 files can be edited or created; binary and oversized files remain read-only. Unsaved edits require a choice before navigation, and conflicting external edits leave the buffer intact.

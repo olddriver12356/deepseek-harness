@@ -69,26 +69,27 @@
 .titleLockup { display: flex; align-items: center; gap: 12px; }
 .titleLockup > div { display: flex; align-items: baseline; gap: 9px; }
 .titleLockup strong { font: 700 19px/1 var(--dsw-font-family, sans-serif); letter-spacing: .02em; }
-.titleLockup small { color: var(--muted); font-size: 13px; }
+.titleLockup small { color: var(--muted); font-size: 14px; }
 .titleMark { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--acid); border-radius: 12px; color: var(--ink); background: var(--acid); box-shadow: 3px 3px 0 var(--blue); font: 800 14px/1 var(--dsw-font-family, sans-serif); }
-.readOnly { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--cyan); background: rgb(13 16 21 / 88%); font: 700 11px/1 var(--dsw-font-family, sans-serif); letter-spacing: .06em; }
+.readOnly { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--cyan); background: rgb(13 16 21 / 88%); font: 700 14px/1 var(--dsw-font-family, sans-serif); letter-spacing: .06em; }
 
 .viewport { height: calc(100% - 72px); overflow: auto; scrollbar-color: var(--blue) transparent; scrollbar-width: thin; }
 .content { width: min(100%, 1480px); min-height: 100%; margin: 0 auto; padding: clamp(28px, 4cqw, 60px); background: transparent; }
 .collectionHero { display: flex; align-items: end; justify-content: space-between; gap: 40px; }
-.sectionKicker { margin: 0 0 12px; color: var(--cyan); font: 900 12px/1.3 var(--dsw-font-family, sans-serif); letter-spacing: .18em; }
+.sectionKicker { margin: 0 0 12px; color: var(--cyan); font: 900 14px/1.3 var(--dsw-font-family, sans-serif); letter-spacing: .18em; }
 .collectionHero h1 { margin: 0; font: 1000 clamp(40px, 5cqw, 60px)/.98 var(--dsw-font-family, 'PingFang SC', sans-serif); letter-spacing: 0; }
 .collectionHero h1 span { color: var(--acid); text-shadow: 4px 3px 0 var(--pink); }
 .collectionHero > div > p:last-child { max-width: 580px; margin: 18px 0 0; color: rgb(255 255 255 / 74%); font-size: 16px; line-height: 1.7; }
 .giantAdd { display: grid; place-items: center; flex: 0 0 146px; height: 120px; border: 4px solid var(--ink); border-radius: 16px; color: var(--ink); background: var(--acid); box-shadow: 10px 10px 0 var(--pink); font: 1000 40px var(--ds-font-family-code, monospace); transform: rotate(2deg); }
-.giantAdd span { font: 1000 13px var(--dsw-font-family, sans-serif); }
+.giantAdd span { font: 1000 14px var(--dsw-font-family, sans-serif); }
 .giantAdd:hover { transform: translate(4px, 4px) rotate(-1deg); box-shadow: 5px 5px 0 var(--pink); }
 .collectionToolbar { display: flex; align-items: center; gap: 20px; margin: 32px 0 22px; }
 .searchCut { display: flex; align-items: center; gap: 9px; flex: 1; max-width: 520px; padding: 12px 14px; border: 2px solid currentColor; border-radius: 12px; color: var(--paper); background: rgb(7 9 13 / 75%); box-shadow: 5px 5px 0 rgb(36 57 255 / 55%); }
 .searchCut span { color: var(--blue); font: 1000 19px var(--ds-font-family-code, monospace); }
 .searchCut input { flex: 1; min-width: 0; border: 0; outline: 0; color: inherit; background: transparent; font-size: 15px; }
 .searchCut input::placeholder { color: var(--muted); }
-.collectionToolbar > span { color: rgb(255 255 255 / 68%); font: 900 12px var(--ds-font-family-code, monospace); }
+.collectionToolbar > span { color: rgb(255 255 255 / 68%); font: 900 14px var(--ds-font-family-code, monospace); }
+.filterCut { padding: 12px 14px; border: 2px solid currentColor; border-radius: 12px; color: var(--paper); background: rgb(7 9 13 / 75%); box-shadow: 5px 5px 0 rgb(36 57 255 / 55%); font: 800 14px var(--ds-font-family-code, monospace); cursor: pointer; }
 .expertGrid { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 16px; padding-bottom: 40px; }
 .recordCard { position: relative; min-height: 260px; padding: 20px; overflow: hidden; border: 3px solid var(--ink); border-radius: 14px; color: var(--ink); background: var(--paper); box-shadow: 7px 7px 0 var(--ink); }
 .recordCard:nth-child(3n + 2) { background: var(--acid); transform: rotate(.7deg); }
@@ -98,16 +99,22 @@
 .recordTop { display: flex; align-items: center; justify-content: space-between; }
 .recordAvatar { display: grid; place-items: center; width: 52px; height: 52px; border: 3px solid currentColor; border-radius: 12px; background: var(--yellow); box-shadow: 4px 4px 0 var(--blue); font: 1000 25px var(--ds-font-family-code, monospace); transform: rotate(-3deg); }
 .recordCard:nth-child(3n + 3) .recordAvatar { color: var(--ink); background: var(--cyan); }
-.recordStatus { padding: 4px 7px; border: 2px solid currentColor; border-radius: 6px; font: 900 10px var(--ds-font-family-code, monospace); }
+.recordStatus { padding: 4px 7px; border: 2px solid currentColor; border-radius: 6px; font: 900 14px var(--ds-font-family-code, monospace); }
 .recordCard h3 { margin: 24px 0 7px; font: 1000 24px var(--dsw-font-family, sans-serif); letter-spacing: -.05em; }
 .recordCard p { min-height: 46px; margin: 0; opacity: .72; font-size: 14px; line-height: 1.55; }
 .recordActions { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
-.recordActions button { padding: 7px 9px; border: 2px solid currentColor; border-radius: 8px; color: inherit; background: transparent; font: 900 11px var(--ds-font-family-code, monospace); }
+.recordActions button { padding: 7px 9px; border: 2px solid currentColor; border-radius: 8px; color: inherit; background: transparent; font: 900 14px var(--ds-font-family-code, monospace); }
 .recordActions button:hover { color: var(--ink); background: var(--cyan); }
 .recordActions button:disabled { cursor: not-allowed; opacity: .45; }
 .recordActions button:disabled:hover { color: inherit; background: transparent; }
-.call { color: var(--paper) !important; background: var(--ink) !important; }
-.recordCard:nth-child(3n + 3) .call { color: var(--ink) !important; background: var(--acid) !important; }
+.recordActions .call { color: var(--paper); background: var(--ink); transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.recordCard:nth-child(3n + 3) .call { color: var(--ink); background: var(--acid); }
+.recordCard .call:enabled:is(:hover, :focus-visible) { color: var(--ink); background: var(--dsw-alias-button-call-hover-fill); transform: translateY(-2px); }
+.recordCard .call:enabled:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .recordActions .call { transition: none; }
+  .recordCard .call:enabled:is(:hover, :focus-visible) { transform: none; }
+}
 .emptyRecords { grid-column: 1 / -1; padding: 70px 30px; border: 3px dashed rgb(255 255 255 / 38%); border-radius: 14px; color: rgb(255 255 255 / 68%); text-align: center; }
 .emptyRecords strong { display: block; margin-bottom: 8px; color: white; font: 1000 25px var(--dsw-font-family, sans-serif); }
 
@@ -115,26 +122,39 @@
 .dialog::backdrop { background: rgb(3 4 7 / 74%); backdrop-filter: blur(8px); }
 .dialog form { padding: 24px; }
 .dialog header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 17px; border-bottom: 1px solid var(--line); background: none; backdrop-filter: none; }
-.dialog header p { margin: 0 0 5px; color: var(--acid); font: 900 10px var(--ds-font-family-code, monospace); letter-spacing: .13em; }
+.dialog header p { margin: 0 0 5px; color: var(--acid); font: 900 14px var(--ds-font-family-code, monospace); letter-spacing: .13em; }
 .dialog header h2 { margin: 0; font: 1000 28px var(--dsw-font-family, sans-serif); }
 .dialogClose { width: 34px; height: 34px; border: 2px solid currentColor; color: inherit; background: transparent; font: 1000 20px var(--ds-font-family-code, monospace); }
 .dialogClose:hover { color: var(--ink); background: var(--pink); }
-.dialog label { display: block; margin-top: 16px; color: var(--muted); font: 800 11px var(--ds-font-family-code, monospace); }
+.dialog label { display: block; margin-top: 16px; color: var(--muted); font: 800 14px var(--ds-font-family-code, monospace); }
 .dialog input:not([type='checkbox']), .dialog textarea, .dialog select { width: 100%; margin-top: 7px; padding: 11px 12px; resize: vertical; border: 1px solid var(--line); color: #f5efdf; background: rgb(255 255 255 / 5%); font: 500 14px var(--dsw-font-family, sans-serif); line-height: 1.6; }
 .checkRow { display: flex !important; align-items: center; gap: 8px; }
 .checkRow input { accent-color: var(--acid); }
 .skillChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.skillChip { padding: 4px 8px; border: 2px solid currentColor; border-radius: 999px; color: var(--cyan); font: 800 11px var(--ds-font-family-code, monospace); }
-.formError, .formNotice { margin: 16px 0 0; padding: 10px 12px; border: 2px solid currentColor; border-radius: 8px; font: 800 12px var(--dsw-font-family, sans-serif); }
+.skillChip { padding: 4px 8px; border: 2px solid currentColor; border-radius: 999px; color: var(--cyan); font: 800 14px var(--ds-font-family-code, monospace); }
+.formError, .formNotice { margin: 16px 0 0; padding: 10px 12px; border: 2px solid currentColor; border-radius: 8px; font: 800 14px var(--dsw-font-family, sans-serif); }
 .formError { color: var(--pink); }
 .formNotice { color: var(--cyan); }
 .dialog footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 17px; border-top: 1px solid var(--line); background: none; }
 .dialog footer button { padding: 10px 16px; }
-.ghostButton, .primaryCut { border: 2px solid currentColor; font: 900 13px var(--dsw-font-family, sans-serif); }
+.ghostButton, .primaryCut { border: 2px solid currentColor; font: 900 14px var(--dsw-font-family, sans-serif); }
 .ghostButton { color: inherit; background: transparent; }
 .primaryCut { color: var(--ink); background: var(--acid); box-shadow: 4px 4px 0 var(--blue); }
 .primaryCut:disabled { cursor: wait; opacity: .58; }
-.dispatchBadge { margin: 16px 0 0; padding: 13px; border: 2px solid var(--ink); color: var(--ink); background: var(--yellow); box-shadow: 4px 4px 0 var(--pink); font: 900 13px var(--dsw-font-family, sans-serif); }
+.dispatchBadge { margin: 16px 0 0; padding: 13px; border: 2px solid var(--ink); color: var(--ink); background: var(--yellow); box-shadow: 4px 4px 0 var(--pink); font: 900 14px var(--dsw-font-family, sans-serif); }
+
+.panel[hidden] { display: none; }
+.panel :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+.collectionHero { padding: 20px; border-radius: 12px; background: linear-gradient(100deg, rgb(16 20 22 / 94%) 20%, rgb(30 27 41 / 70%) 60%, rgb(16 20 22 / 12%)); }
+.collectionHero h1 span { text-shadow: none; background: linear-gradient(100deg, #a7c1db, #d4b5cd 52%, #e4aea8); background-clip: text; -webkit-text-fill-color: transparent; }
+.giantAdd { border: 1px solid var(--line); box-shadow: 0 4px 18px rgb(0 0 0 / 18%); transform: none; }
+.giantAdd:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgb(0 0 0 / 24%); }
+.searchCut, .filterCut { border: 1px solid var(--line); box-shadow: none; background: var(--ink); }
+.recordCard, .recordCard:nth-child(3n + 2), .recordCard:nth-child(3n + 3) { color: var(--paper); background: rgb(25 31 34 / 92%); border: 1px solid var(--line); box-shadow: 0 5px 18px rgb(0 0 0 / 15%); transform: none; }
+.recordAvatar, .recordCard:nth-child(3n + 3) .recordAvatar { color: var(--ink); background: var(--acid); border: 1px solid var(--line); box-shadow: none; transform: none; }
+.recordStatus, .recordActions button { border-width: 1px; }
+.titleMark, .primaryCut, .dispatchBadge { box-shadow: none; }
+.dialog { border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 20px 80px rgb(0 0 0 / 45%); }
 
 .panel[hidden] { display: none; }
 .panel :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
@@ -156,6 +176,7 @@
   .giantAdd { align-self: flex-end; }
   .collectionToolbar { align-items: stretch; flex-wrap: wrap; margin-top: 28px; }
   .searchCut { flex: 1 1 100%; max-width: none; }
+  .filterCut { flex: 1 1 auto; }
   .expertGrid { grid-template-columns: 1fr; }
   .dialog { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; margin: 0; position: fixed; right: 0; bottom: 0; left: 0; top: auto; border-radius: 14px 14px 0 0; }
 }
