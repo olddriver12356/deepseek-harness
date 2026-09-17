@@ -70,7 +70,7 @@ it.skipIf(process.env['DSH_VAULT_ROOT'] === undefined).each([false, true])('capt
     const handle = await ctx.sessionPersistence.create({
       id: sessionId, version: SESSION_FORMAT_VERSION, createdAt: 1, isSeeded: false, cwd: root, delegationDepth: 0,
     })
-    await handle.append([{ type: 'user/message', seq: SessionSeq(0), time: 2, data: createMessage({
+    await handle.append([{ type: 'user/message', surfaceOp: 'append', seq: SessionSeq(0), time: 2, data: createMessage({
       role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text: '完整 source <script>' }],
     }) }])
     await handle.close()

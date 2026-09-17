@@ -22,11 +22,19 @@ This package exposes `experts/list`, `experts/create`, `experts/update`, and `ex
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as the Host only persists Expert definitions and the client dispatches selected instructions through the ordinary Session prompt path.
+### Delegated Expert execution
+
+#### What the model sees
+
+The `dispatch_expert` tool accepts an approved Expert and a task, starts a child with its instructions, and returns the child result to the calling agent.
+
+#### Token effect
+
+The parent receives the tool schema and result; the child receives the selected Expert instructions and task.
 
 #### KV Cache effect
 
-None until a user dispatches an Expert through a Session.
+Tool results append to parent history. Different Expert instructions change the child prompt prefix.
 
 ## Known Limitations and Deferred Work
 
@@ -36,6 +44,7 @@ None until a user dispatches an Expert through a Session.
 - **Conservative deletion**: an Expert package containing files besides `ARTIFACT.md` must be cleaned up manually before deletion.
 
 <a id="dev-note"></a>
+
 `dispatch_expert` registers raw JSON Schema for both input and output. Its input is an object with required `expert` and `task` string properties; author-facing property maps must be converted before registration because model adapters forward the registered schema unchanged.
 
 ### Dev Note

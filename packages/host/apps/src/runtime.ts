@@ -4,7 +4,16 @@ import type { SubprocessRuntime, SubprocessHandle } from '@deepseek-ai/dsh-subpr
 import { inspectProject, validateAppUrl } from './manifest.ts'
 import type { AppRegistration, AppSnapshot, AppLogs } from './types.ts'
 
-export interface RuntimeConfig { startupTimeoutMs: number; graceMs: number; logBytes: number; portAttempts: number }
+export interface RuntimeConfig {
+  /** Maximum time in milliseconds to wait for the app HTTP endpoint. */
+  startupTimeoutMs: number
+  /** Grace period in milliseconds before terminating a managed process. */
+  graceMs: number
+  /** Maximum bytes retained for each process output stream. */
+  logBytes: number
+  /** Number of consecutive ports to probe for automatic allocation. */
+  portAttempts: number
+}
 interface Run { snapshot: AppSnapshot; handle?: SubprocessHandle; cancelled: boolean }
 
 /** Bind checks detect conflicts; the application still owns the eventual socket. */

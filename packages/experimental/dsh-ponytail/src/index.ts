@@ -3,7 +3,7 @@
  * way ponytail's own Claude Code / Codex adapters work: an always-on ruleset
  * section rebuilt from the shared skill body on every turn, plus a
  * `/ponytail <level>` command tracked across turns. See
- * `docs/agent-portability.md` in github.com/olddriver12356/ponytail — DSH has
+ * `packages/experimental/dsh-ponytail/README.md` in github.com/olddriver12356/ponytail — DSH has
  * no row there, so this plugin is the local adapter, built on DSH's own
  * `systemPrompt.section()` seam (the same one `dsh-persona` uses) in place of
  * ponytail's SessionStart/UserPromptSubmit hooks.
@@ -69,7 +69,7 @@ export function apply(ctx: Context, config: Config): void {
 
   ctx.effect(() => ctx.systemPrompt.section({
     name: 'ponytail:ruleset',
-    order: ctx.systemPrompt.getSectionOrder('DEPLOYMENT_PERSONA') + 1,
+    order: ctx.systemPrompt.getSectionOrder('DEPLOYMENT_PERSONA_PREFIX') + 1,
     text: () => getPonytailInstructions(skillPath, readMode(statePath, defaultMode)),
   }), 'ponytail.section()')
 

@@ -33,7 +33,7 @@ const OUT = 'packages/extensions/cordis-client-runner/src/client/slot-catalog.ts
 const SOURCE_GLOBS = ['packages/*/*/src/**/*.ts', 'packages/*/*/src/**/*.tsx']
 
 /** Sources replaced in the shipped web bundle and therefore absent from its catalog surface. */
-const SOURCE_EXCLUDES = ['packages/client/ui-layout/src/**']
+const SOURCE_EXCLUDES: string[] = []
 
 /** Web bundle patch whose explicit substitution authorizes SOURCE_EXCLUDES. */
 const WEB_APP_PATCH = 'packages/bundle/web-app/cordis.patch.yml'

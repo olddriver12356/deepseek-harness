@@ -9,6 +9,9 @@
   ],
   "references": [
     {
+      "path": "../../util/brand"
+    },
+    {
       "path": "../../../vendor/cordis"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../ui-session"
+    },
+    {
+      "path": "../ui-layout-core"
     }
   ]
 }

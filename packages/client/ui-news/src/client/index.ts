@@ -19,9 +19,9 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Register the persistent News overlay in the shell's additive slot. */
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register('newsActions', { zh, en }), 'news: action copy')
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register(
+  ctx.slots.inject('shell.app-overlay', () => ctx.slots.register(
     {
-      name: 'shell.overlay',
+      name: 'shell.app-overlay',
       id: 'news-panel',
       locale: 'newsActions',
       inject: () => {

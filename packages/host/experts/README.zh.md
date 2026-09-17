@@ -22,11 +22,19 @@ kind: "package-reference"
 <a id="model-experience"></a>
 ## 模型体验
 
-无，因为 Host 只持久化 Expert 定义，而客户端通过普通会话提示词路径派发所选指令。
+### 委派专家执行
+
+#### 模型看到什么
+
+`dispatch_expert` 工具接受已批准的专家和任务，使用专家指令启动子 Agent，并将结果返回调用方。
+
+#### Token 影响
+
+父 Agent 接收工具 schema 和结果；子 Agent 接收专家指令与任务。
 
 #### KV Cache 影响
 
-在用户通过会话派发 Expert 之前没有影响。
+工具结果追加到父会话历史；不同专家指令改变子 Agent 的提示词前缀。
 
 ## 已知限制与延后工作
 
@@ -36,6 +44,9 @@ kind: "package-reference"
 - **保守删除**：如果 Expert 包除 `ARTIFACT.md` 之外还包含其他文件，必须先手动清理才能删除。
 
 <a id="dev-note"></a>
+
+`dispatch_expert` 为输入和输出注册原始 JSON Schema。输入是包含必需的 `expert` 和 `task` 字符串属性的对象；面向作者的属性映射必须先转换再注册，因为模型适配器原样转发注册的 schema。
+
 ### 开发说明
 
 <details>

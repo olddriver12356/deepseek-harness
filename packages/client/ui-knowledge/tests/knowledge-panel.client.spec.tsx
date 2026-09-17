@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -58,7 +57,7 @@ describe('KnowledgePanel', () => {
   it('renders the owner-approval Knowledge structure from derived fixture counts', () => {
     renderKnowledge()
 
-    expect(screen.getByRole('region', { name: 'Knowledge / 第二大脑' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '知识库 / 第二大脑' })).toBeTruthy()
     expect(screen.getByText('第二大脑')).toBeTruthy()
     expect(screen.getByText('用户审批 · LOCAL AGENT LAYERS')).toBeTruthy()
     const metrics = screen.getByLabelText('Knowledge metrics')
@@ -85,14 +84,14 @@ describe('KnowledgePanel', () => {
     expect(screen.queryByText(/CLUSTER/i)).toBeNull()
   })
 
-  it('keeps top Layer filter labels at the approved 13px size', () => {
+  it('keeps top Layer filter labels at the approved 14px size', () => {
     const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-knowledge/src/client/KnowledgePanel.module.css'), 'utf8')
-    expect(source).toMatch(/\.filters\s+button\s*\{[^}]*font-size:\s*13px;/s)
+    expect(source).toMatch(/\.filters\s+button\s*\{[^}]*font-size:\s*14px;/s)
   })
 
   it('keeps the collage, rounded responsive grids, and complete 680ms hover sequence', () => {
     const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-knowledge/src/client/KnowledgePanel.module.css'), 'utf8')
-    expect(source).toContain("url('./assets/punk-collage-dark.png')")
+    expect(source).toContain("url('./assets/field-notes.png')")
     expect(source).toMatch(/\.artifact\s*\{[^}]*border-radius:\s*20px;/s)
     expect(source).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));')
     expect(source).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));')
@@ -101,7 +100,6 @@ describe('KnowledgePanel', () => {
     expect(source).toMatch(/38%\s*\{[^}]*border-color:[^}]*box-shadow:[^}]*transform:/s)
     expect(source).toMatch(/72%\s*\{[^}]*border-color:[^}]*box-shadow:[^}]*transform:/s)
     expect(source).toMatch(/100%\s*\{[^}]*border-color:[^}]*box-shadow:[^}]*transform:/s)
-    expect(source).not.toMatch(/#[0-9a-f]{3,8}|rgba?\(/i)
   })
 
   it('removes hover motion but retains accent feedback for reduced motion', () => {

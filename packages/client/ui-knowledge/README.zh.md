@@ -21,7 +21,7 @@ Knowledge 列出 Intake、Processed 和 Knowledge · To learn 中的真实 Agent
 <a id="runtime-contract"></a>
 ## 运行时约定
 
-插件通过 `ctx.slots.inject` 等待 `shell.overlay` 和 `shell.activity.capture` 声明，打开或刷新时通过 [Knowledge Remote](../../host/knowledge/README.zh.md) 加载记录。阅读器复用现有的不可信内容渲染器显示 Markdown，禁用原始 HTML 和危险链接。显式操作支持蒸馏、重试、搁置、恢复和审阅，错误持续可见。晋升需要目标预览和单独的默认未勾选批准框，修改目标会丢弃预览和批准。
+插件通过 `ctx.slots.inject` 等待 `shell.app-overlay` 和 `shell.activity.capture` 声明，打开或刷新时通过 [Knowledge Remote](../../host/knowledge/README.zh.md) 加载记录。阅读器复用现有的不可信内容渲染器显示 Markdown，禁用原始 HTML 和危险链接。显式操作支持蒸馏、重试、搁置、恢复和审阅，错误持续可见。晋升需要目标预览和单独的默认未勾选批准框，修改目标会丢弃预览和批准。
 
 点击卡片立即打开原生模态阅读器，固定标题栏，并在窗口内显示加载状态和错误。渲染后的正文保留 Boujoy 的黑色标题栏、桌面直角边框、蓝色阴影和手机底部抽屉，阅读面采用深炭灰、暖白文字和青色链接。保存的会话显示已提交的用户与助手正文；原始证据仅在明确请求时读取。审阅和学习标签取代验证清单。已接受的 Knowledge 必须标记为已学会才能预览发布，建议目标位置仍可编辑。关联产物链接和返回按钮用于原件与已处理条目导航。刷新重读当前文档；关闭保留列表选择和筛选。Layer 筛选旁的 Kind 筛选可将列表收窄到新闻类保存内容（`news-article` 标签）或其余内容，避免自动抓取的高频新闻队列淹没直接保存的 Intake。
 
@@ -36,7 +36,7 @@ collage 和 Fusion Pixel 字体是包拥有的受跟踪资产，由相对 CSS UR
 
 ## Model Experience
 
-蒸馏草稿要求模型使用现有会话查询工具读取原会话，引用事件序号，将日志内容视为证据，并先展示候选卡片请求用户批准。用户必须发送草稿才会启动模型轮次。其他 Knowledge 面板操作将模型请求委托给 Knowledge Host。
+间接影响：蒸馏草稿要求模型使用现有会话查询工具读取原会话，引用事件序号，将日志内容视为证据，并先展示候选卡片请求用户批准。用户必须发送草稿才会启动模型轮次。其他 Knowledge 面板操作将模型请求委托给 Knowledge Host。
 
 #### KV Cache effect
 

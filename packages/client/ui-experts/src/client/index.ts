@@ -46,9 +46,9 @@ function remoteValue<T>(result:
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-experts: dictionaries')
   const t = ctx.locale.bind(NS)
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register(
+  ctx.slots.inject('shell.app-overlay', () => ctx.slots.register(
     {
-      name: 'shell.overlay',
+      name: 'shell.app-overlay',
       id: 'experts-panel',
       locale: NS,
       inject: () => ({

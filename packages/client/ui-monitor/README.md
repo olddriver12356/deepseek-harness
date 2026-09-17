@@ -1,18 +1,42 @@
+---
+description: "Inspect native token, context, effort and trajectory projections in the Monitor page. "
+kind: package-reference
+---
+
 # @deepseek-ai/dsh-client-ui-monitor
 
-Monitor application panel for the web surface. It registers a persistent session-aware `shell.overlay` occupant, follows `ctx.appPanels`, and presents token usage, context occupancy, reasoning effort, and trajectory data in the approved Boujoy visual language. Token and context values come from native projections; effort reads the latest native request config, and trajectory reads the native `conversation.view` snapshot.
+English | [中文](README.zh.md)
 
-The panel is read-only in this phase: controls are present for layout validation but disabled, and no Vault or host mutation path is introduced. The `/client` export provides the plugin body (`apply`/`inject`) and `MonitorPanel`.
+## Summary
 
+Inspect native token, context, effort and trajectory projections in the Monitor page.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+
+<a id="behavior"></a>
+## Behavior
+
+The persistent session-aware shell.app-overlay follows ctx.appPanels. Token and context values use native projections, effort reads native request configuration, and trajectory uses conversation.view. This page does not write vault data.
+
+<a id="model-experience"></a>
 ## Model Experience
 
-None, as the panel currently renders UI placeholders and does not assemble or send model requests.
+None, as this package manages local browser or process state without assembling model requests.
 
 #### KV Cache effect
 
-None; native cache projections are not wired yet.
+None; no prompt or provider request changes.
 
 ## Known Limitations and Deferred Work
 
-- **Missing capability**: absent native projection/view values remain explicit placeholders.
-- **Disabled controls**: refresh, effort selection, trajectory filters, and search are visual affordances only; effort write-back has no host command contract yet.
+<a id="known-limitations-and-deferred-work"></a>
+
+- Absent native data remains a placeholder; refresh, filters and effort controls without a command contract remain disabled.
+
+### Dev Note
+
+The integration keeps the owner configuration and local feature state separate from disposable verification data.

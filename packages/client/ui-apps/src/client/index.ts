@@ -25,5 +25,5 @@ export function apply(ctx: Context): void {
     confirmExternal: async id => value(await ctx.remote.apps.confirmExternal({ id })),
     pick: async () => value(await ctx.remote.directoryPicker.pick()),
   }
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register({ name: 'shell.overlay', id: 'apps-panel', locale: 'apps', inject: () => ({ appPanels: ctx.appPanels, api, t: ctx.locale.bind('apps') }) }, AppsPanel))
+  ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({ name: 'shell.app-overlay', id: 'apps-panel', locale: 'apps', inject: () => ({ appPanels: ctx.appPanels, api, t: ctx.locale.bind('apps') }) }, AppsPanel))
 }

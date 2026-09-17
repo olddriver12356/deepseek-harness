@@ -244,21 +244,42 @@ export class SkillFilesController extends TypertRemoteService {
     if (workspace === undefined) throw new Error('Unknown Workspace')
     return workspace.path
   }
-  /** @param workspaceId - registered workspace. @returns physical skill inventory. */
+  /**
+   * List physical skill sources available to the workspace.
+   * @param workspaceId - registered workspace.
+   * @returns physical skill inventory.
+   */
   @Remote('list')
   list(workspaceId: WorkspaceId): Promise<SkillInventory> { return this.store.inventory(this.cwd(workspaceId)) }
-  /** @param workspaceId - registered workspace. @param id - physical skill. @returns bundle tree. */
+  /**
+   * Read a skill bundle's file tree.
+   * @param workspaceId - registered workspace.
+   * @param id - physical skill.
+   * @returns bundle tree.
+   */
   @Remote('tree')
   tree(workspaceId: WorkspaceId, id: SkillArtifactId): Promise<readonly SkillTreeEntry[]> {
     return this.store.tree(this.cwd(workspaceId), id)
   }
-  /** @param request - scoped file identity. @returns text or binary summary and revision. */
+  /**
+   * Read one file from a registered skill source.
+   * @param request - scoped file identity.
+   * @returns text or binary summary and revision.
+   */
   @Remote('read')
   read(request: SkillFileRequest): Promise<SkillFileContent> { return this.store.read(this.cwd(request.workspaceId), request) }
-  /** @param request - scoped file and expected revision. @returns committed file readback. */
+  /**
+   * Save a file after checking its expected revision.
+   * @param request - scoped file and expected revision.
+   * @returns committed file readback.
+   */
   @Remote('write')
   write(request: SkillFileWriteRequest): Promise<SkillFileContent> { return this.store.write(this.cwd(request.workspaceId), request) }
-  /** @param request - confirmed skill source identity. @returns recoverable entry location. */
+  /**
+   * Move a confirmed skill source into recoverable storage.
+   * @param request - confirmed skill source identity.
+   * @returns recoverable entry location.
+   */
   @Remote('deleteSkill')
   deleteSkill(request: SkillDeleteRequest): Promise<SkillDeleteResult> { return this.store.remove(this.cwd(request.workspaceId), request) }
 }

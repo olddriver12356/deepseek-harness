@@ -37,6 +37,8 @@ function mount(options: MountOptions = {}) {
       select(new Map(options.pending === undefined ? [] : [['s-test', options.pending]]))) as never,
     useSessions: ((select: (snapshot: { byId: Record<string, unknown> }) => unknown) => select({ byId: { 's-test': { displayTitle: '测试会话', running: options.running ?? false } } })) as never,
     renderSlot: (() => null) as never,
+    usePanelInfo: undefined as never,
+    useResource: undefined as never,
     onEditGoal: (options.verbs?.onEditGoal ?? OK) as never,
     onPauseGoal: (options.verbs?.onPauseGoal ?? OK) as never,
     onResumeGoal: (options.verbs?.onResumeGoal ?? OK) as never,

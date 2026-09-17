@@ -46,9 +46,9 @@ export function apply(ctx: ClientContext): void {
     promote: async (request: import('@deepseek-ai/dsh-host-knowledge/types').KnowledgePromoteRequest) => value(await ctx.remote.knowledge.promote(request)),
     shelve: async (request: import('@deepseek-ai/dsh-host-knowledge/types').KnowledgeShelveRequest) => value(await ctx.remote.knowledge.shelve(request)),
   }
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register(
+  ctx.slots.inject('shell.app-overlay', () => ctx.slots.register(
     {
-      name: 'shell.overlay',
+      name: 'shell.app-overlay',
       id: 'knowledge-panel',
       locale: 'knowledge',
       inject: () => ({ appPanels: ctx.appPanels, api, t }),

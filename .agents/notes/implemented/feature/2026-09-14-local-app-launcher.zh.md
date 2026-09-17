@@ -2,6 +2,8 @@
 
 Status: implemented
 
+[English](2026-09-14-local-app-launcher.md) | 中文
+
 ## Problem
 
 打开本地 Web 工具需要逐个查找仓库并手动执行启动脚本。

@@ -34,6 +34,7 @@ async function bench() {
   ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
   // The activity card reads the goal CAS ref through the sessions service.
   ctx.provide('sessions', { binding: () => undefined } as never)
+  ctx.provide('uiSession', {} as never)
   await ctx.plugin({ inject: themeInject, apply: themeApply }).await()
   await slotsFiber.await()
   return { ctx, slots: ctx.get('slots') as SlotRegistry }
@@ -62,8 +63,9 @@ describe('ui-shell client apply', () => {
     // …and declared the five children in the ledger.
     expect(slots.spec('app.rail')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('sidebar')).toEqual({ kind: 'single', scope: 'root' })
-    expect(slots.spec('conversation')).toEqual({ kind: 'single', scope: 'session-maybe' })
-    expect(slots.spec('details')).toEqual({ kind: 'single', scope: 'session' })
+    expect(slots.spec('main')).toEqual({ kind: 'keyed', scope: 'root' })
+    expect(slots.spec('shell.app-overlay')).toEqual({ kind: 'list', scope: 'session-maybe' })
+    expect(slots.spec('rightbar')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('shell.activity')).toEqual({ kind: 'single', scope: 'session' })
   })
 
@@ -71,14 +73,10 @@ describe('ui-shell client apply', () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
-    const actions = {
-      setSidebar: vi.fn(), setDetails: vi.fn(), toggleSidebar: vi.fn(), openDetails: vi.fn(), closeDetails: vi.fn(),
-    }
-    const injected = (slots.entries('root')[0]!.inject as (actions: never) => object)(actions as never)
-    expect(injected).toEqual({})
+    const entry = slots.entries('root')[0]!
+    expect(entry.inject).toBeUndefined()
     const layout = ctx.get('layout') as LayoutController
-    layout.toggleSidebar()
-    expect(actions.toggleSidebar).toHaveBeenCalledOnce()
+    expect(() => layout.toggleSidebar()).not.toThrow()
   })
 
   it('theme presenter applies the initial snapshot, follows theme/change, and unwinds on dispose', async () => {

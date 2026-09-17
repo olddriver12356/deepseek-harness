@@ -21,7 +21,7 @@ Knowledge lists real Agent Layer artifacts in Intake, Processed, and Knowledge Â
 <a id="runtime-contract"></a>
 ## Runtime contract
 
-The plugin waits for `shell.overlay` and `shell.activity.capture` declarations through `ctx.slots.inject`. It loads records through the [Knowledge Remote](../../host/knowledge/README.md) when opened or refreshed. The reader renders Markdown through the existing untrusted-content renderer, with raw HTML and unsafe links disabled. Explicit actions distill, retry, shelve, restore, and review; errors remain visible. Promotion requires a destination preview and a separate unchecked approval box. Editing the destination discards the preview and approval.
+The plugin waits for `shell.app-overlay` and `shell.activity.capture` declarations through `ctx.slots.inject`. It loads records through the [Knowledge Remote](../../host/knowledge/README.md) when opened or refreshed. The reader renders Markdown through the existing untrusted-content renderer, with raw HTML and unsafe links disabled. Explicit actions distill, retry, shelve, restore, and review; errors remain visible. Promotion requires a destination preview and a separate unchecked approval box. Editing the destination discards the preview and approval.
 
 Cards open a native modal reader immediately, with a sticky title, loading feedback, and errors inside the dialog. Boujoy's black header, square desktop border, blue shadow, and mobile bottom sheet frame a dark charcoal reading surface with warm light text and cyan links. Captured conversations show committed user and assistant text; raw evidence is fetched only on explicit request. Review and learning tags replace validation checklists. Accepted Knowledge must be marked learned before publication preview; the suggested destination remains editable. Related artifact links and Back navigate between sources and processed items. Refresh reloads the current document; closing preserves library selection and filters. A Kind filter next to the Layer filter narrows the library to News captures (topic `news-article`) or everything else, so the high-volume auto-pulled news queue does not bury directly captured intake.
 
@@ -36,7 +36,7 @@ The collage and Fusion Pixel font are package-owned tracked assets referenced by
 
 ## Model Experience
 
-The distillation draft instructs the model to read the source session through existing session-query tools, cite event sequence numbers, treat log contents as evidence, and present proposed cards before requesting approval. The user must send the draft to start a model turn. Other Knowledge panel operations delegate model requests to the Knowledge Host.
+Indirectly, through the distillation draft that instructs the model to read the source session through existing session-query tools, cite event sequence numbers, treat log contents as evidence, and present proposed cards before requesting approval; the user must send the draft to start a model turn, and other Knowledge panel operations delegate model requests to the Knowledge Host.
 
 #### KV Cache effect
 

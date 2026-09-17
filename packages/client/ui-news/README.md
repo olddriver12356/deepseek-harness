@@ -2,13 +2,13 @@
 
 English | [中文](README.zh.md)
 
-News application panel for the web surface. It registers a persistent `shell.overlay` occupant, follows `ctx.appPanels`, and reads the Host News Remote through the shared `api-remotes` assembly. The approved two-column editorial layout shows recent AI news plus tools and model releases, with loading, empty, error, refresh, and image fallback states.
-
-## Model Experience
+News application panel for the web surface. It registers a persistent `shell.app-overlay` occupant, follows `ctx.appPanels`, and reads the Host News Remote through the shared `api-remotes` assembly. The approved two-column editorial layout shows recent AI news plus tools and model releases, with loading, empty, error, refresh, and image fallback states.
 
 Each card offers model-free capture and explicit distillation when the Knowledge Remote is mounted. Distillation saves the feed-provided title, summary, and source into Intake, then calls the isolated Knowledge processor; it does not fetch the full article. Loading prevents repeat clicks and errors remain retryable. Successful output stays in Processed awaiting owner review. The button never reviews, marks learned, or publishes a card. Action labels follow the application locale.
 
-None, as the panel renders a browser surface and never assembles model input or sends model requests.
+## Model Experience
+
+Indirectly, through explicitly requested distillation delegated to the Knowledge Host without assembling model requests itself.
 
 #### KV Cache effect
 

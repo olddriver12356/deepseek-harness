@@ -10,11 +10,14 @@ async function bench() {
   await ctx.plugin(SlotRegistry).await()
   const slots = ctx.get('slots') as SlotRegistry
   slots.register(
-    { name: 'root', children: { 'shell.overlay': { kind: 'list', scope: 'root' } } } as never,
+    { name: 'root', children: { 'shell.app-overlay': { kind: 'list', scope: 'session-maybe' } } } as never,
     () => null,
   )
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
+  ctx.provide('sessions', {})
+  ctx.provide('workspaces', {})
+  ctx.provide('conversation', {})
   ctx.provide('remote', { knowledge: {} })
   ctx.provide('remote.knowledge', {})
   ctx.provide('locale', { register: () => () => {}, bind: () => (key: string) => key })
@@ -23,15 +26,15 @@ async function bench() {
 
 describe('Knowledge plugin apply', () => {
   it('declares the slot and app-panel dependencies', () => {
-    expect(inject).toEqual(['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale'])
+    expect(inject).toEqual(['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces'])
   })
 
   it('registers the persistent overlay with the real Remote adapter', async () => {
     const { ctx, slots, appPanels } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
 
-    const entry = slots.entries('shell.overlay')[0]!
+    const entry = slots.entries('shell.app-overlay')[0]!
     expect(entry.options.id).toBe('knowledge-panel')
     expect(entry.component).toBe(ConnectedKnowledgePanel)
     const props = (entry.inject as () => { appPanels: unknown; api: { list: unknown; read: unknown }; t: unknown })()
@@ -45,9 +48,9 @@ describe('Knowledge plugin apply', () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
 
     await fiber.dispose()
-    expect(slots.entries('shell.overlay')).toHaveLength(0)
+    expect(slots.entries('shell.app-overlay')).toHaveLength(0)
   })
 })

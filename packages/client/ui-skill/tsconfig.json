@@ -44,6 +44,12 @@
     },
     {
       "path": "../ui-shell"
+    },
+    {
+      "path": "../ui-sidebar-right"
+    },
+    {
+      "path": "../../util/workspace-path"
     }
   ]
 }

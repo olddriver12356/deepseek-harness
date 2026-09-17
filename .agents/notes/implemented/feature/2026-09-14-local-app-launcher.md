@@ -2,6 +2,8 @@
 
 Status: implemented
 
+English | [中文](2026-09-14-local-app-launcher.zh.md)
+
 ## Problem
 
 Opening local web tools requires finding each repository and running its package script manually.

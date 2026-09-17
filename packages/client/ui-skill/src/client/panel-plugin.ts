@@ -28,8 +28,8 @@ export function apply(ctx: Context): void {
     handoff: (workspaceId: WorkspaceId, draft: SkillDraft, destination: string) =>
       createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination)),
   }
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-    name: 'shell.overlay', id: 'skills-panel', locale: 'skillsPanel',
+  ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({
+    name: 'shell.app-overlay', id: 'skills-panel', locale: 'skillsPanel',
     inject: () => ({ appPanels: ctx.appPanels, workspaces: ctx.workspaces, sessions: ctx.sessions, api, t: ctx.locale.bind('skillsPanel') }),
   }, SkillsPanel))
 }
