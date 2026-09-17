@@ -23,7 +23,7 @@
   background: var(--dsw-specific-menu);
   --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
   box-shadow: var(--dsw-elevation-prominent);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-label-secondary);
   cursor: default;

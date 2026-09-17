@@ -42,7 +42,7 @@ async function bench() {
 
 describe('ui-shell client apply', () => {
   it('declares its service dependencies', () => {
-    expect(inject).toEqual(['slots', 'theme', 'sessions', 'remote', 'remote.goals', 'locale'])
+    expect(inject).toEqual(['slots', 'theme', 'sessions', 'uiSession', 'remote', 'remote.goals', 'locale'])
   })
 
   it('ships shell-owned effect labels', () => {

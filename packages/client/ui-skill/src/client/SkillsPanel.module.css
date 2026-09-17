@@ -36,28 +36,28 @@
 .header h1 { margin: 0; font-size: 24px; letter-spacing: .02em; line-height: 1.25; }
 .titleLockup { display: flex; align-items: center; gap: 12px; }
 .titleMark { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid rgb(233 223 206 / 30%); border-radius: 12px; color: var(--skill-ink); background: linear-gradient(135deg, #79c4b0, #bacb9c 65%, #d7b77f); font-weight: 800; }
-.header > label { max-width: 240px; font-size: 11px; }
+.header > label { max-width: 240px; font-size: 14px; }
 .panel .primary { color: var(--skill-ink); background: var(--skill-accent); border-color: var(--skill-accent); font-weight: 700; }
 .workbench { display: grid; grid-template-columns: minmax(220px, 25%) minmax(155px, 18%) minmax(300px, 1fr); gap: 10px; margin: 0 22px 28px; min-height: 360px; height: calc(100dvh - 32px); flex: 0 0 auto; }
 .index, .files, .editor { min-width: 0; min-height: 0; border: 1px solid var(--skill-line); border-radius: 12px; background: color-mix(in srgb, var(--skill-ink) 90%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .index { display: flex; flex-direction: column; padding: 14px; }
 .index > select { margin-bottom: 8px; }
-.filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 11px; }
+.filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; font-size: 14px; }
 .filters select { padding: 7px; }
-.count { color: var(--skill-muted); font-size: 11px; }
+.count { color: var(--skill-muted); font-size: 14px; }
 .list { overflow: auto; min-height: 0; flex: 1; }
-.panel .group { display: flex; gap: 6px; align-items: center; text-align: left; width: 100%; margin: 12px 0 4px; padding: 6px 0; border: 0; background: none; color: var(--skill-brass); font-size: 12px; overflow-wrap: anywhere; }
-.group span { margin-left: auto; white-space: nowrap; font: 11px var(--ds-font-family-code, monospace); color: var(--skill-muted); }
+.panel .group { display: flex; gap: 6px; align-items: center; text-align: left; width: 100%; margin: 12px 0 4px; padding: 6px 0; border: 0; background: none; color: var(--skill-brass); font-size: 14px; overflow-wrap: anywhere; }
+.group span { margin-left: auto; white-space: nowrap; font: 14px var(--ds-font-family-code, monospace); color: var(--skill-muted); }
 .panel .skill { display: grid; gap: 4px; text-align: left; width: 100%; margin: 4px 0; padding: 10px; border-color: transparent; background: transparent; overflow-wrap: anywhere; }
 .panel .skill[aria-pressed='true'] { border-color: var(--skill-accent); background: color-mix(in srgb, var(--skill-accent) 12%, var(--skill-ink)); }
 .skill strong { font-weight: 550; }
 .skill small { color: var(--skill-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.skill span { color: var(--skill-brass); font-size: 10px; }
-.notice { display: block; margin-top: 14px; color: var(--skill-muted); font-size: 10px; }
+.skill span { color: var(--skill-brass); font-size: 14px; }
+.notice { display: block; margin-top: 14px; color: var(--skill-muted); font-size: 14px; }
 .files { padding: 14px 10px; overflow: auto; }
 .files > header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 12px; }
-.path { display: block; margin: 8px 0 16px; color: var(--skill-muted); overflow-wrap: anywhere; font-size: 11px; }
-.tree { list-style: none; padding: 0 0 0 8px; margin: 0; font-size: 12px; }
+.path { display: block; margin: 8px 0 16px; color: var(--skill-muted); overflow-wrap: anywhere; font-size: 14px; }
+.tree { list-style: none; padding: 0 0 0 8px; margin: 0; font-size: 14px; }
 .tree summary { cursor: pointer; color: var(--skill-brass); padding: 7px 0; overflow-wrap: anywhere; }
 .tree li { margin: 3px 0; }
 .panel .tree button { width: 100%; padding: 7px; border-color: transparent; background: transparent; text-align: left; overflow-wrap: anywhere; }
@@ -65,14 +65,14 @@
 .editor { display: flex; flex-direction: column; overflow: hidden; }
 .editor > header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--skill-line); }
 .editor > header > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.editor > header small { display: block; color: var(--skill-muted); font-size: 10px; }
-.editor > header > span { font-size: 10px; color: var(--skill-brass); }
+.editor > header small { display: block; color: var(--skill-muted); font-size: 14px; }
+.editor > header > span { font-size: 14px; color: var(--skill-brass); }
 .panel .document { overflow: auto; min-height: 0; flex: 1; padding: 24px; }
 .list, .files, .document { scrollbar-width: auto; scrollbar-color: var(--skill-accent) var(--skill-ink); scrollbar-gutter: stable; }
 .document > label, .document > div { margin-bottom: 18px; }
 .fieldGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .source { height: 100%; min-height: 360px; grid-template-rows: auto 1fr; }
-.source textarea { resize: none; font: 12px/1.8 var(--ds-font-family-code, monospace); tab-size: 2; }
+.source textarea { resize: none; font: 14px/1.8 var(--ds-font-family-code, monospace); tab-size: 2; }
 .empty { color: var(--skill-muted); padding: 32px 18px; text-align: center; margin: auto; }
 .empty > span { color: var(--skill-brass); font-size: 48px; }
 .empty h2 { font-size: 16px; font-weight: 400; }
@@ -117,18 +117,18 @@
 
 .skillRow { display: flex; align-items: center; gap: 4px; }
 .skillRow .skill { flex: 1; min-width: 0; }
-.panel .deleteSkill { flex: 0 0 auto; padding: 6px; color: var(--skill-muted); background: transparent; font-size: 11px; }
+.panel .deleteSkill { flex: 0 0 auto; padding: 6px; color: var(--skill-muted); background: transparent; font-size: 14px; }
 .panel .deleteSkill:hover:not(:disabled), .panel .deleteConfirm { color: var(--skill-error); border-color: currentColor; }
 .editor > header { flex-wrap: wrap; }
 .editor > header > .viewModes { display: flex; flex: 0 0 auto; gap: 3px; }
-.panel .viewModes button { padding: 6px 8px; font-size: 12px; background: transparent; }
+.panel .viewModes button { padding: 6px 8px; font-size: 14px; background: transparent; }
 .panel .viewModes button[aria-pressed='true'] { color: var(--skill-accent); border-color: var(--skill-accent); background: color-mix(in srgb, var(--skill-accent) 10%, transparent); }
 .preview { flex: 1; min-height: 0; overflow: auto; padding: clamp(20px, 3cqw, 44px); scrollbar-color: var(--skill-accent) var(--skill-ink); scrollbar-gutter: stable; overflow-wrap: anywhere; }
 .documentHeader { padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid var(--skill-line); }
-.documentKicker { color: var(--skill-brass); font-size: 11px; letter-spacing: .08em; }
+.documentKicker { color: var(--skill-brass); font-size: 14px; letter-spacing: .08em; }
 .documentHeader h2 { margin: 10px 0; font-size: clamp(24px, 3cqw, 36px); line-height: 1.2; color: var(--skill-paper); }
 .documentDescription { color: var(--skill-muted); line-height: 1.8; }
-.modeBadge { display: inline-block; padding: 3px 9px; border: 1px solid var(--skill-line); border-radius: 20px; color: var(--skill-accent); font-size: 11px; }
+.modeBadge { display: inline-block; padding: 3px 9px; border: 1px solid var(--skill-line); border-radius: 20px; color: var(--skill-accent); font-size: 14px; }
 .prose { line-height: 1.85; font-size: 14px; }
 .prose :is(h1, h2, h3, h4, h5, h6) { color: var(--skill-paper); line-height: 1.35; margin: 1.5em 0 .65em; }
 .prose h1 { font-size: 1.8em; }

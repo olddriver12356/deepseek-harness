@@ -105,7 +105,7 @@
 .entryDescription {
   overflow: hidden;
   color: var(--dsw-alias-label-caption);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;

@@ -9,7 +9,7 @@
 
 .status {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--dsw-alias-label-tertiary);
 }
@@ -70,14 +70,14 @@
 
 .title {
   overflow: hidden;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .meta {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
 }

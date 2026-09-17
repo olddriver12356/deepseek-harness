@@ -46,7 +46,7 @@
   min-width: 0;
   margin-right: 12px;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -157,7 +157,7 @@
   margin: 0;
   padding: 3px 10px;
   color: var(--dsw-alias-label-tertiary);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .status {
