@@ -260,6 +260,17 @@ describe('candidates', () => {
     expect(s2Names).not.toContain('theme')
   })
 
+  it('keeps host commands visible with legacy static plugin labels and descriptions', async () => {
+    const { command, source } = await bench()
+    command.register(themeContribution({
+      label: 'Theme',
+      description: 'Choose theme',
+    }))
+    const rows = await source.candidates(proj('s1'), req(''))
+    expect(rows.map(row => row.name)).toEqual(['goal', 'plan', 'theme'])
+    expect(rows.find(row => row.name === 'theme')).toMatchObject({ label: 'Theme', description: 'Choose theme' })
+  })
+
   it('contribution rows ride the same fuzzy query filter', async () => {
     const { command, source } = await bench()
     command.register(themeContribution())

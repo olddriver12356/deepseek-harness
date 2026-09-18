@@ -13,7 +13,7 @@ async function bench() {
   slots.register({
     name: 'root',
     children: {
-      'shell.overlay': { kind: 'list', scope: 'root' },
+      'shell.app-overlay': { kind: 'list', scope: 'root' },
       'shell.activity.selectors': { kind: 'list', scope: 'session' },
     },
   } as never, () => null)
@@ -48,8 +48,8 @@ describe('Styles plugin apply', () => {
   it('registers one persistent Styles overlay', async () => {
     const { ctx, slots, appPanels } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     expect(entry.options.id).toBe('styles-panel')
     expect(entry.component).toBe(StylesPanel)
     const injected = (entry.inject as () => { appPanels: unknown; t: unknown; api: StyleApi })()
@@ -65,8 +65,8 @@ describe('Styles plugin apply', () => {
   it('surfaces the Remote value for a successful list call', async () => {
     const { ctx, slots, styles } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     const injected = (entry.inject as () => { api: StyleApi })()
     await expect(injected.api.list()).resolves.toEqual([])
     expect(styles.list).toHaveBeenCalledTimes(1)
@@ -75,8 +75,8 @@ describe('Styles plugin apply', () => {
   it('rejects dispatch when there is no current session', async () => {
     const { ctx, slots } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     const injected = (entry.inject as () => { api: StyleApi })()
     const style = {
       id: 's1', name: 'Concise', description: '', instructions: 'do it', status: 'approved', updatedAt: '2026-09-06',

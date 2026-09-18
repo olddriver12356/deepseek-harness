@@ -68,10 +68,10 @@ export type CommandUiSpec = PopupSelectSpec | ActionSpec
 export interface CommandContribution {
   /** Command name without the leading slash (unique across contributions). */
   readonly name: string
-  /** Localized menu row title; the name itself when absent. */
-  label?(): string
-  /** Localized menu row description; the row shows none when absent. */
-  description?(): string
+  /** Menu title: static plugin text or a locale-aware callback; the name when absent. */
+  readonly label?: string | (() => string)
+  /** Menu description: static plugin text or a locale-aware callback; absent hides it. */
+  readonly description?: string | (() => string)
   /** Menu row glyph from the shared icon set. */
   readonly icon?: ComponentType<IconProps>
   /** Capability filter, called with a fresh projection per candidate pass. */

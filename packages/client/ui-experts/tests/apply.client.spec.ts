@@ -13,7 +13,7 @@ async function bench() {
   slots.register({
     name: 'root',
     children: {
-      'shell.overlay': { kind: 'list', scope: 'root' },
+      'shell.app-overlay': { kind: 'list', scope: 'root' },
       'shell.activity.selectors': { kind: 'list', scope: 'session' },
     },
   } as never, () => null)
@@ -55,8 +55,8 @@ describe('Experts plugin apply', () => {
   it('registers one persistent Experts overlay', async () => {
     const { ctx, slots, appPanels } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     expect(entry.options.id).toBe('experts-panel')
     expect(entry.component).toBe(ExpertsPanel)
     const injected = (entry.inject as () => { appPanels: unknown; t: unknown; api: ExpertApi })()
@@ -73,8 +73,8 @@ describe('Experts plugin apply', () => {
   it('surfaces the Remote value for a successful listStyles call', async () => {
     const { ctx, slots, styles } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     const injected = (entry.inject as () => { api: ExpertApi })()
     await expect(injected.api.listStyles()).resolves.toEqual([])
     expect(styles.list).toHaveBeenCalledTimes(1)
@@ -83,8 +83,8 @@ describe('Experts plugin apply', () => {
   it('surfaces the Remote value for a successful list call', async () => {
     const { ctx, slots, experts } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     const injected = (entry.inject as () => { api: ExpertApi })()
     await expect(injected.api.list()).resolves.toEqual([])
     expect(experts.list).toHaveBeenCalledTimes(1)
@@ -93,8 +93,8 @@ describe('Experts plugin apply', () => {
   it('rejects dispatch when there is no current session', async () => {
     const { ctx, slots } = await bench()
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const entry = slots.entries('shell.overlay')[0]!
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const entry = slots.entries('shell.app-overlay')[0]!
     const injected = (entry.inject as () => { api: ExpertApi })()
     const expert = {
       id: 'e1', name: 'Reviewer', category: 'Engineering', description: '', instructions: 'do it',
@@ -111,8 +111,8 @@ describe('Experts plugin apply', () => {
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const injected = (slots.entries('shell.overlay')[0]!.inject as () => { api: ExpertApi })()
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const injected = (slots.entries('shell.app-overlay')[0]!.inject as () => { api: ExpertApi })()
     const expert = {
       id: 'e1', name: 'Root Cause Expert', category: 'Engineering', description: '',
       instructions: 'Reproduce before changing code.', status: 'approved', execution: 'delegated',
@@ -135,8 +135,8 @@ describe('Experts plugin apply', () => {
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never
     await ctx.plugin({ inject: [...inject], apply }).await()
-    await vi.waitFor(() => { expect(slots.entries('shell.overlay')).toHaveLength(1) })
-    const injected = (slots.entries('shell.overlay')[0]!.inject as () => { api: ExpertApi })()
+    await vi.waitFor(() => { expect(slots.entries('shell.app-overlay')).toHaveLength(1) })
+    const injected = (slots.entries('shell.app-overlay')[0]!.inject as () => { api: ExpertApi })()
     const expert = {
       id: 'e2', name: 'Socratic Expert', category: 'Learning', description: '',
       instructions: 'Ask, do not answer.', status: 'approved', execution: 'conversational',

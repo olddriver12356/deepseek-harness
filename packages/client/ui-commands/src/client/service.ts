@@ -224,8 +224,12 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
       }
       rows.push({
         name: contribution.name,
-        ...(contribution.label === undefined ? {} : { label: contribution.label() }),
-        ...(contribution.description === undefined ? {} : { description: contribution.description() }),
+        ...(contribution.label === undefined ? {} : {
+          label: typeof contribution.label === 'function' ? contribution.label() : contribution.label,
+        }),
+        ...(contribution.description === undefined ? {} : {
+          description: typeof contribution.description === 'function' ? contribution.description() : contribution.description,
+        }),
         ...(contribution.icon === undefined ? {} : { icon: contribution.icon }),
       })
     }

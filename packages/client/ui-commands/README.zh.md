@@ -5,6 +5,8 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-commands
 
+贡献项的 `label` 和 `description` 接受静态字符串或回调函数。本地化回调在每次生成候选项时执行；静态字符串保持原值，直到重新注册贡献项。使用字符串说明的已安装插件与使用回调的贡献项、宿主命令共用同一菜单。
+
 [English](README.md) | 中文
 
 ## 概述

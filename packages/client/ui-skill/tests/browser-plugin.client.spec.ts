@@ -42,7 +42,7 @@ function providePresentation(ctx: Context): PresentationCapture {
   const slots = new SlotRegistry(ctx)
   slots.register({
     name: 'root',
-    children: { 'tool.call.toolview': { kind: 'keyed', scope: 'session' }, 'shell.overlay': { kind: 'list' } },
+    children: { 'tool.call.toolview': { kind: 'keyed', scope: 'session' }, 'shell.app-overlay': { kind: 'list' } },
   } as never, () => null)
   const capture: PresentationCapture = {
     slots,
@@ -116,9 +116,9 @@ describe('apply', () => {
     new TestRemote(ctx, { skillFiles: { list: async () => ({ ok: true, value: {} }) } })
     const fiber = ctx.plugin(panelPlugin)
     await fiber.await()
-    expect(presentation.slots.entries('shell.overlay')).toHaveLength(1)
+    expect(presentation.slots.entries('shell.app-overlay')).toHaveLength(1)
     await fiber.dispose()
-    expect(presentation.slots.entries('shell.overlay')).toEqual([])
+    expect(presentation.slots.entries('shell.app-overlay')).toEqual([])
     expect(presentation.localeDisposed).toBe(true)
     await ctx.fiber.dispose()
   })
