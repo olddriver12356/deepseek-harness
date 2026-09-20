@@ -89,10 +89,11 @@ describe('KnowledgePanel', () => {
     expect(source).toMatch(/\.filters\s+button\s*\{[^}]*font-size:\s*14px;/s)
   })
 
-  it('keeps the collage, rounded responsive grids, and complete 680ms hover sequence', () => {
+  it('keeps the collage and layer animation around responsive paper cards', () => {
     const source = readFileSync(resolve(process.cwd(), 'packages/client/ui-knowledge/src/client/KnowledgePanel.module.css'), 'utf8')
     expect(source).toContain("url('./assets/field-notes.png')")
-    expect(source).toMatch(/\.artifact\s*\{[^}]*border-radius:\s*20px;/s)
+    expect(source).toMatch(/\.artifact\s*\{[^}]*border-radius:\s*0;/s)
+    expect(source).toMatch(/\.artifact::before\s*\{[^}]*clip-path:\s*polygon\(/s)
     expect(source).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));')
     expect(source).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));')
     expect(source).toMatch(/\.artifactGrid\s*\{\s*grid-template-columns:\s*1fr;/s)
@@ -109,6 +110,8 @@ describe('KnowledgePanel', () => {
     expect(reducedMotionBlock).toMatch(/border-color:\s*var\(--hover-first\)/)
     expect(reducedMotionBlock).toMatch(/animation:\s*none/)
     expect(reducedMotionBlock).toMatch(/transform:\s*none/)
+    expect(reducedMotionBlock).toMatch(/rotate:\s*none/)
+    expect(reducedMotionBlock).toMatch(/translate:\s*none/)
   })
 
   it.each(['powershell', 'POWERSHELL'])('searches case-insensitively for %s', (query) => {

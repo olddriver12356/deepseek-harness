@@ -45,22 +45,25 @@ function visibleArtifacts(
 
 const SUMMARY_LAYERS = [
   { id: 'intake', label: 'INTAKE LAYER', description: '待处理 artifacts' },
-  { id: 'knowledge', label: 'KNOWLEDGE LAYER', description: 'active artifacts' },
   { id: 'ai-processing', label: '', description: '' },
+  { id: 'knowledge', label: 'KNOWLEDGE LAYER', description: 'active artifacts' },
 ] as const satisfies readonly {
   readonly id: KnowledgeLayerId
   readonly label: string
   readonly description: string
 }[]
 
-function KnowledgeHeader({ t }: { readonly t: Translate }): ReactNode {
+function KnowledgeHeader({ t, children }: { readonly t: Translate; readonly children?: ReactNode }): ReactNode {
   return (
     <header className={css.header}>
       <div className={css.titleLockup}>
         <span className={css.titleMark}>02</span>
         <div><strong>{t('panelTitle')}</strong><small>第二大脑</small></div>
       </div>
-      <span className={css.readOnly}>{t('workflowBoundary')}</span>
+      <div className={css.headerActions}>
+        <span className={css.readOnly}>{t('workflowBoundary')}</span>
+        {children}
+      </div>
     </header>
   )
 }
@@ -105,7 +108,7 @@ function KnowledgeControls({
   t,
 }: KnowledgeControlsProps): ReactNode {
   return (
-    <>
+    <div className={css.controls}>
       <label className={css.search}>
         <span>搜索</span>
         <input
@@ -115,22 +118,24 @@ function KnowledgeControls({
           placeholder="搜索标题、类型或摘要…"
         />
       </label>
-      <div className={css.filters} role="group" aria-label="Layers">
-        <button type="button" aria-pressed={activeLayer === 'all'} onClick={() => { onLayerChange('all') }}>全部</button>
-        {snapshot.layers.map(layer => (
-          <button key={layer.id} type="button" aria-pressed={activeLayer === layer.id} onClick={() => { onLayerChange(layer.id) }}>
-            {layer.ordinal} {layer.label}
-          </button>
-        ))}
+      <div className={css.filterRow}>
+        <div className={css.filters} role="group" aria-label="Layers">
+          <button type="button" aria-pressed={activeLayer === 'all'} onClick={() => { onLayerChange('all') }}>全部</button>
+          {snapshot.layers.map(layer => (
+            <button key={layer.id} type="button" aria-pressed={activeLayer === layer.id} onClick={() => { onLayerChange(layer.id) }}>
+              {layer.ordinal} {layer.label}
+            </button>
+          ))}
+        </div>
+        <div className={css.filters} role="group" aria-label="Kind">
+          {KIND_OPTIONS.map(option => (
+            <button key={option.id} type="button" aria-pressed={activeKind === option.id} onClick={() => { onKindChange(option.id) }}>
+              {t(option.labelKey)}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className={css.filters} role="group" aria-label="Kind">
-        {KIND_OPTIONS.map(option => (
-          <button key={option.id} type="button" aria-pressed={activeKind === option.id} onClick={() => { onKindChange(option.id) }}>
-            {t(option.labelKey)}
-          </button>
-        ))}
-      </div>
-    </>
+    </div>
   )
 }
 
@@ -183,11 +188,10 @@ function ArtifactCard({ artifact, layer, selected, onSelect, onOpen }: {
 }): ReactNode {
   return (
     <button data-entrance-card type="button" className={css.artifact} aria-pressed={selected} onClick={() => { onSelect(artifact.id); onOpen?.(artifact.id) }}>
-      <span className={css.artifactTop}><b>{layer?.ordinal.toString().padStart(2, '0')}</b><small>{artifact.state}</small></span>
+      <span className={css.artifactTop}><b>{layer?.label}</b><small>{artifact.state}</small></span>
       <strong>{artifact.title}</strong>
-      <span>{artifact.summary}</span>
       <span className={css.artifactFooter}>
-        <b>{layer?.label.toUpperCase()} LAYER</b><time dateTime={artifact.updatedAt}>{artifact.updatedAt}</time>
+        <time dateTime={artifact.updatedAt}>{artifact.updatedAt}</time>
       </span>
     </button>
   )
@@ -234,11 +238,9 @@ export function KnowledgePanel({
 
   return (
     <section className={css.panel} data-knowledge-panel hidden={activePanel !== 'knowledge'} aria-label="知识库 / 第二大脑">
-      <KnowledgeHeader t={t} />
+      <KnowledgeHeader t={t}>{children}</KnowledgeHeader>
       <div className={css.viewport}>
         <main ref={entranceRef} className={css.content}>
-          {children}
-
           <KnowledgeHero snapshot={snapshot} t={t} />
           <KnowledgeControls
             snapshot={snapshot}
