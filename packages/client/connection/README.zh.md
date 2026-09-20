@@ -29,6 +29,8 @@ kind: "package-reference"
 
 -----
 
+独立 RPC 的消费方注入 `connection` 并调用 `connection.rpc.handle`。注册时必须已有可用的 Web 服务；调用方不需要单独注入 `webServer`。注册项属于调用插件，并在该插件销毁时移除。
+
 <a id="browser-authentication-and-request-trust"></a>
 ## 浏览器认证与请求信任
 

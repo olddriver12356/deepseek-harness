@@ -1,8 +1,15 @@
 /** Node half: registers the /api prefix route bridging to the api gateway. */
 import { EventEmitter } from 'node:events'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createServer, request as httpRequest } from 'node:http'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { Readable } from 'node:stream'
+import { pathToFileURL } from 'node:url'
 import { Context } from '@deepseek-ai/cordis'
+import Loader from '@deepseek-ai/cordis-plugin-loader'
+import Include from '@deepseek-ai/cordis-plugin-include'
+import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import { describe, expect, it } from 'vitest'
 import type { AddressInfo } from 'node:net'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -118,12 +125,103 @@ function browserCookie(connection: HostConnectionHandle, authority: string): str
 }
 
 describe('connection node half', () => {
+  it('mounts a dedicated RPC channel from a consumer injecting only connection', async () => {
+    const ctx = new Context()
+    const root = await mkdtemp(join(tmpdir(), 'dsh-rpc-loader-'))
+    provideBrowserCredentials(ctx)
+    let consumer: Context | undefined
+    const consumerPlugin = {
+      inject: ['connection'],
+      apply(consumerCtx: Context) {
+        consumer = consumerCtx
+        consumerCtx.effect(() => consumerCtx.connection.rpc.handle('/subscriptions-auth', async () => ({
+          ok: true, value: { tier: 'standard' },
+        })))
+      },
+    }
+    try {
+      const configPath = join(root, 'cordis.yml')
+      const serverPath = join(root, 'webserver.cordis.yml')
+      await writeFile(serverPath, [
+        '- name: webserver', '  config:', '    host: 127.0.0.1', '    port: 0',
+        '',
+      ].join('\n'))
+      await writeFile(configPath, '- name: connection\n- name: consumer\n')
+      ctx.baseUrl = pathToFileURL(root).href + '/'
+      await ctx.plugin(Loader)
+      ctx.loader.builtins.include = Include
+      const modules = new Map<string, unknown>([
+        ['webserver', HttpServer], ['connection', { inject: [...inject], apply }], ['consumer', consumerPlugin],
+      ])
+      ctx.loader.internal = {
+        version: 'v2',
+        async import(specifier: string) {
+          if (!modules.has(specifier)) throw new Error(`unexpected Loader import: ${specifier}`)
+          return modules.get(specifier)
+        },
+      } as unknown as NonNullable<typeof ctx.loader.internal>
+      // Settle the transport before publishing connection without granting consumers its injection.
+      await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(serverPath).href } })
+      await ctx.loader.await()
+      await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
+      await ctx.loader.await()
+      expect(consumer).toBeDefined()
+      const connection = ctx.get('connection') as HostConnectionHandle
+      const authority = `127.0.0.1:${String(ctx.webServer.port)}`
+      const url = `http://${authority}/subscriptions-auth/speed`
+      const request = {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: browserCookie(connection, authority) },
+        body: JSON.stringify({ type: 'client-request', rpcId: 'subscription-speed', method: 'speed', payload: {} }),
+      }
+      // OS-assigned ports can be on fetch's browser blocklist (for example 6000).
+      const post = (headers: Record<string, string>): Promise<Response> => new Promise((resolve, reject) => {
+        const outgoing = httpRequest(url, { method: 'POST', headers }, (incoming) => {
+          let body = ''
+          incoming.setEncoding('utf8')
+          incoming.on('data', (chunk: string) => { body += chunk })
+          incoming.on('end', () => { resolve(new Response(body, { status: incoming.statusCode! })) })
+          incoming.on('error', reject)
+        })
+        outgoing.on('error', reject)
+        outgoing.end(request.body)
+      })
+      const response = await post(request.headers)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toMatchInlineSnapshot(`
+        {
+          "result": {
+            "ok": true,
+            "value": {
+              "tier": "standard",
+            },
+          },
+          "rpcId": "subscription-speed",
+          "type": "server-response",
+        }
+      `)
+      const unauthenticated = await post({ 'content-type': 'application/json' })
+      expect(unauthenticated.status).toBe(401)
+      await unauthenticated.text()
+      expect(consumer).toBeDefined()
+      await consumer!.fiber.dispose()
+      const withdrawn = await post(request.headers)
+      expect(withdrawn.status).toBe(404)
+      await withdrawn.text()
+    } finally {
+      await ctx.fiber.dispose()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('provides the carrier-neutral service without a Web server', async () => {
     const ctx = new Context()
     provideBrowserCredentials(ctx)
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     expect(ctx.get('connection')).toBeInstanceOf(Object)
+    expect(() => ctx.connection.rpc.handle('/rpc', async () => ({ ok: true, value: null })))
+      .toThrow('connection: dedicated RPC channels require a Web server')
     await fiber.dispose()
   })
 

@@ -29,6 +29,8 @@ The browser uses HTTP POST for Remote unary calls. API Gateway owns the `/api/re
 
 -----
 
+Dedicated RPC consumers inject `connection` and call `connection.rpc.handle`. The Web server must already be available; callers do not need a separate `webServer` injection. Registrations belong to the calling plugin and are removed when it is disposed.
+
 <a id="browser-authentication-and-request-trust"></a>
 ## Browser authentication and request trust
 
