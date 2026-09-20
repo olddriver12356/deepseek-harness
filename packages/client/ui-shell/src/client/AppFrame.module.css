@@ -93,6 +93,9 @@
   transition: width var(--ds-transition-duration-slow) var(--ds-ease-in-out);
 }
 
+/* Native dialogs inside Personal Core's iframe must not focus-scroll the outer shell. */
+.frame:has([data-personal-panel]:not([hidden])) { overflow: clip; }
+
 .activityCol[hidden] {
   display: none;
 }

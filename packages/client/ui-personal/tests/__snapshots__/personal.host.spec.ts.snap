@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`mounts the real Bok page with auth, privacy, durable observations, and reversible plugin lifecycle > private-turn acknowledgement 1`] = `
+{
+  "ok": true,
+  "personal": "excluded",
+  "status": "excluded_do_not_remember",
+}
+`;

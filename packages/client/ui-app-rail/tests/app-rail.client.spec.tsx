@@ -47,7 +47,7 @@ describe('AppRail', () => {
   it('renders apps before news with their two-digit numbers', () => {
     render(<AppRail appPanels={new AppPanelsController()} />)
     const labels = screen.getAllByRole('tab').map(node => node.getAttribute('data-panel'))
-    expect(labels).toEqual(['agent', 'knowledge', 'skills', 'experts', 'styles', 'monitor', 'apps', 'news'])
+    expect(labels).toEqual(['agent', 'knowledge', 'skills', 'experts', 'styles', 'monitor', 'apps', 'personal', 'news'])
     expect(screen.getByText('01')).toBeTruthy()
     expect(screen.getByText('06')).toBeTruthy()
   })

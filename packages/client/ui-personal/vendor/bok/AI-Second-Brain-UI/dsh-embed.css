@@ -1,0 +1,116 @@
+/* DSH adaptation: preserve Bok's Personal Core layout and behaviors, with DSH surfaces and typography.
+   Loaded only by the About Me document; the original quick-note sheet remains independent. */
+.sidebar, .global-context, .context-panel, .sync-chip, #searchSection, .quick-note-launcher { display: none !important; }
+.app-shell { grid-template-columns: minmax(0, 1fr) !important; }
+.main-panel { min-width: 0; width: 100%; }
+
+:root {
+  color-scheme: dark;
+  --canvas: #101416;
+  --paper: #171c20;
+  --paper-strong: #1d2429;
+  --ink: #f3efdf;
+  --muted: #a8b5ba;
+  --line: #354249;
+  --acid: #d2ff00;
+  --cyan: #58e0d5;
+  --teal: #58e0d5;
+  --teal-dark: #58e0d5;
+  --teal-soft: #163330;
+  --navy: #10191d;
+  --shadow: none;
+  --shadow-small: none;
+}
+.vault-profile-dialog { width: min(760px, calc(100vw - 28px)); max-height: 85dvh; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); }
+.vault-profile-dialog::backdrop { background: #000a; }
+.vault-profile-dialog p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.vault-profile-dialog button { padding: 9px 13px; margin: 6px 8px 0 0; color: var(--ink); background: var(--paper-strong); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.vault-profile-dialog button:disabled { opacity: .5; cursor: wait; }
+.vault-profile-dialog footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+.vault-profile-row { margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.vault-profile-row pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: var(--canvas); }
+.vault-profile-row small { overflow-wrap: anywhere; color: var(--cyan); }
+.vault-profile-warning { color: #ffd38b; border: 1px solid #8c6939; padding: 12px; }
+html, body { min-width: 0; background: var(--canvas) !important; color: var(--ink); }
+body { padding: 0; background: linear-gradient(#10141626, #10141626), url('./assets/dsh-personal-torn-paper.png') right top / cover fixed, var(--canvas) !important; }
+body, button, input, textarea, select, summary,
+.main-panel *, dialog * { font-family: 'MiSans', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif !important; text-shadow: none !important; }
+body::before, body::after, .main-panel::before, .main-panel::after { display: none; }
+.app-shell { min-height: 100dvh; gap: 0; }
+.main-panel { padding: 0 clamp(20px, 4vw, 60px) 36px; border: 0; border-radius: 0; box-shadow: none; background: transparent !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.main-header { margin: 0 -28px 24px; padding: 18px 28px; border-bottom: 1px solid var(--line); background: #12191c; }
+.main-header h1 { color: var(--ink); font-size: 22px; letter-spacing: .02em; }
+.main-header .eyebrow, .section-kicker { color: var(--cyan) !important; background: none !important; border: 0 !important; padding: 0; letter-spacing: .12em; font-size: 11px; filter: none !important; mask: none !important; clip-path: none !important; transform: none !important; }
+.person-toolbar { margin: 32px 0 24px; padding: 24px; gap: 18px; border-radius: 12px; background: linear-gradient(100deg, #101416f0 20%, #1e1b29b3 60%, #1014161f); }
+.person-toolbar h2 { position: relative; display: table; margin: 12px 0 20px; color: #eee5cd; font-family: 'Arial Black', 'Microsoft YaHei', sans-serif !important; font-size: clamp(40px, 5vw, 60px); font-weight: 900; line-height: 1.15; letter-spacing: -.05em; text-shadow: 3px 2px 0 #ff5b8b, -3px -1px 0 #4389df !important; transform: rotate(-1deg); }
+.person-toolbar h2::after { content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 7px; background: repeating-linear-gradient(90deg, #ff5b8b 0 3px, transparent 3px 6px); transform: rotate(-2deg); }
+.person-toolbar .section-kicker { display: inline-block; padding: 6px 9px; color: #eee5cd !important; border: 1px dashed #ff5b8b !important; border-radius: 4px; font: 900 14px ui-monospace, monospace !important; letter-spacing: .17em; }
+.person-toolbar p, .person-profile-summary .section-heading p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+/* Remove upstream torn masks and rotated collage shadows from the existing cards. */
+.person-hero, .person-stat-grid > div, .person-profile-summary, .person-profile-card,
+.person-permission-summary, .person-memory-card, .person-cleanup-card, .person-impact-card,
+.person-tabs, .person-tabs button, .person-action, .text-button, .person-graph-stage,
+.person-graph-legend span, .person-empty, .person-loading, .person-unavailable {
+  mask: none !important; -webkit-mask: none !important; clip-path: none !important;
+  transform: none !important; filter: none !important; box-shadow: none !important;
+  border-radius: 8px; background: var(--paper) !important; color: var(--ink);
+  border: 1px solid var(--line);
+}
+.person-hero::before, .person-hero::after, .person-stat-grid > div::before,
+.person-profile-summary::before, .person-permission-summary::before,
+.person-memory-card::before, .person-memory-card::after,
+.person-cleanup-card::before, .person-impact-card::before,
+.person-graph-stage::before { display: none; }
+.person-hero { padding: 28px; border-top: 3px solid var(--acid); gap: 28px; }
+.person-hero h2 { color: var(--ink); font-size: clamp(24px, 3vw, 36px); line-height: 1.3; font-weight: 800; }
+.person-hero p, .person-memory-card > p, .person-cleanup-card > p, .person-impact-card > p,
+.person-permission-summary p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.person-stat-grid > div { background: #101719 !important; padding: 14px 18px; }
+.person-stat-grid strong { color: var(--acid); font: 700 28px/1.2 'Consolas', monospace !important; font-variant-numeric: tabular-nums; }
+.person-stat-grid span { color: var(--muted); font-size: 12px; }
+.person-tabs { padding: 6px; gap: 6px; border-radius: 8px; }
+.person-tabs button { padding: 11px 16px; font-size: 13px; font-weight: 650; color: var(--muted); border-color: transparent; white-space: nowrap; }
+.person-tabs button.is-active { color: #101416 !important; background: var(--acid) !important; border-color: var(--acid); }
+.person-tabs button span { color: inherit; background: #78909826; font-size: 11px; }
+.person-profile-summary, .person-memory-card, .person-cleanup-card, .person-impact-card, .person-permission-summary { padding: 22px; }
+.person-profile-summary .section-heading h2, .person-profile-card strong,
+.person-memory-card h3, .person-cleanup-card h3, .person-impact-card h3,
+.person-permission-summary strong, .person-empty strong { color: var(--ink); }
+.person-profile-card { padding: 16px; background: #101719 !important; }
+.person-profile-card li { color: var(--ink); font-size: 13px; }
+.person-profile-card span, .person-memory-meta { color: var(--muted); font-size: 12px; }
+.person-agent-list span, .person-memory-chips span, .person-source-list code, .person-status { border: 1px solid #36524f; color: var(--cyan); background: #152a2a; border-radius: 4px; font-size: 11px; }
+.person-permission-icon, .person-lock { color: var(--cyan); background: #163330; border: 1px solid #36524f; box-shadow: none; }
+.person-action, .text-button { padding: 9px 13px; font-size: 12px; color: var(--ink); cursor: pointer; }
+.person-action.primary { color: #101416; background: var(--acid) !important; border-color: var(--acid); }
+.person-action.danger { color: #ff929d; border-color: #92434c; }
+.person-action.quiet { color: var(--muted); }
+.person-action:hover:not(:disabled), .text-button:hover:not(:disabled), .person-tabs button:hover:not(.is-active) { border-color: var(--cyan); background: #203033 !important; color: var(--ink); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.person-action:disabled, .text-button:disabled { opacity: .45; cursor: not-allowed; }
+.person-empty { min-height: 190px; border-style: dashed; background: #131a1d !important; }
+.person-profile-summary > .person-empty { min-height: 120px; border: 0; padding: 16px; background: transparent !important; }
+.person-hero, .person-profile-summary, .person-permission-summary, .person-memory-card, .person-cleanup-card, .person-impact-card { background: rgb(25 31 34 / 92%) !important; }
+.person-empty p, .person-graph-empty p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.person-graph-stage { background: radial-gradient(#354249 1px, transparent 1px) 0 0 / 24px 24px, #11191c !important; }
+.person-graph-legend span { color: var(--muted); font-size: 11px; }
+.person-stream-item, .person-timeline-item { color: var(--ink); }
+.person-stream-item p, .person-stream-item time, .person-timeline-item p, .person-timeline-item time { color: var(--muted); font-size: 12px; }
+#personEditDialog, #personConfirmDialog { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 24px 80px #0009; }
+#personEditDialog .cleanup-dialog-card, #personConfirmDialog .cleanup-dialog-card { color: var(--ink); background: var(--paper); border: 0; border-radius: 0; box-shadow: none; }
+#personEditDialog button, #personConfirmDialog button { color: var(--ink); background: var(--paper-strong); border: 1px solid var(--line); filter: none; mask: none; clip-path: none; transform: none; box-shadow: none; border-radius: 6px; }
+#personEditDialog .primary-button, #personConfirmDialog .primary-button { color: #101416; background: var(--acid); }
+.person-edit-dialog textarea { background: var(--canvas); color: var(--ink); border: 1px solid var(--line); font-size: 14px; }
+@media (max-width: 760px) {
+  .main-panel { padding: 0 16px 28px; }
+  .main-header { margin: 0 -16px 20px; padding: 16px; }
+  .person-toolbar { flex-wrap: wrap; padding: 20px; }
+  .person-toolbar h2 { font-size: 36px; }
+  .person-hero { padding: 20px; grid-template-columns: 1fr; }
+  .person-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .person-stat-grid > div { min-width: 0; }
+  .person-tabs { flex-wrap: wrap; }
+  .person-tabs button { flex: 1 1 auto; }
+  .person-permission-summary { align-items: flex-start; }
+}

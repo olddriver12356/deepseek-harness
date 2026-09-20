@@ -1,5 +1,5 @@
 /**
- * The persistent application rail. Six entries, always visible, never
+ * The persistent application rail. Entries stay visible, never
  * collapsing with the sidebar, because application navigation and session
  * navigation are separate axes.
  *
@@ -29,6 +29,7 @@ const ENTRIES: readonly RailEntry[] = [
   { id: 'styles', number: '05', label: 'styles', caption: 'stylesCaption' },
   { id: 'monitor', number: '06', label: 'monitor', caption: 'monitorCaption' },
   { id: 'apps', number: '07', label: 'apps', caption: 'appsCaption' },
+  { id: 'personal', number: '08', label: 'personal', caption: 'personalCaption' },
   { id: 'news', number: '08', label: 'news', caption: 'newsCaption' },
 ]
 

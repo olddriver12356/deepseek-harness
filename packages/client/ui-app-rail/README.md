@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-App rail plugin: persistent six-entry navigation occupant for the `app.rail` slot, driving active panel selection through `ctx.appPanels` without managing panel content or lifecycle. AppRail reads the active panel ID via `useSyncExternalStore`, renders six hardcoded entries (agent, knowledge, experts, styles, monitor, news in order), marks the active entry with `aria-selected`, and calls `ctx.appPanels.setActive(id)` on click. The component owns visibility only; panel registration and occupancy remain separate concerns managed by `ctx.slots`.
+App rail plugin: persistent application navigation occupant for the `app.rail` slot, driving active panel selection through `ctx.appPanels` without managing panel content or lifecycle. AppRail reads the active panel ID via `useSyncExternalStore`, renders the agent, knowledge, skills, experts, styles, monitor, apps, personal and news entries in order, marks the active entry with `aria-selected`, and calls `ctx.appPanels.setActive(id)` on click. The component owns visibility only; panel registration and occupancy remain separate concerns managed by `ctx.slots`.
 
 AppRail consumes `ctx.appPanels` injected from `@deepseek-ai/dsh-client-ui-shell/client` and registers itself into the `app.rail` slot declared by that shell package. Later panel packages register into `shell.overlay` and read the same `ctx.appPanels` service to discover active state, creating a single source of truth for active panel identity across the UI without hard coupling between rail and panel implementations.
 

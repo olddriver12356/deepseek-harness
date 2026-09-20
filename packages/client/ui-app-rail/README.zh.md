@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-App rail 插件：`app.rail` slot 的持久六入口导航占用者，通过 `ctx.appPanels` 驱动活动面板选择，但不管理面板内容或生命周期。AppRail 通过 `useSyncExternalStore` 读取活动面板 ID，渲染六个硬编码条目（按 agent、knowledge、experts、styles、monitor、news 顺序），用 `aria-selected` 标记活动条目，并在点击时调用 `ctx.appPanels.setActive(id)`。该组件仅拥有可见性；面板注册和占用由 `ctx.slots` 管理为独立关注点。
+App rail 插件：`app.rail` slot 的持久应用导航占用者，通过 `ctx.appPanels` 驱动活动面板选择，但不管理面板内容或生命周期。AppRail 通过 `useSyncExternalStore` 读取活动面板 ID，依次渲染 agent、knowledge、skills、experts、styles、monitor、apps、personal 和 news 条目，用 `aria-selected` 标记活动条目，并在点击时调用 `ctx.appPanels.setActive(id)`。该组件仅拥有可见性；面板注册和占用由 `ctx.slots` 管理为独立关注点。
 
 AppRail 消费从 `@deepseek-ai/dsh-client-ui-shell/client` 注入的 `ctx.appPanels`，并向该 shell 包声明的 `app.rail` slot 注册自己。后续面板包向 `shell.overlay` 注册，并读取相同的 `ctx.appPanels` 服务来发现活动状态，为整个 UI 中活动面板的标识创建单一事实来源，无需 rail 与面板实现之间的硬耦合。
 
