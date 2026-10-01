@@ -16,7 +16,7 @@ Existing claims are tidied by an owner-started request rather than a background 
 
 The tidy-up request belongs to no Session, so the model-visible input is logged in Personal Core instead: `.bok/dsh-compaction/<id>.request.json` holds the exact request before dispatch, and the proposal and result files sit beside it. This mirrors the observer, whose requests are logged as session events because they belong to a Session.
 
-Each claim group sits just outside its own claim ring, so edges stay short. The graph is an unbounded canvas: dragging pans it, the drawing starts centred, and a drag never opens a claim, so large graphs remain reachable without shrinking labels or adding scrollbars.
+Each claim group sits just outside its own claim ring, so edges stay short. The graph is an unbounded canvas: dragging or wheel and trackpad scrolling pans it, the wheel is captured so the page does not scroll underneath, the drawing starts centred, and a drag never opens a claim, so large graphs remain reachable without shrinking labels or adding scrollbars.
 
 ## Constraints
 

@@ -57,7 +57,7 @@ Claims, Observations, Impacts, Outcomes, history and backups use Bok's original 
 
 ## Upstream source
 
-The pinned source is [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702), commit `d556bfc918224712a1c0bc9660e04c829c8f7702`. `vendor/bok` retains Apache-2.0 LICENSE and NOTICE plus the font's OFL license. Python engine files are unmodified. The browser script carries a modification notice: initialization selects Personal Core, requests use the authenticated DSH path, visibility refreshes the dashboard, and the claim graph is an unbounded canvas the owner pans by dragging. DSH owns the process adapter, the embedding stylesheet and the observer and tidy-up scripts.
+The pinned source is [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702), commit `d556bfc918224712a1c0bc9660e04c829c8f7702`. `vendor/bok` retains Apache-2.0 LICENSE and NOTICE plus the font's OFL license. Python engine files are unmodified. The browser script carries a modification notice: initialization selects Personal Core, requests use the authenticated DSH path, visibility refreshes the dashboard, and the claim graph is an unbounded canvas the owner pans by dragging or by scrolling with the wheel or trackpad, where Shift turns vertical wheel scrolling horizontal. DSH owns the process adapter, the embedding stylesheet and the observer and tidy-up scripts.
 
 ## Known Limitations and Deferred Work
 

@@ -3135,6 +3135,18 @@ elements.personGraph.addEventListener("pointermove", (event) => {
     drawPersonGraph();
   });
 });
+// DSH: the wheel or trackpad scrolls the understanding graph too; Shift turns a vertical wheel into horizontal scrolling.
+elements.personGraph.addEventListener("wheel", (event) => {
+  event.preventDefault();
+  const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? elements.personGraph.clientHeight : 1;
+  const horizontal = event.shiftKey && !event.deltaX;
+  personGraphPan.x -= (horizontal ? event.deltaY : event.deltaX) * scale;
+  personGraphPan.y -= (horizontal ? 0 : event.deltaY) * scale;
+  if (!state.personGraphFrame) state.personGraphFrame = requestAnimationFrame(() => {
+    state.personGraphFrame = null;
+    drawPersonGraph();
+  });
+}, { passive: false });
 elements.personGraph.addEventListener("pointerleave", () => {
   state.personGraphPointer = { x: -9999, y: -9999 };
   if (!state.personGraphFrame) state.personGraphFrame = requestAnimationFrame(() => {
