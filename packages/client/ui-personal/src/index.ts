@@ -10,6 +10,7 @@ import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import { PersonalWorker } from './worker.ts'
 import { saveQuickNote } from './quick-note.ts'
 import { ConversationObserver, type ObserverConfig } from './observer.ts'
+import { UnderstandingCompaction, type CompactionConfig } from './compaction.ts'
 
 export const name = 'ui-personal'
 export const inject = ['webServer', 'connection', 'tools']
@@ -26,6 +27,8 @@ export interface Config {
   ideasVaultRoot: string
   /** Explicit opt-in and resource limits for automatic observation of new conversations. */
   observer?: ObserverConfig | undefined
+  /** Resource limits for the owner-started understanding tidy-up; absent disables it. */
+  compaction?: CompactionConfig | undefined
 }
 export const Config: z<Config> = z.object({
   vaultRoot: z.string().required(), personalCoreRoot: z.string().required(),
@@ -39,16 +42,23 @@ export const Config: z<Config> = z.object({
     maxPendingTurns: z.number().step(1).min(1).max(100).required(),
     timeoutMs: z.number().step(1).min(1000).max(300000).required(),
   })]),
+  compaction: z.union([z.const(undefined), z.object({
+    maxInputBytes: z.number().step(1).min(1024).max(1000000).required(),
+    maxOutputTokens: z.number().step(1).min(1).required(),
+    maxOutputBytes: z.number().step(1).min(1).max(1000000).required(),
+    timeoutMs: z.number().step(1).min(1000).max(600000).required(),
+  })]),
 })
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PREFIX = '/personal'
 const STATIC_FILE_NAMES = [
-  'index.html', 'app.js', 'styles.css', 'atlas-physics.js', 'dsh-embed.css', 'dsh-vault-profile.js', 'dsh-observer.js',
+  'index.html', 'app.js', 'styles.css', 'atlas-physics.js', 'dsh-embed.css', 'dsh-vault-profile.js', 'dsh-observer.js', 'dsh-compaction.js',
   'quick-note.html', 'quick-note-window.js', 'quick-note-window.css',
 ].join('|').replace(/\./g, '\\.')
 const STATIC_FILE_PATTERN = new RegExp(`^(?:${STATIC_FILE_NAMES}|assets/[a-zA-Z0-9._-]+)$`)
 const INJECTED_HEAD_TAGS = '<link rel="stylesheet" href="./dsh-embed.css">'
-  + '<script src="./dsh-vault-profile.js" defer></script><script src="./dsh-observer.js" defer></script></head>'
+  + '<script src="./dsh-vault-profile.js" defer></script><script src="./dsh-observer.js" defer></script>'
+  + '<script src="./dsh-compaction.js" defer></script></head>'
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2',
@@ -76,6 +86,13 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     const observerRef = observer
     ctx.effect(() => () => observerRef.close(), 'personal: automatic observer')
   }
+  let compaction: UnderstandingCompaction | undefined
+  if (config.compaction) {
+    if (!ctx.get('llm') || !ctx.get('agentDefaultModel')) throw new Error('Understanding tidy-up requires llm and agentDefaultModel')
+    compaction = new UnderstandingCompaction(ctx, worker, config.compaction)
+  }
+  const lifetime = new AbortController()
+  ctx.effect(() => () => lifetime.abort(), 'personal: understanding tidy-up')
   for (const tool of tools) {
     ctx.effect(() => ctx.tools.register({
       name: tool.name,
@@ -108,7 +125,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return
     }
     const isApiPath = path.startsWith('/api/bok/v1/person/') || path === '/api/quick-note'
-      || path === '/api/vault-profile' || path === '/api/observer'
+      || path === '/api/vault-profile' || path === '/api/observer' || path === '/api/compaction'
     if (isApiPath) {
       if (!['GET', 'POST'].includes(req.method ?? '')) { res.writeHead(405); res.end(); return }
       let body = ''
@@ -131,6 +148,23 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify(observer?.status() ?? { enabled: false, pending: 0, status: 'not_configured', observations: 0 }))
         } catch { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end('{"error":"observer_update_failed"}') }
+        return
+      }
+      if (path === '/api/compaction') {
+        try {
+          if (!compaction) throw new Error('Understanding tidy-up is not configured')
+          let result: unknown
+          if (req.method === 'GET') result = await compaction.summary()
+          else {
+            const payload = JSON.parse(body)
+            result = payload?.action === 'propose' ? await compaction.propose(lifetime.signal) : await compaction.apply(payload?.id, payload?.accepted)
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(result))
+        } catch (error) {
+          ctx.logger.warn('Personal understanding tidy-up failed: %s', String(error))
+          res.writeHead(compaction ? 409 : 404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: compaction ? 'compaction_failed' : 'not_configured', message: String(error instanceof Error ? error.message : error) }))
+        }
         return
       }
       if (path === '/api/vault-profile') {

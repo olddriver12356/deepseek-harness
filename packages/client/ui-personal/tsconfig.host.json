@@ -8,7 +8,8 @@
     "src/index.ts",
     "src/worker.ts",
     "src/quick-note.ts",
-    "src/observer.ts"
+    "src/observer.ts",
+    "src/compaction.ts"
   ],
   "references": [
     {
@@ -31,6 +32,9 @@
     },
     {
       "path": "../../core/session"
+    },
+    {
+      "path": "../../core/agent-default-model"
     }
   ]
 }
