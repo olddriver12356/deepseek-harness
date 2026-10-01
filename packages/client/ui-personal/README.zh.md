@@ -33,7 +33,7 @@ Personal 将 Bok 原版关于我界面与 Personal Core 引擎嵌入 DSH。页�
 
 通过 `bok_observe_conversation` 提交的每个 `candidate_statement` 必须是以 `用户` 开头的简体中文；Host 在 Bok 记录前拒绝其他表述，观察器的提取提示词也要求同样格式。
 
-可选的 `compaction` 配置需要 `llm` 与 `agentDefaultModel` 服务，并显式设置 `maxInputBytes`、`maxOutputTokens`、`maxOutputBytes` 和 `timeoutMs`。关于我工具栏随后显示 **整理理解**。弹窗说明请求将发送的理解数量及其中私密理解数量；敏感理解从不发送。只有用户点击开始后，才会沿当前默认模型路由发送一次请求，提议合并相似理解并将非中文理解改写为中文。由于该请求不属于任何 Session，完整请求与校验后的提议保存在 `personalCoreRoot/.bok/dsh-compaction/`。被合并的理解必须类型、范围和敏感级别相同，每条表述都必须是以 `用户` 开头的中文。
+可选的 `compaction` 配置需要 `llm` 与 `agentDefaultModel` 服务，并显式设置 `maxInputBytes`、`maxOutputTokens`、`maxOutputBytes` 和 `timeoutMs`。关于我工具栏随后显示 **整理理解**。弹窗说明请求将发送的理解数量及其中私密理解数量；敏感理解从不发送。只有用户点击开始后，才会沿当前默认模型路由发送一次请求，提议合并语义相近（措辞不同但理解相同）或情境相近（同一情境、习惯、目标或项目的不同侧面）的理解并将非中文理解改写为中文。由于该请求不属于任何 Session，完整请求与校验后的提议保存在 `personalCoreRoot/.bok/dsh-compaction/`。被合并的理解必须类型、范围和敏感级别相同，每条表述都必须是以 `用户` 开头的中文。
 
 用户逐张勾选卡片后应用。应用前先创建 Bok 备份，提议后版本或状态有变的理解会被拒绝，并且只使用 Host 保存的表述而非浏览器输入。改写调用 Bok 纠正服务。合并会以新表述取代第一条理解，使其余理解失效并指向替代项，同时把它们的来源引用复制到替代项，因此历史保留全部原始理解。每个提议只能应用一次，结果保存在提议旁。
 
