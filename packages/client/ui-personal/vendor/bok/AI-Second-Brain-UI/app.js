@@ -1,4 +1,4 @@
-// Modified by DSH: mount only Personal Core under authenticated /personal/.
+// Modified by DSH: mount only Personal Core under authenticated /personal/; size the understanding graph to its content.
 "use strict";
 
 const CONFIG = {
@@ -1780,8 +1780,13 @@ function buildPersonGraph(claims, width, height) {
   const center = { x: compact ? width * 0.20 : width * 0.5, y: height * 0.52 };
   const nodes = [{ kind: "self", id: "self", label: "你", x: center.x, y: center.y, radius: 30, width: 60, height: 60, color: "#172b2d" }];
   const edges = [];
-  const groupRadiusX = Math.min(width * 0.32, 270);
-  const groupRadiusY = Math.min(height * 0.30, 150);
+  // DSH: space claim cards so neighbours do not overlap, then grow the group ring to fit those claim rings.
+  const claimStep = (count) => count < 3 ? Math.PI * 2 / 3 : Math.PI * 2 / count;
+  const claimDistance = (count) => Math.max(100, 124 / (2 * Math.sin(claimStep(count) / 2)));
+  const widestClaimRing = Math.max(...groups.map(([, items]) => claimDistance(items.length)));
+  const fittedGroupRadius = groups.length > 1 ? (2 * widestClaimRing + 140) / (2 * Math.sin(Math.PI / groups.length)) : 0;
+  const groupRadiusX = Math.max(Math.min(width * 0.32, 270), fittedGroupRadius);
+  const groupRadiusY = Math.max(Math.min(height * 0.30, 150), fittedGroupRadius * 0.8);
   groups.forEach(([type, items], groupIndex) => {
     const angle = -Math.PI / 2 + groupIndex / Math.max(groups.length, 1) * Math.PI * 2;
     const compactY = center.y + (groupIndex - (groups.length - 1) / 2) * 126;
@@ -1800,9 +1805,9 @@ function buildPersonGraph(claims, width, height) {
     const groupNodeIndex = nodes.push(groupNode) - 1;
     edges.push({ a: 0, b: groupNodeIndex, kind: "group" });
     items.forEach((claim, claimIndex) => {
-      const spread = (claimIndex - (items.length - 1) / 2) * 0.46;
+      const spread = (claimIndex - (items.length - 1) / 2) * claimStep(items.length);
       const claimAngle = angle + spread;
-      const distance = 82 + Math.min(34, claimIndex * 6);
+      const distance = claimDistance(items.length);
       const claimNode = {
         kind: "claim",
         id: claim.id,
@@ -1819,7 +1824,18 @@ function buildPersonGraph(claims, width, height) {
       edges.push({ a: groupNodeIndex, b: claimNodeIndex, kind: "claim" });
     });
   });
-  return { nodes, edges, groups };
+  // DSH: center the drawing and grow the canvas past the stage when it does not fit; the stage scrolls.
+  const padding = 48;
+  const left = Math.min(...nodes.map((node) => node.x - node.width / 2));
+  const right = Math.max(...nodes.map((node) => node.x + node.width / 2));
+  const top = Math.min(...nodes.map((node) => node.y - node.height / 2));
+  const bottom = Math.max(...nodes.map((node) => node.y + node.height / 2));
+  const canvasWidth = Math.max(width, Math.ceil(right - left + padding * 2));
+  const canvasHeight = Math.max(height, Math.ceil(bottom - top + padding * 2));
+  const shiftX = (canvasWidth - (right - left)) / 2 - left;
+  const shiftY = (canvasHeight - (bottom - top)) / 2 - top;
+  nodes.forEach((node) => { node.x += shiftX; node.y += shiftY; });
+  return { nodes, edges, groups, width: canvasWidth, height: canvasHeight };
 }
 
 function personGraphHit(node, point, padding = 0) {
@@ -1839,7 +1855,15 @@ function renderPersonGraph() {
     elements.personGraphLegend.innerHTML = "";
     return;
   }
-  const graph = buildPersonGraph(claims, elements.personGraphStage.clientWidth, elements.personGraphStage.clientHeight);
+  const stage = elements.personGraphStage;
+  const graph = buildPersonGraph(claims, stage.clientWidth, stage.clientHeight);
+  const resized = elements.personGraph.style.width !== `${graph.width}px` || elements.personGraph.style.height !== `${graph.height}px`;
+  elements.personGraph.style.width = `${graph.width}px`;
+  elements.personGraph.style.height = `${graph.height}px`;
+  if (resized) {
+    stage.scrollLeft = (graph.width - stage.clientWidth) / 2;
+    stage.scrollTop = (graph.height - stage.clientHeight) / 2;
+  }
   state.personGraphNodes = graph.nodes;
   state.personGraphEdges = graph.edges;
   elements.personGraphLegend.innerHTML = graph.groups.map(([type], index) => `<span><i style="background:${PERSON_GRAPH_COLORS[index % PERSON_GRAPH_COLORS.length]}"></i>${escapeHtml(PERSON_TYPE_LABELS[type] || type)}</span>`).join("");

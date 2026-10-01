@@ -10,8 +10,11 @@ from bok_core.ui_bridge import BokUIBridge
 from bok_core.mcp import MCPServer, TOOLS
 from vault_profile import VaultProfile
 from observer import Observer
+from compaction import Compaction
 
 PERSONAL_TOOLS = {"bok_person_context", "bok_observe_conversation", "bok_record_person_impact", "bok_record_person_outcome"}
+# The owner reads every understanding in Chinese, so the DSH write path accepts only Chinese statements.
+CHINESE_STATEMENT_RULE = "Durable third-person interpretation written in Simplified Chinese and starting with 用户, for example 用户偏好先给结论再解释原因; must be semantically abstracted from the source wording, whatever language the user wrote in."
 TOOL_ROUTES = {"bok_person_context": "/v1/person/context", "bok_observe_conversation": "/v1/conversations/observe", "bok_record_person_impact": "/v1/person/impacts", "bok_record_person_outcome": "/v1/person/outcomes"}
 
 
@@ -33,9 +36,15 @@ def main():
         tools = json.loads(json.dumps([tool for tool in TOOLS if tool["name"] in PERSONAL_TOOLS]))
         for tool in tools:
             tool["inputSchema"]["properties"]["agent"] = {"type": "string", "const": "dsh", "description": "This integration's authenticated local Agent identity."}
+            signals = tool["inputSchema"]["properties"].get("personal_signals")
+            if signals:
+                signals["items"]["properties"]["candidate_statement"]["description"] = CHINESE_STATEMENT_RULE
         def call_tool(name, arguments):
             if token is None:
                 return {"isError": True, "structuredContent": {}, "content": [{"text": "DSH Personal Core access has been revoked"}]}
+            signals = arguments.get("personal_signals") if name == "bok_observe_conversation" else None
+            if isinstance(signals, list) and any(not isinstance(signal, dict) or not str(signal.get("candidate_statement", "")).startswith("用户") for signal in signals):
+                return {"isError": True, "structuredContent": {}, "content": [{"text": "Every candidate_statement must be written in Simplified Chinese and start with 用户. Rewrite the statements in Chinese and call again."}]}
             payload = {**arguments, "agent": "dsh"}
             outbound = Request(bridge._base_url + TOOL_ROUTES[name], data=json.dumps(payload).encode("utf-8"), headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"}, method="POST")
             try:
@@ -47,6 +56,7 @@ def main():
                 return {"isError": True, "structuredContent": result, "content": [{"text": result.get("error", {}).get("message", "Bok request failed")}]}
         signal_schema = next(tool for tool in tools if tool["name"] == "bok_observe_conversation")["inputSchema"]["properties"]["personal_signals"]["items"]
         observer = Observer(service, vault, token, call_tool, signal_schema)
+        compaction = Compaction(service)
         print(json.dumps({"ready": True, "tools": tools}), flush=True)
         for line in sys.stdin:
             request = json.loads(line)
@@ -64,6 +74,14 @@ def main():
                     value = profile.handle(request["payload"])
                 elif request["kind"] == "observer":
                     value = observer.handle(request)
+                elif request["kind"] == "compaction":
+                    value = compaction.handle(request)
+                    if profile and request["action"] == "apply" and value["applied"]:
+                        try:
+                            profile.reconcile()
+                        except Exception:
+                            # Core succeeded. Never report it as failed and invite a duplicate operation.
+                            value["profileWarning"] = "Vault projection cleanup is pending; open Vault connection to retry."
                 elif request["kind"] == "tool" and request["name"] in PERSONAL_TOOLS:
                     value = call_tool(request["name"], request["arguments"])
                 else:

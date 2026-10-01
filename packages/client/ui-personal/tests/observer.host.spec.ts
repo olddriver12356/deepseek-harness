@@ -26,7 +26,7 @@ function request(port: number, path: string, cookie = '', body?: unknown) {
 }
 const source = 'For all future explanations, please lead with a short conclusion and then explain the reasons only when they are useful.'
 const observation = { message_index: 0, evidence: 'lead with a short conclusion', signal: {
-  candidate_statement: 'The user values concise conclusions before supporting detail in explanations.',
+  candidate_statement: '用户在解释中重视先给简短结论，再补充必要的理由。',
   claim_type: 'communication_preference', signal_kind: 'explicit', polarity: 'support', scope_kind: 'global', confidence: 0.95,
   inference_basis: 'Explicit enduring communication preference', concept_key: 'communication.conclusion-first',
 } }

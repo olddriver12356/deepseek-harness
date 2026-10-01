@@ -25,6 +25,14 @@ Requires Python 3.11 or newer, `webServer`, `connection` and `tools`. Activate t
 
 ## Runtime and data
 
+### Chinese statements and understanding tidy-up
+
+Every `candidate_statement` submitted through `bok_observe_conversation` must be Simplified Chinese starting with `用户`; the Host rejects other statements before Bok records them, and the observer's extraction instructions request the same form.
+
+Optional `compaction` configuration requires the `llm` and `agentDefaultModel` services and explicit `maxInputBytes`, `maxOutputTokens`, `maxOutputBytes` and `timeoutMs` values. The About Me toolbar then shows **整理理解**. Its dialog states how many claims and private claims the request will send; sensitive claims are never sent. Only after the owner starts it does one model request on the current default route propose merges of similar claims and Chinese rewrites of non-Chinese claims. The exact request and validated proposal are stored under `personalCoreRoot/.bok/dsh-compaction/` because this request belongs to no Session. Merged claims must share type, scope and sensitivity, and every statement must be Chinese starting with `用户`.
+
+The owner checks individual cards and applies them. Application takes a Bok backup first, refuses any claim whose version or status changed after the proposal, and uses the statements stored on the Host rather than browser input. A rewrite uses Bok's correction service. A merge supersedes the first claim, expires the others with a reference to the replacement, and copies their source references to it, so history keeps every original. A proposal can be applied once; the result is recorded beside it.
+
 ### Automatic conversation observation
 
 Optional `observer` configuration requires the `llm` service and explicit `enabled`, `maxInputBytes`, `maxOutputTokens`, `maxOutputBytes`, `maxPendingTurns`, and `timeoutMs` values. About Me provides a persistent pause switch and status refresh. The saved switch in the local runtime's `dsh-observer.json` takes precedence over the initial configuration.
@@ -49,7 +57,7 @@ Claims, Observations, Impacts, Outcomes, history and backups use Bok's original 
 
 ## Upstream source
 
-The pinned source is [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702), commit `d556bfc918224712a1c0bc9660e04c829c8f7702`. `vendor/bok` retains Apache-2.0 LICENSE and NOTICE plus the font's OFL license. Python engine files are unmodified. The browser script carries a modification notice: initialization selects Personal Core, requests use the authenticated DSH path, and visibility refreshes the dashboard. DSH owns the process adapter and embedding stylesheet.
+The pinned source is [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702), commit `d556bfc918224712a1c0bc9660e04c829c8f7702`. `vendor/bok` retains Apache-2.0 LICENSE and NOTICE plus the font's OFL license. Python engine files are unmodified. The browser script carries a modification notice: initialization selects Personal Core, requests use the authenticated DSH path, visibility refreshes the dashboard, and the claim graph fits its content inside a scrollable canvas. DSH owns the process adapter, the embedding stylesheet and the observer and tidy-up scripts.
 
 ## Known Limitations and Deferred Work
 
@@ -65,7 +73,7 @@ When enabled, the tool registry exposes `bok_person_context`, `bok_observe_conve
 
 #### Token cost
 
-Four tool descriptions and schemas are registered. Context results are bounded by Bok's requested limit and token budget. Observation responses use the original compact acknowledgement; they do not echo raw user text. Exact serialized token counts depend on the active model tokenizer and tool presentation mode.
+Four tool descriptions and schemas are registered. Context results are bounded by Bok's requested limit and token budget. Observation responses use the original compact acknowledgement; they do not echo raw user text. Exact serialized token counts depend on the active model tokenizer and tool presentation mode. Each owner-started tidy-up is one separate tool-free request outside every Session, whose size follows the stored claims within `compaction.maxInputBytes`.
 
 #### KV Cache effect
 
@@ -73,4 +81,4 @@ The static tool schema prefix is stable while the plugin is active. Memory is re
 
 ### Dev Note
 
-The adapter persists only the observer switch and existing Vault projection bookkeeping; Personal Core remains the memory authority.
+The adapter persists only the observer switch, tidy-up receipts and existing Vault projection bookkeeping; Personal Core remains the memory authority.

@@ -93,8 +93,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .person-profile-summary > .person-empty { min-height: 120px; border: 0; padding: 16px; background: transparent !important; }
 .person-hero, .person-profile-summary, .person-permission-summary, .person-memory-card, .person-cleanup-card, .person-impact-card { background: rgb(25 31 34 / 92%) !important; }
 .person-empty p, .person-graph-empty p { color: var(--muted); font-size: 13px; line-height: 1.7; }
-.person-graph-stage { background: radial-gradient(#354249 1px, transparent 1px) 0 0 / 24px 24px, #11191c !important; }
+.person-graph-stage { overflow: auto; overscroll-behavior: contain; background: radial-gradient(#354249 1px, transparent 1px) 0 0 / 24px 24px, #11191c !important; background-attachment: local !important; }
 .person-graph-legend span { color: var(--muted); font-size: 11px; }
+/* The canvas can outgrow the scrolling stage; keep the legend pinned to the visible corner. */
+.person-graph-legend { position: sticky; top: 16px; left: 16px; width: max-content; margin: 16px; }
 .person-stream-item, .person-timeline-item { color: var(--ink); }
 .person-stream-item p, .person-stream-item time, .person-timeline-item p, .person-timeline-item time { color: var(--muted); font-size: 12px; }
 #personEditDialog, #personConfirmDialog { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 24px 80px #0009; }
@@ -114,3 +116,4 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .person-tabs button { flex: 1 1 auto; }
   .person-permission-summary { align-items: flex-start; }
 }
+.compaction-list { display: grid; gap: 12px; padding-left: 20px; } .compaction-item label { display: flex; gap: 8px; align-items: center; } .compaction-originals { margin: 6px 0; color: var(--muted); font-size: 13px; } .compaction-result { color: var(--ink) !important; font-size: 14px !important; }
