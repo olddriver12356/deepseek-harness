@@ -1,6 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { randomUUID } from 'node:crypto'
-import type { GenerateOptions, MessageId } from '@deepseek-ai/dsh-llm'
+import type { FinishReason, GenerateOptions, MessageId } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { PersonalWorker } from './worker.ts'
@@ -74,7 +74,7 @@ export class UnderstandingCompaction {
       const deadline = AbortSignal.any([signal, AbortSignal.timeout(this.config.timeoutMs)])
       const blocks: string[] = []
       let outputBytes = 0
-      let completed = false
+      let finish: FinishReason | undefined
       for await (const chunk of llm.stream({ ...request, sessionId: id as SessionId, signal: deadline })) {
         deadline.throwIfAborted()
         if (chunk.type === 'tool-call-delta' || chunk.type === 'block-end' && chunk.block.type === 'tool-call') {
@@ -85,10 +85,13 @@ export class UnderstandingCompaction {
           if (outputBytes > this.config.maxOutputBytes) throw new Error('Understanding tidy-up output limit exceeded')
         }
         if (chunk.type === 'block-end' && chunk.block.type === 'text') blocks.push(chunk.block.text)
-        if (chunk.type === 'finish') completed = chunk.reason.kind === 'stop'
+        if (chunk.type === 'finish') finish = chunk.reason
       }
       deadline.throwIfAborted()
-      if (!completed) throw new Error('Understanding tidy-up did not complete')
+      if (finish?.kind !== 'stop') {
+        const detail = finish && 'failure' in finish ? `: ${finish.failure.message}` : ` (${finish?.kind ?? 'no finish'})`
+        throw new Error(`Understanding tidy-up did not complete${detail}`)
+      }
       const output = blocks.join('')
       return await this.worker.request({ kind: 'compaction', action: 'propose', proposal: id, output })
     } finally { this.running = false }

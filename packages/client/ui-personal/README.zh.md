@@ -63,7 +63,7 @@ Claims、Observations、Impacts、Outcomes、历史与备份使用 Bok 原版 Ma
 
 ## 上游源码
 
-固定源码为 [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702)，commit `d556bfc918224712a1c0bc9660e04c829c8f7702`。`vendor/bok` 保留 Apache-2.0 LICENSE、NOTICE 和字体 OFL 许可。Python 引擎文件未修改。浏览器脚本带修改声明：初始化选择 Personal Core，请求改用经过 DSH 认证的路径，恢复可见时刷新仪表板，理解图谱按内容适配并放入可滚动画布。DSH 自有部分是进程适配器、嵌入样式以及观察与整理脚本。
+固定源码为 [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702)，commit `d556bfc918224712a1c0bc9660e04c829c8f7702`。`vendor/bok` 保留 Apache-2.0 LICENSE、NOTICE 和字体 OFL 许可。Python 引擎文件未修改。浏览器脚本带修改声明：初始化选择 Personal Core，请求改用经过 DSH 认证的路径，恢复可见时刷新仪表板，理解图谱是可拖动平移的无边界画布。DSH 自有部分是进程适配器、嵌入样式以及观察与整理脚本。
 
 <a id="known-limitations-and-deferred-work"></a>
 

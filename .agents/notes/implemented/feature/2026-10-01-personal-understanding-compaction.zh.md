@@ -16,7 +16,7 @@ Status: implemented
 
 整理请求不属于任何 Session，因此模型可见输入改在 Personal Core 中记录：`.bok/dsh-compaction/<id>.request.json` 在发送前保存完整请求，提议与结果文件位于其旁。这与观察器对应；观察器请求属于 Session，因此记录为 session event。
 
-图谱计算适配内容的边界框，并在带固定图例的可滚动区域中渲染，大型图谱无需缩小标签即可完整访问。
+每个理解分组紧贴其自身理解环外侧，边保持较短。图谱是无边界画布：拖动即可平移，初始居中，拖动不会打开理解，大型图谱无需缩小标签或滚动条即可完整访问。
 
 ## Constraints
 

@@ -1,4 +1,4 @@
-// Modified by DSH: mount only Personal Core under authenticated /personal/; size the understanding graph to its content.
+// Modified by DSH: mount only Personal Core under authenticated /personal/; make the understanding graph a draggable, unbounded canvas.
 "use strict";
 
 const CONFIG = {
@@ -1780,13 +1780,10 @@ function buildPersonGraph(claims, width, height) {
   const center = { x: compact ? width * 0.20 : width * 0.5, y: height * 0.52 };
   const nodes = [{ kind: "self", id: "self", label: "你", x: center.x, y: center.y, radius: 30, width: 60, height: 60, color: "#172b2d" }];
   const edges = [];
-  // DSH: space claim cards so neighbours do not overlap, then grow the group ring to fit those claim rings.
+  // DSH: space claim cards so neighbours do not overlap; each group sits just outside its own claim ring.
   const claimStep = (count) => count < 3 ? Math.PI * 2 / 3 : Math.PI * 2 / count;
-  const claimDistance = (count) => Math.max(100, 124 / (2 * Math.sin(claimStep(count) / 2)));
-  const widestClaimRing = Math.max(...groups.map(([, items]) => claimDistance(items.length)));
-  const fittedGroupRadius = groups.length > 1 ? (2 * widestClaimRing + 140) / (2 * Math.sin(Math.PI / groups.length)) : 0;
-  const groupRadiusX = Math.max(Math.min(width * 0.32, 270), fittedGroupRadius);
-  const groupRadiusY = Math.max(Math.min(height * 0.30, 150), fittedGroupRadius * 0.8);
+  const claimDistance = (count) => Math.max(76, 120 / (2 * Math.sin(claimStep(count) / 2)));
+  const groupDistance = (count) => claimDistance(count) + 130;
   groups.forEach(([type, items], groupIndex) => {
     const angle = -Math.PI / 2 + groupIndex / Math.max(groups.length, 1) * Math.PI * 2;
     const compactY = center.y + (groupIndex - (groups.length - 1) / 2) * 126;
@@ -1795,8 +1792,8 @@ function buildPersonGraph(claims, width, height) {
       id: `group:${type}`,
       type,
       label: PERSON_TYPE_LABELS[type] || type,
-      x: compact ? width * 0.47 : center.x + Math.cos(angle) * groupRadiusX,
-      y: compact ? compactY : center.y + Math.sin(angle) * groupRadiusY,
+      x: compact ? width * 0.47 : center.x + Math.cos(angle) * groupDistance(items.length) * 1.3,
+      y: compact ? compactY : center.y + Math.sin(angle) * groupDistance(items.length),
       radius: 22,
       width: 78,
       height: 38,
@@ -1824,18 +1821,15 @@ function buildPersonGraph(claims, width, height) {
       edges.push({ a: groupNodeIndex, b: claimNodeIndex, kind: "claim" });
     });
   });
-  // DSH: center the drawing and grow the canvas past the stage when it does not fit; the stage scrolls.
-  const padding = 48;
+  // DSH: center the drawing in the stage; parts outside it are reached by dragging the canvas.
   const left = Math.min(...nodes.map((node) => node.x - node.width / 2));
   const right = Math.max(...nodes.map((node) => node.x + node.width / 2));
   const top = Math.min(...nodes.map((node) => node.y - node.height / 2));
   const bottom = Math.max(...nodes.map((node) => node.y + node.height / 2));
-  const canvasWidth = Math.max(width, Math.ceil(right - left + padding * 2));
-  const canvasHeight = Math.max(height, Math.ceil(bottom - top + padding * 2));
-  const shiftX = (canvasWidth - (right - left)) / 2 - left;
-  const shiftY = (canvasHeight - (bottom - top)) / 2 - top;
+  const shiftX = (width - (right - left)) / 2 - left;
+  const shiftY = (height - (bottom - top)) / 2 - top;
   nodes.forEach((node) => { node.x += shiftX; node.y += shiftY; });
-  return { nodes, edges, groups, width: canvasWidth, height: canvasHeight };
+  return { nodes, edges, groups };
 }
 
 function personGraphHit(node, point, padding = 0) {
@@ -1855,20 +1849,16 @@ function renderPersonGraph() {
     elements.personGraphLegend.innerHTML = "";
     return;
   }
-  const stage = elements.personGraphStage;
-  const graph = buildPersonGraph(claims, stage.clientWidth, stage.clientHeight);
-  const resized = elements.personGraph.style.width !== `${graph.width}px` || elements.personGraph.style.height !== `${graph.height}px`;
-  elements.personGraph.style.width = `${graph.width}px`;
-  elements.personGraph.style.height = `${graph.height}px`;
-  if (resized) {
-    stage.scrollLeft = (graph.width - stage.clientWidth) / 2;
-    stage.scrollTop = (graph.height - stage.clientHeight) / 2;
-  }
+  const graph = buildPersonGraph(claims, elements.personGraphStage.clientWidth, elements.personGraphStage.clientHeight);
   state.personGraphNodes = graph.nodes;
   state.personGraphEdges = graph.edges;
   elements.personGraphLegend.innerHTML = graph.groups.map(([type], index) => `<span><i style="background:${PERSON_GRAPH_COLORS[index % PERSON_GRAPH_COLORS.length]}"></i>${escapeHtml(PERSON_TYPE_LABELS[type] || type)}</span>`).join("");
   drawPersonGraph();
 }
+
+// DSH: pan offset of the understanding graph and the drag gesture in progress.
+const personGraphPan = { x: 0, y: 0 };
+let personGraphDrag = null;
 
 function drawPersonGraph() {
   const canvas = elements.personGraph;
@@ -1883,6 +1873,8 @@ function drawPersonGraph() {
   }
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, width, height);
+  // DSH: graph coordinates are offset by the dragged pan.
+  context.translate(personGraphPan.x, personGraphPan.y);
   const hoveredIndex = state.personGraphNodes.findIndex((node) => personGraphHit(node, state.personGraphPointer, 8));
   const connected = new Set();
   if (hoveredIndex >= 0) {
@@ -1965,12 +1957,12 @@ function drawPersonGraph() {
   if (hovered?.kind === "claim") {
     elements.personGraphTooltip.hidden = false;
     elements.personGraphTooltip.innerHTML = `<strong>${escapeHtml(hovered.claim.statement)}</strong><span>${escapeHtml(PERSON_TYPE_LABELS[hovered.claim.claim_type] || hovered.claim.claim_type || "未分类")} · ${escapeHtml(PERSON_STATUS_LABELS[hovered.claim.epistemic_status] || "长期理解")}</span>`;
-    elements.personGraphTooltip.style.left = `${Math.min(width - 250, Math.max(12, hovered.x + 16))}px`;
-    elements.personGraphTooltip.style.top = `${Math.min(height - 90, Math.max(12, hovered.y - 20))}px`;
+    elements.personGraphTooltip.style.left = `${Math.min(width - 250, Math.max(12, hovered.x + personGraphPan.x + 16))}px`;
+    elements.personGraphTooltip.style.top = `${Math.min(height - 90, Math.max(12, hovered.y + personGraphPan.y - 20))}px`;
     canvas.style.cursor = "pointer";
   } else {
     elements.personGraphTooltip.hidden = true;
-    canvas.style.cursor = "default";
+    canvas.style.cursor = personGraphDrag?.moved ? "grabbing" : "grab";
   }
 }
 
@@ -3112,9 +3104,32 @@ elements.knowledgeGraph.addEventListener("wheel", (event) => {
 elements.atlasZoomOut.addEventListener("click", () => changeAtlasZoom(0.82));
 elements.atlasReset.addEventListener("click", resetAtlasCamera);
 elements.atlasZoomIn.addEventListener("click", () => changeAtlasZoom(1.22));
+// DSH: drag the understanding graph to pan; the pointer is kept in graph coordinates.
+elements.personGraph.addEventListener("pointerdown", (event) => {
+  personGraphDrag = { x: event.clientX, y: event.clientY, panX: personGraphPan.x, panY: personGraphPan.y, moved: false };
+  elements.personGraph.setPointerCapture?.(event.pointerId);
+});
+const endPersonGraphDrag = (event) => {
+  if (elements.personGraph.hasPointerCapture?.(event.pointerId)) elements.personGraph.releasePointerCapture(event.pointerId);
+  elements.personGraph.classList.remove("dragging");
+  // The click that follows pointerup still needs to see whether this gesture moved.
+  setTimeout(() => { personGraphDrag = null; });
+};
+elements.personGraph.addEventListener("pointerup", endPersonGraphDrag);
+elements.personGraph.addEventListener("pointercancel", endPersonGraphDrag);
 elements.personGraph.addEventListener("pointermove", (event) => {
   const bounds = elements.personGraph.getBoundingClientRect();
-  state.personGraphPointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  if (personGraphDrag && event.buttons & 1) {
+    const dx = event.clientX - personGraphDrag.x;
+    const dy = event.clientY - personGraphDrag.y;
+    if (Math.hypot(dx, dy) > 4) personGraphDrag.moved = true;
+    if (personGraphDrag.moved) {
+      personGraphPan.x = personGraphDrag.panX + dx;
+      personGraphPan.y = personGraphDrag.panY + dy;
+      elements.personGraph.classList.add("dragging");
+    }
+  }
+  state.personGraphPointer = { x: event.clientX - bounds.left - personGraphPan.x, y: event.clientY - bounds.top - personGraphPan.y };
   if (!state.personGraphFrame) state.personGraphFrame = requestAnimationFrame(() => {
     state.personGraphFrame = null;
     drawPersonGraph();
@@ -3128,6 +3143,7 @@ elements.personGraph.addEventListener("pointerleave", () => {
   });
 });
 elements.personGraph.addEventListener("click", () => {
+  if (personGraphDrag?.moved) return;
   const node = state.personGraphNodes.find((item) => item.kind === "claim" && personGraphHit(item, state.personGraphPointer, 8));
   if (node) revealPersonClaim(node.id);
 });

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-01-personal-understanding-compaction.md
-2026-10-01-personal-understanding-compaction.md: 70782992bce67b52b768bca58063ea9231892ffc
-2026-10-01-personal-understanding-compaction.zh.md: c042a411be1e8165b6908196087b9d4ced9ee366
+2026-10-01-personal-understanding-compaction.md: 071900c3b19797081166353f4ff561e69b3111b7
+2026-10-01-personal-understanding-compaction.zh.md: ba5e7de367048ba6af8136dfe3f8c4f54869ab98
