@@ -25,6 +25,8 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
+Skills 页面保留原有背景和文件编辑器。Commands、MCP、Hooks、Plugins 标签沿用原有列表和详情布局，均为只读目录。每个标签也有创建入口：名称和描述会发往新 Session，Agent 在聊天中确认缺少的细节并创建工具。Commands 来自当前 Session 的命令 Remote；Plugins 来自 Host 插件清单和当前 Session 选用的 Agent 预设；MCP 与 Hooks 从这些插件条目筛选对应集成。插件标为运行中不代表 MCP 服务器已连接或 Hook 已执行，页面也不展示插件配置或密钥。
+
 在编辑器中输入 `/` 并从建议中选择 skill，或直接键入 `/name`；发出的消息携带字面文本，宿主对菜单 pick 与手动键入的 token 以同样方式加载 skill。与宿主命令同名的名称仍解析为命令——裁决在客户端把该行认领走，它根本不会成为提示词。
 
 ### source 提供什么

@@ -25,6 +25,8 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
+The Skills panel keeps its existing background and file editor. Tabs for Commands, MCP, Hooks, and Plugins reuse its list and detail layout as read-only directories. Each tab also has a creation entry: name and description are sent to a fresh Session, where the agent asks for missing details and creates the tool in chat. Commands come from the active Session's command Remote. Plugins come from the Host plugin inventory and the active Session's selected agent preset; MCP and Hooks filter those plugin rows by their integration packages. A plugin marked active is not proof that its MCP server connected or that a hook ran, and the page never exposes plugin configuration or secrets.
+
 Type `/` in the composer and pick a skill from the suggestions, or type `/name` directly; the sent message carries the literal text, and the host loads the skill the same way for a menu pick or a hand-typed token. A name shared with a host command still resolves to the command — adjudication claims the line client-side before it ever becomes a prompt.
 
 ### What the source offers

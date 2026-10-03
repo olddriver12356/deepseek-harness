@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
-import { createDraftHandoff, draftingPrompt } from '../src/client/creation.ts'
+import { createDraftHandoff, draftingPrompt, toolDraftingPrompt } from '../src/client/creation.ts'
 
 it('retries uncertain sends with the same fresh session and submission identity', async () => {
   const create = vi.fn().mockResolvedValue('created')
@@ -22,4 +22,17 @@ it('retries uncertain sends with the same fresh session and submission identity'
 
 it('pins the drafting instructions without inventing a test or audit workflow', () => {
   expect(draftingPrompt({ name: '', references: 'reference.md', instructions: 'Summarize notes', category: 'capture', scope: 'personal', invocation: 'user' }, '/home/user/.agents/skills')).toMatchSnapshot()
+})
+
+it('preserves name and description as task data with guidance specific to each tool', () => {
+  const draft = { name: '/review', description: 'Review current changes' }
+  for (const kind of ['commands', 'mcp', 'hooks', 'plugins'] as const) {
+    const prompt = toolDraftingPrompt(kind, draft)
+    expect(prompt).toContain(JSON.stringify({ kind, ...draft }, null, 2))
+    expect(prompt).toContain('ask the user in this new chat')
+  }
+  expect(toolDraftingPrompt('commands', draft)).toContain('real DSH slash command')
+  expect(toolDraftingPrompt('mcp', draft)).toContain('never in source or chat history')
+  expect(toolDraftingPrompt('hooks', draft)).toContain('triggering event')
+  expect(toolDraftingPrompt('plugins', draft)).toContain('plugin loads')
 })

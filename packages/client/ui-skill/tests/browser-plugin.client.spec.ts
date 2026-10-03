@@ -113,7 +113,11 @@ describe('apply', () => {
     ctx.provide('sessions', {})
     ctx.provide('workspaces', {})
     ctx.provide('appPanels', {})
-    new TestRemote(ctx, { skillFiles: { list: async () => ({ ok: true, value: {} }) } })
+    new TestRemote(ctx, {
+      skillFiles: { list: async () => ({ ok: true, value: {} }) },
+      commands: { list: async () => ({ ok: true, value: [] }) },
+      pluginInventory: { list: async () => ({ ok: true, value: { entries: [] } }) },
+    })
     const fiber = ctx.plugin(panelPlugin)
     await fiber.await()
     expect(presentation.slots.entries('shell.app-overlay')).toHaveLength(1)
@@ -494,4 +498,41 @@ describe('reference preview', () => {
     expect(list).not.toHaveBeenCalled()
     expect(openResource).not.toHaveBeenCalled()
   })
+})
+it('projects command and plugin remotes into the four read-only sections', async () => {
+  const ctx = new Context()
+  const presentation = providePresentation(ctx)
+  ctx.provide('sessions', {})
+  ctx.provide('workspaces', {})
+  ctx.provide('appPanels', {})
+  new TestRemote(ctx, {
+    skillFiles: { list: async () => ({ ok: true, value: {} }) },
+    commands: { list: async () => ({ ok: true, value: [{ name: 'compact', definitionId: '@deepseek-ai/dsh-command-compact', description: 'Compact context' }, { name: 'goal', definitionId: '@deepseek-ai/dsh-command-goal', description: 'Set a goal', input: { hint: '[<objective>|clear]' } }, { name: 'goal', description: 'Scoped override' }] }) },
+    pluginInventory: { list: async () => ({ ok: true, value: { entries: [
+      { entryId: 'mcp-github', moduleName: '@deepseek-ai/dsh-mcp-client', enabled: true, fiberPhase: 'active' },
+      { entryId: 'hooks-codex', moduleName: '@deepseek-ai/dsh-hooks-codex', enabled: false, fiberPhase: null },
+      { entryId: 'other', moduleName: '@deepseek-ai/dsh-other', enabled: true, fiberPhase: 'active' },
+      { entryId: 'team', moduleName: '@deepseek-ai/dsh-experimental-agent-team-profile', enabled: true, fiberPhase: 'active' },
+    ], agentPresets: [
+      { id: 'standard', trust: 'system', isDefault: true, rows: [{ entryId: 'standard-tool', moduleName: '@deepseek-ai/dsh-standard-tool', enabled: true, fiberPhase: 'active' }] },
+      { id: 'minimal', trust: 'user', isDefault: false, rows: [{ entryId: 'minimal-tool', moduleName: '@deepseek-ai/dsh-minimal-tool', enabled: 'conditional', fiberPhase: null }] },
+    ] } }) },
+  })
+  const fiber = ctx.plugin(panelPlugin)
+  onTestFinished(async () => { await fiber.dispose(); await ctx.fiber.dispose() })
+  await fiber.await()
+  const entry = presentation.slots.entries('shell.app-overlay')[0]!
+  const injected = (entry.inject as unknown as () => { api: import('../src/client/SkillsPanel.tsx').SkillsApi })()
+  const catalog = await injected.api.catalog?.('session', 'minimal')
+  expect(catalog?.commands.map(item => item.name)).toEqual(['/compact', '/goal', '/goal'])
+  expect(catalog?.commands[1]?.detail).toBe('/goal [<objective>|clear]')
+  expect(catalog?.commands[2]?.guide?.note).toBe('catalogNoGuide')
+  expect(catalog?.mcp.map(item => item.name)).toEqual(['mcp-github'])
+  expect(catalog?.hooks.map(item => item.name)).toEqual(['hooks-codex'])
+  expect(catalog?.plugins.map(item => item.name)).toEqual(['mcp-github', 'hooks-codex', 'other', 'team', 'minimal-tool'])
+  expect(catalog?.commands[0]?.guide?.when).toBe('compactWhen')
+  expect(catalog?.commands[0]?.guide?.category).toBe('catalogSlashCommand')
+  expect(catalog?.plugins.find(item => item.name === 'team')?.guide?.note).toBe('teamNote')
+  expect(catalog?.plugins.find(item => item.name === 'minimal-tool')?.status).toBe('catalogConditional')
+  expect(catalog?.hooks[0]?.status).toBe('catalogDisabled')
 })

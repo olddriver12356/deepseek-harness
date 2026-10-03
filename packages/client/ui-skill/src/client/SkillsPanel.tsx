@@ -5,10 +5,21 @@ import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { IWorkspaces } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SkillArtifact, SkillArtifactId, SkillDeleteRequest, SkillDeleteResult, SkillFileContent, SkillFileRequest, SkillFileWriteRequest, SkillInventory, SkillTreeEntry, WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
 import { editField, invocationOf, readFields, type Invocation, type SkillFields } from './skill-document.ts'
-import type { SkillDraft } from './creation.ts'
+import type { AgentToolDraft, AgentToolKind, SkillDraft } from './creation.ts'
 import type { PanelTranslate } from './panel-locales.ts'
 import css from './SkillsPanel.module.css'
 
+export type CatalogSection = AgentToolKind
+export interface CatalogItem {
+  readonly id: string
+  readonly name: string
+  readonly description: string
+  readonly source: string
+  readonly status: string
+  readonly detail: string
+  readonly guide?: { readonly category: string; readonly when?: string; readonly example?: string; readonly note?: string }
+}
+export type CatalogInventory = Record<CatalogSection, readonly CatalogItem[]>
 export interface SkillsApi {
   list(workspaceId: WorkspaceId): Promise<SkillInventory>
   tree(workspaceId: WorkspaceId, id: SkillArtifactId): Promise<readonly SkillTreeEntry[]>
@@ -16,12 +27,19 @@ export interface SkillsApi {
   write(request: SkillFileWriteRequest): Promise<SkillFileContent>
   remove(request: SkillDeleteRequest): Promise<SkillDeleteResult>
   handoff(workspaceId: WorkspaceId, draft: SkillDraft, destination: string): () => Promise<void>
+  handoffTool(workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft): () => Promise<void>
+  catalog?(sessionId?: string, presetId?: string): Promise<CatalogInventory>
 }
 export interface SkillsPanelProps { appPanels: IAppPanels; workspaces: IWorkspaces; sessions: ISessions; api: SkillsApi; t: PanelTranslate }
 const modes: readonly Invocation[] = ['both', 'user', 'agent', 'neither']
 const errorText = (error: unknown): string => error instanceof Error ? error.message : String(error)
 const EMPTY: SkillInventory = { skills: [], projectDestination: '', personalDestination: '' }
 const INITIAL_DRAFT: SkillDraft = { name: '', references: '', instructions: '', scope: 'project', category: '', invocation: 'both' }
+const INITIAL_TOOL_DRAFT: AgentToolDraft = { name: '', description: '' }
+const sections = ['skills', 'commands', 'mcp', 'hooks', 'plugins'] as const
+type Section = typeof sections[number]
+const createLabels = { commands: 'createCommand', mcp: 'addMcp', hooks: 'createHook', plugins: 'addPlugin' } as const
+const EMPTY_CATALOG: CatalogInventory = { commands: [], mcp: [], hooks: [], plugins: [] }
 
 function Modal({ children, title, close, closeLabel }: { children: ReactNode; title: string; close: () => void; closeLabel: string }) {
   const [opened, setOpened] = useState(false)
@@ -47,6 +65,12 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const currentWorkspace = workspaceState.items.find(item =>
     sessionState.current !== undefined && item.sessionIds.includes(sessionState.current))?.workspaceId
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId | undefined>(currentWorkspace)
+  const [section, setSection] = useState<Section>('skills')
+  const [catalog, setCatalog] = useState<CatalogInventory>(EMPTY_CATALOG)
+  const [catalogQuery, setCatalogQuery] = useState('')
+  const [selectedTool, setSelectedTool] = useState('')
+  const [catalogError, setCatalogError] = useState('')
+  const [catalogBusy, setCatalogBusy] = useState(false)
   const [inventory, setInventory] = useState<SkillInventory>(EMPTY)
   const [selected, setSelected] = useState<SkillArtifact>()
   const [tree, setTree] = useState<readonly SkillTreeEntry[]>([])
@@ -60,6 +84,7 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const [scope, setScope] = useState('all')
   const [invocation, setInvocation] = useState('all')
   const [category, setCategory] = useState('all')
+  const [origin, setOrigin] = useState('all')
   const [grouped, setGrouped] = useState(true)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState('')
@@ -67,19 +92,30 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const [status, setStatus] = useState('')
   const [pending, setPending] = useState<(() => void)>()
   const [creating, setCreating] = useState(false)
+  const [creatingTool, setCreatingTool] = useState<CatalogSection>()
+  const [toolDraft, setToolDraft] = useState<AgentToolDraft>(INITIAL_TOOL_DRAFT)
   const [newFile, setNewFile] = useState<string | undefined>()
   const [draft, setDraft] = useState<SkillDraft>(INITIAL_DRAFT)
   const handoff = useRef<(() => Promise<void>)>()
+  const toolHandoff = useRef<(() => Promise<void>)>()
   const [handoffPending, setHandoffPending] = useState(false)
+  const [toolHandoffPending, setToolHandoffPending] = useState(false)
   const generation = useRef(0)
+  const catalogGeneration = useRef(0)
   const dirty = loaded?.content !== undefined && loaded.content !== null && buffer !== loaded.content
   const dirtyRef = useRef(dirty)
   dirtyRef.current = dirty
   const fields = useMemo(() => { try { return { value: readFields(buffer), error: '' } } catch (reason) { return { value: undefined, error: errorText(reason) } } }, [buffer])
   const categories = [...new Set(inventory.skills.map(skill => skill.category).filter(Boolean))].sort((a, b) => a.localeCompare(b))
+  const origins = [...new Set(inventory.skills.map(skill => skill.origin).filter(Boolean))].sort((a, b) => a.localeCompare(b))
   const searchTerm = query.trim().replace(/^\//, '').toLowerCase()
-  const visible = inventory.skills.filter(skill => (searchDescription ? `${skill.name} ${skill.description}` : skill.name).toLowerCase().includes(searchTerm) && (scope === 'all' || skill.scope === scope) && (invocation === 'all' || invocationOf(skill.userInvocable, skill.modelInvocable) === invocation) && (category === 'all' || skill.category === category)).sort((a, b) => a.name.localeCompare(b.name))
+  const visible = inventory.skills.filter(skill => (searchDescription ? `${skill.name} ${skill.description}` : skill.name).toLowerCase().includes(searchTerm) && (scope === 'all' || skill.scope === scope) && (invocation === 'all' || invocationOf(skill.userInvocable, skill.modelInvocable) === invocation) && (category === 'all' || skill.category === category) && (origin === 'all' || skill.origin === origin)).sort((a, b) => a.name.localeCompare(b.name))
   const groups = grouped ? [...new Set(visible.map(skill => skill.category))].sort((a, b) => a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)) : ['']
+  const sessionId = currentWorkspace === workspaceId ? sessionState.current : undefined
+  const presetValue = sessionId === undefined ? undefined : sessionState.byId[sessionId]?.projectionValues?.agentPreset
+  const presetId = typeof presetValue === 'string' ? presetValue : undefined
+  const catalogItems = section === 'skills' ? [] : catalog[section].filter(item => `${item.name} ${item.description} ${item.source}`.toLowerCase().includes(catalogQuery.trim().toLowerCase()))
+  const tool = catalogItems.find(item => item.id === selectedTool) ?? catalogItems[0]
 
   const refresh = useCallback(async () => {
     if (workspaceId === undefined) return
@@ -94,18 +130,28 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
     catch (reason) { if (sequence === generation.current) setError(errorText(reason)) }
     finally { if (sequence === generation.current) setBusy(false) }
   }, [workspaceId, api])
+  const refreshCatalog = useCallback(async () => {
+    const sequence = ++catalogGeneration.current
+    setCatalogBusy(true); setCatalogError('')
+    try {
+      const result = await (api.catalog?.(sessionId, presetId) ?? Promise.resolve(EMPTY_CATALOG))
+      if (sequence === catalogGeneration.current) setCatalog(result)
+    } catch (reason) { if (sequence === catalogGeneration.current) { setCatalog(EMPTY_CATALOG); setCatalogError(errorText(reason)) } }
+    finally { if (sequence === catalogGeneration.current) setCatalogBusy(false) }
+  }, [api, sessionId, presetId])
   useEffect(() => { if (active === 'skills') void refresh() }, [active, refresh])
+  useEffect(() => { if (active === 'skills' && section !== 'skills') void refreshCatalog() }, [active, section, refreshCatalog])
   useEffect(() => {
     if (workspaceId === undefined && currentWorkspace !== undefined) setWorkspaceId(currentWorkspace)
   }, [workspaceId, currentWorkspace])
   useEffect(() => {
     const unload = (event: BeforeUnloadEvent) => { if (dirtyRef.current) event.preventDefault() }
     window.addEventListener('beforeunload', unload)
-    return () => { generation.current++; window.removeEventListener('beforeunload', unload) }
+    return () => { generation.current++; catalogGeneration.current++; window.removeEventListener('beforeunload', unload) }
   }, [])
   function navigate(action: () => void): void { if (dirty) setPending(() => action); else action() }
   function switchWorkspace(id: WorkspaceId): void {
-    navigate(() => { generation.current++; setWorkspaceId(id); setSelected(undefined); setLoaded(undefined); setBuffer(''); setTree([]); setInventory(EMPTY) })
+    navigate(() => { generation.current++; catalogGeneration.current++; setWorkspaceId(id); setSelected(undefined); setLoaded(undefined); setBuffer(''); setTree([]); setInventory(EMPTY); setCatalog(EMPTY_CATALOG) })
   }
   async function selectFile(item: SkillArtifact, file: string): Promise<void> {
     if (workspaceId === undefined) return
@@ -162,14 +208,28 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
       handoff.current = undefined; setHandoffPending(false); setDraft(INITIAL_DRAFT); setCreating(false); appPanels.setActive('agent')
     } catch (reason) { setError(errorText(reason)) } finally { setBusy(false) }
   }
+  async function submitToolDraft(): Promise<void> {
+    if (workspaceId === undefined || creatingTool === undefined || busy || toolDraft.name.trim() === '' || toolDraft.description.trim() === '') return
+    toolHandoff.current ??= api.handoffTool(workspaceId, creatingTool, {
+      name: toolDraft.name.trim(), description: toolDraft.description.trim(),
+    })
+    setToolHandoffPending(true); setBusy(true); setError('')
+    try {
+      await toolHandoff.current()
+      toolHandoff.current = undefined; setToolHandoffPending(false); setToolDraft(INITIAL_TOOL_DRAFT); setCreatingTool(undefined); appPanels.setActive('agent')
+    } catch (reason) { setError(errorText(reason)) } finally { setBusy(false) }
+  }
   const formField = (label: string, key: keyof SkillFields, multiline = false) => <label>{label}{multiline ? <textarea className={key === 'instructions' ? css.instructions : undefined} value={fields.value?.[key] ?? ''} rows={key === 'instructions' ? 18 : 3} onChange={(event) => { changeField(key, event.target.value) }} /> : <input value={fields.value?.[key] ?? ''} onChange={(event) => { changeField(key, event.target.value) }} list={key === 'category' ? 'skill-categories' : undefined} />}</label>
 
   return <section className={css.panel} hidden={active !== 'skills'} data-skills-panel aria-label={t('title')} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (dirty) void save() } }}>
-    <header className={css.header}><div className={css.titleLockup}><span className={css.titleMark} aria-hidden="true">03</span><div><h1>{t('title')}</h1><small>{t('subtitle')}</small></div></div><label>{t('workspace')}<select value={workspaceId ?? ''} disabled={busy} onChange={(event) => { switchWorkspace(event.target.value as WorkspaceId) }}><option value="" disabled>{t('chooseWorkspace')}</option>{workspaceState.items.map(item => <option key={item.workspaceId} value={item.workspaceId}>{item.title}</option>)}</select></label><button type="button" disabled={busy || workspaceId === undefined} onClick={() => { void refresh() }}>{t('refresh')}</button></header>
-    <section className={css.hero}><div><p className={css.heroKicker}>{t('subtitle')}</p><h2>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h2><p className={css.heroBody}>{t('heroBody')}</p></div><button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setCreating(true) }}><span aria-hidden="true">＋</span>{t('create')}</button></section>
+    <header className={css.header}><div className={css.titleLockup}><span className={css.titleMark} aria-hidden="true">03</span><div><h1>{t('title')}</h1><small>{t('subtitle')}</small></div></div><label>{t('workspace')}<select value={workspaceId ?? ''} disabled={busy || catalogBusy} onChange={(event) => { switchWorkspace(event.target.value as WorkspaceId) }}><option value="" disabled>{t('chooseWorkspace')}</option>{workspaceState.items.map(item => <option key={item.workspaceId} value={item.workspaceId}>{item.title}</option>)}</select></label><button type="button" disabled={busy || catalogBusy || workspaceId === undefined} onClick={() => { if (section === 'skills') void refresh(); else void refreshCatalog() }}>{t('refresh')}</button></header>
+    <section className={css.hero}><div><p className={css.heroKicker}>{t('subtitle')}</p><h2>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h2><p className={css.heroBody}>{t('heroBody')}</p></div>{section === 'skills'
+      ? <button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setCreating(true) }}><span aria-hidden="true">＋</span>{t('create')}</button>
+      : <button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setError(''); setCreatingTool(section) }}><span aria-hidden="true">＋</span>{t(createLabels[section])}</button>}</section>
+    <nav className={css.catalogTabs} aria-label={t('toolTypes')}>{sections.map(value => <button key={value} type="button" aria-current={section === value ? 'page' : undefined} onClick={() => { navigate(() => { setSection(value); setCatalogQuery(''); setSelectedTool('') }) }}>{t(value)}</button>)}</nav>
     {error !== ''  && <p className={css.error} role="alert">{error}</p>}
-    <div ref={entranceRef} className={css.workbench}>
-      <aside className={css.index}><select aria-label={t('searchFields')} value={searchDescription ? 'all' : 'name'} onChange={(event) => { setSearchDescription(event.target.value === 'all') }}><option value="name">{t('nameOnly')}</option><option value="all">{t('nameAndDescription')}</option></select><input aria-label={t('search')} placeholder={t(searchDescription ? 'search' : 'searchName')} value={query} onChange={(event) => { setQuery(event.target.value) }} /><div className={css.filters}><select aria-label={t('scope')} value={scope} onChange={(event) => { setScope(event.target.value) }}>{(['all', 'project', 'personal', 'other'] as const).map(value => <option key={value} value={value}>{t(value)}</option>)}</select><select aria-label={t('invocation')} value={invocation} onChange={(event) => { setInvocation(event.target.value) }}><option value="all">{t('all')}</option>{modes.map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</select><select aria-label={t('category')} value={category} onChange={(event) => { setCategory(event.target.value) }}><option value="all">{t('all')}</option>{categories.map(value => <option key={value} value={value}>{value}</option>)}<option value="">{t('uncategorized')}</option></select><select aria-label={t('grouped')} value={grouped ? 'grouped' : 'flat'} onChange={(event) => { setGrouped(event.target.value === 'grouped') }}><option value="grouped">{t('grouped')}</option><option value="flat">{t('flat')}</option></select></div><p className={css.count}>{t('count', { count: visible.length, groups: new Set(visible.map(item => item.category)).size })}</p>
+    {section === 'skills' ? <div ref={entranceRef} className={css.workbench}>
+      <aside className={css.index}><select aria-label={t('searchFields')} value={searchDescription ? 'all' : 'name'} onChange={(event) => { setSearchDescription(event.target.value === 'all') }}><option value="name">{t('nameOnly')}</option><option value="all">{t('nameAndDescription')}</option></select><input aria-label={t('search')} placeholder={t(searchDescription ? 'search' : 'searchName')} value={query} onChange={(event) => { setQuery(event.target.value) }} /><div className={css.filters}><select aria-label={t('scope')} value={scope} onChange={(event) => { setScope(event.target.value) }}>{(['all', 'project', 'personal', 'other'] as const).map(value => <option key={value} value={value}>{t(value)}</option>)}</select><select aria-label={t('invocation')} value={invocation} onChange={(event) => { setInvocation(event.target.value) }}><option value="all">{t('all')}</option>{modes.map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</select><select aria-label={t('category')} value={category} onChange={(event) => { setCategory(event.target.value) }}><option value="all">{t('all')}</option>{categories.map(value => <option key={value} value={value}>{value}</option>)}<option value="">{t('uncategorized')}</option></select><select aria-label={t('origin')} value={origin} onChange={(event) => { setOrigin(event.target.value) }}><option value="all">{t('all')}</option>{origins.map(value => <option key={value} value={value}>{value}</option>)}<option value="">{t('unmanaged')}</option></select><select aria-label={t('grouped')} value={grouped ? 'grouped' : 'flat'} onChange={(event) => { setGrouped(event.target.value === 'grouped') }}><option value="grouped">{t('grouped')}</option><option value="flat">{t('flat')}</option></select></div><p className={css.count}>{t('count', { count: visible.length, groups: new Set(visible.map(item => item.category)).size })}</p>
         <div className={css.list}>{groups.map((group) => {
           const items = grouped ? visible.filter(item => item.category === group) : visible
           const total = grouped ? inventory.skills.filter(item => item.category === group).length : inventory.skills.length
@@ -183,11 +243,26 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
           {loaded.file === selected.entryFile && fields.value !== undefined && <header className={css.documentHeader}><p className={css.documentKicker}>{t(selected.scope)} · {fields.value.category || t('uncategorized')}</p><h2>{fields.value.name || selected.name}</h2><p className={css.documentDescription}>{fields.value.description}</p><span className={css.modeBadge}>{t(fields.value.invocation)}</span></header>}
           <div className={css.prose}><MarkdownText text={loaded.file === selected.entryFile && fields.value !== undefined ? fields.value.instructions : buffer} labels={{ code: { copyLabel: t('copyCode'), copiedLabel: t('copiedCode') }, footnotes: t('footnotes') }} /></div>
         </article> : <fieldset className={css.document} disabled={!selected.writable || busy}>{view === 'structured' && loaded.file === selected.entryFile && fields.value !== undefined ? <><div className={css.fieldGrid}>{formField(t('name'), 'name')}{formField(t('category'), 'category')}</div>{formField(t('description'), 'description', true)}<label>{t('invocation')}<select value={fields.value.invocation} onChange={(event) => { changeField('invocation', event.target.value) }}>{modes.map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</select></label>{formField(t('instructions'), 'instructions', true)}</> : <>{view === 'structured' && loaded.file === selected.entryFile && fields.error !== '' && <p role="alert">{t('sourceProblem')} {fields.error}</p>}<label className={css.source}>{t('source')}<textarea aria-label={t('source')} spellCheck={false} value={buffer} onChange={(event) => { setBuffer(event.target.value); setStatus('') }} /></label></>}</fieldset>}</> }</main>
-    </div><datalist id="skill-categories">{categories.map(value => <option key={value} value={value} />)}</datalist>
+    </div> : <div className={`${css.workbench} ${css.catalogWorkbench}`}>
+      <aside className={css.index}><input aria-label={t('catalogSearch')} placeholder={t('catalogSearch')} value={catalogQuery} onChange={(event) => { setCatalogQuery(event.target.value) }} /><p className={css.count}>{t('catalogCount', { count: catalogItems.length })}</p><div className={css.list}>{catalogItems.map(item => <button key={item.id} className={css.skill} type="button" aria-pressed={tool?.id === item.id} onClick={() => { setSelectedTool(item.id) }}><strong>{item.name}</strong><small>{item.description}</small><span>{item.source}</span></button>)}{catalogItems.length === 0 && <p className={css.empty}>{catalogBusy ? t('loading') : section === 'commands' && sessionId === undefined ? t('chooseSession') : t('catalogEmpty')}</p>}</div><small className={css.notice}>{section === 'commands' ? t('catalogCommandsNotice') : t('catalogNotice')}</small></aside>
+      <main className={css.editor}>{catalogError !== '' ? <p className={css.error} role="alert">{catalogError}</p> : tool === undefined ? <div className={css.empty}><span aria-hidden="true">✳</span><h2>{t('catalogSelect')}</h2></div> : <><header><div><strong>{tool.name}</strong><small>{t(section)} · {tool.source}</small></div><span role="status">{tool.status}</span></header><article className={css.preview}><h2>{tool.name}</h2><p>{tool.description}</p><dl className={css.catalogFacts}><div><dt>{t('source')}</dt><dd>{tool.source}</dd></div><div><dt>{t('catalogStatus')}</dt><dd>{tool.status}</dd></div><div><dt>{t('catalogDetail')}</dt><dd><code>{tool.detail}</code></dd></div>{tool.guide !== undefined && <><div><dt>{t('catalogType')}</dt><dd>{tool.guide.category}</dd></div>{tool.guide.when !== undefined && <div><dt>{t('catalogWhen')}</dt><dd>{tool.guide.when}</dd></div>}{tool.guide.example !== undefined && <div><dt>{t('catalogExample')}</dt><dd>{tool.guide.example}</dd></div>}{tool.guide.note !== undefined && <div><dt>{t('catalogNote')}</dt><dd>{tool.guide.note}</dd></div>}</>}</dl></article></>}</main>
+    </div>}<datalist id="skill-categories">{categories.map(value => <option key={value} value={value} />)}</datalist>
     {recoveryPath !== '' && <p className={css.recovery} role="status">{t('deleted')} <code>{recoveryPath}</code></p>}
     {deleting !== undefined && <Modal closeLabel={t('close')} title={t('deleteNamed', { name: deleting.name })} close={() => { if (!busy) setDeleting(undefined) }}><p>{t('deleteBody')}</p><code className={css.path}>{deleting.bundle ? deleting.path.replace(/[/\\]SKILL\.md$/, '') : deleting.path}</code>{error !== '' && <p role="alert">{error}</p>}<footer><button type="button" disabled={busy} onClick={() => { setDeleting(undefined) }}>{t('stay')}</button><button type="button" className={css.deleteConfirm} disabled={busy} onClick={() => { void removeSkill() }}>{busy ? t('deleting') : t('delete')}</button></footer></Modal>}
     {pending !== undefined && <Modal closeLabel={t('close')} title={t('leave')} close={() => { setPending(undefined) }}><p>{t('leaveBody')}</p><footer><button type="button" disabled={busy} onClick={() => { setPending(undefined) }}>{t('stay')}</button><button type="button" disabled={busy} onClick={() => { setBuffer(loaded?.content ?? ''); setPending(undefined); pending() }}>{t('discard')}</button><button type="button" disabled={busy} onClick={() => { void save().then((ok) => { if (ok) { setPending(undefined); pending() } }) }}>{t('save')}</button></footer></Modal>}
     {newFile !== undefined && <Modal closeLabel={t('close')} title={t('addFile')} close={() => { if (!busy) setNewFile(undefined) }}><form onSubmit={(event) => { event.preventDefault(); void addFile() }}><label>{t('filePath')}<input required placeholder={t('newFileHint')} value={newFile} onChange={(event) => { setNewFile(event.target.value) }} /></label>{error !== '' && <p role="alert">{error}</p>}<footer><button type="submit" disabled={busy}>{t('add')}</button></footer></form></Modal>}
     {creating && <Modal closeLabel={t('close')} title={t('create')} close={() => { if (!busy) setCreating(false) }}><p>{t('createBody')}</p><form onSubmit={(event) => { event.preventDefault(); void submitDraft() }}><fieldset disabled={busy || handoffPending}><label>{t('optionalName')}<input value={draft.name} onChange={(event) => { setDraft({ ...draft, name: event.target.value }) }} /></label><label>{t('references')}<textarea rows={3} value={draft.references} onChange={(event) => { setDraft({ ...draft, references: event.target.value }) }} /></label><label>{t('draft')}<textarea required rows={6} value={draft.instructions} onChange={(event) => { setDraft({ ...draft, instructions: event.target.value }) }} /></label><div className={css.fieldGrid}><label>{t('scope')}<select value={draft.scope} onChange={(event) => { setDraft({ ...draft, scope: event.target.value as SkillDraft['scope'] }) }}><option value="project">{t('project')}</option><option value="personal">{t('personal')}</option></select></label><label>{t('invocation')}<select value={draft.invocation} onChange={(event) => { setDraft({ ...draft, invocation: event.target.value as Invocation }) }}>{modes.map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</select></label></div><label>{t('category')}<input list="skill-categories" value={draft.category} onChange={(event) => { setDraft({ ...draft, category: event.target.value }) }} /></label></fieldset><p>{t('destination')}<code className={css.path}>{draft.scope === 'project' ? inventory.projectDestination : inventory.personalDestination}</code></p>{handoffPending && <p>{t('creationPending')}</p>}{error !== '' && <p role="alert">{error}</p>}<footer><button className={css.primary} type="submit" disabled={busy || draft.instructions.trim() === ''}>{busy ? t('sending') : handoffPending ? t('retry') : t('draftSession')}</button></footer></form></Modal>}
+    {creatingTool !== undefined && <Modal closeLabel={t('close')} title={t(createLabels[creatingTool])} close={() => { if (!busy && !toolHandoffPending) setCreatingTool(undefined) }}>
+      <p>{t('toolCreateBody')}</p>
+      <form onSubmit={(event) => { event.preventDefault(); void submitToolDraft() }}>
+        <fieldset disabled={busy || toolHandoffPending}>
+          <label>{t('name')}<input required value={toolDraft.name} onChange={(event) => { setToolDraft({ ...toolDraft, name: event.target.value }) }} /></label>
+          <label>{t('description')}<textarea required rows={4} value={toolDraft.description} onChange={(event) => { setToolDraft({ ...toolDraft, description: event.target.value }) }} /></label>
+        </fieldset>
+        {toolHandoffPending && <p>{t('creationPending')}</p>}
+        {error !== '' && <p role="alert">{error}</p>}
+        <footer><button className={css.primary} type="submit" disabled={busy || toolDraft.name.trim() === '' || toolDraft.description.trim() === ''}>{busy ? t('sending') : toolHandoffPending ? t('retry') : t('toolHandoff')}</button></footer>
+      </form>
+    </Modal>}
   </section>
 }
