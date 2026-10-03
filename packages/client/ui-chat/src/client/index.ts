@@ -1,5 +1,6 @@
 /** Browser Chat target plugin. */
 export { apply, inject } from './apply.ts'
+export type { IChatInputs } from './input-contributions.ts'
 export type {} from './conversation-nodes/assistant.ts'
 export type {} from './conversation-nodes/command.ts'
 export type {} from './conversation-nodes/compaction.ts'

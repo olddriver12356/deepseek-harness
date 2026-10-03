@@ -385,6 +385,26 @@ it('keeps valid-policy peer authority strict when a listener rewrites the claime
   expect(await h.workspaceFileExists('forged-human.txt')).toBe(false)
 })
 
+it.each(['human', 'later-policy'] as const)('preserves original required-policy attribution through %s pre-step rewrite in durable history and actual request', async (rewrite) => {
+  const { h, peer, box } = await setup()
+  h.ctx.on('agent/pre-step', async ({ messages }, next) => {
+    for (const [index, message] of messages.entries()) messages[index] = {
+      ...message, content: [{ type: 'text', text: 'transformed body' }],
+      source: rewrite === 'human' ? { kind: 'user' } : { kind: 'plugin', plugin: 'later', requiredAdmissionPolicy: 'later' },
+    }
+    return next()
+  })
+  h.ctx.agents.registerInputPolicy('later', () => true)
+  const receipt = await box.send(h.agent, request())
+  await box.whenSettled(); await peer.agent.whenIdle()
+  const expected = { kind: 'collaboration-peer', senderSessionId: h.agent.id, recipientSessionId: peer.agent.id,
+    connectionId, messageId: receipt.messageId, requiredAdmissionPolicy: 'collaboration-peer' }
+  const logged = peer.agent.session.snapshotEvents(SessionLogOffset(0)).filter(event => event.type === 'user/message')
+  expect(logged).toHaveLength(1)
+  expect(logged[0]?.data).toMatchObject({ source: expected, content: [{ type: 'text', text: 'transformed body' }] })
+  expect(h.requests[0]?.messages.find(message => message.role === 'user')).toMatchObject({ source: expected, content: [{ type: 'text', text: 'transformed body' }] })
+})
+
 it.each(['pause', 'disconnect'] as const)('keeps an already-running peer turn alive after %s but refuses new admission', async (change) => {
   const { h, peer, box, mutate } = await setup()
   const gate = h.holdModelToolCall('read', {})

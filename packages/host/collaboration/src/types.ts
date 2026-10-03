@@ -1,10 +1,24 @@
 /** Type-only V1a discussion requests, results, and durable data. */
 import type { z } from 'zod'
 import type { Branded } from '@deepseek-ai/dsh-brand'
-import type { SessionId } from '@deepseek-ai/dsh-session'
-import type { HumanControlAdmission } from './authority.ts'
-import type { peerSourceSchema, sendPeerRequestSchema } from './messages.ts'
-import type { actorSchema, collaborationStateSchema, connectionSchema, discussionOperationSchema, journalSchema, outboxSchema, receiptSchema, registrationSchema, stateLimitsSchema } from './schema.ts'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { peerSourceSchema, sendPeerRequestSchema } from './message-schema.ts'
+import type { actorSchema, collaborationStateSchema, connectionSchema, discussionOperationSchema, journalSchema, outboxSchema, receiptSchema, registrationSchema, stateLimitsSchema } from './record-schema.ts'
+
+/** What a {@link HumanControlAdmission} may authorize. Only discussion grants exist; there is no action scope. */
+export type HumanControlScope = 'discussion'
+
+declare const admissionBrand: unique symbol
+
+/**
+ * Host-created capability for a human-control operation through the authenticated UI path.
+ * It is frozen and tracked in a module-private set, so JSON, tool arguments, and object literals cannot forge it.
+ * Arbitrary Host code and same-user Gateway callers remain outside this guarantee.
+ */
+export interface HumanControlAdmission {
+  readonly [admissionBrand]: true
+  readonly scope: HumanControlScope
+}
 
 /** Persistent bidirectional pair identifier. */
 export type ConnectionId = Branded<'CollaborationConnectionId'>
@@ -115,6 +129,22 @@ export interface CollaborationSnapshot {
   readonly connections: readonly Connection[]
   /** Messages of those pairs; contains no ordinary assistant or private human history. */
   readonly outbox: readonly OutboxMessage[]
+}
+
+/** Current metadata-only observation, never an Agent activation or workspace mutation. */
+export interface ParticipantObservation {
+  readonly sessionId: SessionId
+  /** Current stored workspace; absent if the header is unavailable. */
+  readonly cwd?: string
+  readonly availability: 'running' | 'inactive' | 'unknown' | 'missing'
+  /** Filesystem observation; an unavailable result conveys no branch or checkout fact. */
+  readonly git: { readonly kind: 'unavailable' }
+    | { readonly kind: 'observed'; readonly root: string; readonly branch: string | null; readonly linkedWorktree: boolean }
+}
+
+/** Human management view under the one-human-owner assumption; includes only explicitly shared discussion records. */
+export interface CollaborationControlSnapshot extends CollaborationSnapshot {
+  readonly observations: readonly ParticipantObservation[]
 }
 
 /** Original durable mutation receipt; no later retry creates another revision. */

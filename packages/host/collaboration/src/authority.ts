@@ -19,20 +19,8 @@ import type {} from '@deepseek-ai/dsh-tools'
  */
 export type TurnClass = 'human' | 'peer-discussion'
 
-/** What a {@link HumanControlAdmission} may authorize. Only discussion grants exist; there is no action scope. */
-export type HumanControlScope = 'discussion'
-
-declare const admissionBrand: unique symbol
-
-/**
- * Host-created capability for a human-control operation through the authenticated UI path.
- * It is frozen and tracked in a module-private set, so JSON, tool arguments, and object literals cannot forge it.
- * Arbitrary Host code and same-user Gateway callers remain outside this guarantee.
- */
-export interface HumanControlAdmission {
-  readonly [admissionBrand]: true
-  readonly scope: HumanControlScope
-}
+import type { HumanControlAdmission, HumanControlScope } from './types.ts'
+export type { HumanControlAdmission, HumanControlScope } from './types.ts'
 
 const issued = new WeakSet<object>()
 

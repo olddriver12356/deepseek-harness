@@ -2,20 +2,13 @@
 import { Buffer } from 'node:buffer'
 import { z } from 'zod'
 import { createUserMessage, type UserMessage } from '@deepseek-ai/dsh-llm'
-import { connectionIdSchema, peerMessageIdSchema, requestIdSchema, sessionIdSchema } from './schema.ts'
+import { sessionIdSchema } from './schema.ts'
 import type { OutboxMessage } from './types.ts'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 
 
-/** Strict model request; sender identity comes only from the acting Agent. */
-export const sendPeerRequestSchema = z.strictObject({ connectionId: connectionIdSchema, text: z.string(), requestId: requestIdSchema })
-
-/** Strict persisted attribution, including the policy needed before restored input can enter a request. */
-export const peerSourceSchema = z.strictObject({
-  kind: z.literal('collaboration-peer'), requiredAdmissionPolicy: z.literal('collaboration-peer'),
-  senderSessionId: sessionIdSchema, recipientSessionId: sessionIdSchema,
-  connectionId: connectionIdSchema, messageId: peerMessageIdSchema,
-}).refine(source => source.senderSessionId !== source.recipientSessionId, 'sender and recipient must differ').readonly()
+import { peerSourceSchema } from './message-schema.ts'
+export { peerSourceSchema, sendPeerRequestSchema } from './message-schema.ts'
 
 const receiptProjectionSchema = z.object({
   sessionId: sessionIdSchema, inheritedEventCount: z.number().int().nonnegative(),

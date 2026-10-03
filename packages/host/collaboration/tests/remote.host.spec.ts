@@ -99,7 +99,7 @@ async function load() {
     cwd: root, peerCwd: join(root, 'other-worktree'), disclosureAccepted: true, grants: { snapshot: true, follow: true },
     activationLimit: 2, requestId, expectedRevision })
   const pair = (connectionId: string, expectedRevision: number, requestId: string) => ({ sessionId: 'a', connectionId, expectedRevision, requestId })
-  const socket = async (sessionId: string) => {
+  const socket = async (sessionId: string, method = 'follow') => {
     const ws = new WebSocket(`${origin.replace('http:', 'ws:')}/api/remote.mux`, { headers: { cookie: authenticatedCookie } })
     const closed = once(ws, 'close')
     cleanups.push(async () => { ws.close(); await closed })
@@ -114,12 +114,39 @@ async function load() {
         : data instanceof ArrayBuffer ? Buffer.from(data).toString('utf8') : data.toString('utf8')
       frames.push(JSON.parse(text) as (typeof frames)[number])
     })
-    ws.send(JSON.stringify({ type: 'open', streamId: 'follow', endpoint: 'collaboration/follow', payload: { args: { request: { sessionId } } } }))
+    ws.send(JSON.stringify({ type: 'open', streamId: 'follow', endpoint: `collaboration/${method}`, payload: { args: { request: { sessionId } } } }))
     await vi.waitFor(() => { expect(frames.length).toBeGreaterThan(0) })
     return { ws, frames }
   }
   return { ctx, root, call, add, pair, socket }
 }
+
+it.each([
+  { snapshot: true, follow: false }, { snapshot: false, follow: true }, { snapshot: false, follow: false },
+])('keeps human management snapshot and stream complete for pair grants %j, while peer views remain filtered', async (grants) => {
+  const h = await load()
+  await h.call('addPeer', { ...h.add(), grants })
+  const pair = h.ctx.collaborationStore.read().connections[0]!
+  const before = h.ctx.collaborationStore.read()
+  await h.ctx.collaborationStore.transact(before.revision, state => applyDiscussionOperation(state, {
+    kind: 'enqueue', message: { id: peerMessageIdSchema.parse('shared-message'), connectionId: pair.id,
+      sender: SessionId('a'), recipient: SessionId('b'), text: 'explicitly shared', state: 'queued' },
+  }, { actor: { kind: 'session', sessionId: SessionId('a') }, timestamp: new Date().toISOString() }))
+  const control = await h.call('controlSnapshot', { sessionId: 'a' })
+  expect(control.result).toMatchObject({ ok: true, value: { connections: [{ id: pair.id }], outbox: [{ text: 'explicitly shared' }] } })
+  const stream = await h.socket('a', 'controlFollow')
+  await vi.waitFor(() => { expect(stream.frames.find(frame => frame.type === 'item')?.value).toMatchObject({ connections: [{ id: pair.id }], outbox: [{ text: 'explicitly shared' }] }) })
+  expect((await h.call('snapshot', { sessionId: 'a' })).result?.value?.connections).toHaveLength(grants.snapshot ? 1 : 0)
+  const peerView = await h.socket('a')
+  await vi.waitFor(() => { expect(peerView.frames.find(frame => frame.type === 'item')?.value?.connections).toHaveLength(grants.follow ? 1 : 0) })
+  expect((await h.call('controlSnapshot', { sessionId: 'c' })).result?.value?.connections).toEqual([])
+  expect((await h.call('controlSnapshot', { sessionId: 'a', controlProjection: true })).result?.error?.code).toBe('gateway/bad-request')
+  expect((await h.call('controlSnapshot', { sessionId: 'a' }, false)).status).toBe(401)
+  const revision = h.ctx.collaborationStore.read().revision
+  await h.call('removePeer', h.pair(pair.id, revision, 'disconnect-ui'))
+  await vi.waitFor(() => { expect(stream.frames.filter(frame => frame.type === 'item').at(-1)?.value?.connections).toEqual([]) })
+  expect(h.ctx.agents.list()).toEqual([])
+})
 
 it('authenticated addPeer registers both ordinary sessions from headers without waking an Agent', async () => {
   const h = await load()

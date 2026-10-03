@@ -404,8 +404,15 @@ export class ReactLoopAgent implements Agent {
         this.session.append('system/message', { turn, step, message }, intent)
       }
       if (firstAttempt) {
+        const originalSources = new Map<UserMessage['id'], UserMessage['source']>()
+        for (const input of decision.claimed) {
+          if (input.source.requiredAdmissionPolicy !== undefined && !originalSources.has(input.id)) {
+            originalSources.set(input.id, input.source)
+          }
+        }
         for (const message of decision.messages) {
-          this.session.append('user/message', message, { surfaceOp: 'append' })
+          const source = originalSources.get(message.id)
+          this.session.append('user/message', source === undefined ? message : { ...message, source }, { surfaceOp: 'append' })
         }
       }
       firstAttempt = false

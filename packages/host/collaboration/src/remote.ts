@@ -9,8 +9,9 @@ import { z } from 'zod'
 import { createHumanControlAdmission } from './authority.ts'
 import { collaborationStateSchema, connectionIdSchema, requestIdSchema, sessionIdSchema } from './schema.ts'
 import { applyDiscussionOperation, findRequestReceipt } from './state.ts'
+import { observeGit } from './observations.ts'
 import type {
-  AddPeerRequest, CollaborationActor, CollaborationMutationResult, CollaborationSnapshot, CollaborationState,
+  AddPeerRequest, CollaborationActor, CollaborationControlSnapshot, CollaborationMutationResult, CollaborationSnapshot, CollaborationState,
   CollaborationViewRequest, DiscussionOperation, PeerBudgetRequest, PeerControlRequest, Registration, RequestReceipt,
 } from './types.ts'
 
@@ -129,6 +130,30 @@ export class CollaborationRemote extends TypertRemoteService {
   }
 
   /**
+   * Read human-owned pair controls and explicitly shared discussion records, independent of peer grants.
+   * The same-user Host assumption does not provide action-authority isolation; no private Session log is read.
+   * @param request - ordinary stored Session selected by the authenticated human UI.
+   * @returns one complete committed management view with current metadata observations.
+   */
+  @Remote
+  async controlSnapshot(request: CollaborationViewRequest): Promise<CollaborationControlSnapshot> {
+    const intent = parse(viewSchema, request)
+    await this.ordinaryHeader(intent.sessionId)
+    return this.controlView(this.ctx.collaborationStore.read(), intent.sessionId)
+  }
+
+  /**
+   * Stream complete human management views with the same record visibility as controlSnapshot.
+   * @param request - ordinary stored viewer whose owned pairs define visibility.
+   * @param signal - Remote generation cancellation.
+   * @returns complete committed controls and shared records; no private history or task authority.
+   */
+  @Remote({ mode: 'stream' })
+  async *controlFollow(request: CollaborationViewRequest, signal: AbortSignal): AsyncIterable<CollaborationControlSnapshot> {
+    for await (const view of this.followViews(request, signal, true)) yield view as CollaborationControlSnapshot
+  }
+
+  /**
    * Stream an initial filtered snapshot and complete committed revision views; gaps require no authority cache.
    * Slow readers coalesce pending views to the latest full snapshot. Disposal ends every active generation.
    * @param request - ordinary stored viewing Session; follow grants filter every item anew.
@@ -137,6 +162,12 @@ export class CollaborationRemote extends TypertRemoteService {
    */
   @Remote({ mode: 'stream' })
   async *follow(request: CollaborationViewRequest, signal: AbortSignal): AsyncIterable<CollaborationSnapshot> {
+    yield* this.followViews(request, signal, false)
+  }
+
+  private async *followViews(
+    request: CollaborationViewRequest, signal: AbortSignal, controls: boolean,
+  ): AsyncIterable<CollaborationSnapshot> {
     const intent = parse(viewSchema, request)
     signal.throwIfAborted()
     await this.ordinaryHeader(intent.sessionId)
@@ -168,7 +199,7 @@ export class CollaborationRemote extends TypertRemoteService {
       while (!lifetime.signal.aborted && !signal.aborted) {
         const state = takePending()
         if (state !== undefined) {
-          yield project(state, intent.sessionId, 'follow')
+          yield controls ? await this.controlView(state, intent.sessionId) : project(state, intent.sessionId, 'follow')
         } else {
           await new Promise<void>((resolve) => { wake = resolve })
           wake = undefined
@@ -177,6 +208,22 @@ export class CollaborationRemote extends TypertRemoteService {
     } finally {
       close()
     }
+  }
+
+  private async controlView(state: CollaborationState, sessionId: SessionId): Promise<CollaborationControlSnapshot> {
+    const connections = state.connections.filter(row => row.sessions.includes(sessionId))
+    const endpoints = new Set(connections.flatMap(row => [...row.sessions]))
+    const pairs = new Set(connections.map(row => row.id))
+    const observations = await Promise.all([...endpoints].map(async (id) => {
+      const header = (await this.ctx.sessionPersistence.stat(id))?.header
+      const agents = this.ctx.get('agents')
+      const availability = header === undefined ? 'missing' as const : agents === undefined ? 'unknown' as const
+        : agents.get(id)?.status === 'running' ? 'running' as const : 'inactive' as const
+      return { sessionId: id, availability, ...(header?.cwd === undefined ? {} : { cwd: header.cwd }),
+        git: header?.cwd === undefined ? { kind: 'unavailable' as const } : await observeGit(header.cwd) }
+    }))
+    return { revision: state.revision, connections, registrations: state.registrations.filter(row => endpoints.has(row.sessionId)),
+      outbox: state.outbox.filter(row => pairs.has(row.connectionId)), observations }
   }
 
   private control(request: PeerControlRequest, kind: 'disconnect' | 'pause' | 'resume'): Promise<CollaborationMutationResult> {

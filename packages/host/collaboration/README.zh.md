@@ -58,6 +58,11 @@ kind: "package-reference"
 `snapshot` 和 `follow` 只公开查看 Session 已获成对授权的协作注册、连接和消息。注册不授予访问私人用户输入或普通助手输出的权限。每个 follow 项都是带已提交全局 revision 的完整过滤快照，因此重连和 revision 缺口都可重建视图。读取较慢时，待发布 revision 合并为最新完整视图。授权撤销和断连会重新过滤每个新项目；插件 dispose 结束流并移除监听器。Client API 组装选择生成的 Remote contribution，不会启用此可选 Host 插件。
 
 <a id="durable-discussion-state"></a>
+
+人类管理 endpoint `controlSnapshot` 与 `controlFollow` 在同一人拥有 Host 上所有 Session 的显式假设下提供相同的完整 view。它们包含所选 Session 拥有的每条连接、展示注册、当前 workspace/availability/Git 观察结果和显式共享 outbox 记录，即使该 pair 的 peer snapshot 与 follow grants 都为 false。它们从不读取私有 Session history。现有面向 peer 的 `snapshot`、`follow` 和 `collaboration_status` 保留独立 grant 过滤，不能请求人类 control projection。两个 stream projection 共用同一套 committed-state lifecycle，连接撤销或 disconnect 在下一个完整 view 中移除 pair。本次不增加 action-authority isolation。
+
+Client-safe record 与 attributed-source schema 独立于 Host domain、receipt projection 和 capability runtime。Session identifier 使用 `/types` face，显式 schema annotation 防止生成声明导入 Host root Context augmentation。私有 admission WeakSet 和完整 journal replay validation 保持原有行为。
+
 ## 持久讨论状态
 
 `ctx.collaborationStore` 拥有版本 1 的 domain `collaboration`、table `state`、record `current`。首次打开会持久初始化此记录。未知版本和损坏的权威记录会拒绝整个打开操作；初始化失败会释放存储。store 在现有 storage-domain 写入队列上使用 `KvTable.update`，没有第二个数据库或权限缓存。

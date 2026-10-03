@@ -38,7 +38,7 @@ export type {} from '@deepseek-ai/dsh-message-feedback/remote'
 export type {} from '@deepseek-ai/dsh-host-news/remote'
 export type {} from '@deepseek-ai/dsh-host-collaboration/remote'
 export type { AddPeerRequest, PeerControlRequest, PeerBudgetRequest, CollaborationViewRequest,
-  CollaborationSnapshot, CollaborationMutationResult, ConnectionId, CollaborationRequestId } from '@deepseek-ai/dsh-host-collaboration/types'
+  CollaborationSnapshot, CollaborationControlSnapshot, ParticipantObservation, CollaborationMutationResult, ConnectionId, CollaborationRequestId } from '@deepseek-ai/dsh-host-collaboration/types'
 export type {} from '@deepseek-ai/dsh-host-apps/remote'
 export type {} from '@deepseek-ai/dsh-host-experts/remote'
 export type {} from '@deepseek-ai/dsh-host-knowledge/remote'
