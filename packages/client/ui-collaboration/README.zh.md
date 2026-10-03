@@ -36,7 +36,9 @@ kind: "package-reference"
 
 `data.ts` 为每个被查看的 Session 持有一个权威完整 Remote control view。`controlSnapshot` 与 `controlFollow` 的人类管理可见性一致：查看者拥有的所有 pair 和显式共享 outbox 记录始终可见，不受 peer snapshot/follow grants 影响。面向 peer 的两个 channel 保留各自的 grant 过滤。已提交全局 revision 的跳跃会替换整个 UI view。Refresh 拒绝过期 snapshot，终止性错误后创建新的单消费者 logical stream。插件卸载取消并等待所有 stream，再清理订阅者。
 
-Portal 注册到 `shell.activity.selectors`，Board 注册到 `shell.app-overlay`。两个 renderer scope 分别是 `session` 和 `session-maybe`，因此使用独立 store handle，但每个 Session 只共享一个底层草稿、选择和打开状态实例。store 不持有权威连接状态。组件接收 renderer 绑定的 observable hooks、JSON 兼容数据和 callback，不接收 Cordis context，也不直接订阅 Remote service。
+Portal 注册到 `shell.activity.selectors`，Board 注册到 `shell.app-overlay`。两个 renderer scope 分别是 `session` 和 `session-maybe`，因此使用独立 store handle，但每个 Session 只共享一个底层草稿、选择、打开状态和每条连接的阅读位置实例。store 不持有权威连接状态。组件接收 renderer 绑定的 observable hooks、JSON 兼容数据和 callback，不接收 Cordis context，也不直接订阅 Remote service。
+
+存在实时 Session row 时，可用性跟随 Session Controller running 状态，即使 collaboration revision 没有变化。缺少该 row 时，metadata observation 保留 missing 或 unknown 含义。Portal 未读数量根据当前权威 incoming outbox 顺序，统计该连接最后已读 message ID 之后的消息。查看连接详情仅推进对应的本地阅读位置，也包含详情保持打开时收到的新消息。完整 view replacement 决定可见消息和数量；本地 store 不复制消息正文或权威状态。
 
 原生 dialog 提供键盘模态和 Escape 取消，聚焦关闭按钮，并恢复打开控件的焦点。英文和中文标签使用同一组类型化 key。消息正文以惰性文本展示，包括 Markdown 和类似 HTML 的内容。自定义 Peer Definition 处理持久化的来源输入，可逆的 `chatInputs.excludeSource('collaboration-peer')` contribution 避免重复的 generic row。卸载后恢复 generic attributed context。AgentLoop 在持久化 append 边界按精确 input identity 保留原始 required-policy source，因此首次加载的历史页即使没有 Inbox 证据也能保留来源。
 

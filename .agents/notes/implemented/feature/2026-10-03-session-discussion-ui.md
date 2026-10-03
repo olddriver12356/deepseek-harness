@@ -10,7 +10,7 @@ V1a needs human management of ordinary Session discussion pairs within the exist
 
 ## Decision
 
-The optional `ui-collaboration` browser package contributes a Portal to `shell.activity.selectors`, a native discussion dialog to `shell.app-overlay` and a keyed Peer renderer. No shell background or parent component changes are required. The two slots have different renderer scopes, so separate handles bridge onto one per-Session local draft, selection and visibility store instance. The committed Remote view remains solely in the data owner.
+The optional `ui-collaboration` browser package contributes a Portal to `shell.activity.selectors`, a native discussion dialog to `shell.app-overlay` and a keyed Peer renderer. No shell background or parent component changes are required. The two slots have different renderer scopes, so separate handles bridge onto one per-Session local draft, selection, visibility and per-connection reading-position store instance. The committed Remote view remains solely in the data owner.
 
 Host `controlSnapshot` and `controlFollow` return identical complete human management projections: selected Session-owned connections, endpoint registrations and observations, and explicitly shared outbox records irrespective of peer grants. The existing peer `snapshot`, `follow` and model status keep their exact filters. Both stream forms reuse the same committed-store notification, coalescing and disposal implementation. Observations use stored headers, the existing Agent registry without resolution, and native read-only Git metadata; absent or malformed facts remain unavailable.
 

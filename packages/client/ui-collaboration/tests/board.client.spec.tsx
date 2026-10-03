@@ -38,3 +38,30 @@ it('keeps malicious message bodies as inert text and reports missing Git observa
   expect(container.querySelector('script')).toBeNull()
   expect(screen.getAllByText('Not observed').length).toBeGreaterThan(0)
 })
+
+it('advances only the viewed connection reading position and reads incoming additions while open', () => {
+  const p = props(true)
+  const second = { ...snapshot.connections[0], id: 'second-pair', sessions: ['a', 'c'] }
+  const view = { ...snapshot, connections: [...snapshot.connections, second], outbox: [
+    ...snapshot.outbox, { ...snapshot.outbox[0], id: 'second-message', connectionId: 'second-pair', sender: 'c' },
+  ] }
+  p.useCollaboration = select => select({ view, phase: 'ready', error: null })
+  const { rerender } = render(<Board {...p as never} />)
+  expect(p.actions.read).toHaveBeenCalledWith('pair', 'message')
+  expect(p.actions.read).not.toHaveBeenCalledWith('second-pair', 'second-message')
+  p.state.readThrough.pair = 'message'
+  p.state.selected = 'second-pair'
+  rerender(<Board {...p as never} />)
+  expect(p.actions.read).toHaveBeenCalledWith('second-pair', 'second-message')
+  p.state.readThrough['second-pair'] = 'second-message'
+  p.actions.read.mockClear()
+  p.useCollaboration = select => select({ view: { ...view, revision: 8, outbox: [...view.outbox,
+    { ...view.outbox[1], id: 'second-new' }, { ...view.outbox[0], id: 'first-new' },
+  ] }, phase: 'ready', error: null })
+  rerender(<Board {...p as never} />)
+  expect(p.actions.read).toHaveBeenCalledExactlyOnceWith('second-pair', 'second-new')
+  p.state.open = false
+  p.actions.read.mockClear()
+  rerender(<Board {...p as never} />)
+  expect(p.actions.read).not.toHaveBeenCalled()
+})

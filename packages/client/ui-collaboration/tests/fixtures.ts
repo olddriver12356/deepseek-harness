@@ -14,7 +14,7 @@ export const snapshot = {
 } as CollaborationControlSnapshot
 
 export function props(open = false) {
-  const state = { open, selected: 'pair', draft: { peerId: '', title: '', peerTitle: '', activationLimit: '', snapshot: false, follow: false, disclosure: false }, budget: '' }
+  const state = { open, selected: 'pair', readThrough: {} as Record<string, string | undefined>, draft: { peerId: '', title: '', peerTitle: '', activationLimit: '', snapshot: false, follow: false, disclosure: false }, budget: '' }
   return {
     sessionId: sid,
     useCollaboration: (select: (value: unknown) => unknown) => select({ view: snapshot, phase: 'ready', error: null }),
@@ -23,7 +23,8 @@ export function props(open = false) {
       a: { id: sid, displayTitle: 'Author', cwd: '/repo/main', running: true },
       b: { id: peer, displayTitle: 'Reviewer', cwd: '/repo/review', running: false },
     } }),
-    actions: { open: vi.fn(), close: vi.fn(), select: vi.fn(), draft: vi.fn(), budget: vi.fn() },
+    actions: { open: vi.fn(), close: vi.fn(), select: vi.fn(), draft: vi.fn(), budget: vi.fn(), read: vi.fn() },
+    state,
     addPeer: vi.fn(async () => {}), control: vi.fn(async () => {}), setBudget: vi.fn(async () => {}),
     refresh: vi.fn(async () => {}), openSession: vi.fn(),
     t: makeTranslate(en),

@@ -20,6 +20,14 @@ export function Board({
   const dialog = useRef<HTMLDialogElement>(null)
   const [failure, setFailure] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const view = data.view
+  const pair = view?.connections.find(value => value.id === state.selected)
+  const latestIncoming = view?.outbox.filter(message => message.connectionId === pair?.id && message.recipient === sessionId).at(-1)?.id
+  useEffect(() => {
+    if (state.open && pair !== undefined && latestIncoming !== undefined && state.readThrough[pair.id] !== latestIncoming) {
+      actions.read(pair.id, latestIncoming)
+    }
+  }, [state.open, pair?.id, latestIncoming, state.readThrough, actions.read])
   useEffect(() => {
     if (!state.open) return
     const previous = document.activeElement as HTMLElement | null
@@ -28,14 +36,12 @@ export function Board({
     return () => { dialog.current?.close(); previous?.focus() }
   }, [state.open])
   if (!state.open || sessionId === undefined) return null
-  const view = data.view
   const draft = state.draft
   const current = sessions.byId[sessionId]
   const peer = sessions.byId[draft.peerId as SessionId]
   const limit = wholeLimit(draft.activationLimit)
   const canConnect = current?.cwd !== undefined && peer?.cwd !== undefined && peer.id !== sessionId && peer.origin !== 'subagent'
     && draft.disclosure && limit !== undefined
-  const pair = view?.connections.find(value => value.id === state.selected)
   const run = async (operation: () => Promise<void>) => {
     setBusy(true); setFailure(null)
     try { await operation() } catch (error) { setFailure(error instanceof Error ? error.message : String(error)) }
