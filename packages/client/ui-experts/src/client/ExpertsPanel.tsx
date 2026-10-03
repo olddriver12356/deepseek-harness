@@ -85,6 +85,8 @@ function draftFromForm(form: HTMLFormElement): ExpertDraft {
     execution: (value('execution') || 'conversational') as ExpertExecution,
     model: value('model') || 'inherit',
     reasoning: value('reasoning') || 'inherit',
+    access: value('access') === 'write' ? 'write' : 'read-only',
+    contextMode: value('contextMode') === 'fork' ? 'fork' : 'fresh',
   }
 }
 
@@ -99,7 +101,6 @@ function ExpertCard({ item, index, onOpen, onDelete, t }: {
   // A delegated Expert is started by the main Agent as a tool inside a turn, so
   // the panel offers no turn-external dispatch for it. Management actions stay:
   // the record is still authored and curated here.
-  const dispatchable = item.execution !== 'delegated'
   return (
     <article data-entrance-card className={`${css.recordCard} ${callable ? '' : css.disabled}`} data-index={String(index + 1).padStart(2, '0')}>
       <div className={css.recordTop}>
@@ -110,7 +111,7 @@ function ExpertCard({ item, index, onOpen, onDelete, t }: {
       <h3>{item.name}</h3>
       <p>{item.description}</p>
       <div className={css.recordActions}>
-        {dispatchable && <button className={css.call} disabled={!callable} type="button" onClick={() => { onOpen({ kind: 'dispatch', item }) }}>{t('call')}</button>}
+        <button className={css.call} disabled={!callable} type="button" onClick={() => { onOpen({ kind: 'dispatch', item }) }}>{t('call')}</button>
         <button type="button" onClick={() => { onOpen({ kind: 'record', item }) }}>{t('edit')}</button>
         <button type="button" onClick={() => { onOpen({ kind: 'record', item, copy: true }) }}>{t('copy')}</button>
         <button type="button" onClick={() => { onDelete(item) }}>{t('delete')}</button>
@@ -151,6 +152,8 @@ function RecordDialog({ state, onClose, onSave, t }: {
         <label>{t('execution')}<select name="execution" defaultValue={item?.execution ?? 'conversational'}>{EXECUTIONS.map(mode => <option key={mode} value={mode}>{t(mode === 'delegated' ? 'executionDelegated' : 'executionConversational')}</option>)}</select></label>
         <label>{t('model')}<input name="model" defaultValue={item?.model ?? 'inherit'} maxLength={60} /></label>
         <label>{t('reasoning')}<select name="reasoning" defaultValue={item?.reasoning ?? 'inherit'}>{REASONING_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}</select></label>
+        <label>{t('access')}<select name="access" defaultValue={item?.access ?? 'read-only'}><option value="read-only">{t('readOnly')}</option><option value="write">{t('writeAccess')}</option></select></label>
+        <label>{t('contextMode')}<select name="contextMode" defaultValue={item?.contextMode ?? 'fresh'}><option value="fresh">{t('freshContext')}</option><option value="fork">{t('forkContext')}</option></select></label>
         <label>{t('instructions')}<textarea name="instructions" defaultValue={item?.instructions ?? ''} rows={9} required /></label>
         <p className={css.formNotice}>{t('capabilityNotice')}</p>
         {error !== '' && <p className={css.formError} role="alert">{error}</p>}

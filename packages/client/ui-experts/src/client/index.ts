@@ -10,6 +10,7 @@ import type { ExpertDraft, ExpertRecord } from '@deepseek-ai/dsh-host-experts/ty
 import type { StyleRecord } from '@deepseek-ai/dsh-host-styles/types'
 import { ExpertsPanel } from './ExpertsPanel.tsx'
 import { ExpertSelect } from './ExpertSelect.tsx'
+import { ExpertTaskCard, type ExpertTaskActions } from './ExpertTaskCard.tsx'
 import type { ExpertSelectInjected } from './ExpertSelect.tsx'
 import { en, zh, type ExpertLocaleKey } from './locales.ts'
 
@@ -46,6 +47,13 @@ function remoteValue<T>(result:
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-experts: dictionaries')
   const t = ctx.locale.bind(NS)
+  ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
+    name: 'tool.call.toolview', key: 'dispatch_expert', locale: NS,
+    inject: (): ExpertTaskActions => ({
+      openTask: (address) => { ctx.sessions.openSubagent(address) },
+      stopTask: async (address) => { remoteValue(await ctx.remote.subagents.interruptByParent(address.childSessionId, address.parentSessionId, 'continuable')) },
+    }),
+  }, ExpertTaskCard))
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register(
     {
       name: 'shell.app-overlay',
@@ -66,12 +74,15 @@ export function apply(ctx: ClientContext): void {
             // injection path below would paste its instructions in as a user
             // message — the hollow "Expert as prompt text" this design removed —
             // so refuse loudly instead of degrading silently.
-            if (expert.execution === 'delegated') throw new Error(t('delegatedNotInjectable'))
             const current = ctx.sessions.list.getSnapshot().current
             if (current === undefined) throw new Error(t('noSession'))
             const session = ctx.sessions.binding(current)?.session
             if (session === undefined) throw new Error(t('sessionNotReady'))
-            const text = [
+            const text = expert.execution === 'delegated' ? [
+              `Delegate this task using dispatch_expert with expert ${JSON.stringify(expert.id)} (${expert.name}). Keep the expert in a separate child session and verify its report before accepting completion.`,
+              `## Task\n${task}`,
+              style === undefined ? '' : `## Requested report style\n${style.instructions}`,
+            ].filter(Boolean).join('\n\n') : [
               `Use the following approved Expert Method for this task.\n\n## Expert\n${expert.name}\n\n## Instructions\n${expert.instructions}`,
               style === undefined ? '' : `## Output style\n${style.name}\n\n${style.instructions}`,
               AGENT_SKILLS_NOTICE,

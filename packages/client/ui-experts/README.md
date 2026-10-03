@@ -26,11 +26,11 @@ This package renders the Experts application panel, manages Expert Method record
 
 #### What the model sees
 
-After the user confirms a task, the current Session receives one ordinary user message containing the selected Expert title, full instructions, optional output style, and task through `beginSubmission()` and `prompt()`.
+After the user confirms a task, conversational Experts submit their instructions, optional output style, and task to the current Session through `beginSubmission()` and `prompt()`. Delegated Experts instead submit a request naming `dispatch_expert`, the stable Expert id, and the task brief; their instructions are loaded by the Host into the child persona.
 
 #### Token effect
 
-The complete Expert instructions, optional style, and task add input tokens to that Session submission; opening, searching, editing, or approving records adds no model tokens.
+Conversational instructions, optional style, and task add input tokens to the current Session. Delegated instructions add tokens to the child, while the parent receives the request, admission receipt, and settlement notice. Opening, searching, editing, or approving records adds no model tokens.
 
 #### KV Cache effect
 
@@ -54,8 +54,8 @@ Checking or unchecking an Expert changes the prompt prefix on the very next send
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **Descriptive capability fields**: model, reasoning, permission, skills, knowledge scopes, and tool policy record intent only; dispatch inherits the current Session runtime.
-- **Single-Session execution**: dispatch runs in the current Session; subagent execution and automatic Vault knowledge retrieval remain deferred.
+- **Delegated tasks**: approved delegated Experts submit a request for `dispatch_expert` through the current parent turn. The task card uses persisted admission metadata, opens the addressed child for inspection or follow-ups, and stops it through the existing authorized subagent Remote. Admission is never displayed as task acceptance.
+- **Access and context**: the editor saves read-only or write access and fresh or fork context. Conversational Experts still inject instructions into the current Session. Automatic file isolation and an explicit acceptance workflow remain deferred.
 
 <a id="dev-note"></a>
 ### Dev Note

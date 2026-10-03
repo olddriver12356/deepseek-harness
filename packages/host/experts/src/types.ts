@@ -12,6 +12,9 @@ export interface ExpertRecord {
   readonly execution: ExpertExecution
   readonly model: string
   readonly reasoning: string
+  /** Missing legacy values resolve to read-only fresh-context delegation. */
+  readonly access?: 'read-only' | 'write'
+  readonly contextMode?: 'fresh' | 'fork'
   readonly updatedAt: string
 }
 export interface ExpertDraft extends Omit<ExpertRecord, 'id' | 'updatedAt'> {}

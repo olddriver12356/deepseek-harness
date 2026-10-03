@@ -26,7 +26,7 @@ This package exposes `experts/list`, `experts/create`, `experts/update`, and `ex
 
 #### What the model sees
 
-The `dispatch_expert` tool accepts an approved Expert and a task, starts a child with its instructions, and returns the child result to the calling agent.
+The `dispatch_expert` tool accepts an approved delegated Expert id or name and a self-contained task brief. It starts a continuable background child and returns its durable id. Fresh context is the default; `context_mode: fork` includes completed parent turns. Expert instructions become the child persona, and model/reasoning overrides retain their existing meaning. The parent receives settlement notices, can follow up through `send_message`, and owns verification before final delivery.
 
 #### Token effect
 
@@ -40,7 +40,9 @@ Tool results append to parent history. Different Expert instructions change the 
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **Descriptive capability fields**: stored model, reasoning, permission, skills, knowledge scopes, and tool policy do not change runtime capabilities in this first slice.
+- **Tool authority**: missing `access` defaults to `read-only`. Host `readOnlyTools` defaults to read, read_image, glob, grep, web_search and web_fetch; `writeTools` adds write, edit, bash, pwsh, job_output and job_kill for `access: write`. Admission intersects these lists with parent-visible tools. Children use native tools and enforce the persisted allowlist on execution, including scoped registrations and cold resume. This is tool authority, not filesystem isolation; write tools retain the inherited sandbox and approval policy.
+- **Bounded starts**: `maxConcurrent` defaults to 2 active or starting experts per parent at initial dispatch. Only top-level agents can dispatch experts. Follow-up turns use the existing continuation service rather than a new scheduler.
+- **Shared files**: task briefs must assign file ownership; automatic worktrees, file locks, review approval records and provider selection UI are deferred. The Experts Host plugin must remain installed to enforce expert policy when restoring children.
 - **Conservative deletion**: an Expert package containing files besides `ARTIFACT.md` must be cleaned up manually before deletion.
 
 <a id="dev-note"></a>

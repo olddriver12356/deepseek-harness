@@ -1,6 +1,5 @@
 /**
- * Delegated Expert dispatch: compose and run one forked child from a stored
- * Expert record.
+ * Compose the persona and task for one stored delegated Expert.
  *
  * The Expert's instructions become the child's `persona`, which SHADOWS the
  * deployment persona rather than appending to it. That substitution is the
@@ -17,16 +16,13 @@
 
 import type { ExpertRecord } from './types.ts'
 
-/** The provider name registered by `@deepseek-ai/dsh-subagent-fork-in-process`. */
-export const FORK_PROVIDER = 'fork'
-
 /** A route field carrying `inherit` expresses no override. */
 function override(value: string): string | undefined {
   const trimmed = value.trim()
   return trimmed === '' || trimmed === 'inherit' ? undefined : trimmed
 }
 
-/** The subset of a fork start request this module owns; the caller adds `parent` and `signal`. */
+/** Per-task child composition; the caller supplies provider, parent and cancellation. */
 export interface ExpertStartRequest {
   readonly label: string
   readonly prompt: string
@@ -35,10 +31,10 @@ export interface ExpertStartRequest {
 }
 
 /**
- * Compose the fork start request for one delegated Expert.
+ * Compose the start request for one delegated Expert.
  * @param expert - the stored Expert record.
  * @param task - the user's task for this dispatch.
- * @returns the composition passed to `ctx.subagents.start('fork', …)`.
+ * @returns the persona, task and optional model selection for the child.
  * @throws when the Expert is not delegated, not approved, or the task is empty.
  */
 export function buildStartRequest(expert: ExpertRecord, task: string): ExpertStartRequest {
@@ -60,32 +56,7 @@ export function buildStartRequest(expert: ExpertRecord, task: string): ExpertSta
   return {
     label: expert.name,
     prompt,
-    persona: expert.instructions,
+    persona: `${expert.instructions}\n\n## Delegated task contract\nWork only on the assigned task. ${expert.access === 'write' ? 'Writing is allowed within the parent permission scope; respect assigned file ownership.' : 'Only approved read-only tools are available. Do not modify files or execute programs.'} Do not delegate further. Return findings, evidence, changes (if any), verification, and unresolved questions. The parent owns acceptance and the final reply to the user.`,
     ...Object.keys(agentOptions).length === 0 ? {} : { agentOptions },
   }
 }
-
-/** One block of the child's final assistant output. */
-export interface OutputBlock { readonly type: string; readonly text?: string }
-
-/**
- * Flatten the child's final assistant output to text. `SubagentResult.output`
- * is a `ContentBlock[]`, never a plain string, and it is `[]` when the child
- * produced neither a non-empty message nor an accumulated text stream.
- * @param output - the child's terminal content blocks.
- * @returns the concatenated, trimmed text.
- */
-export function outputText(output: readonly OutputBlock[]): string {
-  return output
-    .filter((block): block is OutputBlock & { text: string } =>
-      block.type === 'text' && typeof block.text === 'string')
-    .map(block => block.text)
-    .join('')
-    .trim()
-}
-
-// A turn-EXTERNAL dispatch entry point used to live here, started by the
-// browser against a Session id. It was removed rather than repaired: a child
-// started outside any turn leaves no event in the parent transcript, so the
-// child session was unreachable from the conversation and its report could not
-// return to the Agent. `./tool.ts` owns the turn-internal entry point instead.

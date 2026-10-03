@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildStartRequest } from '../src/dispatch.ts'
-import { dispatchable, resolveExpert, rosterDescription, runExpertTool } from '../src/tool.ts'
+import { dispatchable, resolveExpert, rosterDescription, runExpertTool, type ExpertToolContext } from '../src/tool.ts'
 import type { ExpertRecord } from '../src/types.ts'
 
 const base: ExpertRecord = {
@@ -19,7 +19,7 @@ const base: ExpertRecord = {
 describe('buildStartRequest', () => {
   it('uses the instructions as the shadowing persona and the task as the prompt', () => {
     const request = buildStartRequest(base, 'Why does login fail?')
-    expect(request.persona).toBe('Reproduce before changing code.')
+    expect(request.persona).toContain('Reproduce before changing code.')
     expect(request.prompt).toBe('Why does login fail?')
     expect(request.label).toBe('Root Cause Expert')
   })
@@ -101,82 +101,43 @@ describe('Expert roster resolution', () => {
 })
 
 describe('runExpertTool', () => {
-  const agent = { id: 'parent-agent' }
-  const roster = { list: () => Promise.resolve(ROSTER) }
-  function ctxReturning(result: Record<string, unknown>, started: unknown[] = []) {
-    let disposed = 0
-    return {
-      disposals: () => disposed,
-      ctx: {
-        tools: { register: () => () => {} },
-        subagents: {
-          start: (name: string, request: Record<string, unknown>) => {
-            started.push({ name, request })
-            return Promise.resolve({
-              result: Promise.resolve(result as never),
-              dispose: () => { disposed += 1 },
-            })
-          },
-        },
-      },
+  const agent = { id: 'parent-agent' } as never
+  const roster = { list: async () => ROSTER }
+  function bench(fail = false) {
+    const started: unknown[] = []
+    let released = 0
+    const ctx = {
+      tools: { register: () => () => {} },
+      experts: { reserveDelegation: () => () => { released++ } },
+      subagents: { startContinuable: async (spec: Parameters<ExpertToolContext['subagents']['startContinuable']>[0]) => {
+        started.push(spec)
+        if (fail) throw new Error('startup failed')
+        return { childId: spec.childId }
+      } },
     }
+    return { ctx, started, released: () => released }
   }
-
-  it('forks with the Expert persona and returns the child report to the turn', async () => {
-    const started: unknown[] = []
-    const { ctx } = ctxReturning(
-      { output: [{ type: 'text', text: 'traced to a stale build' }], stopReason: 'completed' },
-      started,
-    )
-    const value = await runExpertTool(ctx, roster, { expert: 'Root Cause Expert', task: 'Why does login fail?' }, {
-      agent, signal: new AbortController().signal,
-    })
-    expect(value).toEqual({ expert: 'Root Cause Expert', text: 'traced to a stale build' })
-    const [call] = started as { name: string; request: Record<string, unknown> }[]
-    expect(call?.name).toBe('fork')
-    expect(call?.request.persona).toBe('Reproduce before changing code.')
-    // The calling Agent is the fork parent, so the child hangs off this turn.
-    expect(call?.request.parent).toBe(agent)
-    expect(call?.request.prompt).toBe('Why does login fail?')
+  it('returns a durable background receipt and a fresh bounded task', async () => {
+    const { ctx, started, released } = bench()
+    const result = await runExpertTool(ctx, roster, { expert: base.id, task: 'Investigate login' }, { agent, signal: new AbortController().signal })
+    expect(result).toMatchObject({ expert: base.name, parentSessionId: 'parent-agent', access: 'read-only', status: 'started' })
+    expect(started[0]).toMatchObject({ provider: 'spawn', childId: result.childId, request: { maxDepth: 1, prompt: [{ type: 'text', text: 'Investigate login' }] } })
+    expect(released()).toBe(1)
   })
-
-  it('requires a calling Agent', async () => {
-    const { ctx } = ctxReturning({ output: [], stopReason: 'completed' })
-    await expect(runExpertTool(ctx, roster, { expert: 'Root Cause Expert', task: 'task' }, {
-      signal: new AbortController().signal,
-    })).rejects.toThrow('dispatch_expert requires a calling agent')
+  it('selects fork only when the approved record requests it', async () => {
+    const { ctx, started } = bench()
+    await runExpertTool(ctx, { list: async () => [{ ...base, contextMode: 'fork' }] }, { expert: base.id, task: 'task' }, { agent, signal: new AbortController().signal })
+    expect(started[0]).toMatchObject({ provider: 'fork' })
   })
-
-  it('surfaces a non-completed run instead of returning empty text', async () => {
-    const { ctx } = ctxReturning({ output: [], stopReason: 'error', diagnostic: 'provider lacks persona' })
-    await expect(runExpertTool(ctx, roster, { expert: 'Root Cause Expert', task: 'task' }, {
-      agent, signal: new AbortController().signal,
-    })).rejects.toThrow('experts: "Root Cause Expert" ended as "error": provider lacks persona')
+  it('releases admission after startup failure', async () => {
+    const { ctx, released } = bench(true)
+    await expect(runExpertTool(ctx, roster, { expert: base.id, task: 'task' }, { agent, signal: new AbortController().signal })).rejects.toThrow('startup failed')
+    expect(released()).toBe(1)
   })
-
-  it('releases the run even when it fails', async () => {
-    const failing = ctxReturning({ output: [], stopReason: 'error' })
-    await expect(runExpertTool(failing.ctx, roster, { expert: 'Root Cause Expert', task: 'task' }, {
-      agent, signal: new AbortController().signal,
-    })).rejects.toThrow('ended as "error"')
-    expect(failing.disposals()).toBe(1)
-  })
-
-  it('honours a turn that was already cancelled', async () => {
-    const started: unknown[] = []
-    const { ctx } = ctxReturning({ output: [], stopReason: 'completed' }, started)
-    const controller = new AbortController()
-    controller.abort()
-    await expect(runExpertTool(ctx, roster, { expert: 'Root Cause Expert', task: 'task' }, {
-      agent, signal: controller.signal,
-    })).rejects.toThrow()
+  it('rejects cancellation before starting a child', async () => {
+    const { ctx, started } = bench()
+    const controller = new AbortController(); controller.abort()
+    await expect(runExpertTool(ctx, roster, { expert: base.id, task: 'task' }, { agent, signal: controller.signal })).rejects.toThrow()
     expect(started).toHaveLength(0)
-  })
-
-  it('returns empty text when a completed child produced no output', async () => {
-    const { ctx } = ctxReturning({ output: [], stopReason: 'completed' })
-    await expect(runExpertTool(ctx, roster, { expert: 'Root Cause Expert', task: 'task' }, {
-      agent, signal: new AbortController().signal,
-    })).resolves.toEqual({ expert: 'Root Cause Expert', text: '' })
   })
 })

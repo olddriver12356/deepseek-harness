@@ -123,8 +123,11 @@ describe('Experts plugin apply', () => {
     // reachable from the UI. The guarantee that still matters is the negative
     // one: its instructions must never be injected as a user message, because
     // that is exactly the hollow "Expert as prompt text" this design removed.
-    await expect(injected.api.dispatch(expert, 'Why does login fail?', undefined)).rejects.toThrow()
-    expect(prompt).not.toHaveBeenCalled()
+    await injected.api.dispatch(expert, 'Why does login fail?', undefined)
+    const sent = JSON.stringify(prompt.mock.calls)
+    expect(sent).toContain('dispatch_expert')
+    expect(sent).toContain('Why does login fail?')
+    expect(sent).not.toContain('Reproduce before changing code.')
   })
 
   it('keeps injecting a conversational Expert into the current Session', async () => {

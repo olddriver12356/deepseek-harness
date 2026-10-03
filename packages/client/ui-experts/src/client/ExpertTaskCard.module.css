@@ -1,0 +1,5 @@
+.card { border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 12px; margin: 8px 0; color: inherit; }
+.card header, .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.card header { justify-content: space-between; }
+.card p, .card pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.actions button { color: inherit; background: transparent; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 4px; padding: 6px 10px; cursor: pointer; }

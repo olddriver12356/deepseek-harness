@@ -69,6 +69,8 @@ function recordOf(directory: string, text: string): ExpertRecord {
     execution: executionOf(data),
     model: field(data, 'model') || 'inherit',
     reasoning: field(data, 'reasoning') || 'inherit',
+    access: data.access === 'write' ? 'write' : 'read-only',
+    contextMode: data.context_mode === 'fork' ? 'fork' : 'fresh',
     updatedAt: field(data, 'updated'),
   }
 }
@@ -86,6 +88,8 @@ function validateDraft(input: ExpertDraft): ExpertDraft {
     // defaults, while an unrecognized value is rejected below rather than
     // silently normalized — tolerance belongs on the read path, not on writes.
     execution: (input as { execution?: ExpertExecution }).execution ?? 'conversational',
+    access: input.access ?? 'read-only',
+    contextMode: input.contextMode ?? 'fresh',
   }
   if (draft.name.length === 0 || draft.name.length > 80 || !TITLE_PATTERN.test(draft.name) || draft.name.endsWith('.') || draft.name.endsWith(' ')) {
     throw new Error('experts: name is not a valid package title')
@@ -97,6 +101,8 @@ function validateDraft(input: ExpertDraft): ExpertDraft {
   }
   if (!STATUSES.has(draft.status)) throw new Error('experts: invalid status')
   if (!EXECUTIONS.has(draft.execution)) throw new Error('experts: invalid execution mode')
+  if (!['read-only', 'write'].includes(draft.access)) throw new Error('experts: invalid access')
+  if (!['fresh', 'fork'].includes(draft.contextMode)) throw new Error('experts: invalid context mode')
   return draft
 }
 
@@ -128,6 +134,8 @@ function artifactText(id: string, draft: ExpertDraft, created: string): string {
     description: draft.description,
     model: draft.model,
     reasoning: draft.reasoning,
+    access: draft.access,
+    context_mode: draft.contextMode,
     knowledge_scopes: [],
     tool_policy: 'inherit',
     created,

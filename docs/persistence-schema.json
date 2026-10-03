@@ -4852,6 +4852,110 @@
       }
     },
     {
+      "key": "event:experts/delegation",
+      "kind": "event",
+      "event": "experts/delegation",
+      "surface": false,
+      "digest": "bdb00161ec9e2dd9a47ad4fa1bfe847dbc6519dc9a12fd262b7a0d7015880706",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 7,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 9,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "access",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "allowedTools",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "childId",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "expertId",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "read-only"
+          },
+          {
+            "kind": "literal",
+            "value": "write"
+          },
+          {
+            "kind": "array",
+            "element": 6
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "experts/delegation"
+          }
+        ]
+      }
+    },
+    {
       "key": "event:feedback/message-delete",
       "kind": "event",
       "event": "feedback/message-delete",
@@ -19437,6 +19541,20 @@
       "sources": [
         "packages/schedule/schedule/src/types.ts:79"
       ]
+    },
+    {
+      "digest": "18ecff74ae9ce1a1b76d9eff9339b5c273d3aefbc4db31dca30c43b9cd3c5b0f",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "literal",
+            "value": "write"
+          }
+        ]
+      },
+      "names": [],
+      "sources": []
     },
     {
       "digest": "18ee62b8900a4c3d046700f05d7a4d49d6cab2a660a020c87481d1603dd8bd4f",
@@ -37599,9 +37717,9 @@
         ]
       },
       "names": [
-        "SessionEventEnvelope[41].sourceEventSeqs",
-        "SessionEventEnvelope[54].sourceEventSeqs",
-        "SessionEventEnvelope[57].sourceEventSeqs",
+        "SessionEventEnvelope[42].sourceEventSeqs",
+        "SessionEventEnvelope[55].sourceEventSeqs",
+        "SessionEventEnvelope[58].sourceEventSeqs",
         "event:assistant/attempt.data.stream[0][0].dt",
         "event:assistant/attempt.data.stream[0][1].dt",
         "event:assistant/attempt.data.stream[0][2].dt",
@@ -47997,6 +48115,7 @@
         "event:assistant/attempt.data.stream[0][0].texts",
         "event:assistant/attempt.data.stream[0][1].texts",
         "event:assistant/attempt.data.stream[0][2].args",
+        "event:experts/delegation.data.allowedTools",
         "event:personal/observation-request.data.request.stop",
         "event:request/header.data.header.config.stop",
         "event:subagent/descriptor.data[1].toolFilter.allow",
@@ -48333,9 +48452,9 @@
         ]
       },
       "names": [
-        "SessionEventEnvelope[41]",
-        "SessionEventEnvelope[54]",
-        "SessionEventEnvelope[57]"
+        "SessionEventEnvelope[42]",
+        "SessionEventEnvelope[55]",
+        "SessionEventEnvelope[58]"
       ],
       "sources": []
     },
@@ -50310,6 +50429,20 @@
           {
             "kind": "literal",
             "value": "tool"
+          }
+        ]
+      },
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "a2741a21c7dacb8cfc8edba80ee84c0add199dce1dafa0feaf1a2b6c70ccf632",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "literal",
+            "value": "experts/delegation"
           }
         ]
       },
@@ -52747,6 +52880,33 @@
       },
       "names": [
         "event:agent/inbox/spliced.data.inserted[0].source[17].entries"
+      ],
+      "sources": []
+    },
+    {
+      "digest": "abf08fcb7fdc2d9a75c2a1770ff5f99647037bfcfce97c12339b81d123176691",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "union",
+            "types": [
+              1,
+              2
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "read-only"
+          },
+          {
+            "kind": "literal",
+            "value": "write"
+          }
+        ]
+      },
+      "names": [
+        "event:experts/delegation.data.access"
       ],
       "sources": []
     },
@@ -55991,6 +56151,110 @@
         ]
       },
       "names": [],
+      "sources": []
+    },
+    {
+      "digest": "bdb00161ec9e2dd9a47ad4fa1bfe847dbc6519dc9a12fd262b7a0d7015880706",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 7,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 9,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "access",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "allowedTools",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "childId",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "expertId",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "read-only"
+          },
+          {
+            "kind": "literal",
+            "value": "write"
+          },
+          {
+            "kind": "array",
+            "element": 6
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "experts/delegation"
+          }
+        ]
+      },
+      "names": [
+        "event:experts/delegation"
+      ],
       "sources": []
     },
     {
@@ -63648,7 +63912,7 @@
         "SessionEventEnvelope[39]",
         "SessionEventEnvelope[3]",
         "SessionEventEnvelope[40]",
-        "SessionEventEnvelope[42]",
+        "SessionEventEnvelope[41]",
         "SessionEventEnvelope[43]",
         "SessionEventEnvelope[44]",
         "SessionEventEnvelope[45]",
@@ -63661,9 +63925,10 @@
         "SessionEventEnvelope[51]",
         "SessionEventEnvelope[52]",
         "SessionEventEnvelope[53]",
-        "SessionEventEnvelope[55]",
+        "SessionEventEnvelope[54]",
         "SessionEventEnvelope[56]",
-        "SessionEventEnvelope[58]",
+        "SessionEventEnvelope[57]",
+        "SessionEventEnvelope[59]",
         "SessionEventEnvelope[5]",
         "SessionEventEnvelope[7]",
         "SessionEventEnvelope[8]",
@@ -64409,6 +64674,69 @@
         "event:hook/result"
       ],
       "sources": []
+    },
+    {
+      "digest": "e7b06de650c3e1eab7e5e31b7193fa213efb303fd2117de0567856f7a827ab13",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "access",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "allowedTools",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "childId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "expertId",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              3
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "read-only"
+          },
+          {
+            "kind": "literal",
+            "value": "write"
+          },
+          {
+            "kind": "array",
+            "element": 5
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          }
+        ]
+      },
+      "names": [
+        "packages/host/experts/src/policy.ts#ExpertPolicy"
+      ],
+      "sources": [
+        "packages/host/experts/src/policy.ts:15"
+      ]
     },
     {
       "digest": "e7ce49f12953583fad217bf80fb9f1463acff2c3e9471a823782661675fb124c",

@@ -1,6 +1,7 @@
 /**
- * Model-facing `dispatch_expert` tool: start one approved, delegated Vault
- * Expert as a subagent from INSIDE the calling Agent's turn.
+ * Model-facing `dispatch_expert` tool: start an approved Vault Expert as a
+ * continuable child inside the parent turn. The persisted tool receipt links
+ * the task card; the subagent service owns completion, follow-ups and stopping.
  *
  * Why a tool rather than a browser Remote: a delegated Expert IS a subagent —
  * both paths reach the same `startInProcessRun` driver — so the only real
@@ -8,8 +9,8 @@
  * any turn, which leaves the parent transcript with no event to carry the
  * delegation: the child session becomes unreachable from the conversation and
  * its report never returns to the Agent. Starting the child inside a turn
- * reuses the delegation plumbing that already works, so the tool call is the
- * durable record and the tool result is the return path.
+ * reuses the delegation plumbing, so the tool call is the durable admission
+ * record and child settlement is delivered through the normal lifecycle.
  *
  * Unlike `tool-subagent`, the persona here is resolved PER CALL from the Vault
  * record rather than fixed at mount time, because the Expert roster is authored
@@ -19,8 +20,13 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { randomUUID } from 'node:crypto'
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { ContinuableStartSpec } from '@deepseek-ai/dsh-subagent'
+import type { ExpertService } from './index.ts'
 import z from '@deepseek-ai/schemastery'
-import { buildStartRequest, FORK_PROVIDER, outputText, type OutputBlock } from './dispatch.ts'
+import { buildStartRequest } from './dispatch.ts'
 import { ExpertStore } from './store.ts'
 import type { ExpertRecord } from './types.ts'
 
@@ -49,7 +55,7 @@ export function dispatchable(records: readonly ExpertRecord[]): readonly ExpertR
 export function resolveExpert(records: readonly ExpertRecord[], name: string): ExpertRecord {
   const roster = dispatchable(records)
   const wanted = name.trim()
-  const exact = roster.find(record => record.name === wanted)
+  const exact = roster.find(record => record.id === wanted || record.name === wanted)
   if (exact !== undefined) return exact
   const folded = wanted.toLowerCase()
   const loose = roster.filter(record => record.name.toLowerCase() === folded)
@@ -77,60 +83,71 @@ export interface ExpertToolContext {
     register(definition: unknown): () => void
   }
   readonly subagents: {
-    start(name: string, request: Record<string, unknown>): Promise<{
-      readonly result: Promise<{
-        readonly output: readonly OutputBlock[]
-        readonly stopReason: string
-        readonly diagnostic?: string
-      }>
-      dispose(): void | Promise<void>
-    }>
+    startContinuable(spec: ContinuableStartSpec): Promise<{ readonly childId: SessionId }>
   }
+  readonly experts: Pick<ExpertService, 'reserveDelegation'>
 }
 
 /** One tool execution's access to the calling Agent and its cancellation. */
 export interface ExpertToolExec {
-  readonly agent?: unknown
+  readonly agent?: Agent
   readonly signal: AbortSignal
 }
 
 /**
- * Run one `dispatch_expert` call: resolve the Expert, start the forked child,
- * and return its final text so the tool result carries the report back into the
- * parent turn.
+ * Resolve an Expert and start a fresh or forked continuable child. Admission
+ * returns immediately; child lifetime is independent of the finished tool call.
  * @param ctx - context exposing the subagent registry.
  * @param roster - the Vault roster to resolve against.
  * @param args - the model's `expert` name and `task`.
  * @param exec - the calling Agent and the turn's cancellation signal.
- * @returns the child's final text.
- * @throws when no Agent is calling, resolution fails, or the run does not complete.
+ * @returns the durable child admission receipt, not a completion claim.
+ * @throws when the caller, roster, policy, or child startup rejects admission.
  */
 export async function runExpertTool(
   ctx: ExpertToolContext,
   roster: ExpertRoster,
   args: { readonly expert: string; readonly task: string },
   exec: ExpertToolExec,
-): Promise<{ readonly expert: string; readonly text: string }> {
+): Promise<ExpertDispatchResult> {
+  if (typeof args.expert !== 'string' || typeof args.task !== 'string') throw new Error('experts: expert and task must be strings')
   const parent = exec.agent
-  if (parent === undefined || parent === null) {
+  if (parent === undefined) {
     throw new Error('experts: dispatch_expert requires a calling agent (exec.agent was undefined)')
   }
   const expert = resolveExpert(await roster.list(), args.expert)
   const composed = buildStartRequest(expert, args.task)
   exec.signal.throwIfAborted()
-  const run = await ctx.subagents.start(FORK_PROVIDER, { ...composed, parent, signal: exec.signal })
+  const childId = randomUUID() as SessionId
+  const release = ctx.experts.reserveDelegation(parent, childId, expert)
   try {
-    const result = await run.result
-    if (result.stopReason !== 'completed') {
-      throw new Error(
-        `experts: "${expert.name}" ended as "${result.stopReason}"`
-        + (result.diagnostic === undefined ? '' : `: ${result.diagnostic}`),
-      )
-    }
-    return { expert: expert.name, text: outputText(result.output) }
+    const { agentOptions, ...request } = composed
+    const started = await ctx.subagents.startContinuable({
+      provider: expert.contextMode === 'fork' ? 'fork' : 'spawn',
+      childId, label: expert.name, signal: exec.signal,
+      request: {
+        ...request, parent, maxDepth: 1,
+        prompt: [{ type: 'text', text: composed.prompt }],
+        ...agentOptions === undefined ? {} : { agentOptions: agentOptions as NonNullable<ContinuableStartSpec['request']['agentOptions']> },
+      },
+    })
+    return { expert: expert.name, expertId: expert.id, childId: started.childId,
+      parentSessionId: parent.id, access: expert.access ?? 'read-only',
+      contextMode: expert.contextMode ?? 'fresh', status: 'started' }
   } finally {
-    await run.dispose()
+    release()
   }
+}
+
+/** Admission receipt; completion is delivered by the child lifecycle. */
+export interface ExpertDispatchResult {
+  readonly expert: string
+  readonly expertId: string
+  readonly childId: SessionId
+  readonly parentSessionId: SessionId
+  readonly access: 'read-only' | 'write'
+  readonly contextMode: 'fresh' | 'fork'
+  readonly status: 'started'
 }
 
 /**
@@ -148,12 +165,11 @@ export function registerExpertTool(
   return ctx.tools.register({
     name: TOOL_NAME,
     description:
-      'Dispatch an approved Vault Expert as a subagent. The Expert\'s recorded instructions become the '
-      + 'child\'s persona, shadowing the deployment persona, so the child works as that Expert rather than '
-      + 'as a general assistant. Use this when a task matches an Expert\'s method. The child inherits this '
-      + 'conversation\'s completed turns, works in its own context, and returns only its final report — its '
-      + 'intermediate steps do not consume this conversation. It cannot ask you questions mid-run, so state '
-      + 'everything it needs in `task`.'
+      'Delegate a bounded task to an approved Vault Expert in the background. Returns a durable childId, not a completed result. '
+      + 'Continue independent work; the runtime sends a settlement notice. Use send_message with childId for follow-ups and interrupt_agent '
+      + 'to stop its current turn. Fresh context is the default; fork experts inherit completed turns only. Include goal, relevant context, '
+      + 'owned files, deliverable and acceptance checks in task. Read-only is the default; only owner-configured write experts can change files. '
+      + 'Avoid overlapping file ownership. Verify the report before claiming completion.'
       + rosterDescription(records),
     parameters: {
       type: 'object',
@@ -161,7 +177,7 @@ export function registerExpertTool(
       properties: {
         expert: {
           type: 'string',
-          description: 'Exact name of the approved Expert to dispatch.',
+          description: 'Stable id or exact name of the approved Expert to dispatch.',
         },
         task: {
           type: 'string',
@@ -175,15 +191,19 @@ export function registerExpertTool(
       schema: {
         type: 'object',
         additionalProperties: false,
-        required: ['expert', 'text'],
+        required: ['expert', 'expertId', 'childId', 'parentSessionId', 'access', 'contextMode', 'status'],
         properties: {
           expert: { type: 'string' },
-          text: { type: 'string' },
+          expertId: { type: 'string' }, childId: { type: 'string' }, parentSessionId: { type: 'string' },
+          access: { type: 'string', enum: ['read-only', 'write'] },
+          contextMode: { type: 'string', enum: ['fresh', 'fork'] },
+          status: { type: 'string', enum: ['started'] },
         },
       },
-      render: (_args: unknown, value: { readonly expert: string; readonly text: string }) => [{
+      presentationMeta: (_args: unknown, value: ExpertDispatchResult) => ({ expertDelegation: value }),
+      render: (_args: unknown, value: ExpertDispatchResult) => [{
         type: 'text',
-        text: value.text,
+        text: `Started expert ${value.expert}: ${value.childId} (${value.access}, ${value.contextMode}). Await the settlement notice; use send_message for follow-ups. Verify its report before accepting the task.`,
       }],
     },
     // The child never mutates the parent session.
@@ -194,7 +214,7 @@ export function registerExpertTool(
 }
 
 export const name = 'tool-expert'
-export const inject = ['tools', 'subagents']
+export const inject = ['tools', 'subagents', 'experts']
 
 /** Config: the Vault root whose Agent Layer holds the Expert roster. */
 export interface Config {
@@ -213,14 +233,15 @@ export const Config: z<Config> = z.object({ vaultRoot: z.string().required() })
  * @param ctx - the Agent-scoped Context.
  * @param config - the Vault root.
  */
-export function apply(ctx: Context, config: Config): void {
+export async function apply(ctx: Context, config: Config): Promise<void> {
   const store = new ExpertStore(config.vaultRoot)
   const runtime = ctx as unknown as ExpertToolContext
-  void store.list().then((records) => {
-    ctx.effect(() => registerExpertTool(runtime, store, records), 'tool-expert: dispatch_expert')
-  }, (error: unknown) => {
-    // A missing or unreadable Vault must not take the Agent down; the tool is
-    // simply absent, and the Experts panel surfaces the same read failure.
+  let records: readonly ExpertRecord[]
+  try { records = await store.list() }
+  catch (error) {
+    // Standard presets also run outside Agent Layer vaults; keep their existing optional expert behavior.
     ctx.logger.warn(`tool-expert: Expert roster unavailable, dispatch_expert not registered: ${String(error)}`)
-  })
+    return
+  }
+  ctx.effect(() => registerExpertTool(runtime, store, records), 'tool-expert: dispatch_expert')
 }

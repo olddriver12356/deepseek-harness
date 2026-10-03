@@ -26,11 +26,11 @@ kind: "package-reference"
 
 #### 模型看到的内容
 
-用户确认任务后，当前会话会通过 `beginSubmission()` 和 `prompt()` 收到一条普通用户消息，其中包含所选 Expert 的标题、完整指令、可选输出风格与任务。
+用户确认任务后，对话式 Expert 通过 `beginSubmission()` 和 `prompt()` 向当前会话提交指令、可选输出风格与任务。委派式 Expert 提交包含 `dispatch_expert`、Expert 稳定 id 和任务简报的请求；Host 将其指令加载到子会话的 persona。
 
 #### Token 影响
 
-完整 Expert 指令、可选风格与任务会增加该次会话提交的输入 token；打开、搜索、编辑或批准记录不会增加模型 token。
+对话式指令、可选风格与任务增加当前会话的输入 token。委派式指令增加子会话的 token，父会话接收请求、启动回执和结束通知。打开、搜索、编辑或批准记录不会增加模型 token。
 
 #### KV Cache 影响
 
@@ -54,8 +54,8 @@ Live Signal 卡片选择器中每个勾选的 Expert 都会拼装进 `ctx.conver
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **描述性能力字段**：模型、推理、权限、skill、知识范围与工具策略目前只记录意图；派发继承当前会话运行时。
-- **单会话执行**：派发在当前会话中运行；subagent 执行与自动 Vault 知识检索仍延后。
+- **委派任务**：已批准的委派专家会通过当前父会话提交 `dispatch_expert` 请求。任务卡读取持久化的启动信息，打开带父子地址的子会话供查看或追问，并通过现有授权 subagent Remote 停止任务。启动成功不会显示为任务验收通过。
+- **权限与上下文**：编辑器保存只读或可写权限，以及独立或 fork 上下文。对话式专家仍把指令注入当前会话。目前不提供自动文件隔离或显式验收工作流。
 
 <a id="dev-note"></a>
 ### 开发说明

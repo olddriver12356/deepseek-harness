@@ -26,7 +26,7 @@ kind: "package-reference"
 
 #### 模型看到什么
 
-`dispatch_expert` 工具接受已批准的专家和任务，使用专家指令启动子 Agent，并将结果返回调用方。
+`dispatch_expert` 工具接受已批准委派专家的 id 或名称，以及自足的任务单。它启动可继续的后台子 Agent，并返回持久化 id。默认使用独立上下文；`context_mode: fork` 会包含父会话已完成的回合。专家指令成为子 Agent 的 persona，模型与推理强度覆盖保留现有语义。父 Agent 接收完成通知，通过 `send_message` 继续追问，并负责验证后再交付。
 
 #### Token 影响
 
@@ -40,7 +40,9 @@ kind: "package-reference"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **描述性能力字段**：存储的模型、推理、权限、skill、知识范围与工具策略在当前首版中不会改变运行时能力。
+- **工具权限**：缺少 `access` 时默认为 `read-only`。Host 的 `readOnlyTools` 默认包含 read、read_image、glob、grep、web_search 和 web_fetch；`access: write` 时由 `writeTools` 增加 write、edit、bash、pwsh、job_output 和 job_kill。启动时与父 Agent 可见工具取交集。子 Agent 使用原生工具，并在执行时强制检查持久化的允许列表，包括作用域内注册和冷恢复。这是工具权限，不是文件系统隔离；写入工具继续继承 sandbox 和审批策略。
+- **启动上限**：`maxConcurrent` 默认限制每个父 Agent 初次委派时最多有 2 个正在启动或运行的专家。只有顶层 Agent 可以委派专家。后续回合使用现有 continuation 服务，不另建调度器。
+- **共享文件**：任务单必须指定文件责任范围；自动 worktree、文件锁、验收批准记录和 provider 选择界面暂缓。恢复子 Agent 时必须保留 Experts Host 插件以执行专家权限。
 - **保守删除**：如果 Expert 包除 `ARTIFACT.md` 之外还包含其他文件，必须先手动清理才能删除。
 
 <a id="dev-note"></a>

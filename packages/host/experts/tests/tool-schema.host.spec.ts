@@ -12,12 +12,13 @@ it('registers wire schemas with required input and output fields', () => {
         expect(validateJsonSchemaValue(parameters, { expert: 'Reviewer' })).not.toEqual([])
         expect(validateJsonSchemaValue(parameters, { task: 'Review' })).not.toEqual([])
         assertSupportedJsonSchema(output.schema)
-        expect(validateJsonSchemaValue(output.schema, { expert: 'Reviewer', text: 'Done' })).toEqual([])
+        expect(validateJsonSchemaValue(output.schema, { expert: 'Reviewer', expertId: 'e1', childId: 'c1', parentSessionId: 'p1', access: 'read-only', contextMode: 'fresh', status: 'started' })).toEqual([])
         expect(validateJsonSchemaValue(output.schema, { expert: 'Reviewer' })).not.toEqual([])
         expect(validateJsonSchemaValue(output.schema, { text: 'Done' })).not.toEqual([])
         return () => {}
       },
     },
-    subagents: { start: async () => { throw new Error('Schema validation must not dispatch') } },
+    experts: { reserveDelegation: () => () => {} },
+    subagents: { startContinuable: async () => { throw new Error('Schema validation must not dispatch') } },
   }, { list: async () => [] }, [])
 })

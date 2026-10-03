@@ -123,12 +123,10 @@ describe('ExpertsPanel', () => {
     expect(screen.getAllByText('委派')).toHaveLength(1)
   })
 
-  it('offers no Call button for a delegated Expert but keeps its management actions', async () => {
+  it('offers a Call button for a delegated Expert through the parent turn', async () => {
     renderExperts([DELEGATED])
     await screen.findByText('1 位专家')
-    // The main Agent calls a delegated Expert as a tool inside a turn; the panel
-    // must not offer a turn-external dispatch path for it.
-    expect(screen.queryByRole('button', { name: '调用专家 →' })).toBeNull()
+    expect(screen.getByRole('button', { name: '调用专家 →' })).toBeTruthy()
     for (const action of ['编辑', '复制', '删除']) {
       expect(screen.getByRole('button', { name: action })).toBeTruthy()
     }
@@ -138,7 +136,7 @@ describe('ExpertsPanel', () => {
     renderExperts([APPROVED, DELEGATED])
     await screen.findByText('2 位专家')
     const calls = screen.getAllByRole('button', { name: '调用专家 →' })
-    expect(calls).toHaveLength(1)
+    expect(calls).toHaveLength(2)
     expect(calls[0]?.hasAttribute('disabled')).toBe(false)
   })
 

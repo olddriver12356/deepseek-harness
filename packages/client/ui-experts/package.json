@@ -59,7 +59,9 @@
     "@deepseek-ai/dsh-host-experts": "workspace:^",
     "@deepseek-ai/dsh-host-styles": "workspace:^",
     "@types/react": "~18.3.1",
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "@deepseek-ai/dsh-client-ui-tool": "workspace:^",
+    "@deepseek-ai/dsh-subagent": "workspace:^"
   },
   "files": [
     "lib/index.js",
