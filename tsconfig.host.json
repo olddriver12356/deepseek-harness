@@ -381,6 +381,7 @@
     { "path": "./packages/host/news" },
     { "path": "./packages/host/apps" },
     { "path": "./packages/host/experts" },
+    { "path": "./packages/host/collaboration" },
     { "path": "./packages/host/knowledge" },
     { "path": "./packages/host/styles" },
     { "path": "./packages/llm/plugin-package-inventory-deepseek" },
