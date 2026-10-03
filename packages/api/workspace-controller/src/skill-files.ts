@@ -3,7 +3,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { createHash, randomUUID } from 'node:crypto'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { access, lstat, mkdir, open, readdir, realpath, rename, stat, unlink } from 'node:fs/promises'
+import { access, lstat, mkdir, open, readdir, readFile, realpath, rename, stat, unlink } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { parseDocument } from 'yaml'
 import { z } from 'zod'
@@ -18,12 +18,22 @@ const requestSchema = z.object({ workspaceId: z.string().min(1), id: z.string().
 const writeSchema = requestSchema.extend({
   content: z.string().max(MAX_TEXT_BYTES), revision: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
 })
+const lockSchema = z.object({ skills: z.record(z.string(), z.looseObject({ source: z.string().optional() })) })
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex')
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
 const absent = (error: unknown): boolean => error instanceof Error && 'code' in error && (error.code === 'ENOENT' || error.code === 'ENOTDIR')
 function within(root: string, path: string): boolean {
   const child = relative(root, path)
   return !isAbsolute(child) && child !== '..' && !child.startsWith(`..${sep}`)
+}
+/** Installed-pack attribution written beside a skill root by the pack installer. */
+async function installOrigins(root: string): Promise<Map<string, string>> {
+  try {
+    const parsed = lockSchema.safeParse(JSON.parse(await readFile(join(dirname(root), '.skill-lock.json'), 'utf8')))
+    if (!parsed.success) return new Map()
+    return new Map(Object.entries(parsed.data.skills).flatMap(([name, entry]) =>
+      entry.source === undefined ? [] : [[name, entry.source] as const]))
+  } catch { return new Map() }
 }
 async function exists(path: string): Promise<boolean> {
   try { await access(path); return true } catch (error) { if (absent(error)) return false; throw error }
@@ -49,6 +59,7 @@ export class SkillFileStore {
     for (const root of roots) {
       let entries
       try { entries = await readdir(root.path) } catch (error) { if (absent(error)) continue; throw error }
+      const origins = await installOrigins(root.path)
       for (const entry of entries.sort()) {
         if (entry === '.dsh-skill-trash') continue
         if (root.skipSystem && entry === '.system') continue
@@ -63,6 +74,8 @@ export class SkillFileStore {
         if (canonical.has(key)) continue
         canonical.add(key)
         let name = info.isDirectory() ? entry : entry.slice(0, -3)
+        // The lock file keys installed packs by entry name, before frontmatter renames it.
+        let origin = origins.get(name) ?? ''
         let description = '', category = '', problem = ''
         let userInvocable = true, modelInvocable = true
         try {
@@ -80,12 +93,13 @@ export class SkillFileStore {
           name = parsed.name
           description = parsed.description
           category = typeof parsed.metadata?.category === 'string' ? parsed.metadata.category : ''
+          if (typeof parsed.metadata?.origin === 'string') origin = parsed.metadata.origin
           userInvocable = frontmatterBoolean(parsed, 'user-invocable') ?? true
           modelInvocable = !(frontmatterBoolean(parsed, 'disable-model-invocation') ?? false)
         } catch (error) { problem = message(error) }
         const shadowed = names.has(name)
         if (problem === '') names.add(name)
-        skills.push({ id: hash(path) as SkillArtifactId, name, description, category, path, canonicalPath, entryFile: basename(path), bundle: info.isDirectory(), source: root.source, scope: root.source.startsWith('project-') ? 'project' : root.source.startsWith('user-') ? 'personal' : 'other', userInvocable, modelInvocable, shadowed, writable: root.source !== 'bundled', problem })
+        skills.push({ id: hash(path) as SkillArtifactId, name, description, category, origin, path, canonicalPath, entryFile: basename(path), bundle: info.isDirectory(), source: root.source, scope: root.source.startsWith('project-') ? 'project' : root.source.startsWith('user-') ? 'personal' : 'other', userInvocable, modelInvocable, shadowed, writable: root.source !== 'bundled', problem })
       }
     }
     return { skills, projectDestination: roots.find(root => root.source === 'project-agents')?.path ?? '', personalDestination: roots.find(root => root.source === 'user-agents')?.path ?? '' }

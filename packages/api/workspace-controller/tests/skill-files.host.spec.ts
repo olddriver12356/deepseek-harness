@@ -53,6 +53,14 @@ describe('physical skill editing', () => {
     expect(inventory.skills.filter(skill => skill.name === 'capture').map(skill => [skill.category, skill.shadowed])).toEqual([['writing', false], ['writing', true]])
     expect(inventory).toMatchObject({ projectDestination: project, personalDestination: personal })
   })
+  it('tags installed skills with their pack origin and leaves unmanaged sources empty', async () => {
+    const { store, root, project } = await fixture()
+    await writeFile(join(root, '.skill-lock.json'), JSON.stringify({ skills: { capture: { source: 'obra/superpowers' } } }))
+    await writeFile(join(project, 'local.md'), '---\nname: local\ndescription: Hand written\n---\nbody')
+    const inventory = await store.inventory(root)
+    expect(inventory.skills.find(skill => skill.name === 'capture' && !skill.shadowed)?.origin).toBe('obra/superpowers')
+    expect(inventory.skills.find(skill => skill.name === 'local')?.origin).toBe('')
+  })
   it('uses runtime boolean spellings and rejects invalid invocation names', async () => {
     const { store, root, project } = await fixture()
     await writeFile(join(project, 'legacy.md'), '---\nname: legacy\ndescription: Compatible flags\nuser-invocable: no\ndisable-model-invocation: 1\n---\nbody')

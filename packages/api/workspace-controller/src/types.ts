@@ -16,6 +16,8 @@ export interface SkillArtifact {
   readonly name: string
   readonly description: string
   readonly category: string
+  /** Installed provenance: the pack a skill came from, empty when unmanaged. */
+  readonly origin: string
   readonly source: string
   readonly path: string
   readonly canonicalPath: string

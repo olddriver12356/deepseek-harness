@@ -5825,7 +5825,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SkillArtifact',
-    declaration: 'export interface SkillArtifact {\n    readonly id: SkillArtifactId;\n    readonly name: string;\n    readonly description: string;\n    readonly category: string;\n    readonly source: string;\n    readonly path: string;\n    readonly canonicalPath: string;\n    readonly entryFile: string;\n    readonly bundle: boolean;\n    readonly scope: \'project\' | \'personal\' | \'other\';\n    readonly userInvocable: boolean;\n    readonly modelInvocable: boolean;\n    readonly shadowed: boolean;\n    readonly writable: boolean;\n    readonly problem: string;\n}',
+    declaration: 'export interface SkillArtifact {\n    readonly id: SkillArtifactId;\n    readonly name: string;\n    readonly description: string;\n    readonly category: string;\n    readonly origin: string;\n    readonly source: string;\n    readonly path: string;\n    readonly canonicalPath: string;\n    readonly entryFile: string;\n    readonly bundle: boolean;\n    readonly scope: \'project\' | \'personal\' | \'other\';\n    readonly userInvocable: boolean;\n    readonly modelInvocable: boolean;\n    readonly shadowed: boolean;\n    readonly writable: boolean;\n    readonly problem: string;\n}',
   },
   {
     name: 'SkillArtifactId',
