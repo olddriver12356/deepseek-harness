@@ -6,6 +6,59 @@ import { createCollaborationHarness, type CollaborationHarness } from './helpers
 const opened: CollaborationHarness[] = []
 afterEach(async () => { while (opened.length) await opened.pop()!.dispose() })
 
+it('holds deferred initiating input and neutral context without a turn until an explicit ready wake', async () => {
+  const h = await createCollaborationHarness({ withCollaboration: false })
+  opened.push(h)
+  let ready = false
+  const dispose = h.ctx.agents.registerInputPolicy('deferred-fixture', () => ready ? true : 'defer')
+  const deferred = createUserMessage({ content: [{ type: 'text', text: 'pending' }],
+    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'deferred-fixture' } })
+  const context = createUserMessage({ content: [{ type: 'text', text: 'context' }], source: { kind: 'plugin', plugin: 'fixture' } })
+  try {
+    h.agent.inbox.append('next-step', context)
+    h.agent.followup(deferred)
+    await h.agent.whenIdle()
+    h.agent.wake()
+    await h.agent.whenIdle()
+    expect(h.requests).toHaveLength(0)
+    expect((await h.storedEvents()).filter(event => event.type === 'turn/start')).toHaveLength(0)
+    expect(h.agent.inbox.nextTurn).toEqual([deferred])
+    expect(h.agent.inbox.nextStep).toEqual([context])
+    ready = true
+    h.agent.wake()
+    await h.agent.whenIdle()
+    expect(h.requests).toHaveLength(1)
+    expect(h.agent.inbox.hasPending).toBe(false)
+  } finally { dispose() }
+})
+
+it('lets humans bypass deferred input in FIFO order and refuses it once its policy is disposed', async () => {
+  const h = await createCollaborationHarness({ withCollaboration: false })
+  opened.push(h)
+  const dispose = h.ctx.agents.registerInputPolicy('deferred-fixture', () => 'defer')
+  const deferred = createUserMessage({ content: [{ type: 'text', text: 'pending' }],
+    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'deferred-fixture' } })
+  const human = (text: string) => createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } })
+  try {
+    await h.agent.runMaintenance(async () => {
+      h.agent.followup(deferred)
+      h.agent.followup(human('first'))
+      h.agent.followup(human('second'))
+    })
+    await h.agent.whenIdle()
+    expect(h.requests).toHaveLength(2)
+    expect(h.agent.inbox.nextTurn).toEqual([deferred])
+    expect(h.agent.session.deriveMessages().filter(message => message.role === 'user').map(message => message.content))
+      .toEqual([[{ type: 'text', text: 'first' }], [{ type: 'text', text: 'second' }]])
+    dispose()
+    h.agent.followup(human('third'))
+    await h.agent.whenIdle()
+    expect(h.requests).toHaveLength(3)
+    expect(h.agent.inbox.hasPending).toBe(false)
+    expect((await h.storedEvents()).filter(event => event.type === 'turn/end' && event.data.reason.kind === 'blocked')).toHaveLength(1)
+  } finally { dispose() }
+})
+
 it('refuses restored peer inbox work when the authority plugin is absent', async () => {
   const h = await createCollaborationHarness({ withCollaboration: false })
   opened.push(h)

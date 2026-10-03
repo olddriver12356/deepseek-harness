@@ -106,11 +106,26 @@ export class ReactLoopInbox implements InboxContract {
    * Remove and return the complete batch proposed for one step.
    * @param target - whether this boundary also consumes one queued turn.
    * @param turn - turn that will own the claimed batch.
+   * @param ready - synchronous admission readiness; false retains the exact pending identity.
    * @returns next-step input followed by the queued turn, when requested.
    */
-  claim(target: InboxTarget, turn: number): UserMessage[] {
-    const claimed = this.mutate('next-step', 0, this.nextStep.length, [], false)
-    if (target === 'next-turn') claimed.push(...this.mutate('next-turn', 0, 1, [], false))
+  claim(target: InboxTarget, turn: number, ready: (message: UserMessage) => boolean = () => true): UserMessage[] {
+    const claimed: UserMessage[] = []
+    for (let index = 0; index < this.nextStep.length;) {
+      const pending = this.nextStep
+      let end = index
+      while (end < pending.length) {
+        const candidate = pending[end]
+        if (candidate === undefined || !ready(candidate)) break
+        end++
+      }
+      if (end > index) claimed.push(...this.mutate('next-step', index, end - index, [], false))
+      else index++
+    }
+    if (target === 'next-turn') {
+      const index = this.nextTurn.findIndex(ready)
+      if (index >= 0) claimed.push(...this.mutate('next-turn', index, 1, [], false))
+    }
     for (const message of claimed) this.dispatch.emit('agent/inbox/claimed', { message, turn })
     return claimed
   }

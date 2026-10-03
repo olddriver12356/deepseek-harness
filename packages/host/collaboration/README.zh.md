@@ -75,9 +75,9 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 
 `ctx.collaborationMailbox.send(caller, request)` 接受严格的 connection/text/request-key 数据，从活动普通 Agent 派生发送方。`maxFramedMessageBytes` 是必填正安全整数，没有默认值；它限制完整序列化 UTF-8 消息内容，包括 Host 归属与免责声明。来源固定 `requiredAdmissionPolicy: collaboration-peer` 和精确端点、连接及消息身份。转义后的正文是数据，不是人工批准。
 
-接受记录先于接收方活动持久化。激活预留仍保持排队并可取消。投递使用普通冷会话 resolver、空闲 maintenance、接收方 inbox 追加、持久 flush、确认及唤醒。接收方自身非继承回执确立准入；恢复复用该回执，不重复插入或扣减。预留、flush 或确认期间到达的人工消息先于待处理 peer，各类别保持 FIFO，中性上下文位置保留。实际 pre-step 和准备后请求检查执行当前会话对授权。普通助手输出不会被转发。
+接受记录先于接收方活动持久化。激活预留仍保持排队并可取消。投递使用普通冷会话 resolver、空闲 maintenance、接收方 inbox 追加、持久 flush、确认及唤醒。恢复在确认前将接收方自身非继承回执与精确的待处理 inbox 身份匹配，仅有历史插入不足以确认。缺少确认或已暂停时保留待处理输入并延后领取，人工消息仍可运行。预留、flush 或确认期间到达的人工消息先于待处理 peer，各类别保持 FIFO，中性上下文位置保留。实际 pre-step 和准备后请求检查对新准入执行当前会话对授权。已持久记录启动的回合在暂停或断开连接后继续；策略缺失或卸载仍会拒绝它。在交给可变监听器之前保存原始 peer 分类。普通助手输出不会被转发。
 
-`recover()` 在存储或生命周期中断后核对排队工作；`whenSettled()` 等待 mailbox 作业，不等待助手完成。卸载停止准入、移除注册并排空作业。接受回执始终保留原始 queued 接受版本。准入表示持久接收方输入，不表示回复完成。
+`recover()` 在存储或生命周期中断后核对排队工作，并唤醒仍待处理的已准入输入，不重复插入或扣减。回执投影区分 pending、claimed、started、consumed、refused 和 cancelled 输入，通过现有 Session 事件重建这些阶段。`whenSettled()` 等待 mailbox 作业，不等待助手完成。卸载停止准入、移除注册并排空作业。接受回执始终保留原始 queued 接受版本。准入表示持久接收方输入，不表示回复完成。
 
 <a id="model-experience"></a>
 ## 模型体验

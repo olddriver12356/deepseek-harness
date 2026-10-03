@@ -331,7 +331,7 @@ it('resolves a cold ordinary Session through the production resolver and admits 
   expect(resumed!.session.deriveMessages().some(message => message.source.kind === 'collaboration-peer')).toBe(true)
 })
 
-it('recovers a persisted receipt before acknowledgement by waking existing input once without charging twice', async () => {
+it.each(['queued', 'admitted'] as const)('recovers a persisted %s receipt by waking existing input once without charging twice', async (stateAtCrash) => {
   const { h, peer, box } = await setup()
   const recipient = peer.agent.id
   peer.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'initialize' }], source: { kind: 'user' } }))
@@ -357,6 +357,11 @@ it('recovers a persisted receipt before acknowledgement by waking existing input
       await stored.append([{ type: 'agent/inbox/spliced', seq: SessionSeq(before.length), time: Date.now(),
         data: { target: 'next-turn', start: 0, inserted: [framePeerMessage(row, 16384)] } }])
     } finally { await stored.close() }
+    if (stateAtCrash === 'admitted') {
+      state = h.ctx.collaborationStore.read()
+      await h.ctx.collaborationStore.transact(state.revision, current => applyDiscussionOperation(current, { kind: 'admit', messageId: id },
+        { actor: { kind: 'system' }, timestamp: new Date().toISOString() }))
+    }
     release.resolve(undefined)
     await box.whenSettled()
     await h.ctx.agents.get(recipient)!.whenIdle()
@@ -364,4 +369,158 @@ it('recovers a persisted receipt before acknowledgement by waking existing input
     expect(h.ctx.collaborationStore.read().connections[0]?.budget.used).toBe(1)
     expect(h.requests).toHaveLength(2)
   } finally { release.resolve(undefined); close.resolveAgent = resolver }
+})
+
+it('keeps valid-policy peer authority strict when a listener rewrites the claimed array in place', async () => {
+  const { h, peer, box } = await setup()
+  h.ctx.on('agent/pre-step', async ({ messages }, next) => {
+    for (const [index, message] of messages.entries()) messages[index] = { ...message, source: { kind: 'user' } }
+    return next()
+  })
+  h.scriptModelToolCall('write', { file_path: 'forged-human.txt' })
+  await box.send(h.agent, request())
+  await box.whenSettled()
+  await peer.agent.whenIdle()
+  expect(h.executed).not.toContain('write')
+  expect(await h.workspaceFileExists('forged-human.txt')).toBe(false)
+})
+
+it.each(['pause', 'disconnect'] as const)('keeps an already-running peer turn alive after %s but refuses new admission', async (change) => {
+  const { h, peer, box, mutate } = await setup()
+  const gate = h.holdModelToolCall('read', {})
+  try {
+    await box.send(h.agent, request())
+    await gate.started
+    await mutate(change === 'pause' ? { kind: 'pause', connectionId, paused: true } : { kind: 'disconnect', connectionId })
+    await expect(box.send(h.agent, request('later'))).rejects.toThrow(/absent|paused/)
+    gate.release()
+    await peer.agent.whenIdle()
+    expect(h.executed).toEqual(['read'])
+    expect(h.requests).toHaveLength(2)
+    await h.ctx.sessionPersistence.flush()
+    const stored = await h.ctx.sessionPersistence.open(peer.agent.id, 'read')
+    try { expect((await stored.read()).events.findLast(event => event.type === 'turn/end')?.data).toMatchObject({ reason: { kind: 'completed' } }) }
+    finally { await stored.close() }
+  } finally { gate.release() }
+})
+
+it.each(['flush', 'ack'] as const)('retains the exact pending peer across persistent ACK failure and a human wake at %s', async (window) => {
+  const { h, peer, box } = await setup()
+  const entered = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  const store = h.ctx.collaborationStore
+  const transact = store.transact.bind(store)
+  const flush = h.ctx.sessionPersistence.flush.bind(h.ctx.sessionPersistence)
+  let failAck = true
+  let held = false
+  const hold = async () => { held = true; entered.resolve(undefined); await release.promise }
+  store.transact = async (revision, transform) => {
+    if (window === 'ack' && !held && transform(store.read()).journal.at(-1)?.operation === 'admit') await hold()
+    return transact(revision, (current) => {
+      const next = transform(current)
+      if (failAck && next.journal.at(-1)?.operation === 'admit') throw new Error('persistent ACK failure')
+      return next
+    })
+  }
+  h.ctx.sessionPersistence.flush = async () => {
+    await flush()
+    if (window === 'flush' && !held && peer.agent.inbox.nextTurn.some(message => message.source.kind === 'collaboration-peer')) await hold()
+  }
+  const inserted: string[] = []
+  const discarded: string[] = []
+  h.ctx.on('agent/inbox/inserted', ({ message }) => { if (message.source.kind === 'collaboration-peer') inserted.push(message.id) })
+  h.ctx.on('agent/inbox/discarded', ({ message }) => { if (message.source.kind === 'collaboration-peer') discarded.push(message.id) })
+  try {
+    await box.send(h.agent, request())
+    await entered.promise
+    const pending = peer.agent.inbox.nextTurn[0]
+    peer.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human priority' }], source: { kind: 'user' } }))
+    release.resolve(undefined)
+    await box.whenSettled()
+    await peer.agent.whenIdle()
+    await box.whenSettled()
+    expect(h.requests).toHaveLength(1)
+    expect(peer.agent.inbox.nextTurn).toEqual([pending])
+    expect(store.read().outbox[0]?.state).toBe('queued')
+    failAck = false
+    box.recover()
+    await box.whenSettled()
+    await peer.agent.whenIdle()
+    expect(peer.agent.session.deriveMessages().filter(message => message.role === 'user').map(message => message.source.kind))
+      .toEqual(['user', 'collaboration-peer'])
+    expect(h.requests).toHaveLength(2)
+    expect(inserted).toEqual([pending?.id])
+    expect(discarded).toEqual([])
+    expect(store.read().connections[0]?.budget.used).toBe(1)
+    expect(store.read().outbox[0]?.state).toBe('admitted')
+  } finally { release.resolve(undefined); store.transact = transact; h.ctx.sessionPersistence.flush = flush }
+})
+
+it('holds a paused pending receipt and resumes it once after ACK recovery', async () => {
+  const { h, peer, box, mutate } = await setup()
+  const store = h.ctx.collaborationStore
+  const transact = store.transact.bind(store)
+  store.transact = (revision, transform) => transact(revision, (current) => {
+    const next = transform(current)
+    if (next.journal.at(-1)?.operation === 'admit') throw new Error('ACK unavailable')
+    return next
+  })
+  try {
+    await box.send(h.agent, request())
+    await box.whenSettled()
+    const pending = peer.agent.inbox.nextTurn[0]
+    await mutate({ kind: 'pause', connectionId, paused: true })
+    store.transact = transact
+    peer.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human during pause' }], source: { kind: 'user' } }))
+    await peer.agent.whenIdle()
+    await box.whenSettled()
+    expect(h.requests).toHaveLength(1)
+    expect(peer.agent.inbox.nextTurn).toEqual([pending])
+    await mutate({ kind: 'pause', connectionId, paused: false })
+    await box.whenSettled()
+    await peer.agent.whenIdle()
+    expect(h.requests).toHaveLength(2)
+    expect(store.read().outbox[0]?.state).toBe('admitted')
+    expect(store.read().connections[0]?.budget.used).toBe(1)
+  } finally { store.transact = transact }
+})
+
+it('never acknowledges a cancelled historical insertion as an admitted empty inbox', async () => {
+  const { h, peer, box } = await setup()
+  const store = h.ctx.collaborationStore
+  const transact = store.transact.bind(store)
+  store.transact = (revision, transform) => transact(revision, (current) => {
+    const next = transform(current)
+    if (next.journal.at(-1)?.operation === 'admit') throw new Error('ACK unavailable')
+    return next
+  })
+  try {
+    await box.send(h.agent, request())
+    await box.whenSettled()
+    const pending = peer.agent.inbox.nextTurn[0]!
+    peer.agent.inbox.remove(pending.id)
+    store.transact = transact
+    box.recover()
+    await box.whenSettled()
+    expect(h.requests).toHaveLength(0)
+    expect(store.read().outbox[0]?.state).toBe('failed')
+    expect(h.ctx.sessionProjections.stateOf(peer.agent.session, 'collaborationReceipts')?.receipts[0]?.phase).toBe('cancelled')
+  } finally { store.transact = transact }
+})
+
+it('refuses continuation of a running peer when its required policy is disposed', async () => {
+  const { h, peer, box } = await setup()
+  const gate = h.holdModelToolCall('read', {})
+  try {
+    await box.send(h.agent, request())
+    await gate.started
+    await box.close()
+    gate.release()
+    await peer.agent.whenIdle()
+    expect(h.requests).toHaveLength(1)
+    await h.ctx.sessionPersistence.flush()
+    const stored = await h.ctx.sessionPersistence.open(peer.agent.id, 'read')
+    try { expect((await stored.read()).events.findLast(event => event.type === 'turn/end')?.data).toMatchObject({ reason: { kind: 'blocked' } }) }
+    finally { await stored.close() }
+  } finally { gate.release() }
 })

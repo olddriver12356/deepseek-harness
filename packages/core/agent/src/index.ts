@@ -243,15 +243,15 @@ interface FactorySlot {
  * nested lineage that starts an owning-fiber unload is excluded from its own drain.
  */
 export class AgentRegistry extends Service {
-  private readonly inputPolicies = new Map<string, (agent: Agent, message: UserMessage) => boolean>()
+  private readonly inputPolicies = new Map<string, (agent: Agent, message: UserMessage) => boolean | 'defer'>()
 
   /**
    * Register an input policy required by durable message attribution. Missing policies deny admission.
    * @param name - exact source requirement identifier.
-   * @param accepts - synchronous final admission check against current policy state.
+   * @param accepts - synchronous check; defer preserves pending input until a later wake, true admits, false refuses.
    * @returns reversible registration owned by the caller's fiber.
    */
-  registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean): () => void {
+  registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean | 'defer'): () => void {
     // oxlint-disable-next-line typescript/no-misused-promises -- synchronous cleanup; preserve the exact owner effect disposer
     return this.ctx.effect(() => {
       if (this.inputPolicies.has(name)) throw new Error(`input policy "${name}" is already registered`)
@@ -271,6 +271,17 @@ export class AgentRegistry extends Service {
       const name = message.source.requiredAdmissionPolicy
       return name === undefined || this.inputPolicies.get(name)?.(agent, message) === true
     })
+  }
+
+  /**
+   * Check whether pending input must remain unclaimed until a later owner wake.
+   * @param agent - actual recipient.
+   * @param message - pending input, before any durable removal.
+   * @returns true only when its installed policy explicitly defers; missing policies remain a refusal.
+   */
+  defersInput(agent: Agent, message: UserMessage): boolean {
+    const name = message.source.requiredAdmissionPolicy
+    return name !== undefined && this.inputPolicies.get(name)?.(agent, message) === 'defer'
   }
 
   private store = new Map<SessionId, AgentEntry>()

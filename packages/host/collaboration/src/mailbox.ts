@@ -33,9 +33,17 @@ export class CollaborationMailbox {
       if (!parsed.success) return false
       const source = parsed.data
       const row = store.read().outbox.find(item => item.id === source.messageId)
-      return row !== undefined && row.state === 'admitted' && row.recipient === agent.session.id && row.sender === source.senderSessionId
-        && row.recipient === source.recipientSessionId && row.connectionId === source.connectionId && this.authorized(row)
-        && JSON.stringify(message.content) === JSON.stringify(framePeerMessage(row, maxFramedMessageBytes).content)
+      if (row === undefined || row.recipient !== agent.session.id || row.sender !== source.senderSessionId
+        || row.recipient !== source.recipientSessionId || row.connectionId !== source.connectionId
+        || JSON.stringify(message.content) !== JSON.stringify(framePeerMessage(row, maxFramedMessageBytes).content)) return false
+      const projection = ctx.sessionProjections.stateOf(agent.session, 'collaborationReceipts')
+      const receipt = projection?.receipts.find(item => item.messageId === row.id && item.inputId === message.id)
+      if (row.state === 'admitted' && projection?.turnOpen && receipt?.phase === 'started' && receipt.turn === projection.turn) return true
+      const pair = store.read().connections.find(item => item.id === row.connectionId)
+      if ((row.state !== 'queued' && row.state !== 'admitted') || pair === undefined
+        || !pair.sessions.includes(row.sender) || !pair.sessions.includes(row.recipient)) return false
+      if (receipt?.phase === 'pending' && (pair.paused || row.state === 'queued')) return 'defer'
+      return row.state === 'admitted' && !pair.paused
     }))
     this.releases.push(ctx.on('agent/status', ({ agent, status }) => { if (status === 'idle') this.schedule(agent.session.id) }))
     this.releases.push(ctx.on('agent/created', () => { this.recover(); return undefined }))
@@ -87,7 +95,7 @@ export class CollaborationMailbox {
   /** Reschedule committed pending work; callers need not supply or reconstruct message bodies. */
   recover(): void {
     if (this.stopped.signal.aborted) return
-    for (const row of this.store.read().outbox) if (row.state === 'queued') this.schedule(row.recipient)
+    for (const row of this.store.read().outbox) if (row.state === 'queued' || row.state === 'admitted') this.schedule(row.recipient)
   }
 
   /** @returns completion of currently scheduled mailbox work, excluding model execution. */
@@ -157,11 +165,21 @@ export class CollaborationMailbox {
     const target = agent
     await target.runMaintenance(async (signal) => {
       const active = () => !signal.aborted && !this.stopped.signal.aborted && this.ctx.agents.get(recipient) === target
-      for (const saved of this.store.read().outbox.filter(row => row.recipient === recipient && row.state === 'queued')) {
+      for (const saved of this.store.read().outbox.filter(row => row.recipient === recipient && (row.state === 'queued' || row.state === 'admitted'))) {
         if (!active()) return
         let row = this.message(saved.id)
         const receipt = this.ctx.sessionProjections.stateOf(target.session, 'collaborationReceipts')?.receipts.find(item => item.messageId === row.id)
+        const pending = [...target.inbox.nextTurn, ...target.inbox.nextStep].find(message =>
+          message.id === receipt?.inputId && message.source.kind === 'collaboration-peer' && message.source.messageId === row.id)
+        if (row.state === 'admitted') {
+          if (pending !== undefined && this.authorized(row)) this.wakeWithHumanPriority(target)
+          continue
+        }
         if (receipt !== undefined) {
+          if (pending === undefined) {
+            if (receipt.phase === 'refused' || receipt.phase === 'cancelled') await this.update({ kind: 'settle', messageId: row.id, state: 'failed' })
+            continue
+          }
           await this.ctx.sessionPersistence.flush()
           if (active() && this.authorized(row)) {
             await this.update({ kind: 'admit', messageId: row.id })

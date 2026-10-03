@@ -36,7 +36,7 @@ import * as collaboration from '../../src/index.ts'
 import { createHumanControlAdmission, requireHumanControl, type HumanControlAdmission } from '../../src/authority.ts'
 
 /** The model's next reply: plain text, or one tool call followed by a closing text reply. */
-type ModelStep = { readonly kind: 'text' } | { readonly kind: 'tool'; readonly name: string; readonly args: object }
+type ModelStep = { readonly kind: 'text' } | { readonly kind: 'tool'; readonly name: string; readonly args: object; readonly gate?: () => Promise<void> }
   | { readonly kind: 'pending'; readonly started: () => void; readonly stopped: () => void }
 
 class ScriptedAdapter extends LlmAdapter {
@@ -56,6 +56,7 @@ class ScriptedAdapter extends LlmAdapter {
       return
     }
     if (step.kind === 'tool') {
+      await step.gate?.()
       yield { type: 'block-start', index: 0, blockType: 'tool-call' }
       yield {
         type: 'block-end', index: 0,
@@ -96,6 +97,8 @@ export interface CollaborationHarness {
   scriptModelToolCall(name: string, args: object): void
   /** Hold one model request until production cancellation stops it. */
   holdModelRequest(): { readonly started: Promise<void>; readonly stopped: Promise<void> }
+  /** Hold the first tool-producing model response until the test releases its deterministic barrier. */
+  holdModelToolCall(name: string, args: object): { readonly started: Promise<void>; release(): void }
   /** Execute a tool directly through the Executor on behalf of the agent, as dynamic code or a loopback call would. */
   executeCurrentTool(name: string, args: object): Promise<ToolOutcome>
   /** Tool names whose bodies actually ran, in order. */
@@ -234,6 +237,12 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
         createUserMessage({ content: [{ type: 'text', text: 'trusted context' }], source: { kind: 'plugin', plugin: 'fixture' } }), human(text),
       ]),
       scriptModelToolCall: (name, args) => { adapter.steps.push({ kind: 'tool', name, args }, { kind: 'text' }) },
+      holdModelToolCall(name, args) {
+        const started = Promise.withResolvers<undefined>()
+        const release = Promise.withResolvers<undefined>()
+        adapter.steps.push({ kind: 'tool', name, args, gate: async () => { started.resolve(undefined); await release.promise } }, { kind: 'text' })
+        return { started: started.promise, release: () => { release.resolve(undefined) } }
+      },
       holdModelRequest() {
         const started = Promise.withResolvers<undefined>()
         const stopped = Promise.withResolvers<undefined>()

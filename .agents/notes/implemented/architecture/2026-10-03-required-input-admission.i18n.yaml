@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-03-required-input-admission.md
-2026-10-03-required-input-admission.md: 4c27804df780fff58dec7352cffe97839eff8860
-2026-10-03-required-input-admission.zh.md: cee0f34746f4a1d85c886c5b1b5d222363a23bb8
+2026-10-03-required-input-admission.md: 27d174fa8779ce02aadf24474b6f304a3452db09
+2026-10-03-required-input-admission.zh.md: c904912462ba3eadecc47c37960599294a30dd70

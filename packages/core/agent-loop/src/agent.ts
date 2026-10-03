@@ -205,6 +205,7 @@ export class ReactLoopAgent implements Agent {
       }
       return
     }
+    if (this.inbox.hasPending && !this.hasReadyInput()) return
     const driver = Promise.withResolvers<void>()
     this.activityDone = driver.promise
     this.setPhase({
@@ -251,7 +252,7 @@ export class ReactLoopAgent implements Agent {
     /* v8 ignore next -- private callers establish the running phase before proposing a step */
     if (this.phase.kind !== 'running') throw new Error(`agent "${this.id}": pre-step outside running phase`)
     const signal = this.phase.abort.signal
-    const claimed = this.inbox.claim(target, position.turn)
+    const claimed = this.inbox.claim(target, position.turn, message => !this.loopCtx.agents.defersInput(this, message))
     const requiredInputs = claimed.filter(message => message.source.requiredAdmissionPolicy !== undefined)
     const assembly = await this.loopCtx.systemPrompt.assemble(assembleContextFor(this, signal))
     signal.throwIfAborted()
@@ -285,6 +286,7 @@ export class ReactLoopAgent implements Agent {
       this.throwError(new Error(`agent "${this.id}": turn without driver reservation`))
     }
     const phase = this.phase
+    if (this.inbox.hasPending && !this.hasReadyInput()) return false
     const { signal } = phase.abort
     signal.throwIfAborted()
     const turn = phase.turn + 1
@@ -328,11 +330,11 @@ export class ReactLoopAgent implements Agent {
           this.session.append('step/end', { turn, step })
         }
         signal.throwIfAborted()
-        if (turnEnds && this.inbox.nextStep.length === 0) {
+        if (turnEnds && !this.hasReadyStepInput()) {
           await this.dispatch.serial('agent/turn-stopping', { turn, signal })
           signal.throwIfAborted()
         }
-        if (turnEnds && this.inbox.nextStep.length === 0) break
+        if (turnEnds && !this.hasReadyStepInput()) break
         target = 'next-step'
       }
     } catch (error: unknown) {
@@ -357,12 +359,24 @@ export class ReactLoopAgent implements Agent {
         this.throwError(error)
       }
     }
-    if (!this.inbox.hasPending) return false
+    if (!this.hasReadyInput()) return false
     phase.abort = new AbortController()
     // A fresh controller makes a latch set on the old one stale: the live driver claims the queue itself.
     phase.wakeRequested = false
     phase.step = 0
     return true
+  }
+
+  private hasReadyStepInput(): boolean {
+    return this.inbox.nextStep.some(message => !this.loopCtx.agents.defersInput(this, message))
+  }
+
+  private hasReadyInput(): boolean {
+    const ready = (message: UserMessage) => !this.loopCtx.agents.defersInput(this, message)
+    if (this.inbox.nextTurn.some(ready)) return true
+    const deferredTurn = [...this.inbox.nextTurn, ...this.inbox.nextStep].some(message => !ready(message))
+    return this.inbox.nextStep.some(message => ready(message)
+      && (!deferredTurn || (message.source.kind !== 'plugin' && message.source.kind !== 'tool')))
   }
 
   private async step(decision: Extract<PreparedStep, { kind: 'enter' }>): Promise<StepEndReason | null> {

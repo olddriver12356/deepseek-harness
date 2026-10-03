@@ -143,13 +143,13 @@ export function installCollaborationAuthority(ctx: Context, config: AuthorityCon
     return undefined
   })
   const stopListening = ctx.on('agent/pre-step', async ({ agent, messages, turn }, next): Promise<PreStepDecision> => {
+    const claimed = classifyMessages(messages)
     const decision = await next()
     if (decision.kind === 'reject') return decision
     const previous = states.get(agent)
     const sameTurn = previous?.turn === turn
     const entered = classifyMessages(decision.messages) ?? (sameTurn ? previous.turnClass : 'peer-discussion')
     // Inbox messages that a later listener removed still count: ambiguity resolves to the stricter class.
-    const claimed = classifyMessages(messages)
     const merged = claimed === undefined ? entered : stricter(entered, claimed)
     states.set(agent, { turn, turnClass: sameTurn ? stricter(previous.turnClass, merged) : merged })
     return decision
