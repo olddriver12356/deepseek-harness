@@ -2,6 +2,12 @@
 
 DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
+## Local integration handoff
+
+At session start, read [the local integration handoff](context/handoff/2026-10-01-dsh-cleanup-handoff.md) before changing this checkout. It records prior consolidation and recovery locations. Refresh Git/worktree and runtime state before acting on its dated snapshot.
+
+When resuming OpenSpeedy installation or native Apps support, read [the paused adoption handoff](context/handoff/2026-10-02-openspeedy-native-apps.md) first; resume execution only after the owner asks to continue.
+
 ## Pre-stable APIs and released Session data
 
 Public APIs are pre-stable; update every consumer. Follow [version/status](docs/session-format-status.md) and [type acknowledgements](docs/cookbook/reviewing-persistence-type-changes.md). [Adjacent migration](.agents/notes/implemented/architecture/2026-08-31-released-session-format-migrations.md) may add a version-named successor but never move, overwrite, or delete committed generations; predecessors imply neither fallback nor downgrade support. SQLite uses monotonic `SCHEMA_VERSION`.
@@ -117,6 +123,10 @@ Run checks before pushes via [dsh-pre-push-checks](.agents/skills/dsh-pre-push-c
 ## Secrets / .env
 
 Real-API tests and demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and root `.env`. cordis.yml allows `!!js` (never `!js`) under plugin `config` and entry `disabled`; other metadata stays literal, so conditional composition also uses overlays ([primer](docs/cordis-primer.md#loader-configuration)). Never commit credentials. CI e2e skips without a key; [testing.md](docs/testing.md) owns key policy.
+
+## Local customization and upstream integration
+
+All edits and customizations must minimize future upstream integration risk. Reuse documented services, hooks, slots and plugin extension points first. Keep a cohesive feature in its existing owning plugin; implement independently optional capabilities as separate plugins when that boundary avoids core coupling. Do not create a package for every control. Changes to shared runtime code or pinned vendor sources require evidence that existing extension points are insufficient, the smallest necessary change, and an Agent Note explaining the dependency and upgrade checks. Preserve persisted data contracts and permission enforcement; a clean merge or typecheck alone is not evidence of compatibility. Keep customizations separately reviewable, regenerate build artifacts and declared contracts together, and validate affected startup, restoration, authorization and user flows before activating an upstream update. When upstream supplies equivalent functionality, prefer removing the overlapping customization after checking those contracts.
 
 ## Conventions
 
