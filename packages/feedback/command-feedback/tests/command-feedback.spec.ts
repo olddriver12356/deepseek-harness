@@ -40,7 +40,7 @@ function stubAgent(ctx: Context, id: string): { agent: Agent; session: Session }
     ctx: new Context(),
     get status() { return status },
     send: () => {},
-    followup: () => {},
+    wake: () => {}, followup: () => {},
     steer: () => {},
     inject: () => {},
     cancel() { status = 'idle' },

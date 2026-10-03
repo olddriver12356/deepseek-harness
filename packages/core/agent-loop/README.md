@@ -22,6 +22,8 @@ English | [中文](README.zh.md)
 
 -----
 
+Required source admission and pending-input wake/reorder semantics are owned by the [Agent API](../agent/README.md). The loop refuses absent policies after asynchronous request preparation, retaining original requirements for the active turn. This refusal reaches the existing pending-input drain; ordinary pre-step rejection retains its stopping behavior.
+
 <a id="use-this-package"></a>
 ## Use this package
 

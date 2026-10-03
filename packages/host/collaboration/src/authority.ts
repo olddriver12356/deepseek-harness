@@ -137,6 +137,11 @@ export function installCollaborationAuthority(ctx: Context, config: AuthorityCon
     }
   }
   const states = new WeakMap<Agent, TurnState>()
+  const stopRestoring = ctx.on('agent/created', ({ agent }) => {
+    const restored = ctx.get('sessionProjections')?.stateOf(agent.session, 'collaborationReceipts')
+    if (restored?.turnClass !== undefined) states.set(agent, { turn: restored.turn, turnClass: restored.turnClass })
+    return undefined
+  })
   const stopListening = ctx.on('agent/pre-step', async ({ agent, messages, turn }, next): Promise<PreStepDecision> => {
     const decision = await next()
     if (decision.kind === 'reject') return decision
@@ -158,6 +163,7 @@ export function installCollaborationAuthority(ctx: Context, config: AuthorityCon
   const stopProviding = ctx.provide('collaborationAuthority', authorityMarker)
   return () => {
     stopProviding()
+    stopRestoring()
     stopListening()
     stopGuarding()
   }

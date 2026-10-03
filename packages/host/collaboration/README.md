@@ -34,7 +34,7 @@ This package is the Host plugin for discussion between independently owned sessi
 <a id="turn-classification"></a>
 ## Turn classification
 
-The plugin listens on `agent/pre-step` ahead of other listeners and records one class per Agent and turn. Any peer or unknown input source makes the step `peer-discussion`. User input is `human`; supported `tool` and `plugin` context is neutral and preserves that classification. A step with no new origin keeps the turn's class, or defaults to `peer-discussion` when no class is recorded, including after restoration. Within one turn the class only becomes stricter. Both claimed and admitted messages count, so a later listener cannot rewrite away peer input.
+The plugin listens on `agent/pre-step` ahead of other listeners and records one class per Agent and turn. Any peer or unknown input source makes the step `peer-discussion`. User input is `human`; supported `tool` and `plugin` context is neutral and preserves that classification. On restore, the own non-inherited source projection restores a recorded human or peer turn class. A step with no new origin keeps the turn's class, or defaults to `peer-discussion` when no class is recorded, when the restored log contains no classified own input. Within one turn the class only becomes stricter. Both claimed and admitted messages count, so a later listener cannot rewrite away peer input.
 
 The guard is registered with `tools.guard`, which runs after every `tools/pre-execute` listener and has no allow result. A listener cannot turn its denial into permission. Existing policies still govern human turns and allowlisted discussion tools. Callers must carry the exact executing Agent; calls without one pass through this guard.
 
@@ -71,6 +71,14 @@ Outbox states are `queued`, `admitted`, `cancelled`, and `failed`. Successful en
 
 Retry consumers validate canonical operation data, derive the actor from the Host, and call `findRequestReceipt` before transacting and after a concurrent revision conflict. Identical actor/request keys return the original result and revision without a write. Changed operations under that key reject with `collaboration/request-conflict`. Other sessions or actor kinds namespace the same key independently. Receipts preserve original revision and connection/message identifiers even after later state changes.
 
+## Durable peer delivery
+
+`ctx.collaborationMailbox.send(caller, request)` accepts strict connection/text/request-key data and derives the sender from the live ordinary Agent. `maxFramedMessageBytes` is a required positive safe integer with no default; it bounds complete serialized UTF-8 framed content including Host attribution and the disclaimer. The source fixes `requiredAdmissionPolicy: collaboration-peer` and exact endpoint, connection and message identities. The escaped body is data and never human approval.
+
+Acceptance persists before recipient activity. Activation reservation remains queued and cancellable. Delivery uses the ordinary cold resolver, idle maintenance, recipient inbox append, durable flush, acknowledgement and wake. The recipient’s own non-inherited receipt establishes admission; recovery reuses it without another insertion or charge. Human messages arriving during reservation, flush or acknowledgement precede pending peers, with FIFO preserved within each class and neutral context positions retained. Actual pre-step and prepared-request checks enforce the current pair grant. Ordinary assistant output is never forwarded.
+
+`recover()` reconciles queued work after storage or lifecycle interruptions; `whenSettled()` waits for mailbox jobs, not assistant completion. Disposal stops admission, removes registrations and drains jobs. Accepted receipts always retain the original queued acceptance revision. Admission describes durable recipient input, not a completed reply.
+
 <a id="model-experience"></a>
 ## Model Experience
 
@@ -92,9 +100,7 @@ Independent of request prefixes. The plugin adds no system prompt text or tool s
 ## Known Limitations and Deferred Work
 
 - **No action authority**: arbitrary dynamic Host code reaches the Host process, and a same-user shell can authenticate to the Gateway using local credentials. Automatic action admission remains blocked by Prerequisite P until both paths can enforce human-only authorization. The permanent admission-limit regressions in `tests/authority-investigation.host.spec.ts` assert that both limitations remain reachable; they do not assert attack denial.
-- **Executor-side guard only**: calls without an Agent are not governed. A runtime without this plugin must refuse peer delivery through the recipient resolver, rather than rely on a global runtime rule.
-- **Restoration scoping**: the current installer applies globally and treats an unclassified restored Agent as discussion. The recipient resolver must distinguish protected peer work from ordinary human-only restored work before enabling production delivery. Source-aware restoration and missing-policy recipient denial remain delivery-module obligations.
-- **No peer source declaration yet**: the peer message source kind is declared with the messaging module. Until then the classifier treats every unknown source kind as peer input.
+- **Executor-side guard only**: calls without an Agent are not governed. Required source admission refuses restored peer work when the runtime policy is absent or disposed.
 - **Discussion state only**: no plans, enrollment, task claims, roles, or action approvals are persisted. Remote controls, model tools, and delivery consumers enforce request admission before calling Host state operations.
 
 <a id="dev-note"></a>

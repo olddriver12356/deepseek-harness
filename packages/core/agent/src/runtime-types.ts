@@ -46,6 +46,13 @@ export interface CancelOptions {
 
 /** Agent-owned access to pending work; concrete storage belongs to the driver. */
 export interface Inbox {
+  /**
+   * Move an existing message within its pending list with one durable splice and no insertion/discard notifications.
+   * @param messageId - identity already pending in either list.
+   * @param index - destination index in that same list, clamped to its bounds.
+   * @returns whether the identity exists, including a no-op move.
+   */
+  move(messageId: MessageId, index: number): boolean
   /** Prompts awaiting individual turns. */
   readonly nextTurn: readonly UserMessage[]
   /** Input awaiting the next step boundary. */
@@ -220,6 +227,12 @@ declare module './types.ts' {
    * @param message - identified prompt content and the source that supplied it.
    */
     followup(message: UserMessage): void
+
+    /**
+     * Wake existing pending input without inserting another message; maintenance retains the wake until it settles.
+     * Empty or disposed activity does not start a turn.
+     */
+    wake(): void
 
     /**
    * Submit steering for the nearest step. An idle driver starts a turn;

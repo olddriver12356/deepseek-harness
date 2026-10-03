@@ -3,12 +3,28 @@ import type { z } from 'zod'
 import type { Branded } from '@deepseek-ai/dsh-brand'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { HumanControlAdmission } from './authority.ts'
+import type { peerSourceSchema, sendPeerRequestSchema } from './messages.ts'
 import type { actorSchema, collaborationStateSchema, connectionSchema, discussionOperationSchema, journalSchema, outboxSchema, receiptSchema, registrationSchema, stateLimitsSchema } from './schema.ts'
 
 /** Persistent bidirectional pair identifier. */
 export type ConnectionId = Branded<'CollaborationConnectionId'>
 /** Durable peer-message identifier. */
 export type PeerMessageId = Branded<'CollaborationPeerMessageId'>
+/** Validated model request; the Host separately derives its sender. */
+export type SendPeerRequest = z.infer<typeof sendPeerRequestSchema>
+/** Durable acceptance of one actor-scoped send, independent of eventual Agent completion. */
+export interface MessageReceipt {
+  readonly messageId: PeerMessageId
+  readonly revision: number
+  readonly state: 'queued'
+}
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    /** Explicitly attributed peer data with required discussion admission. */
+    'collaboration-peer': z.infer<typeof peerSourceSchema>
+  }
+}
 /** Caller request identifier, scoped by the Host-derived actor. */
 export type CollaborationRequestId = Branded<'CollaborationRequestId'>
 /** Display-only independent-session registration. */

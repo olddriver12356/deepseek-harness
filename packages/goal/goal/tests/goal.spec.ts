@@ -53,7 +53,7 @@ function stubAgentForSession(session: Session, suppliedCtx?: Context): StubAgent
     ctx: agentCtx,
     status: 'idle',
     send: () => {},
-    followup: () => {},
+    wake: () => {}, followup: () => {},
     steer: () => {},
     inject(input) { this.inbox.append('next-step', input) },
     cancel() {},

@@ -146,6 +146,22 @@ export class ReactLoopInbox implements InboxContract {
     return true
   }
 
+  /** Move one pending identity without reporting cancellation or a new insertion. */
+  move(messageId: MessageId, index: number): boolean {
+    const location = this.locate(messageId)
+    if (location === undefined) return false
+    const inbox = this.current()[location.target]
+    const destination = Math.max(0, Math.min(Number.isNaN(index) ? 0 : Math.trunc(index), inbox.length - 1))
+    if (destination === location.index) return true
+    const start = Math.min(destination, location.index)
+    const end = Math.max(destination, location.index)
+    const reordered = inbox.slice(start, end + 1)
+    const moved = reordered.splice(location.index - start, 1)
+    reordered.splice(destination - start, 0, ...moved)
+    this.mutate(location.target, start, reordered.length, reordered, false, false)
+    return true
+  }
+
   /**
    * Remove one pending message.
    * @param messageId - identity of the pending message to remove.
@@ -204,6 +220,7 @@ export class ReactLoopInbox implements InboxContract {
     deleteCount: number,
     inserted: UserMessage[],
     discardRemoved: boolean,
+    notifyInserted = true,
   ): UserMessage[] {
     const state = this.current()
     const inbox = state[target]
@@ -239,9 +256,7 @@ export class ReactLoopInbox implements InboxContract {
     if (discardRemoved) {
       for (const message of removed) this.dispatch.emit('agent/inbox/discarded', { message })
     }
-    for (const message of event.data.inserted) {
-      this.dispatch.emit('agent/inbox/inserted', { message })
-    }
+    if (notifyInserted) for (const message of event.data.inserted) this.dispatch.emit('agent/inbox/inserted', { message })
     return removed
   }
 }

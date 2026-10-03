@@ -34,7 +34,7 @@ kind: "package-reference"
 <a id="turn-classification"></a>
 ## 回合分类
 
-插件在其他监听器之前监听 `agent/pre-step`，并为每个 Agent 的每个回合记录一个分类。任何对等或未知来源的输入都会使步骤成为 `peer-discussion`。用户输入是 `human`；受支持的 `tool` 和 `plugin` 上下文是中性的，会保留该分类。没有新来源的步骤沿用回合分类；如果没有已记录的分类，包括恢复之后，则默认是 `peer-discussion`。同一回合内分类只会变得更严格。已领取和已准入的消息都计入分类，因此后续监听器不能通过改写消除对等输入。
+插件在其他监听器之前监听 `agent/pre-step`，并为每个 Agent 的每个回合记录一个分类。任何对等或未知来源的输入都会使步骤成为 `peer-discussion`。用户输入是 `human`；受支持的 `tool` 和 `plugin` 上下文是中性的，会保留该分类。恢复时，自身非继承来源投影恢复已记录的人工或 peer 回合分类。没有新来源的步骤沿用回合分类；如果没有已记录的分类，包括恢复日志没有已分类自有输入时，则默认是 `peer-discussion`。同一回合内分类只会变得更严格。已领取和已准入的消息都计入分类，因此后续监听器不能通过改写消除对等输入。
 
 守卫通过 `tools.guard` 注册，它在所有 `tools/pre-execute` 监听器之后运行，并且没有放行结果。监听器无法把它的拒绝变成许可。已有策略仍约束人类回合和允许列表中的讨论工具。调用方必须携带实际执行的 Agent；不带 Agent 的调用会通过此守卫。
 
@@ -71,6 +71,14 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 
 重试消费者验证规范化的操作数据，从 Host 派生 actor，并在事务前和并发 revision 冲突后调用 `findRequestReceipt`。相同 actor/request key 返回原始结果和 revision，不写入。相同 key 对应不同操作时，以 `collaboration/request-conflict` 拒绝。其他会话或 actor kind 使用相同 key 时属于独立命名空间。即使状态随后改变，回执仍保留原始 revision 和 connection/message 标识符。
 
+## 持久 peer 投递
+
+`ctx.collaborationMailbox.send(caller, request)` 接受严格的 connection/text/request-key 数据，从活动普通 Agent 派生发送方。`maxFramedMessageBytes` 是必填正安全整数，没有默认值；它限制完整序列化 UTF-8 消息内容，包括 Host 归属与免责声明。来源固定 `requiredAdmissionPolicy: collaboration-peer` 和精确端点、连接及消息身份。转义后的正文是数据，不是人工批准。
+
+接受记录先于接收方活动持久化。激活预留仍保持排队并可取消。投递使用普通冷会话 resolver、空闲 maintenance、接收方 inbox 追加、持久 flush、确认及唤醒。接收方自身非继承回执确立准入；恢复复用该回执，不重复插入或扣减。预留、flush 或确认期间到达的人工消息先于待处理 peer，各类别保持 FIFO，中性上下文位置保留。实际 pre-step 和准备后请求检查执行当前会话对授权。普通助手输出不会被转发。
+
+`recover()` 在存储或生命周期中断后核对排队工作；`whenSettled()` 等待 mailbox 作业，不等待助手完成。卸载停止准入、移除注册并排空作业。接受回执始终保留原始 queued 接受版本。准入表示持久接收方输入，不表示回复完成。
+
 <a id="model-experience"></a>
 ## 模型体验
 
@@ -92,9 +100,7 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 ## 已知限制与延后工作
 
 - **没有执行权限**：任意动态 Host 代码可以访问 Host 进程，同一用户的 shell 可以使用本地凭据向 Gateway 完成身份验证。在两条路径都能强制实施人类专属授权之前，自动执行准入继续被 Prerequisite P 阻塞。`tests/authority-investigation.host.spec.ts` 中的永久准入限制回归测试断言这两个限制仍可触达，并未断言攻击被拒绝。
-- **仅 Executor 一侧的守卫**：不带 Agent 的调用不受管控。没有此插件的运行时必须通过接收方解析器拒绝对等消息传递，不能依赖全局运行时规则。
-- **恢复范围**：当前安装函数全局生效，并把未分类的恢复后 Agent 视为讨论。在启用生产环境的消息传递之前，接收方解析器必须区分受保护的对等工作与普通人类会话的恢复工作。基于来源的恢复和缺少策略时拒绝接收方仍是消息传递模块的责任。
-- **尚无对等来源声明**：对等消息的来源类型随消息模块声明。在此之前，分类器把所有未知来源类型视为对等输入。
+- **仅 Executor 一侧的守卫**：不带 Agent 的调用不受管控。必要来源准入在运行时策略缺失或卸载时拒绝恢复的 peer 工作。
 - **仅保存讨论状态**：不持久保存计划、enrollment、task claim、角色或执行审批。Remote 控制、模型工具和传递消费者必须先执行请求准入，再调用 Host 状态操作。
 
 <a id="dev-note"></a>

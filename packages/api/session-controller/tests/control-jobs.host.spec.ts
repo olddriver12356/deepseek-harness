@@ -52,7 +52,7 @@ async function harness(withJobs: boolean): Promise<{
     status: 'idle',
     ctx,
     send: () => {},
-    followup: () => {},
+    wake: () => {}, followup: () => {},
     steer: () => {},
     inject: () => {},
     cancel: () => {},

@@ -12,6 +12,8 @@ import Credentials from '@deepseek-ai/dsh-credentials-local'
 import WebServer from '@deepseek-ai/dsh-host-webserver'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import Jsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
+import AgentRegistry from '@deepseek-ai/dsh-agent'
+import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import Storage from '@deepseek-ai/dsh-storage'
 import * as StorageDomain from '@deepseek-ai/dsh-storage-domain'
 import * as StorageJson from '@deepseek-ai/dsh-storage-json'
@@ -46,14 +48,14 @@ async function load() {
   const modules = new Map<string, unknown>([
     ['credentials', Credentials], ['web', WebServer], ['connection', Connection], ['typert', Typert], ['gateway', Gateway],
     ['sessions', SessionStore], ['persistence', Jsonl], ['storage', Storage], ['storage-json', StorageJson], ['storage-domain', StorageDomain],
-    ['prompt', SystemPrompt], ['tools', Tools], ['collaboration', Collaboration],
+    ['prompt', SystemPrompt], ['tools', Tools], ['agents', AgentRegistry], ['projections', SessionProjections], ['collaboration', Collaboration],
   ])
   const rows = [...modules.keys()].map(name => ({ name, ...(name === 'credentials' ? { config: { path: join(root, '.credentials.yaml'), watch: false } }
     : name === 'web' ? { config: { host: '127.0.0.1', port: 0 } }
       : name === 'persistence' ? { config: { root: join(root, 'sessions'), compression: 'none' } }
         : name === 'storage-json' ? { config: { root: join(root, 'storage') } }
           : name === 'storage-domain' ? { config: { backend: 'json' } }
-            : name === 'collaboration' ? { config: { peerDiscussionTools: [], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 } } } : {}) }))
+            : name === 'collaboration' ? { config: { maxFramedMessageBytes: 16384, peerDiscussionTools: [], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 } } } : {}) }))
   const config = join(root, 'cordis.yml')
   await writeFile(config, JSON.stringify(rows))
   ctx.baseUrl = pathToFileURL(root).href + '/'
@@ -128,7 +130,7 @@ it('authenticated addPeer registers both ordinary sessions from headers without 
   expect(state.registrations).toEqual([{ sessionId: 'a', title: 'A', cwd: h.root }, { sessionId: 'b', title: 'B', cwd: join(h.root, 'other-worktree') }])
   expect(state.connections).toHaveLength(1)
   expect(state.connections[0]).toMatchObject({ disclosureAccepted: true, budget: { limit: 2, used: 0 } })
-  expect(h.ctx.get('agents')).toBeUndefined()
+  expect(h.ctx.agents.list()).toEqual([])
   expect(open).not.toHaveBeenCalled()
 })
 
@@ -245,7 +247,8 @@ it('filters snapshots and streams to authorized pairs, sends full recovery basel
   expect(h.ctx.get('collaborationRemote')).toBeUndefined()
   expect((await h.call('snapshot', { sessionId: 'a' })).status).toBe(404)
   await h.ctx.loader.create({ name: 'collaboration', config: {
-    peerDiscussionTools: [], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 },
+    maxFramedMessageBytes: 16384, peerDiscussionTools: [],
+    stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 },
   } })
   await h.ctx.loader.await()
   expect((await h.call('snapshot', { sessionId: 'a' })).result?.value).toMatchObject({ revision: 2, connections: [{ id, paused: true }] })

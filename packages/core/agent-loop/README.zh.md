@@ -22,6 +22,8 @@ kind: "package-reference"
 
 -----
 
+必要来源准入与待处理输入唤醒、重排语义由 [Agent API](../agent/README.zh.md) 拥有。循环在异步请求准备之后拒绝缺失策略，并为当前回合保留原始要求。该拒绝进入现有待处理输入排空流程；普通 pre-step 拒绝仍保留停止行为。
+
 <a id="use-this-package"></a>
 ## 使用本包
 

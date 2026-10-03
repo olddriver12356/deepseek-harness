@@ -68,6 +68,8 @@ The `agent/*` events let plugins act on live work without depending on the loop 
 
 -----
 
+`AgentRegistry.registerInputPolicy(name, accepts)` registers a synchronous input predicate as a reversible owner effect. A source can require that name through `requiredAdmissionPolicy`; missing registration refuses the input. The loop retains original requirements despite downstream source rewriting and checks again immediately before committing model input. Policy denial records a blocked turn and drains later pending human input. Ordinary human sources require no policy. `wake()` creates no message or authority and holds existing work behind maintenance; disposed agents and empty inboxes do no work. `Inbox.move(messageId, index)` records one reorder splice within the same list, preserving identity and content without inserted/discarded notifications.
+
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 

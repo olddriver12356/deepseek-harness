@@ -39,6 +39,24 @@ import type {
 
 const roots: string[] = []
 
+it('publishes a V4 successor while preserving the committed V3 generation bytes and identity', async () => {
+  const root = await tempRoot()
+  const request = options(root, 'none', catalogAdapter(), 3)
+  const source = Buffer.from(line(header(3)) + [event0, event1].map(line).join(''))
+  await writeFile(request.sourcePath, source)
+  const before = await stat(request.sourcePath)
+  const prepared = await prepareJsonlMigration({ ...request, verifyCurrentFile: verifier() })
+  expect(prepared.artifact.header.version).toBe(4)
+  expect(prepared.artifact.events).toEqual([event0, event1])
+  await prepared.publish()
+  expect(await readFile(request.sourcePath)).toEqual(source)
+  const after = await stat(request.sourcePath)
+  expect([after.ino, after.size, after.mtimeMs]).toEqual([before.ino, before.size, before.mtimeMs])
+  expect((await readdir(root)).sort()).toEqual(['session.v3.jsonl', 'session.v4.jsonl'])
+  const rows = (await readFile(request.currentPath, 'utf8')).trimEnd().split('\n').map(row => JSON.parse(row) as unknown)
+  expect(rows).toEqual([header(4), event0, event1])
+})
+
 async function tempRoot(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'dsh-jsonl-generation-'))
   roots.push(root)

@@ -11,6 +11,10 @@ import * as StorageDomain from '@deepseek-ai/dsh-storage-domain'
 import * as StorageJson from '@deepseek-ai/dsh-storage-json'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import AgentRegistry from '@deepseek-ai/dsh-agent'
+import SessionStore from '@deepseek-ai/dsh-session'
+import SessionProjections from '@deepseek-ai/dsh-session-projection'
+import Jsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
 import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
 import { MemoryMediaPool, MemoryStorageBackend } from '../../../storage/storage-domain/tests/helpers/memory-backend.ts'
 import { createHumanControlAdmission } from '../src/authority.ts'
@@ -47,11 +51,14 @@ async function bootJson(root: string) {
   contexts.push(ctx)
   const modules = new Map<string, unknown>([
     ['storage', Storage], ['json', StorageJson], ['domain', StorageDomain],
-    ['prompt', SystemPrompt], ['tools', ToolRuntime], ['collaboration', collaboration],
+    ['prompt', SystemPrompt], ['tools', ToolRuntime], ['agents', AgentRegistry], ['sessions', SessionStore],
+    ['projections', SessionProjections], ['persistence', Jsonl], ['collaboration', collaboration],
   ])
   const rows = [
     { name: 'storage' }, { name: 'json', config: { root } }, { name: 'domain', config: { backend: 'json' } },
-    { name: 'prompt' }, { name: 'tools' }, { name: 'collaboration', config: { stateLimits: limits } },
+    { name: 'prompt' }, { name: 'tools' }, { name: 'agents' }, { name: 'sessions' }, { name: 'projections' },
+    { name: 'persistence', config: { root: join(root, 'sessions'), compression: 'none' } },
+    { name: 'collaboration', config: { maxFramedMessageBytes: 16384, stateLimits: limits } },
   ]
   const config = join(root, 'cordis.yml')
   await writeFile(config, JSON.stringify(rows))
@@ -186,7 +193,7 @@ describe('atomic collaboration store', () => {
     await entry.fiber!.dispose()
     expect(second.ctx.get('collaborationStore')).toBeUndefined()
     await expect(second.store.transact(4, register)).rejects.toMatchObject({ code: 'collaboration/closed' })
-    await second.ctx.loader.create({ name: 'collaboration', config: { stateLimits: limits } })
+    await second.ctx.loader.create({ name: 'collaboration', config: { maxFramedMessageBytes: 16384, stateLimits: limits } })
     await second.ctx.loader.await()
     expect(second.ctx.collaborationStore.read()).toEqual(snapshot)
   })

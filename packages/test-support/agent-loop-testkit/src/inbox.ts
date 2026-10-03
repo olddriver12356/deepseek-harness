@@ -35,6 +35,15 @@ export function createInboxStub(): Inbox {
     prepend(target, message) {
       pending[target].unshift(message)
     },
+    move(messageId, index) {
+      const location = locate(messageId)
+      if (location === undefined) return false
+      const list = pending[location.target]
+      const destination = Math.max(0, Math.min(Number.isNaN(index) ? 0 : Math.trunc(index), list.length - 1))
+      const moved = list.splice(location.index, 1)
+      list.splice(destination, 0, ...moved)
+      return true
+    },
     replace(messageId, message) {
       const location = locate(messageId)
       if (location === undefined) return false
@@ -67,6 +76,7 @@ export function unsupportedInbox(): Inbox {
     clear: rejectMutation,
     append: rejectMutation,
     prepend: rejectMutation,
+    move: rejectMutation,
     replace: rejectMutation,
     remove: rejectMutation,
     splice: rejectMutation,

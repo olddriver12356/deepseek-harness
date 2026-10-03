@@ -11,6 +11,12 @@ import Include from '@deepseek-ai/cordis-plugin-include'
 import { pathToFileURL } from 'node:url'
 import AgentRegistry, { type AgentHandle } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
+import AgentDefaultModel from '@deepseek-ai/dsh-agent-default-model'
+import SqliteSessionQuery from '@deepseek-ai/dsh-session-query-sqlite'
+import { ApiSessionAgentController } from '../../../../api/session-controller/src/agent.ts'
+import { installModelSelectionProjection } from '../../../../api/session-controller/src/model-selection-projection.ts'
+import type { SessionController } from '@deepseek-ai/dsh-api-session-controller'
+import TypertRegistry from '@deepseek-ai/dsh-typert-registry'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import LlmRuntime, { createUserMessage, LlmAdapter, ToolCallId } from '@deepseek-ai/dsh-llm'
 import type { GenerateOptions, StreamChunk, UserMessage } from '@deepseek-ai/dsh-llm'
@@ -131,15 +137,23 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
       ['prompt', SystemPrompt], ['tools', ToolRuntime], ['agents', AgentRegistry],
       ['persistence', JsonlSessionPersistence], ['loop', AgentLoop], ['collaboration', collaboration],
       ['storage', Storage], ['storage-json', StorageJson], ['storage-domain', StorageDomain],
+      ['default-model', AgentDefaultModel], ['query', SqliteSessionQuery], ['typert', TypertRegistry],
+      ['ordinary-resolver', { inject: ['agents', 'sessions', 'sessionQuery', 'sessionProjections', 'agentDefaultModel', 'typert'], apply(context: Context) {
+        installModelSelectionProjection(context)
+        const resolver = new ApiSessionAgentController(context)
+        context.provide('sessionController', { resolveAgent: resolver.resolveAgent.bind(resolver) } as SessionController)
+      } }],
     ])
     const rows = [...modules.keys()]
       .filter(name => name !== 'collaboration' || options.withCollaboration !== false)
       .map(name => ({ name, ...(name === 'persistence'
         ? { config: { root: join(workspace, 'sessions'), compression: 'none' } }
-        : name === 'loop' ? { config: { agents: [] } }
-          : name === 'storage-json' ? { config: { root: join(workspace, 'storage') } }
-            : name === 'storage-domain' ? { config: { backend: 'json' } }
-              : name === 'collaboration' ? { config: { peerDiscussionTools: options.peerDiscussionTools ?? ['read'], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 } } } : {}) }))
+        : name === 'default-model' ? { config: { provider: 'mock', model: 'mock' } }
+          : name === 'query' ? { config: { path: ':memory:', openAt: 'never' } }
+            : name === 'loop' ? { config: { agents: [] } }
+              : name === 'storage-json' ? { config: { root: join(workspace, 'storage') } }
+                : name === 'storage-domain' ? { config: { backend: 'json' } }
+                  : name === 'collaboration' ? { config: { maxFramedMessageBytes: 16384, peerDiscussionTools: options.peerDiscussionTools ?? ['read'], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 } } } : {}) }))
     const configPath = join(workspace, 'cordis.yml')
     await writeFile(configPath, JSON.stringify(rows))
     ctx.baseUrl = pathToFileURL(workspace).href + '/'
@@ -154,6 +168,7 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
     } as unknown as NonNullable<typeof ctx.loader.internal>
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
     await ctx.loader.await()
+    if (options.withCollaboration !== false && ctx.get('collaborationStore') === undefined) throw new Error('collaboration plugin did not activate')
     const inactive = [...ctx.loader.entries()].filter(entry => !entry.disabled && entry.fiber === undefined)
     if (inactive.length > 0) throw new Error(`inactive fixture plugins: ${inactive.map(entry => entry.options.name).join(', ')}`)
     ctx.llm.registerAdapter(['mock'], adapter)
