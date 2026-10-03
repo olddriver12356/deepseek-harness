@@ -7,6 +7,7 @@ import { NewsService, type Config } from '../src/index.ts'
 import { createTempArchive, removeTempArchives } from './support/archive-fixture.ts'
 import { fetchPublic } from '../src/public-fetch.ts'
 import { KnowledgeStore } from '@deepseek-ai/dsh-host-knowledge'
+import * as archive from '../src/archive.ts'
 vi.mock('../src/public-fetch.ts', () => ({ fetchPublic: vi.fn() }))
 
 const contexts: Context[] = []
@@ -21,10 +22,10 @@ afterEach(async () => {
 })
 
 describe('News service', () => {
-  it('does not wait for a slow intake writer before returning the feed', async () => {
+  it('does not wait for a slow archive writer before returning the feed', async () => {
     const fixture = await createTempArchive()
     let release!: () => void
-    saveFeed.mockImplementation(() => new Promise<void>((resolve) => { release = resolve }))
+    const append = vi.spyOn(archive, 'appendNewsArchive').mockImplementation(() => new Promise<number>((resolve) => { release = () => { resolve(0) } }))
     vi.mocked(fetchPublic).mockImplementation(async () => ({ response: new Response('<rss><channel /></rss>', { headers: { 'content-type': 'application/rss+xml' } }) as never, close: async () => {} }))
     const ctx = new Context()
     contexts.push(ctx)
@@ -33,14 +34,15 @@ describe('News service', () => {
     const service = new NewsService(ctx, { cacheDir: fixture.cacheDir, vaultRoot: fixture.vaultRoot, refreshIntervalMs: 60_000 })
     try {
       expect((await service.list({ refresh: true })).fetchedAt).not.toBeNull()
-      await expect.poll(() => saveFeed.mock.calls.length).toBe(1)
+      await expect.poll(() => append.mock.calls.length).toBe(1)
+      expect(saveFeed).not.toHaveBeenCalled()
     } finally {
       release?.()
     }
   })
-  it('serves and caches a crawl when Agent Layer is locked, then retries archival', async () => {
+  it('serves and caches a crawl when archival fails, then retries archival without writing Intake', async () => {
     const fixture = await createTempArchive()
-    saveFeed.mockRejectedValue(new Error('Agent Layer writer lock is already held or requires recovery'))
+    const append = vi.spyOn(archive, 'appendNewsArchive').mockRejectedValueOnce(new Error('Archive is unavailable'))
     const xml = `<rss><channel><item><title>Available</title><link>https://example.com/available</link><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`
     vi.mocked(fetchPublic).mockImplementation(async () => ({ response: new Response(xml, { headers: { 'content-type': 'application/rss+xml' } }) as never, close: async () => {} }))
     const ctx = new Context()
@@ -51,11 +53,11 @@ describe('News service', () => {
     const snapshot = await service.list({ refresh: true })
     expect(snapshot.news[0]?.title).toBe('Available')
     expect(JSON.parse(await readFile(join(fixture.cacheDir, 'news.json'), 'utf8')).news[0].title).toBe('Available')
-    await expect.poll(async () => (await readFile(fixture.archivePath, 'utf8').catch(() => ''))).toContain('Available')
-    await expect.poll(() => saveFeed.mock.calls.length).toBe(1)
-    saveFeed.mockResolvedValue(undefined)
+    await expect.poll(() => append.mock.calls.length).toBe(1)
     await service.list({ refresh: true })
-    await expect.poll(() => saveFeed.mock.calls.length).toBe(2)
+    await expect.poll(() => append.mock.calls.length).toBe(2)
+    await expect.poll(async () => (await readFile(fixture.archivePath, 'utf8').catch(() => ''))).toContain('Available')
+    expect(saveFeed).not.toHaveBeenCalled()
   })
   it('uses the schema default for the background refresh interval', async () => {
     const fixture = await createTempArchive()
@@ -107,8 +109,7 @@ describe('News service', () => {
         return 0
       }
     }).toBe(2)
-    await expect.poll(() => saveFeed.mock.calls.length).toBeGreaterThan(0)
-    expect(saveFeed).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ title: 'Stored' })]))
+    expect(saveFeed).not.toHaveBeenCalled()
     await expect(readFile(join(fixture.vaultRoot, 'Resources/AI News/news.jsonl'))).rejects.toThrow()
   })
 })

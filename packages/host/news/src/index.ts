@@ -10,7 +10,6 @@ import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { appendNewsArchive, type NewsArchiveBatch } from './archive.ts'
 import { fetchPublic } from './public-fetch.ts'
-import { KnowledgeStore } from '@deepseek-ai/dsh-host-knowledge'
 import { collectFeed, imageCacheKey, NEWS_IMAGE_LIMIT, NEWS_SOURCES, readResponse, TOOLS_SOURCES, type CachedNewsItem } from './feed.ts'
 import type { NewsListRequest, NewsItem, NewsSnapshot } from './types.ts'
 
@@ -189,7 +188,6 @@ export class NewsService extends TypertRemoteService {
   static Config = Config
   static inject = ['timer', 'webServer']
   private readonly archivePath: string
-  private readonly intake: KnowledgeStore
   private readonly cachePath: string
   private readonly thumbnailDir: string
   private refreshTask: Promise<StoredNewsCache> | undefined
@@ -200,7 +198,6 @@ export class NewsService extends TypertRemoteService {
     this.cachePath = join(resolve(config.cacheDir), 'news.json')
     this.thumbnailDir = join(resolve(config.cacheDir), 'news-thumbs')
     this.archivePath = join(resolve(config.vaultRoot), 'Agents', '.generated', 'news', 'news.jsonl')
-    this.intake = new KnowledgeStore(join(resolve(config.vaultRoot), 'Agents'))
     const route: WebRoute = { kind: 'exact', path: '/news/image', handler: this.handleImage }
     ctx.effect(() => ctx.webServer.register(route), 'news: image route')
     ctx.interval(() => { void this.backgroundRefresh() }, config.refreshIntervalMs)
@@ -217,10 +214,6 @@ export class NewsService extends TypertRemoteService {
 
   private async archive(batch: NewsArchiveBatch, fetchedAt: string): Promise<void> {
     await appendNewsArchive(this.archivePath, batch, fetchedAt, false)
-    await this.intake.saveFeed([...batch.news, ...batch.tools].map(item => ({
-      sourceUrl: item.url, publisher: item.source, retrievedAt: fetchedAt, title: item.title,
-      content: `${item.title}\n\n${item.summary}\n\nSource: ${item.url}`,
-    })))
   }
 
   private queueArchive(batch: NewsArchiveBatch, fetchedAt: string): void {
