@@ -190,4 +190,42 @@ describe('atomic collaboration store', () => {
     await second.ctx.loader.await()
     expect(second.ctx.collaborationStore.read()).toEqual(snapshot)
   })
+
+  it('rejects an unexplained transaction authority change before durable commit or notification', async () => {
+    const { store, changed } = await open()
+    const op = discussionOperationSchema.parse({ kind: 'add-peer', registrations: [
+      { sessionId: 'a', title: 'A', cwd: '/a' }, { sessionId: 'b', title: 'B', cwd: '/b' },
+    ], connection: { id: 'ab', sessions: ['a', 'b'], disclosureAccepted: true,
+      grants: { snapshot: false, follow: false }, paused: true, budget: { limit: 1, used: 0 } } })
+    await store.transact(0, state => applyDiscussionOperation(state, op, host))
+    const before = store.read()
+    await expect(store.transact(1, (state) => {
+      const next = register(state)
+      return { ...next, connections: next.connections.map(row => ({ ...row, grants: { snapshot: true, follow: true }, paused: false })) }
+    })).rejects.toThrow(/journal/)
+    expect(store.read()).toEqual(before)
+    expect(changed).toHaveLength(1)
+  })
+
+  it.each(['contradictory-pair', 'revision-zero'] as const)('refuses stored authority inconsistent with journal: %s', async (corruption) => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-collaboration-corrupt-'))
+    paths.push(root)
+    const { store, ctx } = await bootJson(root)
+    const op = discussionOperationSchema.parse({ kind: 'add-peer', registrations: [
+      { sessionId: 'a', title: 'A', cwd: '/a' }, { sessionId: 'b', title: 'B', cwd: '/b' },
+    ], connection: { id: 'ab', sessions: ['a', 'b'], disclosureAccepted: true,
+      grants: { snapshot: false, follow: false }, paused: true, budget: { limit: 1, used: 0 } } })
+    await store.transact(0, state => applyDiscussionOperation(state, op, host))
+    const valid = store.read()
+    await store.close()
+    const corrupt = corruption === 'revision-zero' ? { ...valid, revision: 0, journal: [] }
+      : { ...valid, connections: valid.connections.map(row => ({ ...row, grants: { snapshot: true, follow: true }, paused: false })) }
+    const path = join(root, 'collaboration.json')
+    const document = JSON.parse(await readFile(path, 'utf8')) as { tables: { state: { current: unknown } } }
+    document.tables.state.current = corrupt
+    await writeFile(path, JSON.stringify(document, null, 2) + '\n')
+    const outcome = await CollaborationStore.open(ctx.storageDomain, limits)
+      .then(() => 'opened', (error: unknown) => (error as { code: string }).code)
+    expect(outcome).toBe('invalid-record')
+  })
 })

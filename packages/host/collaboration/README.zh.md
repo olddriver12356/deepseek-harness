@@ -49,6 +49,8 @@ kind: "package-reference"
 
 `ctx.collaborationStore` 拥有版本 1 的 domain `collaboration`、table `state`、record `current`。首次打开会持久初始化此记录。未知版本和损坏的权威记录会拒绝整个打开操作；初始化失败会释放存储。store 在现有 storage-domain 写入队列上使用 `KvTable.update`，没有第二个数据库或权限缓存。
 
+持久读取和事务验证使用与实时操作相同的纯 reducer，从空状态重放完整连续的 journal。当前注册、连接、授权、暂停状态、预算和 outbox 必须与重放结果一致。没有操作依据的权限变化和非空的 revision-zero 记录会验证失败。重放检查已记录操作的一致性，不创建人类准入，也不建立对任意 Host 代码的隔离。
+
 `read()` 返回不可变的已提交状态。`transact(expectedRevision, transform)` 在其排队位置检查 revision，应用一次同步纯变换，验证状态和容量，再持久提交一条新增 journal 条目。陈旧写入以 `collaboration/revision-conflict` 拒绝，并返回当前 revision。写入失败既不改变内存，也不发布通知。消费者只发布匹配的已提交 `domain/changed` 结果。dispose 立即拒绝新事务，等待已接纳事务完成后再关闭存储。
 
 `applyDiscussionOperation` 分开接收已验证的操作数据，以及 Host 派生的 actor、时间戳、请求 key 和私有人类准入。请求不包含覆盖 actor 的字段。注册记录只含显示字段，不授予权限。连接保存双向会话对，带已接受的披露、仅属于该会话对的 snapshot/follow 授权、暂停状态和明确的人类设置激活上限。`add-peer` 原子注册对方并打开连接。人类控制需要私有 discussion 准入；预算更新保留已扣减的 `used` 数量。每次操作都把完整数据、actor、revision 和时间戳写入 journal。

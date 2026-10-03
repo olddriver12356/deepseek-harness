@@ -141,4 +141,12 @@ describe('V1a aggregate validation and transitions', () => {
     const forgedActors = state.journal.map(row => ({ ...row, actor: fromA.actor }))
     expect(collaborationStateSchema.safeParse({ ...state, journal: forgedActors }).success).toBe(false)
   })
+
+  it.each(['grants', 'pause', 'revision-zero'] as const)('rejects authority inconsistent with journal: %s', (corruption) => {
+    const paused = applyDiscussionOperation(paired(), operation({ kind: 'pause', connectionId: 'ab', paused: true }), human)
+    const corrupt = corruption === 'revision-zero' ? { ...paused, revision: 0, journal: [] }
+      : { ...paused, connections: paused.connections.map(row => corruption === 'grants'
+        ? { ...row, grants: { snapshot: true, follow: true } } : { ...row, paused: false }) }
+    expect(collaborationStateSchema.safeParse(corrupt).success).toBe(false)
+  })
 })

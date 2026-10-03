@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
+import { reduceDiscussionOperation } from './operation.ts'
 import type { CollaborationRequestId, ConnectionId, PeerMessageId } from './types.ts'
 
 const identifier = z.string().min(1).regex(/^[^\u0000-\u001f\u007f]+$/)
@@ -82,7 +83,7 @@ export const receiptSchema = z.strictObject({
 export const stateLimitsSchema = z.strictObject({
   maxStateBytes: count.min(1), maxJournalEntries: count.min(1), maxRequests: count.min(1),
 }).readonly()
-/** Authoritative aggregate parser, including cross-record ownership and ordered journal facts. */
+/** Authoritative aggregate parser; current records must equal replay of the complete journal from empty state. */
 export const collaborationStateSchema = z.strictObject({
   revision: count, registrations: z.array(registrationSchema).readonly(), connections: z.array(connectionSchema).readonly(),
   outbox: z.array(outboxSchema).readonly(), journal: z.array(journalSchema).readonly(), requests: z.array(receiptSchema).readonly(),
@@ -113,6 +114,20 @@ export const collaborationStateSchema = z.strictObject({
   if (state.journal.length !== state.revision) fail('journal does not cover committed revisions')
   for (const [index, entry] of state.journal.entries()) {
     if (entry.revision !== index + 1 || entry.operation !== entry.data.kind) fail('unordered or inconsistent journal')
+  }
+  let replay: Parameters<typeof reduceDiscussionOperation>[0] = { registrations: [], connections: [], outbox: [], journal: [] }
+  try {
+    for (const entry of state.journal) {
+      replay = { ...reduceDiscussionOperation(replay, entry.data, entry.actor), journal: [...replay.journal, entry] }
+    }
+  } catch (error) {
+    // Invalid operation sequences are corrupt durable records, not live human-control requests.
+    fail(`journal operation sequence is invalid: ${String(error)}`)
+    return
+  }
+  if (JSON.stringify([state.registrations, state.connections, state.outbox])
+    !== JSON.stringify([replay.registrations, replay.connections, replay.outbox])) {
+    fail('current authority and outbox do not match retained journal operations')
   }
   const keys = new Set<string>()
   for (const receipt of state.requests) {
