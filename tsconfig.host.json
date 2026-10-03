@@ -385,6 +385,7 @@
     { "path": "./packages/host/styles" },
     { "path": "./packages/llm/plugin-package-inventory-deepseek" },
     { "path": "./packages/host/webserver" },
+    { "path": "./packages/host/peer-inbox" },
     { "path": "./packages/sdk/client" },
     { "path": "./packages/sdk/protocol" },
     { "path": "./packages/lsp/lsp" },
