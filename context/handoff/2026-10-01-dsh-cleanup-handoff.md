@@ -2,13 +2,17 @@
 
 Created: 2026-10-01 14:42:48 local time
 
+## Resolved on 2026-10-02
+
+The owner confirmed that no agent was writing to the old worktrees. Main `master` now contains the prior dirty main work as separate Tools, Experts, skill-origin, Personal Memory, News, Unicode, Peer Inbox, workspace-registration, documentation, and handoff commits, followed by merge commit `49741ce60a` for the Independent Session Collaboration plan and opt-in authority milestone. The generated module graph was refreshed in `fa4852e3d3`. The main Git status is clean and `git worktree list --porcelain` reports only `C:/Projects/deepseek-harness`. The three former Collaboration worktrees and their local branch refs were removed after verifying the plan commit was an ancestor and the V1a package tree matched main. The `collab-v1a` branch was cherry-picked before merging, so its original commit is retained in the verified `C:\SecondBrain.local\dsh-consolidation-20261002\branches-before-prune.bundle`; staged and unstaged patches, untracked ZIPs, duplicate main files, and Windows removal residue are in the same recovery directory. The residue was renamed out of `.worktrees` after Git hit `Filename too long`, not recursively deleted. The local runtime news archive remains in place and is ignored only by this checkout's `.git/info/exclude`; eight browser screenshots were moved to recovery. The running port 3910 process was not restarted or probed. Focused Collaboration and Peer Inbox verification passed 45 tests with one skipped, and both package TypeScript builds passed. This is an integration checkpoint, not completion of Independent Session Collaboration.
+
 ## User intent and latest correction
 
 The user wants a single clear main DSH checkout and the confusing secondary worktrees removed without losing work. They authorized attempting consolidation even though another agent is working on Session Collaboration. Latest instruction: use `/handoff`, save this handoff in the OS temporary directory, and reference existing artifacts rather than duplicate them. This is context transfer, not authority to overwrite concurrent work.
 
 ## Resume here
 
-Read the existing integration handoff below, then refresh `git worktree list --porcelain` and the Session Collaboration worktree's dirty status. Coordinate the active writer's pause/handoff before final removal. Do not assume absence from Orca inventory means no writer.
+This section records the original 2026-10-01 checkpoint. Use the resolution above and refresh Git and runtime state before future changes.
 
 ## Authoritative existing artifacts
 
