@@ -63,8 +63,14 @@ def _parse_scalar(raw: str):
         return False
     if value in ("null", "Null", "~"):
         return None
-    if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
-        return value[1:-1]
+    if value.startswith('"') and value.endswith('"'):
+        # DSH: decode the JSON string emitted by yaml_scalar instead of re-escaping it on every save.
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value[1:-1]
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
     return value
 
 
@@ -77,7 +83,7 @@ def parse_frontmatter(text: str) -> Tuple[Dict[str, object], str]:
     for raw_line in match.group(1).splitlines():
         if re.match(r"^\s+-\s+", raw_line) and active_list:
             result.setdefault(active_list, [])
-            value = re.sub(r"^\s+-\s+", "", raw_line).strip().strip("\"'")
+            value = _parse_scalar(re.sub(r"^\s+-\s+", "", raw_line))
             if value:
                 result[active_list].append(value)
             continue

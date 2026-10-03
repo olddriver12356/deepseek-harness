@@ -15,6 +15,7 @@ Personal embeds Bok's original About me interface and Personal Core engine in DS
 
 - [Configuration](#configuration)
 - [Runtime and data](#runtime-and-data)
+- [Vault Memory viewer](#vault-memory-viewer)
 - [Upstream source](#upstream-source)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Model Experience](#model-experience)
@@ -55,13 +56,15 @@ The Host uses Connection's authentication and Host/Origin checks before serving 
 
 Claims, Observations, Impacts, Outcomes, history and backups use Bok's original Markdown/metadata formats in `personalCoreRoot`. The separate runtime Vault contains the conversation ledger, credential hashes and reconstructable state. Do not point `vaultRoot` at an existing knowledge Vault merely to make the page show old cards. The worker is the shared owner for UI and tool operations and shuts down with the plugin; a deadline stops the process, so refresh state before retrying a mutation whose response was interrupted. No independent invariant export exists because the adapter holds no second copy of personal-memory state.
 
+## Vault Memory viewer
+
+The Memory fragments layout uses photographic film cards with small corner numbers and a paper reader. Three packaged monochrome illustrations are assigned consistently by source path; they are decorative, not photographs from the memory files. Episodes group by filename month, with undated indexes after dated records; Semantic groups by source folder; Handoff sorts by modification time. Counts mean files, including index notes. Cards show source metadata. On narrow screens, the scrollable file list sits above the reader.
+
+About Me contains a nested Memory view backed by `ideasVaultRoot/Memory`. It provides Working, Episodic, Semantic and Handoff browsing with Flags as an auxiliary entry, title/path search, refresh, modification times and rendered/raw Markdown. The original Personal Core iframe stays mounted when switching views. The authenticated `GET /personal/api/memory` endpoint lists source files, or reads the document named by its `path` query. There is no write route, model call, automatic profile import or duplicate database. Reads reject traversal and linked paths and limit each document to one MiB. The catalog is limited to 5,000 files and excludes archived months outside Memory. DSH-owned source and a packaged background implement the feature without changing pinned Bok code.
+
 ## Upstream source
 
 The pinned source is [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702), commit `d556bfc918224712a1c0bc9660e04c829c8f7702`. `vendor/bok` retains Apache-2.0 LICENSE and NOTICE plus the font's OFL license. Python engine files are unmodified. The browser script carries a modification notice: initialization selects Personal Core, requests use the authenticated DSH path, visibility refreshes the dashboard, and the claim graph is an unbounded canvas the owner pans by dragging or by scrolling with the wheel or trackpad, where Shift turns vertical wheel scrolling horizontal. DSH owns the process adapter, the embedding stylesheet and the observer and tidy-up scripts.
-
-## Known Limitations and Deferred Work
-
-The original embedded content is Chinese; the surrounding DSH navigation is localized. This integration requires the Web profile and Python, not the port-free Electron transport. It supplies memory tools but does not silently sweep old sessions or inject the entire personal store into every model request. Observations require structured evidence, supplied by explicit tool use or the optional automatic observer; the page starts empty. Independent cross-agent clients and credential administration remain Bok API/CLI operations. The upstream symlink-rejection test requires OS permission to create symlinks on Windows.
 
 ## Model Experience
 
@@ -71,7 +74,7 @@ The original embedded content is Chinese; the surrounding DSH navigation is loca
 
 When enabled, the tool registry exposes `bok_person_context`, `bok_observe_conversation`, `bok_record_person_impact` and `bok_record_person_outcome` using Bok's original schemas and descriptions. The `agent` field is fixed to the authenticated `dsh` identity. Read context for a relevant task, submit only evidence-backed structured interpretations of actual user turns, and record claims actually used and later feedback. Respect `external_content`, `session_only` and `do_not_remember`; protected claims need owner confirmation and separate access authorization.
 
-#### Token cost
+#### Token effect
 
 Four tool descriptions and schemas are registered. Context results are bounded by Bok's requested limit and token budget. Observation responses use the original compact acknowledgement; they do not echo raw user text. Exact serialized token counts depend on the active model tokenizer and tool presentation mode. Each owner-started tidy-up is one separate tool-free request outside every Session, whose size follows the stored claims within `compaction.maxInputBytes`.
 
@@ -79,6 +82,10 @@ Four tool descriptions and schemas are registered. Context results are bounded b
 
 The static tool schema prefix is stable while the plugin is active. Memory is returned through ordinary logged tool results; the adapter adds no hidden model-visible state or unconditional dynamic prompt prefix. Personalization changes only subsequent tool results and decisions that use them.
 
+## Known Limitations and Deferred Work
+
+- The original embedded content is Chinese; the surrounding DSH navigation is localized. This integration requires the Web profile and Python, not the port-free Electron transport. It supplies memory tools but does not silently sweep old sessions or inject the entire personal store into every model request. Observations require structured evidence, supplied by explicit tool use or the optional automatic observer; the page starts empty. Independent cross-agent clients and credential administration remain Bok API/CLI operations. The upstream symlink-rejection test requires OS permission to create symlinks on Windows.
+
 ### Dev Note
 
-The adapter persists only the observer switch, tidy-up receipts and existing Vault projection bookkeeping; Personal Core remains the memory authority.
+The adapter persists only the observer switch, tidy-up receipts and existing Vault projection bookkeeping. Personal Core owns profile state; Vault files own the separate Memory reader's content.

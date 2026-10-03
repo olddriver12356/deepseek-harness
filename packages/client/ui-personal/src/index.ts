@@ -9,6 +9,7 @@ import type {} from '@deepseek-ai/dsh-tools'
 import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import { PersonalWorker } from './worker.ts'
 import { saveQuickNote } from './quick-note.ts'
+import { listMemory, readMemory } from './vault-memory.ts'
 import { ConversationObserver, type ObserverConfig } from './observer.ts'
 import { UnderstandingCompaction, type CompactionConfig } from './compaction.ts'
 
@@ -121,6 +122,24 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     const url = new URL(req.url ?? '/', 'http://localhost')
     const path = decodeURIComponent(url.pathname.slice(PREFIX.length))
+    if (path === '/api/memory') {
+      if (req.method !== 'GET') { res.writeHead(405); res.end(); return }
+      try {
+        const document = url.searchParams.get('path')
+        const value = document === null ? await listMemory(config.ideasVaultRoot) : await readMemory(config.ideasVaultRoot, document)
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value))
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end('{"error":"memory_unavailable"}')
+      }
+      return
+    }
+    if (['/memory-background.png', '/memory-film.png'].includes(path) && ['GET', 'HEAD'].includes(req.method ?? '')) {
+      try {
+        const image = await readFile(resolve(ROOT, 'assets', path.slice(1)))
+        res.writeHead(200, { 'Content-Type': 'image/png' }); res.end(req.method === 'HEAD' ? undefined : image)
+      } catch { res.writeHead(404); res.end() }
+      return
+    }
     if (path === '/api/quick-note' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return
     }

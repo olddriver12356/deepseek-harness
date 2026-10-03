@@ -95,7 +95,7 @@ export function ConnectedKnowledgePanel({ appPanels, api, t }: {
     featuredArtifactId: records[0]?.id ?? '',
     artifacts: records.map(record => ({
       id: record.id, title: record.title, updatedAt: record.updatedAt,
-      summary: `${t(`state_${record.workflow}`)} · ${record.topics.join(', ')}`,
+      summary: `${t(record.layer === '3 Knowledge' && !record.reviewed ? 'unreviewed' : `state_${record.workflow}`)} · ${record.topics.join(', ')}`,
       topics: record.topics,
       layerId: record.layer === '1 Intake' ? 'intake' : record.layer === '2 AI Processing' ? 'ai-processing' : 'knowledge',
       state: record.status === 'rejected' ? 'REJECTED'
@@ -122,7 +122,7 @@ export function ConnectedKnowledgePanel({ appPanels, api, t }: {
                 : <MarkdownText text={document.markdown.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, '')} labels={labels} />}
           </article>
           <section className={css.workflow} aria-label={t('review')}>
-            <p role="status">{t(`state_${document.workflow}`)}</p>
+            <p role="status">{t(document.layer === '3 Knowledge' && !document.reviewed ? 'unreviewed' : `state_${document.workflow}`)}</p>
             {(['pending', 'processed', 'failed', 'rejected'].includes(document.workflow)) && <button type="button" disabled={busy}
               title={t('distillNotice')} onClick={() => { void act(() => api.distill(document.id)) }}>{t(document.workflow === 'pending' ? 'distill' : 'retry')}</button>}
             {document.layer === '1 Intake' && document.workflow !== 'processing' && <button type="button" disabled={busy} onClick={() => {
@@ -131,8 +131,8 @@ export function ConnectedKnowledgePanel({ appPanels, api, t }: {
             {busy && <p role="status">{t('working')}</p>}
             {(document.workflow === 'awaiting-review' || document.layer === '3 Knowledge' && !document.reviewed) && <fieldset disabled={busy}>
               <legend>{t('review')}</legend>
-              <button type="button" onClick={() => { void act(() => api.review({ id: document.id, revision: document.revision, decision: 'accept' })) }}>{t('accept')}</button>
-              <button type="button" onClick={() => { void act(() => api.review({ id: document.id, revision: document.revision, decision: 'reject' })) }}>{t('reject')}</button>
+              <button type="button" onClick={() => { void act(() => api.review({ id: document.id, revision: document.revision, decision: 'accept' })) }}>{t(document.layer === '3 Knowledge' ? 'markReviewed' : 'accept')}</button>
+              <button type="button" onClick={() => { void act(() => api.review({ id: document.id, revision: document.revision, decision: 'reject' })) }}>{t(document.layer === '3 Knowledge' ? 'rejectCard' : 'reject')}</button>
             </fieldset>}
             {document.layer === '3 Knowledge' && document.workflow === 'accepted' && <>
               <p>{t(document.reviewed ? 'reviewed' : 'unreviewed')} · {t(document.learned ? 'learned' : 'toLearn')}</p>
@@ -146,7 +146,7 @@ export function ConnectedKnowledgePanel({ appPanels, api, t }: {
               {document.derivedFrom.map(source => <button type="button" key={source.id} onClick={() => { navigate(source.id) }}>{t('openSource')} · {records.find(record => record.id === source.id)?.title ?? source.id}</button>)}
               {records.filter(record => record.derivedFrom.some(source => source.id === document.id)).map(record => <button type="button" key={record.id} onClick={() => { navigate(record.id) }}>{record.title} · {t(`state_${record.workflow}`)}</button>)}
             </nav>
-            <RawEvidence key={document.id} id={document.id} api={api} t={t} />
+            {document.source !== 'direct-question' && <RawEvidence key={document.id} id={document.id} api={api} t={t} />}
           </section>
         </>}
       </div>

@@ -85,6 +85,21 @@ it('renders Markdown as a readable document while keeping unsafe HTML and links 
   expect(reader.querySelector('details')?.open).toBe(false)
 })
 
+it('labels review actions accurately for a direct Knowledge card without a source log', async () => {
+  const appPanels = new AppPanelsController()
+  appPanels.setActive('knowledge')
+  const direct = { ...item, layer: '3 Knowledge', workflow: 'accepted', reviewed: false, learned: false, source: 'direct-question', content: '# Concept', markdown: '', evidence: '' }
+  render(<ConnectedKnowledgePanel appPanels={appPanels} api={{ list: async () => [direct], read: async () => direct } as never} t={t} />)
+  fireEvent.click(await screen.findByRole('button', { name: /Saved source/u }))
+  const reader = await screen.findByRole('dialog')
+  expect(screen.getAllByText(zh.unreviewed).length).toBeGreaterThan(0)
+  expect(reader.textContent).not.toContain(zh.state_accepted)
+  expect(screen.getByRole('button', { name: zh.markReviewed })).toBeTruthy()
+  expect(screen.getByRole('button', { name: zh.rejectCard })).toBeTruthy()
+  expect(screen.getByRole('button', { name: zh.markLearned })).toBeTruthy()
+  expect(reader.querySelector('details')).toBeNull()
+})
+
 it('projects committed conversation text without replaying injected context or stream duplicates', async () => {
   const appPanels = new AppPanelsController()
   appPanels.setActive('knowledge')

@@ -56,7 +56,8 @@
     "@deepseek-ai/dsh-system-prompt": "workspace:^",
     "@deepseek-ai/dsh-llm": "workspace:^",
     "@deepseek-ai/dsh-session": "workspace:^",
-    "@deepseek-ai/dsh-agent-default-model": "workspace:^"
+    "@deepseek-ai/dsh-agent-default-model": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-primitives": "workspace:^"
   },
   "files": [
     "lib/index.js",
@@ -69,7 +70,8 @@
     "vendor/bok/AI-Second-Brain-UI/*.html",
     "vendor/bok/AI-Second-Brain-UI/*.js",
     "vendor/bok/AI-Second-Brain-UI/*.css",
-    "vendor/bok/AI-Second-Brain-UI/assets/*"
+    "vendor/bok/AI-Second-Brain-UI/assets/*",
+    "assets/*"
   ],
   "dependencies": {
     "@deepseek-ai/dsh-client-connection": "workspace:^",

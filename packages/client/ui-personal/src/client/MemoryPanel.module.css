@@ -1,0 +1,44 @@
+.memory { --memory-paper: color-mix(in srgb, var(--dsw-static-neutral-00) 90%, var(--dsw-static-amber-600)); --memory-ink: var(--dsw-static-amber-900); --memory-line: color-mix(in srgb, var(--dsw-static-blue-300) 25%, transparent); height: 100%; overflow: auto; color: var(--dsw-static-neutral-100); background: var(--dsw-static-neutral-900) url('/personal/memory-background.png') center top / cover fixed; padding: clamp(20px, 3vw, 48px); box-sizing: border-box; }
+.hero { max-width: 750px; margin-bottom: 26px; }
+.hero h1 { font-family: 'Microsoft YaHei', 'PingFang SC', 'Arial Black', sans-serif; font-size: clamp(46px, 6.5vw, 94px); font-weight: 900; letter-spacing: -.045em; margin: 12px 0 16px; line-height: 1.1; color: var(--memory-paper); background: linear-gradient(color-mix(in srgb, var(--memory-paper) 91%, transparent), color-mix(in srgb, var(--memory-paper) 91%, transparent)), url('/personal/memory-background.png') center / 700px auto; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero h2 { font-size: clamp(18px, 2vw, 26px); margin: 0 0 10px; font-weight: 500; color: var(--dsw-static-neutral-250); }
+.hero p { font-size: 13px; line-height: 1.6; }
+.hero p:first-child { display: inline-block; padding: 5px 12px; background: var(--dsw-static-neutral-250); color: var(--memory-ink); margin: 0; transform: rotate(-2deg); }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; max-width: 1440px; margin-bottom: 16px; }
+.workspace { display: grid; grid-template-columns: minmax(270px, 2fr) minmax(0, 3fr); gap: 20px; align-items: start; max-width: 1440px; }
+.directory { min-width: 0; max-height: 72vh; overflow: auto; padding: 2px; }
+.tiers { display: flex; flex-wrap: wrap; gap: 4px; }
+.memory button, .memory input { font: inherit; color: inherit; }
+.memory button { cursor: pointer; }
+.tiers button { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 0.5px solid var(--memory-line); border-radius: 4px; background: var(--dsw-static-neutral-900); }
+.tiers button:last-child { margin-left: 12px; }
+.tiers button[aria-pressed=true] { background: var(--dsw-static-blue-950); box-shadow: inset 0 -3px var(--dsw-static-blue-300); }
+.tiers button:hover, .files button:hover { background: var(--dsw-static-neutral-800); }
+.memory button:focus-visible, .memory input:focus-visible { outline: 2px solid var(--dsw-static-blue-400); outline-offset: 2px; }
+.search { display: flex; gap: 6px; flex: 1 1 220px; max-width: 400px; }
+.search input { min-width: 0; width: 100%; padding: 10px; border: 0.5px solid var(--memory-line); border-radius: 5px; background: var(--dsw-static-neutral-900); }
+.search button, .source button { border: 0.5px solid currentColor; border-radius: 4px; background: transparent; padding: 7px 12px; }
+.group h3 { font-size: 12px; font-weight: 500; letter-spacing: .08em; margin: 4px 0 10px; color: var(--dsw-static-neutral-250); }
+.group + .group { margin-top: 20px; }
+.files { list-style: none; margin: 0; padding: 0; }
+.files li + li { margin-top: 10px; }
+.files button { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; padding: 15px 18px 15px 26px; border: 0.5px solid var(--memory-line); border-radius: 6px; background: color-mix(in srgb, var(--dsw-static-neutral-900) 96%, transparent); position: relative; }
+.files button::before { content: ''; position: absolute; left: 8px; top: 14px; bottom: 14px; width: 6px; background: repeating-linear-gradient(to bottom, var(--dsw-static-neutral-500) 0 7px, transparent 7px 16px); }
+.files button[aria-current=page] { outline: 2px solid var(--dsw-static-blue-300); outline-offset: -2px; }
+.frame { flex: 0 0 108px; height: 108px; position: relative; border: 0.5px solid var(--memory-line); color: var(--dsw-static-neutral-100); background: var(--dsw-static-neutral-900) url('/personal/memory-film.png') left center / 300% 100% no-repeat; }
+.frame > span { position: absolute; top: 5px; left: 5px; padding: 2px 5px; font-family: monospace; font-size: 11px; line-height: 1.4; background: color-mix(in srgb, var(--dsw-static-neutral-900) 80%, transparent); }
+.fileInfo { min-width: 0; }
+.files strong, .files small { display: block; overflow-wrap: anywhere; }
+.files strong { font-size: 15px; line-height: 1.5; font-weight: 600; }
+.files small { font-size: 11px; margin-top: 7px; color: var(--dsw-static-neutral-300); }
+.reader { --dsw-alias-label-primary: var(--memory-ink); --dsw-alias-label-secondary: var(--dsw-static-neutral-600); --dsw-alias-label-tertiary: var(--dsw-static-neutral-600); --dsw-alias-text-primary: var(--memory-ink); --dsw-alias-text-secondary: var(--dsw-static-neutral-600); --dsw-alias-link: var(--dsw-static-blue-800); --dsw-alias-bg-base: var(--memory-paper); --dsw-alias-markdown-inline-code: var(--dsw-static-neutral-250); padding: clamp(22px, 3vw, 44px); min-height: 480px; min-width: 0; overflow-wrap: anywhere; line-height: 1.9; font-size: 15px; color: var(--memory-ink); background-color: var(--memory-paper); background-image: radial-gradient(ellipse at top left, color-mix(in srgb, var(--memory-paper) 70%, var(--dsw-static-neutral-00)), transparent 70%); border-radius: 7px 3px 8px 4px; }
+.reader h1, .reader h2, .reader h3 { font-family: 'Songti SC', 'SimSun', Georgia, serif; color: var(--memory-ink); }
+.reader pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.source { display: flex; align-items: start; justify-content: space-between; gap: 16px; font-size: 11px; line-height: 1.7; color: var(--dsw-static-neutral-600); padding-bottom: 18px; margin-bottom: 22px; border-bottom: 0.5px solid currentColor; }
+.source button { flex-shrink: 0; }
+@media (max-width: 760px) { .workspace { grid-template-columns: minmax(0, 1fr); } .tiers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; } .tiers button { justify-content: space-between; gap: 8px; padding: 10px; font-size: 13px; } .tiers button:last-child { margin-left: 0; } .search { max-width: none; } .directory { max-height: 270px; } .hero { padding-right: 10%; } .memory { background-attachment: scroll; } .frame { flex-basis: 50px; height: 64px; font-size: 26px; } }
+
+.memory h1, .memory h2, .memory button { text-shadow: none; }
+.memory button { clip-path: none; }
+.memory button::after { display: none; }
+.reader code { color: var(--memory-ink); text-shadow: none; }

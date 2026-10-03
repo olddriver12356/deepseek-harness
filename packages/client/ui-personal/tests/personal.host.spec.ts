@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { request as httpRequest } from 'node:http'
-import { afterEach, expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
@@ -57,6 +57,18 @@ it('mounts the real Bok page with auth, privacy, durable observations, and rever
   const launch = new URL(ctx.connection.authenticatedUrl(`http://127.0.0.1:${port}/`))
   const login = await request(port, launch.pathname + launch.search)
   const cookie = login.cookie
+  // Worker startup can outlive Loader topology settling under concurrent GUI load.
+  await vi.waitFor(async () => { expect((await request(port, '/personal/', cookie)).status).toBe(200) }, { timeout: 30000 })
+  await mkdir(join(ideasVault, 'Memory'), { recursive: true })
+  await writeFile(join(ideasVault, 'Memory/Working Memory.md'), '# Today\nA memory to read.\n')
+  expect((await request(port, '/personal/api/memory')).status).toBe(401)
+  expect((await request(port, '/personal/memory-film.png')).status).toBe(401)
+  expect((await request(port, '/personal/memory-film.png', cookie)).status).toBe(200)
+  expect((await request(port, '/personal/api/memory', cookie, 'POST')).status).toBe(405)
+  expect((await request(port, '/personal/api/memory', cookie, 'GET', '', 'https://evil.invalid')).status).toBe(403)
+  expect(JSON.parse((await request(port, '/personal/api/memory', cookie)).body)).toMatchObject([{ path: 'Working Memory.md', tier: 'working' }])
+  expect(JSON.parse((await request(port, '/personal/api/memory?path=Working%20Memory.md', cookie)).body).content).toContain('A memory to read.')
+  expect((await request(port, '/personal/api/memory?path=../private/secret.md', cookie)).status).toBe(400)
   expect(cookie).not.toBe('')
   expect((await request(port, '/personal/')).status).toBe(401)
   const note = { id: 'e39294e0-14e6-4c22-a393-13ca52231cc7', text: '  A raw idea\n\n[[Knowledge]] with a link.  ' }

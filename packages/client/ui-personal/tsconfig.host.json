@@ -8,6 +8,7 @@
     "src/index.ts",
     "src/worker.ts",
     "src/quick-note.ts",
+    "src/vault-memory.ts",
     "src/observer.ts",
     "src/compaction.ts"
   ],

@@ -741,6 +741,10 @@
 .reader .markdownBody h2 { margin-top: 2em; padding-bottom: 7px; border-bottom: 1px solid var(--reader-line); }
 .reader .markdownBody pre { padding: 15px; color: var(--reader-text); background: var(--reader-raised); border-left: 3px solid var(--reader-line); white-space: pre; }
 .reader .markdownBody code { font-family: var(--reader-mono); }
+.reader .markdownBody :not(pre) > code { color: var(--reader-ink); }
+.reader .markdownBody :global(.md-code-block) { --dsl-code-block-background: var(--reader-ink); --shiki-foreground: var(--reader-paper); }
+.reader .markdownBody :global(.md-code-block) pre { color: var(--reader-paper); background: var(--reader-ink) !important; }
+.reader .markdownBody :global(.md-code-block) pre code { color: inherit; }
 .reader .markdownBody blockquote { margin-left: 0; padding: 8px 16px; border-left: 3px solid var(--reader-muted); background: var(--reader-raised); }
 .reader .markdownBody a { color: var(--reader-ink); text-decoration: underline; text-underline-offset: 3px; }
 .reader .markdownBody :is(th, td) { color: var(--reader-text); border-color: var(--reader-line); }

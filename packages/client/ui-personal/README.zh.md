@@ -15,6 +15,7 @@ Personal 将 Bok 原版关于我界面与 Personal Core 引擎嵌入 DSH。页�
 
 - [配置](#configuration)
 - [运行与数据](#runtime-and-data)
+- [Vault Memory 阅读器](#vault-memory-viewer)
 - [上游源码](#upstream-source)
 - [已知限制与后续工作](#known-limitations-and-deferred-work)
 - [模型体验](#model-experience)
@@ -59,17 +60,19 @@ Host 在提供资产或转发显式 Personal Core 浏览器路由前，使用 Co
 
 Claims、Observations、Impacts、Outcomes、历史与备份使用 Bok 原版 Markdown 和元数据格式，位于 `personalCoreRoot`。独立运行 Vault 保存对话收据、凭证哈希及可重建状态。不要为了显示旧卡片就将 `vaultRoot` 指向现有知识 Vault。worker 统一管理 UI 与工具操作，并随插件关闭；超时会停止进程，因此中断响应的写入操作在重试前应先刷新状态。适配器不持有另一份个人记忆状态，因此不发布独立 invariant。
 
+<a id="vault-memory-viewer"></a>
+
+## Vault Memory 阅读器
+
+「记忆切片」布局使用带小角标编号的图像胶片卡片和纸张阅读区。三幅打包的黑白插图按来源路径固定分配，仅作装饰，不代表记忆文件中的真实照片。经历按文件名月份分组，无日期索引位于日期记录之后；长期事实按来源目录分组；交接按修改时间排序。数量表示文件数，包含索引笔记。卡片展示来源元数据。窄屏将可滚动文件列表放在阅读区上方。
+
+About Me 内含 Memory 视图，来源为 `ideasVaultRoot/Memory`。它支持 Working、Episodic、Semantic 和 Handoff 浏览，并把 Flags 作为辅助入口，提供标题与路径搜索、刷新、修改时间以及 Markdown 阅读和原文模式。切换视图时原 Personal Core iframe 保持挂载。经过认证的 `GET /personal/api/memory` 列出来源文件，或读取 `path` 参数指定的文档。没有写入路由、模型调用、自动画像导入或第二份数据库。读取会拒绝路径越界和链接路径，单文档上限为一 MiB。目录最多 5,000 个文件，不含 Memory 之外的归档月份。该功能由 DSH 自有源码和打包背景实现，不修改固定版本的 Bok 代码。
+
 <a id="upstream-source"></a>
 
 ## 上游源码
 
 固定源码为 [Bok](https://github.com/asen-goat-mine/bok/tree/d556bfc918224712a1c0bc9660e04c829c8f7702)，commit `d556bfc918224712a1c0bc9660e04c829c8f7702`。`vendor/bok` 保留 Apache-2.0 LICENSE、NOTICE 和字体 OFL 许可。Python 引擎文件未修改。浏览器脚本带修改声明：初始化选择 Personal Core，请求改用经过 DSH 认证的路径，恢复可见时刷新仪表板，理解图谱是无边界画布，可拖动或用滚轮、触控板滚动平移；按住 Shift 时纵向滚轮变为横向滚动。DSH 自有部分是进程适配器、嵌入样式以及观察与整理脚本。
-
-<a id="known-limitations-and-deferred-work"></a>
-
-## 已知限制与后续工作
-
-原版嵌入内容为中文，外层 DSH 导航支持本地化。本集成需要 Web profile 和 Python，不支持无端口的 Electron 传输。它提供记忆工具，但不会静默扫描旧会话，也不会把整个私人库注入每次模型请求。观察需要结构化证据，可来自明确工具调用或可选自动观察器，页面初始为空。独立跨 Agent 客户端与凭证管理仍使用 Bok API/CLI。上游符号链接拒绝测试需要 Windows 允许创建符号链接。
 
 <a id="model-experience"></a>
 
@@ -81,7 +84,7 @@ Claims、Observations、Impacts、Outcomes、历史与备份使用 Bok 原版 Ma
 
 启用后，工具注册表使用 Bok 原版 schema 与描述提供 `bok_person_context`、`bok_observe_conversation`、`bok_record_person_impact` 和 `bok_record_person_outcome`。`agent` 固定为已认证的 `dsh` 身份。围绕相关任务读取上下文，只对真实用户回合提交有依据的结构化理解，记录实际使用的主张和后续反馈。遵守 `external_content`、`session_only` 和 `do_not_remember`；受保护主张需要用户确认及单独授权。
 
-#### Token 成本
+#### Token 影响
 
 注册四个工具描述与 schema。上下文结果受 Bok 请求中的数量与 token 预算限制。观察响应使用原版紧凑收据，不回显用户原文。实际序列化 token 数取决于当前模型 tokenizer 和工具呈现模式。每次用户发起的整理是一次独立、不带工具且不属于任何 Session 的请求，大小随已存理解增长，上限为 `compaction.maxInputBytes`。
 
@@ -89,6 +92,12 @@ Claims、Observations、Impacts、Outcomes、历史与备份使用 Bok 原版 Ma
 
 插件启用期间静态工具 schema 前缀保持稳定。记忆通过普通且有日志的工具结果返回；适配器不添加隐藏的模型输入，也不无条件插入动态提示前缀。个人化只改变后续工具结果及使用它们的决策。
 
+<a id="known-limitations-and-deferred-work"></a>
+
+## 已知限制与后续工作
+
+- 原版嵌入内容为中文，外层 DSH 导航支持本地化。本集成需要 Web profile 和 Python，不支持无端口的 Electron 传输。它提供记忆工具，但不会静默扫描旧会话，也不会把整个私人库注入每次模型请求。观察需要结构化证据，可来自明确工具调用或可选自动观察器，页面初始为空。独立跨 Agent 客户端与凭证管理仍使用 Bok API/CLI。上游符号链接拒绝测试需要 Windows 允许创建符号链接。
+
 ### Dev Note
 
-适配器仅持久化观察开关、整理收据和已有 Vault 投影记录；Personal Core 仍是记忆的权威来源。
+适配器仅持久化观察开关、整理收据和已有 Vault 投影记录。Personal Core 负责画像状态；Vault 文件是独立 Memory 阅读器的内容来源。
