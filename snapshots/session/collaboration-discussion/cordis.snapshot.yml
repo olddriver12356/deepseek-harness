@@ -1,0 +1,14 @@
+# Owning profile contribution for the assembled recorded collaboration scenario.
+# Task 10 owns its Session roles, human controls, replay adapter, and recorded outputs.
+- insert:
+    - id: collaboration
+      name: '@deepseek-ai/dsh-host-collaboration'
+      config:
+        peerDiscussionTools: [read, glob, grep, collaboration_status, peer_send]
+        maxFramedMessageBytes: 16384
+        stateLimits:
+          maxStateBytes: 1000000
+          maxJournalEntries: 1000
+          maxRequests: 1000
+    - id: collaboration-tools
+      name: '@deepseek-ai/dsh-host-collaboration/tool'

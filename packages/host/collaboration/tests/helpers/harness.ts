@@ -33,6 +33,7 @@ import * as StorageJson from '@deepseek-ai/dsh-storage-json'
 import { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import type { ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import * as collaboration from '../../src/index.ts'
+import * as discussionTools from '../../src/tool.ts'
 import { createHumanControlAdmission, requireHumanControl, type HumanControlAdmission } from '../../src/authority.ts'
 
 /** The model's next reply: plain text, or one tool call followed by a closing text reply. */
@@ -118,6 +119,8 @@ export interface CollaborationHarness {
 
 /** Options for {@link createCollaborationHarness}. */
 export interface HarnessOptions {
+  /** Install the separately selected production discussion tools instead of name-only fixtures. */
+  readonly withDiscussionTools?: boolean
   /** Mount the collaboration plugin; false models a runtime where it is absent. Default true. */
   readonly withCollaboration?: boolean
   /** Replace the plugin's peer-discussion allowlist. */
@@ -139,6 +142,7 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
       ['llm', LlmRuntime], ['session', SessionStore], ['projection', SessionProjectionRegistry],
       ['prompt', SystemPrompt], ['tools', ToolRuntime], ['agents', AgentRegistry],
       ['persistence', JsonlSessionPersistence], ['loop', AgentLoop], ['collaboration', collaboration],
+      ['discussion-tools', discussionTools],
       ['storage', Storage], ['storage-json', StorageJson], ['storage-domain', StorageDomain],
       ['default-model', AgentDefaultModel], ['query', SqliteSessionQuery], ['typert', TypertRegistry],
       ['ordinary-resolver', { inject: ['agents', 'sessions', 'sessionQuery', 'sessionProjections', 'agentDefaultModel', 'typert'], apply(context: Context) {
@@ -149,6 +153,7 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
     ])
     const rows = [...modules.keys()]
       .filter(name => name !== 'collaboration' || options.withCollaboration !== false)
+      .filter(name => name !== 'discussion-tools' || options.withDiscussionTools === true)
       .map(name => ({ name, ...(name === 'persistence'
         ? { config: { root: join(workspace, 'sessions'), compression: 'none' } }
         : name === 'default-model' ? { config: { provider: 'mock', model: 'mock' } }
@@ -194,6 +199,7 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
     ctx.sessionPersistence.create = async (...args) => instrument(await create(...args))
     ctx.sessionPersistence.open = async (...args) => instrument(await open(...args))
     for (const name of ['read', 'write', 'bash', 'cordis_run', 'delegate', 'publish', 'collaboration_status', 'peer_send']) {
+      if (options.withDiscussionTools && (name === 'collaboration_status' || name === 'peer_send')) continue
       ctx.tools.register(defineContentToolFixture({
         name,
         description: `fixture ${name}`,

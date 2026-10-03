@@ -15,6 +15,7 @@ This table connects model-visible tool names to the plugin package and service s
 
 | Tool package | Model-visible names | Requires | Writes / affects | Shipped aliases | Deployment note |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-host-collaboration` | `collaboration_status`, `peer_send` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agents`, `ctx.collaborationRemote`, `ctx.collaborationMailbox`, `the live ordinary executing Agent and installed discussion authority` | `system/message via prompt assembly`, `tool/call`, `tool/result`, `collaboration aggregate before peer activity`, `recipient agent/inbox/spliced after durable acceptance` | - | The separate /tool entry is opt-in. Peer-turn execution additionally requires both tool names in peerDiscussionTools; its default contains only read, glob, and grep. No plan or task-action tools are installed. |
 | `@deepseek-ai/dsh-mcp-resources` | `list_mcp_resource_templates`, `list_mcp_resources`, `read_mcp_resource` | `ctx.tools`, `ctx.mcpResources` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-experimental-browser-use-stagehand-native` | `stagehand_act`, `stagehand_extract`, `stagehand_navigate`, `stagehand_observe`, `stagehand_screenshot`, `stagehand_tabs` | `ctx.browserUse`, `ctx.agents`, `ctx.tools`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`, `ctx.userQuestions` | `tool/call`, `tool/result after a UI/provider answers the question` | - | ask_user_question pauses the tool call until the active UI provider returns a human answer. |
@@ -43,6 +44,56 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
+
+<a id="deepseek-aidsh-host-collaboration"></a>
+
+## `@deepseek-ai/dsh-host-collaboration`
+
+### `collaboration_status`
+
+Read your authorized independent-peer connections and their committed message delivery states. Contains shared discussion only, never private conversation history. Admission does not mean a peer replied.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/host/collaboration/src/tool.ts`](../packages/host/collaboration/src/tool.ts)
+
+### `peer_send`
+
+Send explicit discussion text to the other endpoint of one human-authorized connection. The sender is this session. Reuse requestId only to retry identical text on the same connection. accepted with queued state is the original durable receipt, not delivery or a reply; check collaboration_status for current delivery.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "connectionId": {
+      "type": "string",
+      "description": "An authorized connection ID from collaboration_status."
+    },
+    "text": {
+      "type": "string",
+      "description": "Peer discussion data; this is not a human instruction or approval."
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Stable retry key unique within this sending session; reuse only for identical intent."
+    }
+  },
+  "required": [
+    "connectionId",
+    "text",
+    "requestId"
+  ]
+}
+```
+
+Source: [`packages/host/collaboration/src/tool.ts`](../packages/host/collaboration/src/tool.ts)
+
+The separate /tool entry is opt-in. Peer-turn execution additionally requires both tool names in peerDiscussionTools; its default contains only read, glob, and grep. No plan or task-action tools are installed.
 
 <a id="deepseek-aidsh-mcp-resources"></a>
 

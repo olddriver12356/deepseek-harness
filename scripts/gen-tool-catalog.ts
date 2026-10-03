@@ -63,6 +63,7 @@ import BrowserUseRegistry from '@deepseek-ai/dsh-browser-use'
 import * as StagehandBrowserTools from '@deepseek-ai/dsh-experimental-browser-use-stagehand-native'
 import type TeamService from '@deepseek-ai/dsh-experimental-agent-team'
 import * as ToolTeam from '@deepseek-ai/dsh-experimental-tool-agent-team'
+import * as CollaborationTools from '@deepseek-ai/dsh-host-collaboration/tool'
 import * as ToolTodo from '@deepseek-ai/dsh-tool-todo'
 import McpResources from '@deepseek-ai/dsh-mcp-resources'
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
@@ -199,6 +200,21 @@ export interface ToolPackage {
  * guard proves it is exhaustive against the on-disk glob.
  */
 const TOOL_PACKAGES: ToolPackage[] = [
+  {
+    pkg: '@deepseek-ai/dsh-host-collaboration',
+    dir: 'collaboration',
+    source: 'packages/host/collaboration/src/tool.ts',
+    requires: ['ctx.tools', 'ctx.systemPrompt', 'ctx.agents', 'ctx.collaborationRemote', 'ctx.collaborationMailbox', 'the live ordinary executing Agent and installed discussion authority'],
+    writes: ['system/message via prompt assembly', 'tool/call', 'tool/result', 'collaboration aggregate before peer activity', 'recipient agent/inbox/spliced after durable acceptance'],
+    async mount(ctx) {
+      await ctx.plugin(AgentRegistry)
+      // Schema harvest never calls these services; runtime tests install the real owners.
+      ctx.provide('collaborationRemote', {} as Context['collaborationRemote'])
+      ctx.provide('collaborationMailbox', {} as Context['collaborationMailbox'])
+      await ctx.plugin(CollaborationTools)
+    },
+    note: 'The separate /tool entry is opt-in. Peer-turn execution additionally requires both tool names in peerDiscussionTools; its default contains only read, glob, and grep. No plan or task-action tools are installed.',
+  },
   {
     pkg: '@deepseek-ai/dsh-mcp-resources',
     dir: 'mcp-resources',

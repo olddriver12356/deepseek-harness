@@ -18,6 +18,7 @@ This package is the Host plugin for discussion between independently owned sessi
 - [Human-control admission](#human-control-admission)
 - [Authenticated Remote controls](#authenticated-remote-controls)
 - [Durable discussion state](#durable-discussion-state)
+- [Model discussion tools](#model-discussion-tools)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
@@ -79,6 +80,15 @@ Acceptance persists before recipient activity. Activation reservation remains qu
 
 `recover()` reconciles queued work and wakes admitted input still pending after storage or lifecycle interruptions without another insertion or charge. The receipt projection distinguishes pending, claimed, started, consumed, refused and cancelled input; it rebuilds these phases from existing Session events. `whenSettled()` waits for mailbox jobs, not assistant completion. Disposal stops admission, removes registrations and drains jobs. Accepted receipts always retain the original queued acceptance revision. Admission describes durable recipient input, not a completed reply.
 
+<a id="model-discussion-tools"></a>
+## Model discussion tools
+
+Install the separate `@deepseek-ai/dsh-host-collaboration/tool` Loader entry alongside this plugin to register `collaboration_status`, `peer_send`, and discussion instructions. The core plugin alone installs neither. Peer turns additionally require the selected names in `peerDiscussionTools`; installing a tool does not change the default allowlist. Existing tool, sandbox, and approval policies remain in force.
+
+`collaboration_status` takes no arguments and derives the viewer from the exact live ordinary `exec.agent`. It reuses the Remote snapshot filter, returning only pair-granted registrations, connections, and messages, with the committed revision. Journal entries, request receipts, and private Session histories are excluded. `peer_send` accepts only `connectionId`, `text`, and `requestId`. Sender identity and the other endpoint come from the Host. Extra identity or association fields, unknown or foreign pairs, invalid identifiers, oversized complete frames, and conflicting retries fail execution.
+
+Send success returns `accepted: true`, the stable message ID, and the original `queued` acceptance revision. Status separately reports current `queued`, `admitted`, `cancelled`, or `failed` delivery. None reports an assistant reply or task completion. Plans, task actions, human controls, and approval operations are absent from this tool entry. See the [tool catalog](../../../docs/tool-catalog.md#deepseek-aidsh-host-collaboration) for schemas and the [decision](../../../.agents/notes/implemented/feature/2026-10-03-bounded-peer-discussion-tools.md) for the installation split.
+
 <a id="model-experience"></a>
 ## Model Experience
 
@@ -94,10 +104,25 @@ Zero direct tokens on every request. A denied call adds one short error result t
 
 #### KV Cache effect
 
-Independent of request prefixes. The plugin adds no system prompt text or tool schema, so it does not invalidate a reusable prefix.
+Independent of request prefixes when the separate tool entry is absent. The authority guard alone adds no prompt text or tool schema.
+
+### Explicitly installed discussion tools
+
+#### What the model sees
+
+The [two tool schemas](../../../docs/tool-catalog.md#deepseek-aidsh-host-collaboration) and one logged system section explain independent peers, explicit sharing, current attempt ownership, human approval, and delivery states. Its first sentence is `Independent peers are independently owned sessions with their own working directories and private conversations.` Results render the declared JSON values; pure generic presenters retain the raw input and recorded output.
+
+#### Token effect
+
+Installation adds two schemas and one fixed instruction section to each assembled request. Calls append their actual arguments and rendered results; status size is bounded by the configured retained aggregate and the existing tool output policy.
+
+#### KV Cache effect
+
+Installation or removal changes the prompt and tool prefix. Committed status and send results append to the owning Session history without injecting peers' histories.
+
+## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
-## Known Limitations and Deferred Work
 
 - **No action authority**: arbitrary dynamic Host code reaches the Host process, and a same-user shell can authenticate to the Gateway using local credentials. Automatic action admission remains blocked by Prerequisite P until both paths can enforce human-only authorization. The permanent admission-limit regressions in `tests/authority-investigation.host.spec.ts` assert that both limitations remain reachable; they do not assert attack denial.
 - **Executor-side guard only**: calls without an Agent are not governed. Required source admission refuses restored peer work when the runtime policy is absent or disposed.

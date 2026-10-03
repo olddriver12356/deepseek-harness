@@ -180,6 +180,7 @@
       "@deepseek-ai/dsh-host-news/types": ["./packages/host/news/src/types.ts"],
       "@deepseek-ai/dsh-host-collaboration/types": ["./packages/host/collaboration/src/types.ts"],
       "@deepseek-ai/dsh-host-collaboration": ["./packages/host/collaboration/src/index.ts"],
+      "@deepseek-ai/dsh-host-collaboration/tool": ["./packages/host/collaboration/src/tool.ts"],
       "@deepseek-ai/dsh-host-experts": ["./packages/host/experts/src"],
       "@deepseek-ai/dsh-host-knowledge": ["./packages/host/knowledge/src"],
       "@deepseek-ai/dsh-host-knowledge/types": ["./packages/host/knowledge/src/types.ts"],

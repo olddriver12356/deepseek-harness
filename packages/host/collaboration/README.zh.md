@@ -18,6 +18,7 @@ kind: "package-reference"
 - [人类控制准入](#human-control-admission)
 - [经过身份验证的 Remote 控制](#authenticated-remote-controls)
 - [持久讨论状态](#durable-discussion-state)
+- [模型讨论工具](#model-discussion-tools)
 - [模型体验](#model-experience)
 - [已知限制与延后工作](#known-limitations-and-deferred-work)
 - [开发说明](#dev-note)
@@ -79,6 +80,15 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 
 `recover()` 在存储或生命周期中断后核对排队工作，并唤醒仍待处理的已准入输入，不重复插入或扣减。回执投影区分 pending、claimed、started、consumed、refused 和 cancelled 输入，通过现有 Session 事件重建这些阶段。`whenSettled()` 等待 mailbox 作业，不等待助手完成。卸载停止准入、移除注册并排空作业。接受回执始终保留原始 queued 接受版本。准入表示持久接收方输入，不表示回复完成。
 
+<a id="model-discussion-tools"></a>
+## 模型讨论工具
+
+在此插件旁显式安装独立的 `@deepseek-ai/dsh-host-collaboration/tool` Loader 入口，注册 `collaboration_status`、`peer_send` 和讨论指令。核心插件本身不会安装它们。Peer 回合还要求在 `peerDiscussionTools` 中选择相应名称；安装工具不改变默认允许列表。现有工具、sandbox 和审批策略继续生效。
+
+`collaboration_status` 不接受参数，从准确的活动普通 `exec.agent` 派生查看者。它复用 Remote snapshot 过滤，只返回会话对授权的注册、连接和消息，以及已提交版本。结果不包含 journal、请求回执或私有 Session 历史。`peer_send` 只接受 `connectionId`、`text` 和 `requestId`。Host 派生发送者和另一个端点。额外身份或关联字段、未知或其他会话的连接、非法标识符、超限完整 frame 和冲突重试都在执行时失败。
+
+发送成功返回 `accepted: true`、稳定消息 ID 和最初 `queued` 接受版本。Status 另行报告当前 `queued`、`admitted`、`cancelled` 或 `failed` 投递状态。两者都不表示助手回复或任务完成。此工具入口没有计划、任务操作、人工控制或审批操作。Schema 见[工具目录](../../../docs/tool-catalog.zh.md#deepseek-aidsh-host-collaboration)，安装拆分见[决策](../../../.agents/notes/implemented/feature/2026-10-03-bounded-peer-discussion-tools.zh.md)。
+
 <a id="model-experience"></a>
 ## 模型体验
 
@@ -94,10 +104,25 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 
 #### KV Cache 影响
 
-与请求前缀无关。插件不增加系统提示词文本或工具 schema，因此不会使可复用的前缀失效。
+独立工具入口缺席时不影响请求前缀。权限 guard 本身不添加提示词文本或工具 schema。
+
+### 显式安装的讨论工具
+
+#### 模型看到什么
+
+[两个工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-host-collaboration) 和一段记录在日志中的 system 指令说明独立 peer、显式共享、当前尝试的责任、人工审批和投递状态。首句为 `Independent peers are independently owned sessions with their own working directories and private conversations.` 结果渲染声明的 JSON 值；纯 generic presenter 保留原始输入和记录的输出。
+
+#### Token 影响
+
+安装后每次组装请求增加两个 schema 和一段固定指令。调用追加实际参数和渲染结果；status 大小受配置的持久聚合上限和现有工具输出策略限制。
+
+#### KV Cache 影响
+
+安装或卸载改变提示词和工具前缀。已提交 status 和发送结果追加到所属 Session 历史，不注入 peer 历史。
+
+## 已知限制与延后工作
 
 <a id="known-limitations-and-deferred-work"></a>
-## 已知限制与延后工作
 
 - **没有执行权限**：任意动态 Host 代码可以访问 Host 进程，同一用户的 shell 可以使用本地凭据向 Gateway 完成身份验证。在两条路径都能强制实施人类专属授权之前，自动执行准入继续被 Prerequisite P 阻塞。`tests/authority-investigation.host.spec.ts` 中的永久准入限制回归测试断言这两个限制仍可触达，并未断言攻击被拒绝。
 - **仅 Executor 一侧的守卫**：不带 Agent 的调用不受管控。必要来源准入在运行时策略缺失或卸载时拒绝恢复的 peer 工作。
