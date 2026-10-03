@@ -18,6 +18,8 @@ Turn authority belongs to the exact executing Agent. `human` and `peer-discussio
 
 Peer delivery must require installed collaboration authority before admitting input, including cold recipients. `requireCollaborationAuthority(ctx)` supplies that presence check and is removed with the policy registrations. The delivery/resolver owner must also preserve ordinary human-only restoration while failing closed for protected peer work. The current global installer defaults every unclassified Agent to discussion; it does not itself resolve this distinction.
 
+The durable milestone stores V1a registrations, pairs, outbox messages, budgets, journal entries, and actor-scoped original request receipts in version-1 domain `collaboration`, table `state`, record `current`. `KvTable.update` atomically publishes the entire aggregate and ordered journal after durability; it avoids cross-record ownership and outbox races at the cost of rewriting retained data. Explicit validated capacities stop writes instead of discarding authority or pending work. Task-only schemas remain deferred. A queued message's `activationReserved` fact commits with its budget charge; durable recipient acceptance is a separate `admitted` transition, so disconnect can still cancel reserved queued work without misrepresenting recipient input.
+
 ## Alternatives considered
 
 **Use UI credentials as action authorization.** The permanent investigation tests show that a same-user shell can authenticate with test-owned local credentials and that a dynamic VM helper can access the Host process. Another ambient token or a hidden method does not distinguish a human from these callers, so it cannot unblock action dispatch.
@@ -26,11 +28,15 @@ Peer delivery must require installed collaboration authority before admitting in
 
 **Require a global core policy for every restored session.** Ordinary sessions remain supported without this optional feature. Protected recipient discovery and cold peer admission belong to the collaboration delivery owner; modifying the core runtime would impose an unrelated requirement on human-only sessions.
 
+**Persist each grant, message, and budget separately.** The existing storage-domain primitive serializes record updates but does not expose multi-record transactions. Separate writes could commit an outbox without its budget charge or revoke only part of a pair. One aggregate keeps these transitions atomic without adding a database; bounded retention remains an explicit operator cost.
+
 ## Acceptance criteria
 
 The policy milestone boots a test-owned `cordis.yml` through real Loader/Include services and uses the production AgentLoop, tool executor, session store, and JSONL backend. It rejects forged discussion admission, unsafe configuration, peer writes, shell/dynamic/delegation/publishing calls, and listener attempts to undo restrictions. Tests verify files and durable logs independently, restore interrupted work, refuse failed resume publication, and await request cancellation during disposal. Permanent same-user Gateway and dynamic VM tests document the current admitted attacks.
 
-Completing V1a additionally requires a production discussion Remote adapter, durable connection state, explicit peer-source logging and receipt resolution, absent-policy cold-recipient denial, ordinary human-only restoration, model tools, the Live Signal portal, and a keyless recorded-session scenario through the final opt-in assembly. No shipped default or live session is activated by these test fixtures.
+The durable milestone verifies stale concurrent writers, failed storage publication, per-pair grants, budget reservation and disconnection, actor-scoped retry results, corrupt records, explicit capacity limits, and disposal. A real Loader composition with the production JSON backend verifies disk state, restart, and plugin remount without replenishing the budget.
+
+Completing V1a additionally requires a production discussion Remote adapter, explicit peer-source logging and receipt resolution, absent-policy cold-recipient denial, ordinary human-only restoration, model tools, the Live Signal portal, and a keyless recorded-session scenario through the final opt-in assembly. No shipped default or live session is activated by these test fixtures.
 
 ## Risks
 

@@ -21,6 +21,9 @@ import type { SessionHandle } from '@deepseek-ai/dsh-session-persistence'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import Storage from '@deepseek-ai/dsh-storage'
+import * as StorageDomain from '@deepseek-ai/dsh-storage-domain'
+import * as StorageJson from '@deepseek-ai/dsh-storage-json'
 import { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import type { ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import * as collaboration from '../../src/index.ts'
@@ -127,13 +130,16 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
       ['llm', LlmRuntime], ['session', SessionStore], ['projection', SessionProjectionRegistry],
       ['prompt', SystemPrompt], ['tools', ToolRuntime], ['agents', AgentRegistry],
       ['persistence', JsonlSessionPersistence], ['loop', AgentLoop], ['collaboration', collaboration],
+      ['storage', Storage], ['storage-json', StorageJson], ['storage-domain', StorageDomain],
     ])
     const rows = [...modules.keys()]
       .filter(name => name !== 'collaboration' || options.withCollaboration !== false)
       .map(name => ({ name, ...(name === 'persistence'
         ? { config: { root: join(workspace, 'sessions'), compression: 'none' } }
         : name === 'loop' ? { config: { agents: [] } }
-          : name === 'collaboration' ? { config: { peerDiscussionTools: options.peerDiscussionTools ?? ['read'] } } : {}) }))
+          : name === 'storage-json' ? { config: { root: join(workspace, 'storage') } }
+            : name === 'storage-domain' ? { config: { backend: 'json' } }
+              : name === 'collaboration' ? { config: { peerDiscussionTools: options.peerDiscussionTools ?? ['read'], stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 } } } : {}) }))
     const configPath = join(workspace, 'cordis.yml')
     await writeFile(configPath, JSON.stringify(rows))
     ctx.baseUrl = pathToFileURL(workspace).href + '/'
