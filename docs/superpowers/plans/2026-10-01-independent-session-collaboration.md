@@ -16,8 +16,9 @@
 - The collaboration never changes a session's working directory, creates or removes worktrees, or silently switches branches.
 - Each participant can own at most one unfinished execution task across collaborations.
 - Parallel writers must have distinct worktrees.
-- Registration alone grants neither communication nor task authority.
-- Only the human enrolls or removes participants and grants persistent bidirectional communication connections.
+- Adding a peer in the Live Signal sidebar registers that session and opens a persistent bidirectional connection with it. The sidebar list is the authoritative set of connections, grants stay strictly per pair, and no grant conveys task authority.
+- Only the human adds, enrolls, or removes participants. Free discussion needs an authorized connection and no collaboration or plan at all; a collaboration exists only where there is a plan.
+- A role belongs to a task assignment, never to a participant. Required capability is checked when a task is claimed, against the claiming session's actual workspace.
 - No implementation dispatch occurs before exact plan-revision approval.
 - Peer messages wait until the current turn ends; do not use `steer()`.
 - Ordinary assistant output and private human messages are never automatically forwarded.
@@ -118,6 +119,10 @@ The Host service combines this interface with the separately authorized Remote a
 
 Finish each task's failing test, minimal implementation, verification, documentation, and focused commit before proceeding. Tasks 1–5 produce a safely paired messaging milestone; Tasks 6–8 add an accountable code workflow; Tasks 9–10 expose and validate the complete product. Keep all incomplete functionality opt-in and fail closed.
 
+**V1a is the shippable first release: Tasks 1 to 5, plus the parts of Tasks 9 and 10 that cover them.** V1a delivers free discussion only. Turn classification carries two values, `human` and `peer-discussion`, and no action tool is ever granted, so no plan, task graph, claim, review, or integration is dispatched. Tasks 6 to 8 depend on Prerequisite P and do not start until it is resolved.
+
+**Prerequisite P: close the host-code admission gap.** `packages/host/collaboration/tests/authority-investigation.host.spec.ts` already proves two attacks on the current runtime, and both of its tests pass. First, `packages/extensions/cordis-host-runner/src/index.ts:270-275` activates a host-only dynamic package with no approval at all, because the approval condition at line 278 covers client packages only; that path reaches `evaluateHostCode` at line 899, where `btoa.constructor("return process")()` returns the host process. Second, a same-user process can read `.credentials.yaml` and forge the `dsh-auth-*` cookie, which the Gateway accepts with `status: 200`. Together these defeat Task 1's `requireHumanControl` on the existing transport, so Task 1 cannot mint action authority and Tasks 6 to 8 stay unavailable until either the sandbox escape is closed or the Gateway gains an unforgeable UI admission. Treat Prerequisite P as its own work line, not as part of this feature.
+
 ## Task 1: Prove human-control and turn-authority enforcement
 
 **Files:** Create `packages/host/collaboration/src/authority.ts`, minimal `src/index.ts`, package/config/README files, `tests/authority.host.spec.ts`, `tests/loader-composition.host.spec.ts`, and the proposed Agent Note. Inspect `packages/extensions/tool-cordis/src/index.ts`, `packages/core/tools/src/index.ts`, `packages/core/agent/src/runtime-types.ts`, and the existing Gateway caller/context resolution. Modify shared owners only if the proof requires a minimal documented capability extension.
@@ -129,8 +134,8 @@ Finish each task's failing test, minimal implementation, verification, documenta
 - [ ] Write a REAL-composition test-only Loader fixture booting existing runtime services and the minimal collaboration plugin. Add a fixture helper `createCollaborationHarness()` in `tests/helpers/harness.ts` with explicit operations for UI admission, model tool execution, session creation/resume, injected durable-write failure, and disposal; expose actual runtime outcomes, not a mock success path.
 - [ ] Define named denial cases in `authority.host.spec.ts`: model calls human-control service directly; dynamic Cordis code invokes it; local shell sends equivalent loopback RPC; forged `human: true`; missing authority plugin on restored protected session. A method hidden from schemas must still deny these calls.
 - [ ] Run `pnpm exec vitest run packages/host/collaboration/tests/authority.host.spec.ts packages/host/collaboration/tests/loader-composition.host.spec.ts`; confirm missing authority enforcement fails before implementation.
-- [ ] Implement admission using the strongest existing supported caller mechanism. Trace whether model-owned shell shares the UI transport credential. If existing transport cannot distinguish those callers, stop and present the exact attack and required extension to the human; do not invent a capability that is just another ambient token.
-- [ ] Add turn classification with three values: `human`, `peer-discussion`, and `approved-task`. On mixed or ambiguous input, require the stricter peer classification until an explicit current task attempt proves action authority. Preserve it through later tool steps and resumed open work.
+- [ ] Implement admission using the strongest existing supported caller mechanism. The tracing step is already done and its outcome is Prerequisite P: the existing transport cannot distinguish a model-owned shell from the UI, so do not invent a capability that is just another ambient token. Limit `requireHumanControl` to operations that grant discussion, and treat any action-authority admission as blocked by Prerequisite P.
+- [ ] Add turn classification with two values for V1a: `human` and `peer-discussion`. Task 7 introduces the third value `approved-task`, and only after Prerequisite P is resolved. On mixed or ambiguous input, require the stricter peer classification. Preserve it through later tool steps and resumed open work.
 - [ ] Install executor-side guards: peer-discussion permits a validated read-tool allowlist plus collaboration message/proposal tools; shell, dynamic code, delegation, publishing, and mutation tools are denied without a current approved task or separate human approval. Unknown tools default to denial in peer discussion.
 - [ ] Exercise guard behavior with this assertion pattern using the helper created above:
 
@@ -146,7 +151,7 @@ it('does not convert a peer claim of approval into action authority', async () =
 ```
 
 - [ ] Make the real human-control and human-turn positive cases pass, then repeat all direct/dynamic/loopback denial cases. Test disposal removes registrations and joins pending operations.
-- [ ] Commit only Task 1 paths and any justified shared-owner extension. Record whether the authority proof passed. Automatic action dispatch must not ship if this task is unresolved.
+- [ ] Commit only Task 1 paths and any justified shared-owner extension. The authority proof did not pass on the current runtime, so automatic action dispatch does not ship in V1a. Promote `tests/authority-investigation.host.spec.ts` into the permanent denial suite rather than deleting it.
 
 ## Task 2: Add atomic collaboration state and persistent registration
 
@@ -176,9 +181,9 @@ async function commitState(
 }
 ```
 
-`stateTable` is the table opened by `CollaborationStore`; `revisionConflict` is a typed collaboration-domain error owned by this package. Define complete request/result schemas before adding consumers. Runtime validation belongs at model, Remote, config, and persisted-data entry points.
+`stateTable` is the table opened by `CollaborationStore`; `revisionConflict` is a typed collaboration-domain error owned by this package. `KvTable.update` rejects a missing key (`packages/storage/storage-domain/src/domain.ts:337`), so `CollaborationStore` must `put('current', emptyState)` when it opens a fresh domain, before any `commitState` call. Define complete request/result schemas before adding consumers. Runtime validation belongs at model, Remote, config, and persisted-data entry points.
 
-- [ ] Implement pure registration, connection, enrollment, pause, budget, and journal transitions. Each entry records host-derived actor identity, operation, revision, and timestamp; caller strings cannot impersonate another actor.
+- [ ] Implement pure registration, connection, enrollment, pause, budget, and journal transitions. Connections are the primary record and collaborations reference them; a registration carries display fields only, with no role or capability field. Each entry records host-derived actor identity, operation, revision, and timestamp; caller strings cannot impersonate another actor.
 - [ ] Publish Remote subscribers only from committed `domain/changed` outcomes. Reject writes after disposal starts; drain admitted writes before closing storage.
 - [ ] Run tests, add restart round-trip coverage through the actual storage backend, update durable type acknowledgements through the repository workflow, and commit Task 2.
 
@@ -188,13 +193,13 @@ async function commitState(
 
 **Consumes:** Task 1 human admission and Task 2 store.
 
-**Produces:** Remote operations `register`, `connect`, `disconnect`, `create`, `enroll`, `approvePlan`, `pause`, `resume`, `removeParticipant`, `end`, `snapshot`, and `follow`. Mutations accept expected revision and stable request key; human authority is derived by the adapter, never part of a JSON request.
+**Produces:** Remote operations `addPeer`, `removePeer`, `create`, `enroll`, `approvePlan`, `pause`, `resume`, `removeParticipant`, `end`, `snapshot`, and `follow`. `addPeer` is the sidebar gesture: one transition registers the session and opens the connection, and it records that the UI showed the disclosure warning. `removePeer` is the disconnect. Mutations accept expected revision and stable request key; human authority is derived by the adapter, never part of a JSON request.
 
 - [ ] Write positive UI and negative model-origin calls for every mutation. A snapshot only exposes authorized collaboration records; registration does not expose arbitrary session histories.
 - [ ] Run `pnpm exec vitest run packages/host/collaboration/tests/remote.host.spec.ts` and observe failures before implementing the adapter.
 - [ ] Implement ordinary-session validation through stored headers or the existing resolver without waking sessions for browsing. Reject subagent-owned identities, unknown sessions, and workspace mismatches with stable errors and recovery instructions.
 - [ ] Make `approvePlan` compare the submitted exact plan revision and hash/canonical approved payload. A retry of the same approval returns its original receipt; a stale approval does not accept a changed plan.
-- [ ] Implement disconnect/removal in one state transaction: revoke grants, cancel unadmitted outbox items, revoke active task attempts, and block/release affected tasks. Record already admitted or running work separately; never claim that disconnection undid it.
+- [ ] Implement `removePeer` and participant removal in one state transaction each: revoke grants, cancel unadmitted outbox items, revoke active task attempts, and block/release affected tasks. Record already admitted or running work separately; never claim that disconnection undid it.
 - [ ] Implement `follow` as an existing Remote stream of committed revisions; initial snapshot plus revision-gap recovery rebuilds views without a second authority cache.
 - [ ] Run authorization and HMR tests together, regenerate only affected Remote artifacts, update README semantics, and commit Task 3.
 
@@ -222,10 +227,10 @@ async function commitState(
 
 **Consumes:** Tasks 1–4; exact `exec.agent` identity, caller-filtered `snapshot`, peer delivery, approved connection/participant state.
 
-**Produces:** Tools `collaboration_status`, `collaboration_send`, `collaboration_propose_plan`, `collaboration_claim_task`, `collaboration_update_task`, `collaboration_submit_task`, and `collaboration_review_task`. Claim/submit/review remain explicitly unavailable until their backing tasks are installed; never return synthetic success.
+**Produces:** Tools `collaboration_status`, `peer_send`, `collaboration_propose_plan`, `collaboration_claim_task`, `collaboration_update_task`, `collaboration_submit_task`, and `collaboration_review_task`. `peer_send` needs only an authorized connection, so it accepts no collaboration ID and, with `collaboration_status`, is the whole of V1a's model surface. Claim/submit/review remain explicitly unavailable until their backing tasks are installed; never return synthetic success.
 
 - [ ] Write tests proving the sender cannot be chosen in arguments, unknown peers are rejected, self-messaging is rejected, and status exposes only caller-authorized records.
-- [ ] Define explicit JSON schemas and pure presenters. `collaboration_send` has target, text, and allowed associations; results distinguish accepted, queued, admitted, cancelled, and failed, with stable message identity rather than an inferred reply.
+- [ ] Define explicit JSON schemas and pure presenters. `peer_send` has target, text, and optional associations; results distinguish accepted, queued, admitted, cancelled, and failed, with stable message identity rather than an inferred reply.
 - [ ] Implement proposal validation: complete task contracts, known participants, known dependencies, acyclic graph, path normalization, code-task repository requirements, and an independent review task per implementation submission. Proposals have no approval effect.
 - [ ] Test a proposed plan remains non-executable:
 
@@ -282,7 +287,7 @@ it('revokes the old attempt before accepting reassignment', async () => {
 ```
 
 - [ ] Run `pnpm exec vitest run packages/host/collaboration/tests/scheduler.host.spec.ts packages/host/collaboration/tests/task-authority.host.spec.ts`; verify races fail before implementation.
-- [ ] Reserve dispatch/invitation atomically in the state aggregate. Invitation is not a claim. `claim` checks dependency acceptance, current approval, participant enrollment, suspension/budget state, and repository observation, then commits owner/attempt/reservation together.
+- [ ] Reserve dispatch/invitation atomically in the state aggregate. Invitation is not a claim. `claim` checks dependency acceptance, current approval, participant enrollment, suspension/budget state, and the task's required capability against the claiming session's observed repository, then commits owner/attempt/reservation together. Capability is evaluated here, never pre-assigned at registration.
 - [ ] Admit authorized task turns separately from peer discussion. Install scoped guards at creation/resume; every action tool checks the current attempt and approved revision at execution. Existing session permissions still intersect this grant. Completion, revocation, or pause cannot leave stale action authority attached to a session.
 - [ ] Keep direct human turns available. An explicit human operation is governed by normal policy, but the portal warns about active work. A peer payload injected into human steering must not become human authority; reject ambiguous source combinations or retain stricter classification.
 - [ ] Handle restart by marking interrupted attempts, preserving partial work, and awaiting an explicit continuation/retry decision. New retries revoke old capabilities before rescheduling. Budget exhaustion and unavailable owners produce visible blocked state, not another agent.
@@ -383,4 +388,4 @@ The feature is complete only when the opt-in assembly passes the relevant tests,
 
 ## Draft validation record
 
-The plan was derived from the approved spec and inspected source owners. Personal Core retrieval was attempted but failed because a valid local Bok bearer token was unavailable. Implementation tests listed above have not been run during planning. The prior spec documentation run exposed existing repository README, terminology, Agent Note, and word-budget failures; those are not part of this feature's repair scope.
+The plan was derived from the approved spec and inspected source owners. Personal Core retrieval was attempted but failed because a valid local Bok bearer token was unavailable. Implementation tests listed above have not been run during planning, with one exception: `packages/host/collaboration/tests/authority-investigation.host.spec.ts` was run on 2026-10-01 and reported `Test Files 1 passed (1)` and `Tests 2 passed (2)`, which is the evidence behind Prerequisite P. The cited extension points were re-verified the same day: `KvTable.update` at `packages/storage/storage-domain/src/domain.ts:89`, `shell.app-overlay` and `shell.activity.selectors` at `packages/client/ui-shell/src/client/index.ts:63` and `:74`, `MessageSourceMap` at `packages/llm/llm/src/message.ts:102`, and `Agent.followup` at `packages/core/agent/src/runtime-types.ts:222`, which queues its own turn instead of steering. `packages/experimental/agent-team/src/` supplies only two modules worth lifting, `task-graph.ts` at 69 lines and `session-message.ts` at 31 lines; `mailbox.ts`, `task-board.ts`, `journal.ts`, and `projection.ts` are written around lead and teammate ownership, which this spec excludes, so they stay references rather than sources. The prior spec documentation run exposed existing repository README, terminology, Agent Note, and word-budget failures; those are not part of this feature's repair scope.
