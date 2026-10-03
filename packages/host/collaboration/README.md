@@ -16,6 +16,7 @@ This package is the Host plugin for discussion between independently owned sessi
 - [Configuration](#configuration)
 - [Turn classification](#turn-classification)
 - [Human-control admission](#human-control-admission)
+- [Authenticated Remote controls](#authenticated-remote-controls)
 - [Durable discussion state](#durable-discussion-state)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
@@ -44,6 +45,17 @@ Peer delivery must call `requireCollaborationAuthority(ctx)` before admitting re
 
 `requireHumanControl` accepts only a `HumanControlAdmission` minted inside this package for the authenticated UI adapter. The frozen object is tracked in a module-private `WeakSet`, so JSON, structured clones, and tool arguments such as `{ human: true }` cannot recreate it. The constructor is absent from the package entry and tool registry. This check does not isolate arbitrary Host code or identify a same-user Gateway caller as human. Its sole scope is `discussion`; even an untyped request for an action scope fails. A peer turn never becomes approval.
 
+<a id="authenticated-remote-controls"></a>
+## Authenticated Remote controls
+
+The generated `collaboration` Remote namespace provides `addPeer`, `removePeer`, `pause`, `resume`, `budget`, `snapshot`, and `follow`. Connection authenticates HTTP calls and WebSocket streams before Gateway dispatch. The adapter mints private discussion admission internally; request JSON accepts neither an actor override nor human/admission flags. These endpoints are absent from the model tool registry. Arbitrary direct Host calls and authenticated same-user processes remain the action-admission limitation described below.
+
+`addPeer` takes explicit display titles, observed workspace paths, accepted disclosure, pair-specific grants, and an activation limit, including zero. It reads stored Session headers through `sessionPersistence.stat`, validates both ordinary identities and the observed paths, and commits both registrations with the pair atomically. It neither reads conversation events nor resolves an Agent. Ordinary forks and separate worktrees are supported; subagent origin or delegation depth, unknown identities, and missing or stale workspace metadata fail with actionable diagnostics. The Host persists the header's actual identity and cwd, never a caller's workspace claim.
+
+Every mutation takes `expectedRevision` and an actor-scoped stable `requestId`. An identical retry returns its original durable receipt, even after disconnect. `addPeer` compares original caller intent before generating a new connection identity or refreshing headers. Changed intent conflicts; a concurrent identical write rereads the committed receipt after its revision conflict. New keys validate current Session headers. Budget updates preserve charges, and disconnect cancels queued work atomically while retaining admitted work in the store.
+
+`snapshot` and `follow` expose only pair-granted collaboration registrations, connections, and messages for the viewing Session. Registration grants no access to private human input or ordinary assistant output. Every follow item is a complete filtered snapshot with its committed global revision, so reconnects and revision gaps rebuild the view. Slow readers coalesce pending revisions to the latest complete view. Grant removal and disconnection filter every new item; plugin disposal ends streams and removes their listeners. Generated Remote contributions are selected by the Client API assembly without activating this optional Host plugin.
+
 <a id="durable-discussion-state"></a>
 ## Durable discussion state
 
@@ -53,7 +65,7 @@ Durable reads and transaction validation replay the complete contiguous journal 
 
 `read()` returns immutable committed state. `transact(expectedRevision, transform)` checks the revision at its queue slot, applies one synchronous pure transform, validates state and capacities, and durably commits one appended journal entry. A stale write rejects with `collaboration/revision-conflict` and the current revision. Failed writes change neither memory nor notifications. Consumers publish only matching committed `domain/changed` outcomes. Disposal rejects new transactions immediately and drains admitted transactions before storage closes.
 
-`applyDiscussionOperation` accepts validated operation data separately from Host-derived actor, timestamp, request key, and private human admission. Requests contain no acting identity override. Registrations contain display fields only and confer no permission. Connections hold bidirectional pairs with accepted disclosure, pair-specific snapshot/follow grants, pause state, and explicit human-supplied activation limits. `add-peer` registers a peer and opens the pair atomically. Human controls require the private discussion admission; budget updates preserve charged `used` counts. Each operation journals its complete data, actor, revision, and timestamp.
+`applyDiscussionOperation` accepts validated operation data separately from Host-derived actor, timestamp, request key, and private human admission. Requests contain no acting identity override. Registrations contain display fields only and confer no permission. Connections hold bidirectional pairs with accepted disclosure, pair-specific snapshot/follow grants, pause state, and explicit human-supplied activation limits. `add-peer` registers both Sessions and opens the pair atomically. Human controls require the private discussion admission; budget updates preserve charged `used` counts. Each operation journals its complete data, actor, revision, and timestamp.
 
 Outbox states are `queued`, `admitted`, `cancelled`, and `failed`. Successful enqueue and its original send receipt represent acceptance. `reserve-activation` atomically charges the pair and adds `activationReserved: true` while keeping the message queued; recovery must use that fact without charging again. `admit` records durable recipient input acceptance. Disconnect cancels all queued work for its pair, including reservations, and preserves admitted work separately. It neither refunds charges nor undoes recipient input. Delivery consumers own recipient pre-step authority checks, durable receipt reconciliation, framing limits, and turn ordering.
 
@@ -92,7 +104,7 @@ Independent of request prefixes. The plugin adds no system prompt text or tool s
 <details>
 <summary>Working context for maintainers, click to expand</summary>
 
-`tests/helpers/harness.ts` loads test-owned `cordis.yml` through Loader and Include with the production runtime and JSONL backend. Its scripted model and tool definitions are fixtures; tool execution, workspace writes, durable reads, session creation/resume, append-failure rollback, and runtime disposal use the real implementations. The UI-admission operation is a test-owned adapter, not a claim that a production Remote adapter is already installed. See the [feature proposal](../../../.agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.md) for the remaining composition obligations.
+`tests/helpers/harness.ts` loads test-owned `cordis.yml` through Loader and Include with the production runtime and JSONL backend. Its scripted model and tool definitions are fixtures; tool execution, workspace writes, durable reads, session creation/resume, append-failure rollback, and runtime disposal use the real implementations. `tests/remote.host.spec.ts` separately loads authenticated Connection/Gateway transport and real JSON storage without an Agent service, and checks controls, filtered streams, and plugin remount. See the [feature proposal](../../../.agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.md) for the remaining composition obligations.
 
 </details>
 

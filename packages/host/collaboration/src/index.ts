@@ -8,9 +8,12 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { installCollaborationAuthority, peerDiscussionToolNames } from './authority.ts'
 import { CollaborationStore } from './store.ts'
+import { CollaborationRemote } from './remote.ts'
 import type { StateLimits } from './types.ts'
 
 export { CollaborationStore } from './store.ts'
+export { CollaborationRemote } from './remote.ts'
+export type { AddPeerRequest, PeerControlRequest, PeerBudgetRequest, CollaborationViewRequest, CollaborationSnapshot, CollaborationMutationResult } from './types.ts'
 export { applyDiscussionOperation, emptyCollaborationState, findRequestReceipt } from './state.ts'
 export { collaborationStateSchema, discussionOperationSchema } from './schema.ts'
 export type { CollaborationState, CollaborationActor, CollaborationRequestId, Connection, ConnectionId, DiscussionContext, DiscussionOperation, JournalEntry, OutboxMessage, PeerMessageId, Registration, RequestReceipt, StateLimits } from './types.ts'
@@ -60,4 +63,5 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   ctx.effect(() => () => store.close(), 'collaboration.store')
   ctx.provide('collaborationStore', store)
   ctx.effect(() => installCollaborationAuthority(ctx, { allowedTools: new Set(config.peerDiscussionTools) }), 'collaboration.authority')
+  ctx.plugin(CollaborationRemote)
 }

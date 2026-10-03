@@ -21,16 +21,16 @@ describe('collaboration through the real Loader export path', () => {
   })
 
   it('defaults peer discussion to read-only file tools', () => {
-    expect(collaboration.Config({ stateLimits })).toEqual({ peerDiscussionTools: ['read', 'glob', 'grep'], stateLimits })
+    expect(collaboration.Config({ stateLimits } as collaboration.Config)).toEqual({ peerDiscussionTools: ['read', 'glob', 'grep'], stateLimits })
   })
 
   it('rejects a malformed allowlist when the plugin loads instead of ignoring it', () => {
-    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: 'read' })).toThrow()
-    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: [1] })).toThrow()
+    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: 'read' } as unknown as collaboration.Config)).toThrow()
+    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: [1] } as unknown as collaboration.Config)).toThrow()
   })
 
   it.each(['write', 'bash', 'run_code', 'cordis_run', 'delegate', 'publish', 'unknown_tool'])('rejects %s as a peer-discussion capability', (name) => {
-    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: [name] })).toThrow()
+    expect(() => collaboration.Config({ stateLimits, peerDiscussionTools: [name] } as unknown as collaboration.Config)).toThrow()
   })
 
   it('applies the configured read allowlist to a booted runtime', async () => {

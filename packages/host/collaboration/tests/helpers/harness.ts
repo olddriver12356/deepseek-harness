@@ -46,7 +46,7 @@ class ScriptedAdapter extends LlmAdapter {
       step.started()
       if (!signal.aborted) await new Promise<void>((resolve) =>{  signal.addEventListener('abort', () =>{  resolve() }, { once: true }) })
       step.stopped()
-      yield { type: 'finish', reason: { kind: 'aborted' } }
+      yield { type: 'finish', reason: { kind: 'aborted', failure: { message: 'fixture request aborted', code: 'ABORTED' } } }
       return
     }
     if (step.kind === 'tool') {

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.md
-2026-10-01-independent-session-collaboration.md: cbfed5e6bdfad309762180433c2b6cabd23723bf
-2026-10-01-independent-session-collaboration.zh.md: 89a7a30b846e435c8cd7ae39da16839332ba506c
+2026-10-01-independent-session-collaboration.md: 18b2dda278c56c0cfabf99a22468b5c0c593d56d
+2026-10-01-independent-session-collaboration.zh.md: 63ddebe198974e8d4c1bbfc8bad7e10d38ee8df1

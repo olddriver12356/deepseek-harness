@@ -37,7 +37,8 @@ describe('V1a aggregate validation and transitions', () => {
   })
 
   it('requires host-created human admission for grants', () => {
-    expect(() => applyDiscussionOperation(emptyCollaborationState(), { kind: 'register', registration: { sessionId: a, title: 'A', cwd: '/a' } }, { ...human, admission: undefined })).toThrow(/human control/)
+    const { admission: _admission, ...withoutAdmission } = human
+    expect(() => applyDiscussionOperation(emptyCollaborationState(), { kind: 'register', registration: { sessionId: a, title: 'A', cwd: '/a' } }, withoutAdmission)).toThrow(/human control/)
   })
 
   it('adds both display registrations and a disclosed pair atomically from a fresh aggregate', () => {

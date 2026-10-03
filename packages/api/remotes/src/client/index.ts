@@ -10,6 +10,7 @@ import dynamicRemote from '@deepseek-ai/dsh-cordis-host-runner/remote'
 import pluginInventoryRemote from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 import messageFeedbackRemote from '@deepseek-ai/dsh-message-feedback/remote'
 import newsRemote from '@deepseek-ai/dsh-host-news/remote'
+import collaborationRemote from '@deepseek-ai/dsh-host-collaboration/remote'
 import appsRemote from '@deepseek-ai/dsh-host-apps/remote'
 import expertsRemote from '@deepseek-ai/dsh-host-experts/remote'
 import knowledgeRemote from '@deepseek-ai/dsh-host-knowledge/remote'
@@ -35,6 +36,9 @@ export type {} from '@deepseek-ai/dsh-llm/remote'
 export type {} from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 export type {} from '@deepseek-ai/dsh-message-feedback/remote'
 export type {} from '@deepseek-ai/dsh-host-news/remote'
+export type {} from '@deepseek-ai/dsh-host-collaboration/remote'
+export type { AddPeerRequest, PeerControlRequest, PeerBudgetRequest, CollaborationViewRequest,
+  CollaborationSnapshot, CollaborationMutationResult, ConnectionId, CollaborationRequestId } from '@deepseek-ai/dsh-host-collaboration/types'
 export type {} from '@deepseek-ai/dsh-host-apps/remote'
 export type {} from '@deepseek-ai/dsh-host-experts/remote'
 export type {} from '@deepseek-ai/dsh-host-knowledge/remote'
@@ -168,7 +172,8 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
   try {
     for (const contribution of [
       agentPresetsRemote, commandsRemote, settingsControllerRemote, goalsRemote, llmRemote, dynamicRemote,
-      pluginInventoryRemote, messageFeedbackRemote, newsRemote, appsRemote, expertsRemote, knowledgeRemote, stylesRemote,
+      pluginInventoryRemote, messageFeedbackRemote, newsRemote, collaborationRemote,
+      appsRemote, expertsRemote, knowledgeRemote, stylesRemote,
       sessionFeedbackRemote, fileUploadsRemote, sessionReferencesRemote,
       permissionPresetsRemote, subagentsRemote, sessionRemote, workspaceRemote, workspaceFilesRemote, terminalRemote,
     ]) {

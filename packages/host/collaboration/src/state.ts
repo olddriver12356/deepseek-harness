@@ -5,21 +5,6 @@ import { requireHumanControl } from './authority.ts'
 import { collaborationStateSchema } from './schema.ts'
 import type { CollaborationActor, CollaborationRequestId, CollaborationState, DiscussionContext, DiscussionOperation, RequestReceipt } from './types.ts'
 
-declare module '@deepseek-ai/dsh-typert-protocol' {
-  interface RemoteErrorDetailsMap {
-    /** Expected revision differs from the current durable aggregate. */
-    'collaboration/revision-conflict': { readonly revision: number }
-    /** Retained authority or messages exceed an explicitly configured limit. */
-    'collaboration/capacity': { readonly limit: string; readonly maximum: number; readonly actual: number }
-    /** The operation requires an active pair, valid delivery state, or available budget. */
-    'collaboration/invalid-operation': { readonly reason: string }
-    /** The same actor reused a committed request key for different operation data. */
-    'collaboration/request-conflict': { readonly requestId: CollaborationRequestId }
-    /** The collaboration store has begun disposal. */
-    'collaboration/closed': Record<string, never>
-  }
-}
-
 /**
  * Construct an empty aggregate with no ambient grants or activation allowance.
  * @returns immutable, schema-valid initial state.

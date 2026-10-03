@@ -16,6 +16,7 @@ kind: "package-reference"
 - [配置](#configuration)
 - [回合分类](#turn-classification)
 - [人类控制准入](#human-control-admission)
+- [经过身份验证的 Remote 控制](#authenticated-remote-controls)
 - [持久讨论状态](#durable-discussion-state)
 - [模型体验](#model-experience)
 - [已知限制与延后工作](#known-limitations-and-deferred-work)
@@ -44,6 +45,17 @@ kind: "package-reference"
 
 `requireHumanControl` 只接受此包内部为经过身份验证的 UI 适配器签发的 `HumanControlAdmission`。冻结对象记录在模块私有的 `WeakSet` 中，因此 JSON、结构化克隆和 `{ human: true }` 等工具参数无法重建它。构造函数不在包入口和工具注册表中。此检查不隔离任意 Host 代码，也不把同一用户的 Gateway 调用方认定为人类。唯一的作用域是 `discussion`；即使请求未经类型检查，执行作用域也会失败。对等回合永远不会成为批准。
 
+<a id="authenticated-remote-controls"></a>
+## 经过身份验证的 Remote 控制
+
+生成的 `collaboration` Remote 命名空间提供 `addPeer`、`removePeer`、`pause`、`resume`、`budget`、`snapshot` 和 `follow`。Connection 在 Gateway 分派前验证 HTTP 调用和 WebSocket 流。适配器在内部签发私有讨论准入；请求 JSON 既不接受 actor 覆盖，也不接受 human/admission 标记。这些端点不在模型工具注册表中。任意直接 Host 调用和同一用户的已验证进程仍受到下文所述执行准入限制。
+
+`addPeer` 接收明确的显示标题、已观察的工作区路径、接受披露、每对会话的授权和激活上限，包括零。它通过 `sessionPersistence.stat` 读取存储的 Session header，验证两个普通会话身份和已观察路径，并在一次原子提交中保存双方注册及连接。它既不读取对话事件，也不解析 Agent。支持普通 fork 和独立 worktree；subagent origin 或 delegation depth、未知身份、缺失或陈旧的工作区元数据会返回可操作的诊断。Host 持久保存 header 中的实际身份和 cwd，不采用调用方的工作区声明。
+
+每次变更接收 `expectedRevision` 和以 actor 隔离的稳定 `requestId`。相同重试返回原始持久回执，即使连接已经断开。`addPeer` 在生成新连接身份或刷新 header 之前比较原始调用意图。改变意图会冲突；并发的相同写入在 revision 冲突后重新读取已提交回执。新 key 验证当前 Session header。预算更新保留已扣减数量，断连原子取消排队工作，同时在 store 中保留已准入工作。
+
+`snapshot` 和 `follow` 只公开查看 Session 已获成对授权的协作注册、连接和消息。注册不授予访问私人用户输入或普通助手输出的权限。每个 follow 项都是带已提交全局 revision 的完整过滤快照，因此重连和 revision 缺口都可重建视图。读取较慢时，待发布 revision 合并为最新完整视图。授权撤销和断连会重新过滤每个新项目；插件 dispose 结束流并移除监听器。Client API 组装选择生成的 Remote contribution，不会启用此可选 Host 插件。
+
 <a id="durable-discussion-state"></a>
 ## 持久讨论状态
 
@@ -53,7 +65,7 @@ kind: "package-reference"
 
 `read()` 返回不可变的已提交状态。`transact(expectedRevision, transform)` 在其排队位置检查 revision，应用一次同步纯变换，验证状态和容量，再持久提交一条新增 journal 条目。陈旧写入以 `collaboration/revision-conflict` 拒绝，并返回当前 revision。写入失败既不改变内存，也不发布通知。消费者只发布匹配的已提交 `domain/changed` 结果。dispose 立即拒绝新事务，等待已接纳事务完成后再关闭存储。
 
-`applyDiscussionOperation` 分开接收已验证的操作数据，以及 Host 派生的 actor、时间戳、请求 key 和私有人类准入。请求不包含覆盖 actor 的字段。注册记录只含显示字段，不授予权限。连接保存双向会话对，带已接受的披露、仅属于该会话对的 snapshot/follow 授权、暂停状态和明确的人类设置激活上限。`add-peer` 原子注册对方并打开连接。人类控制需要私有 discussion 准入；预算更新保留已扣减的 `used` 数量。每次操作都把完整数据、actor、revision 和时间戳写入 journal。
+`applyDiscussionOperation` 分开接收已验证的操作数据，以及 Host 派生的 actor、时间戳、请求 key 和私有人类准入。请求不包含覆盖 actor 的字段。注册记录只含显示字段，不授予权限。连接保存双向会话对，带已接受的披露、仅属于该会话对的 snapshot/follow 授权、暂停状态和明确的人类设置激活上限。`add-peer` 原子注册双方 Session 并打开连接。人类控制需要私有 discussion 准入；预算更新保留已扣减的 `used` 数量。每次操作都把完整数据、actor、revision 和时间戳写入 journal。
 
 outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队及其原始发送回执表示请求已接受。`reserve-activation` 原子扣减会话对的预算并添加 `activationReserved: true`，消息仍保持排队；恢复时必须利用此事实，避免再次扣减。`admit` 记录持久的接收方输入接受。断开连接会取消此会话对的全部排队工作，包含已预留者，并单独保留已准入工作。它不退还费用，也不撤回接收方输入。传递消费者负责接收方 pre-step 权限检查、持久回执核对、完整消息大小限制和回合顺序。
 
@@ -92,7 +104,7 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 <details>
 <summary>维护者的工作上下文，点击展开</summary>
 
-`tests/helpers/harness.ts` 通过 Loader 和 Include 加载测试自有的 `cordis.yml`，使用生产环境运行时和 JSONL 后端。脚本化模型和工具定义是测试夹具；工具执行、工作区写入、持久读取、会话创建与恢复、追加失败回滚和运行时清理均使用真实实现。UI 准入操作是测试自有的适配器，并不表示生产环境的 Remote 适配器已安装。剩余组合责任见[功能提案](../../../.agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.zh.md)。
+`tests/helpers/harness.ts` 通过 Loader 和 Include 加载测试自有的 `cordis.yml`，使用生产环境运行时和 JSONL 后端。脚本化模型和工具定义是测试夹具；工具执行、工作区写入、持久读取、会话创建与恢复、追加失败回滚和运行时清理均使用真实实现。`tests/remote.host.spec.ts` 单独加载经过身份验证的 Connection/Gateway 传输和真实 JSON 存储，不安装 Agent 服务，并检查控制、过滤流和插件重新挂载。剩余组合责任见[功能提案](../../../.agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.zh.md)。
 
 </details>
 
