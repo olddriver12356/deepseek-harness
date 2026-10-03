@@ -25,19 +25,21 @@ This package is the Host plugin for discussion between independently owned sessi
 <a id="configuration"></a>
 ## Configuration
 
-`peerDiscussionTools` lists the tool names a `peer-discussion` turn may call. The default is `read`, `glob`, and `grep`. Every other tool name, including names that are not registered, is denied. An empty list denies every tool. A value that is not an array of strings fails when the plugin loads.
+`peerDiscussionTools` selects a subset of the reviewed file-reading tools `read`, `glob`, and `grep`, plus the V1a discussion tools `collaboration_status` and `peer_send`. The default selects only the three file tools. An empty list denies every tool. Unknown names and execution capabilities such as `write`, `bash`, and `cordis_run` fail when the plugin loads; configuration cannot grant peer turns action authority. The direct installer validates and copies the same selection.
 
 <a id="turn-classification"></a>
 ## Turn classification
 
-The plugin listens on `agent/pre-step` ahead of other listeners and records one class per Agent and turn. A step whose entering messages include any source other than `user`, `tool`, or `plugin` is `peer-discussion`. A step with only user messages is `human`. A step with no new input, such as tool results of an earlier step, keeps the turn's class. A step with no recorded class, such as resumed open work after a restart, is `peer-discussion`. Within one turn the class moves only from `human` to `peer-discussion`, so mixed or ambiguous input receives the stricter class and a peer message cannot be undone by a later step.
+The plugin listens on `agent/pre-step` ahead of other listeners and records one class per Agent and turn. Any peer or unknown input source makes the step `peer-discussion`. User input is `human`; supported `tool` and `plugin` context is neutral and preserves that classification. A step with no new origin keeps the turn's class, or defaults to `peer-discussion` when no class is recorded, including after restoration. Within one turn the class only becomes stricter. Both claimed and admitted messages count, so a later listener cannot rewrite away peer input.
 
-The guard is registered with `tools.guard`, which runs after every `tools/pre-execute` listener and has no allow result. A listener cannot turn its denial into permission. Calls that carry no Agent are not classified and pass through, because they do not come from a model turn.
+The guard is registered with `tools.guard`, which runs after every `tools/pre-execute` listener and has no allow result. A listener cannot turn its denial into permission. Existing policies still govern human turns and allowlisted discussion tools. Callers must carry the exact executing Agent; calls without one pass through this guard.
+
+Peer delivery must call `requireCollaborationAuthority(ctx)` before admitting recipient input, including restored recipients. The check fails when the policy is absent or disposed. It checks installed policy presence and grants no human or task authority. The delivery module owns enforcing this check and resolving protected recipient state.
 
 <a id="human-control-admission"></a>
 ## Human-control admission
 
-`requireHumanControl` accepts only a `HumanControlAdmission` minted by the Host inside this package. The value is a frozen object tracked in a module-private `WeakSet`, so it cannot be rebuilt from JSON, a structured clone, tool arguments, or an object literal such as `{ human: true }`. The only scope is `discussion`. No scope grants authority to act, and a `peer-discussion` turn is never approval.
+`requireHumanControl` accepts only a `HumanControlAdmission` minted inside this package for the authenticated UI adapter. The frozen object is tracked in a module-private `WeakSet`, so JSON, structured clones, and tool arguments such as `{ human: true }` cannot recreate it. The constructor is absent from the package entry and tool registry. This check does not isolate arbitrary Host code or identify a same-user Gateway caller as human. Its sole scope is `discussion`; even an untyped request for an action scope fails. A peer turn never becomes approval.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -58,8 +60,9 @@ Independent of request prefixes. The plugin adds no system prompt text or tool s
 
 ## Known Limitations and Deferred Work
 
-- **No action authority**: nothing in this package can grant a session authority to act. The existing runtime lets a host-only dynamic package run without approval and lets a same-user process forge the Gateway cookie, so a human-control call cannot be told apart from a model-owned shell. Any admission of action authority stays blocked until the dynamic-code sandbox or Gateway admission is closed. The two permanent denial tests in `tests/authority-investigation.host.spec.ts` record both attacks and pass on the current runtime.
-- **Executor-side guard only**: calls that carry no Agent are not governed, and a runtime that does not mount this plugin does not restrict a peer turn.
+- **No action authority**: arbitrary dynamic Host code reaches the Host process, and a same-user shell can authenticate to the Gateway using local credentials. Automatic action admission remains blocked by Prerequisite P until both paths can enforce human-only authorization. The permanent admission-limit regressions in `tests/authority-investigation.host.spec.ts` assert that both limitations remain reachable; they do not assert attack denial.
+- **Executor-side guard only**: calls without an Agent are not governed. A runtime without this plugin must refuse peer delivery through the recipient resolver, rather than rely on a global runtime rule.
+- **Restoration scoping**: the current installer applies globally and treats an unclassified restored Agent as discussion. The recipient resolver must distinguish protected peer work from ordinary human-only restored work before enabling production delivery. Source-aware restoration and missing-policy recipient denial remain delivery-module obligations.
 - **No peer source declaration yet**: the peer message source kind is declared with the messaging module. Until then the classifier treats every unknown source kind as peer input.
 
 <a id="dev-note"></a>
@@ -69,7 +72,7 @@ Independent of request prefixes. The plugin adds no system prompt text or tool s
 <details>
 <summary>Working context for maintainers, click to expand</summary>
 
-`tests/helpers/harness.ts` boots the production AgentLoop and ToolRuntime with a scripted model adapter and the plugin loaded through the Loader export path. Only the model and the three tool bodies are fixtures. Persistent registration, durable-write failure injection, and session resume belong to the state module and extend this harness there.
+`tests/helpers/harness.ts` loads test-owned `cordis.yml` through Loader and Include with the production runtime and JSONL backend. Its scripted model and tool definitions are fixtures; tool execution, workspace writes, durable reads, session creation/resume, append-failure rollback, and runtime disposal use the real implementations. The UI-admission operation is a test-owned adapter, not a claim that a production Remote adapter is already installed. See the [feature proposal](../../../.agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.md) for the remaining composition obligations.
 
 </details>
 

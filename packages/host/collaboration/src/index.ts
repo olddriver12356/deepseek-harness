@@ -6,7 +6,9 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import { installCollaborationAuthority } from './authority.ts'
+import { installCollaborationAuthority, peerDiscussionToolNames } from './authority.ts'
+
+export { requireCollaborationAuthority } from './authority.ts'
 
 export type { HumanControlAdmission, HumanControlScope, TurnClass } from './authority.ts'
 
@@ -18,13 +20,13 @@ export const inject = ['tools']
 
 /** Validated plugin configuration. */
 export interface Config {
-  /** Tool names a peer-discussion turn may call; every other tool is denied. */
-  readonly peerDiscussionTools: string[]
+  /** Reviewed read and collaboration tools a peer turn may call; other names fail loading. */
+  readonly peerDiscussionTools: Array<(typeof peerDiscussionToolNames)[number]>
 }
 
 /** Schema for {@link Config}; the default admits only the read-only file tools. */
 export const Config: z<Config> = z.object({
-  peerDiscussionTools: z.array(z.string()).default(['read', 'glob', 'grep']),
+  peerDiscussionTools: z.array(z.union([...peerDiscussionToolNames])).default(['read', 'glob', 'grep']),
 })
 
 /**

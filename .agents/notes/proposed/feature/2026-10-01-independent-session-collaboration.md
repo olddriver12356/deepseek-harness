@@ -1,0 +1,37 @@
+# Agent Note: Independent session collaboration
+
+Status: proposed
+
+English | [中文](2026-10-01-independent-session-collaboration.zh.md)
+
+## Problem
+
+Independently created sessions need a persistent discussion connection without changing their workspaces or treating a peer message as a human instruction. The existing authenticated UI transport cannot establish human-only action authorization against a model-owned process running as the same operating-system user. Dynamic Host code also retains access to Host-realm functions. Discussion and action authorization therefore require different guarantees.
+
+## Proposal
+
+Compose an opt-in Host plugin with durable pair connections, human UI controls, explicit peer attribution, and the two model tools `collaboration_status` and `peer_send`. V1a supports discussion only. Task dispatch, claims, execution approvals, review, and integration remain deferred until Prerequisite P provides enforceable human-only action admission. The [design](../../../../docs/superpowers/specs/2026-10-01-independent-session-collaboration-design.md) describes the complete feature; V1a is the discussion-only milestone.
+
+The current policy milestone uses a module-private object capability for discussion controls. Tool JSON and cloned objects cannot recreate it; arbitrary Host code and a same-user authenticated Gateway request are outside that guarantee. The constructor is absent from the package entry and model tool registry. A production Remote adapter must create admission only after the existing UI transport accepts the request, and must never grant action authority through that path.
+
+Turn authority belongs to the exact executing Agent. `human` and `peer-discussion` are the only classes. Peer and unknown input make a turn stricter; supported tool/plugin context is neutral. `tools.guard` denies peer action tools after the extensible pre-execute policy. Configuration selects only reviewed `read`, `glob`, `grep`, `collaboration_status`, and `peer_send` names; it cannot admit an arbitrary capability by adding its name. This uses the existing runtime extension points and changes no shared runtime owner.
+
+Peer delivery must require installed collaboration authority before admitting input, including cold recipients. `requireCollaborationAuthority(ctx)` supplies that presence check and is removed with the policy registrations. The delivery/resolver owner must also preserve ordinary human-only restoration while failing closed for protected peer work. The current global installer defaults every unclassified Agent to discussion; it does not itself resolve this distinction.
+
+## Alternatives considered
+
+**Use UI credentials as action authorization.** The permanent investigation tests show that a same-user shell can authenticate with test-owned local credentials and that a dynamic VM helper can access the Host process. Another ambient token or a hidden method does not distinguish a human from these callers, so it cannot unblock action dispatch.
+
+**Let configuration admit arbitrary tool names.** This permits an ordinary allowlist edit to grant `write` or dynamic execution to peer messages. A reviewed closed set, narrowed by configuration and copied at installation, preserves the discussion-only guarantee.
+
+**Require a global core policy for every restored session.** Ordinary sessions remain supported without this optional feature. Protected recipient discovery and cold peer admission belong to the collaboration delivery owner; modifying the core runtime would impose an unrelated requirement on human-only sessions.
+
+## Acceptance criteria
+
+The policy milestone boots a test-owned `cordis.yml` through real Loader/Include services and uses the production AgentLoop, tool executor, session store, and JSONL backend. It rejects forged discussion admission, unsafe configuration, peer writes, shell/dynamic/delegation/publishing calls, and listener attempts to undo restrictions. Tests verify files and durable logs independently, restore interrupted work, refuse failed resume publication, and await request cancellation during disposal. Permanent same-user Gateway and dynamic VM tests document the current admitted attacks.
+
+Completing V1a additionally requires a production discussion Remote adapter, durable connection state, explicit peer-source logging and receipt resolution, absent-policy cold-recipient denial, ordinary human-only restoration, model tools, the Live Signal portal, and a keyless recorded-session scenario through the final opt-in assembly. No shipped default or live session is activated by these test fixtures.
+
+## Risks
+
+Executor policy requires callers to carry the exact Agent. Arbitrary Host code can call services directly or omit that identity; the plugin is not a process sandbox. An installed-policy marker establishes presence, not isolation from Host code. Production delivery remains unavailable until the resolver enforces recipient scoping and the installed-policy check. Existing sandbox, approval, and tool policies continue to apply. Closing Prerequisite P is a separate prerequisite for any future action-authority capability.
