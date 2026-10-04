@@ -14,12 +14,13 @@
   - img
   - img
   - text: 系统提示词
-- text: 只回复 MESSAGES_WEB_READY，不调用工具。 {{clock}}
+- text: 你 只回复 MESSAGES_WEB_READY，不调用工具。 {{clock}}
 - button "复制":
   - img
 - button "已思考":
   - text: 已思考
   - img
+- text: 智能体
 - button "思考":
   - img
   - img

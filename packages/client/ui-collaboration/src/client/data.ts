@@ -26,10 +26,17 @@ export class CollaborationDataSource {
     })
   }
 
-  /** @returns the stable current committed-view snapshot. */
+  /**
+   * Read the last complete committed view without starting a request.
+   * @returns the stable current committed-view snapshot.
+   */
   readonly getSnapshot = (): CollaborationData => this.value
 
-  /** @param listener - committed-view observer. @returns disposer. */
+  /**
+   * Observe complete view replacements and connection failures.
+   * @param listener - committed-view observer.
+   * @returns disposer removing this observer.
+   */
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
     return () => { this.listeners.delete(listener) }
@@ -41,7 +48,10 @@ export class CollaborationDataSource {
     this.consumer = this.consume()
   }
 
-  /** @returns completion after a fresh authorized snapshot and requested stream replacement. */
+  /**
+   * Refresh the authorized view and reopen a terminally ended stream; concurrent calls share one request.
+   * @returns completion after a fresh authorized snapshot and requested stream replacement.
+   */
   refresh(): Promise<void> {
     return this.refreshing ??= this.refreshNow().finally(() => { this.refreshing = undefined })
   }
@@ -63,7 +73,10 @@ export class CollaborationDataSource {
     }
   }
 
-  /** @returns quiescence after every stream generation is cancelled. */
+  /**
+   * Stop updates and drain the owned stream consumer before releasing observers.
+   * @returns quiescence after every stream generation is cancelled.
+   */
   async dispose(): Promise<void> {
     this.disposed = true
     await this.stream.dispose()
@@ -101,7 +114,11 @@ export class CollaborationDataSource {
   private isDisposed(): boolean { return this.disposed }
 }
 
-/** @param result - generated Remote settlement. @returns successful value or throws its exact diagnostic. */
+/**
+ * Unwrap a successful Remote settlement or throw its exact diagnostic.
+ * @param result - generated Remote settlement.
+ * @returns successful value.
+ */
 export function valueOf<T>(result: RemoteResult<T>): T {
   if (!result.ok) throw new Error(`${result.error.code}: ${result.error.message}`)
   return result.value

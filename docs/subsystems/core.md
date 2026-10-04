@@ -747,6 +747,30 @@ Initiator methods provide same-process causal attribution only. Ambient presence
 
 ```ts cordis-catalog
 /**
+ * Register an input policy required by durable message attribution. Missing policies deny admission.
+ * @param name - exact source requirement identifier.
+ * @param accepts - synchronous check; defer preserves pending input until a later wake, true admits, false refuses.
+ * @returns reversible registration owned by the caller's fiber.
+ */
+registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean | 'defer'): () => void
+
+/**
+ * Check every original and rewritten input immediately before admitting a request.
+ * @param agent - actual recipient.
+ * @param messages - original claimed inputs and downstream admitted inputs.
+ * @returns false if a required policy is absent, disposed, or refuses any input.
+ */
+acceptsInput(agent: Agent, messages: readonly UserMessage[]): boolean
+
+/**
+ * Check whether pending input must remain unclaimed until a later owner wake.
+ * @param agent - actual recipient.
+ * @param message - pending input, before any durable removal.
+ * @returns true only when its installed policy explicitly defers; missing policies remain a refusal.
+ */
+defersInput(agent: Agent, message: UserMessage): boolean
+
+/**
  * Read the Agent that initiated the inherited asynchronous driver chain.
  * Use this optional form for logging, tracing, metrics, or host attribution
  * that also supports agentless calls. When a parent creates a child, setup
@@ -911,6 +935,8 @@ list(): Agent[]
  */
 roots(): Agent[]
 ```
+
+Types: [UserMessage](session.md)
 
 Source: [`packages/core/agent/src/index.ts`](../../packages/core/agent/src/index.ts)
 

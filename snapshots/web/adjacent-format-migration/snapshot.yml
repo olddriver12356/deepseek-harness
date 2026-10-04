@@ -1,0 +1,10 @@
+version: 1
+scenario: adjacent-format-migration
+profile: web
+composition: web-default
+recording: authored
+sessionFormat:
+  version: 3
+  coverage: [adjacent-migration]
+header:
+  class: web-default

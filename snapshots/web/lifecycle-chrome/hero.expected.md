@@ -1,16 +1,58 @@
+- tablist "Main navigation":
+  - tab "01 Agent Execution" [selected]:
+    - text: "01"
+    - strong: Agent
+    - text: Execution
+  - tab "02 Knowledge Second brain":
+    - text: "02"
+    - strong: Knowledge
+    - text: Second brain
+  - tab "03 Tools Working library":
+    - text: "03"
+    - strong: Tools
+    - text: Working library
+  - tab "04 Experts Perspectives":
+    - text: "04"
+    - strong: Experts
+    - text: Perspectives
+  - tab "05 Styles Output voice":
+    - text: "05"
+    - strong: Styles
+    - text: Output voice
+  - tab "06 Monitor Usage and traces":
+    - text: "06"
+    - strong: Monitor
+    - text: Usage and traces
+  - tab "07 Apps Local tools":
+    - text: "07"
+    - strong: Apps
+    - text: Local tools
+  - tab "08 About me Personal memory":
+    - text: "08"
+    - strong: About me
+    - text: Personal memory
+  - tab "09 News AI and tools":
+    - text: "09"
+    - strong: News
+    - text: AI and tools
 - button "New session"
 - button "Collapse sidebar":
   - img
-- button "New session":
+- text: PROJECT TAPE 1
+- button "New Session":
   - img
   - text: New Session
-- text: Workspaces
+- button "Add workspace":
+  - img
+  - text: Add workspace
+- button "Switch workspace":
+  - text: Current workspace Using workspace
+  - img
+- text: SESSION TAPE
 - button "Search sessions":
   - img
-- textbox "Search sessions..."
+- textbox "Search session content…"
 - button "View options":
-  - img
-- button "Add workspace":
   - img
 - tree "Sessions":
   - treeitem "workspace" [expanded]:

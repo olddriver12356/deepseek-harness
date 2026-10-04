@@ -19,7 +19,11 @@ export interface ConnectionDraft {
  * Declare selection, drafts, visibility and reading positions without authoritative connection state.
  * @returns per-Session view store handle.
  */
-export function createCollaborationStore() {
+export function createCollaborationStore(): ReturnType<typeof defineCollaborationStore> {
+  return defineCollaborationStore()
+}
+
+function defineCollaborationStore() {
   return defineStore({
     init: () => ({ open: false, selected: undefined as ConnectionId | undefined,
       readThrough: {} as Record<string, IncomingMessageId | undefined>, budget: '', draft: {

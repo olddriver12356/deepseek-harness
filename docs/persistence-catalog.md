@@ -687,7 +687,7 @@ Source: [`packages/interaction/permission-presets/src/index.ts:57`](../packages/
 'personal/observation-request': { turn: number; sourceSeqs: number[]; request: Omit<GenerateOptions, 'signal'> }
 ```
 
-Source: [`packages/client/ui-personal/src/observer.ts:19`](../packages/client/ui-personal/src/observer.ts)
+Source: [`packages/client/ui-personal/src/observer.ts:25`](../packages/client/ui-personal/src/observer.ts)
 
 <a id="personalobservation-result--log-only"></a>
 
@@ -698,7 +698,7 @@ Source: [`packages/client/ui-personal/src/observer.ts:19`](../packages/client/ui
 'personal/observation-result': { turn: number; status: string; observations: number }
 ```
 
-Source: [`packages/client/ui-personal/src/observer.ts:21`](../packages/client/ui-personal/src/observer.ts)
+Source: [`packages/client/ui-personal/src/observer.ts:27`](../packages/client/ui-personal/src/observer.ts)
 
 ### `plan/*`
 
@@ -3193,7 +3193,7 @@ SHA-256: `674ebedef5e276d110225e53965f7a1b9b463d19e3c356b8ee34c603eeba17c6`
 
 SHA-256: `ca376e90b111492c563d9627a728bae2462c2b61bec50cb04155cbbfc0d6cef0`
 
-Sources: [`packages/client/ui-personal/src/observer.ts:19`](../packages/client/ui-personal/src/observer.ts)
+Sources: [`packages/client/ui-personal/src/observer.ts:25`](../packages/client/ui-personal/src/observer.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -3290,7 +3290,7 @@ SHA-256: `cb93fd3e186e31aebe7cdc6133da735b61ec1164239abe1e19cc48f3be22adea`
 
 SHA-256: `fddd32e495a348a9b2a04869f2bf8965abdc6f68dfb585ab2ca7de5ce841b82a`
 
-Sources: [`packages/client/ui-personal/src/observer.ts:21`](../packages/client/ui-personal/src/observer.ts)
+Sources: [`packages/client/ui-personal/src/observer.ts:27`](../packages/client/ui-personal/src/observer.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -6655,7 +6655,7 @@ SHA-256: `57f3f606ff8b6c84d9c443faace9d1dd10cca0354f37a4f515ef075f7c351b90`
 
 SHA-256: `4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b`
 
-Sources: [`packages/api/session-controller/src/types.ts:375`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:19`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/host/collaboration/src/types.ts:10`](../packages/host/collaboration/src/types.ts) · [`packages/host/collaboration/src/types.ts:12`](../packages/host/collaboration/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:10`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/util/brand/src/index.ts:18`](../packages/util/brand/src/index.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
+Sources: [`packages/api/session-controller/src/types.ts:375`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:19`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/host/collaboration/src/types.ts:24`](../packages/host/collaboration/src/types.ts) · [`packages/host/collaboration/src/types.ts:26`](../packages/host/collaboration/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:10`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/util/brand/src/index.ts:18`](../packages/util/brand/src/index.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
 
 `string`
 

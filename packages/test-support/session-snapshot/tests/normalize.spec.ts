@@ -29,7 +29,7 @@ describe('materializeSessionFixtureCwd', () => {
   it('keeps Windows separators and quoted path data valid in hydrated JSONL', () => {
     const cwd = 'C:\\Users\\Snapshot\\quoted"data'
     const fixture = '{"type":"session","cwd":"{{cwd}}"}\n{"text":"read {{cwd}}/file.txt"}\n'
-    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line))
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line) as unknown)
     expect(rows).toEqual([{ type: 'session', cwd }, { text: `read ${cwd}/file.txt` }])
   })
 })
@@ -163,6 +163,33 @@ describe('normalizeStdout', () => {
       regex: String.raw`\d+\w+`,
       command: String.raw`printf "\\n"`,
     })
+  })
+
+  it('normalizes declared JSON-escaped cwd inside SDK policy text without erasing other paths', () => {
+    const cwd = String.raw`C:\Users\Snapshot\Temp\sdk-snapshot-text-turn-owned`
+    const escapedCwd = JSON.stringify(cwd).slice(1, -1)
+    const text = `{"cwd":"${escapedCwd}"}; unrelated C:\\Users\\Snapshot\\private`
+    const event = {
+      type: 'user/message', seq: 9,
+      data: {
+        content: [{ type: 'text', text }],
+        source: { kind: 'plugin', plugin: '@deepseek-ai/dsh-system-prompt', sections: [{ name: 'sandbox:policy', text }] },
+      },
+    }
+    const frame = { method: 'session.event', params: { event } }
+    const normalized = normalizeStdout(JSON.stringify(frame), { sessionIds: [], cwd, cwdAliases: [escapedCwd] })
+    const expectedText = '{"cwd":"{{cwd}}"}; unrelated C:\\Users\\Snapshot\\private'
+    expect(JSON.parse(normalized)).toEqual({
+      ...frame,
+      params: { event: { ...event, data: {
+        content: [{ type: 'text', text: expectedText }],
+        source: { ...event.data.source, sections: [{ name: 'sandbox:policy', text: expectedText }] },
+      } } },
+    })
+    expect(normalizeStdout(normalized, { sessionIds: [], cwd, cwdAliases: [escapedCwd] })).toBe(normalized)
+    const fixture = JSON.stringify({ type: 'session', cwd: '{{cwd}}' }) + '\n' + JSON.stringify(event) + '\n'
+    expect(tokenizeSessionFixtureCwd(fixture, [escapedCwd])).toContain('\\"{{cwd}}\\"')
+    expect(tokenizeSessionFixtureCwd(fixture, [escapedCwd])).not.toContain(JSON.stringify(escapedCwd).slice(1, -1))
   })
 
   it('canonicalizes generated relative path fields and text markers without rewriting other text', () => {

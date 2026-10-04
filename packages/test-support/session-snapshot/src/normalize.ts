@@ -265,10 +265,11 @@ function tokenizeFixtureValue(
  * path.
  *
  * @param rawLog The raw or refresh-stabilized session JSONL fixture.
+ * @param cwdAliases Exact additional spellings of the test-owned cwd, including JSON-escaped embedded text.
  * @returns Compact JSONL whose known cwd spellings become `{{cwd}}`.
  * @throws If a non-empty line is invalid JSON or the session cwd has no basename.
  */
-export function tokenizeSessionFixtureCwd(rawLog: string): string {
+export function tokenizeSessionFixtureCwd(rawLog: string, cwdAliases: readonly string[] = []): string {
   const lines = rawLog.split('\n')
   const firstLine = lines.find(line => line.trim().length > 0)
   const header = firstLine === undefined ? undefined : JSON.parse(firstLine) as { cwd?: unknown }
@@ -277,7 +278,7 @@ export function tokenizeSessionFixtureCwd(rawLog: string): string {
   if (basename === undefined || basename.length === 0) {
     throw new Error('acp-snapshot: cannot tokenize a cwd without a basename')
   }
-  const ctx: NormalizeContext = { sessionIds: [], cwd }
+  const ctx: NormalizeContext = { sessionIds: [], cwd, cwdAliases }
   return lines.map((line) => {
     if (line.trim().length === 0) return line
     return JSON.stringify(tokenizeFixtureValue(JSON.parse(line), ctx, basename))

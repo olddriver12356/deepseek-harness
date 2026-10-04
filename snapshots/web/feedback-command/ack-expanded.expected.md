@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: Reply with the single word LIGHTHOUSE and stop. {{clock}}
+- text: You Reply with the single word LIGHTHOUSE and stop. {{clock}}
 - button "Copy":
   - img
 - button "Thought for a while" [expanded]:
@@ -24,6 +24,7 @@
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
+- text: Agent
 - button "Think The user wants me to reply with a single word. Let me comply.":
   - img
   - img

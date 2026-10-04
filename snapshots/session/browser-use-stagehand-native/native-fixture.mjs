@@ -13,24 +13,30 @@ const chromiumFixture = new URL('tests/fixtures/chromium.ts', packageRoot).href
 
 /** Install external browser mocks in one real Node isolate. */
 export function installExternalBrowserHooks() {
+  // Resolve only fixture modules so Node 22 can load unrelated CommonJS dependencies normally.
+  const origins = new Map()
+  const fixtureModule = (url) => {
+    const source = ts.transpileModule(readFileSync(new URL(url), 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    }).outputText
+    const moduleUrl = `data:text/javascript,${encodeURIComponent(source)}`
+    origins.set(moduleUrl, url)
+    return { url: moduleUrl, shortCircuit: true }
+  }
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
-      if (specifier === '@puppeteer/browsers') return { url: chromiumFixture, shortCircuit: true }
-      if (specifier !== '@browserbasehq/stagehand') return nextResolve(specifier, context)
+      const origin = origins.get(context.parentURL)
+      if (origin !== undefined) context = { ...context, parentURL: origin }
+      if (specifier === '@puppeteer/browsers') return fixtureModule(chromiumFixture)
+      if (specifier !== '@browserbasehq/stagehand') {
+        const resolved = nextResolve(specifier, context)
+        return resolved.url === sdkFixture || resolved.url === chromiumFixture
+          ? fixtureModule(resolved.url)
+          : resolved
+      }
       const actual = nextResolve(specifier, context).url
       const proxy = `export * from ${JSON.stringify(sdkFixture)}; export { StagehandClientCreateConfigSchema } from ${JSON.stringify(actual)};`
       return { url: `data:text/javascript,${encodeURIComponent(proxy)}`, shortCircuit: true }
-    },
-    // Built profiles use plain Node; only the external fixtures need transpilation.
-    load(url, context, nextLoad) {
-      if (url !== sdkFixture && url !== chromiumFixture) return nextLoad(url, context)
-      return {
-        format: 'module',
-        source: ts.transpileModule(readFileSync(new URL(url), 'utf8'), {
-          compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-        }).outputText,
-        shortCircuit: true,
-      }
     },
   })
   return () => hooks.deregister()

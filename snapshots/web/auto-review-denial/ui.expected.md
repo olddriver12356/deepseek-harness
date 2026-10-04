@@ -2,7 +2,7 @@
 
 - banner:
   - navigation "Session hierarchy":
-    - button "{{workspace}}" [disabled]
+    - button "dsh-web-e2e-ws-YFYBCb" [disabled]
   - button "More actions":
     - img
   - button "Open right sidebar":
@@ -10,7 +10,7 @@
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
-- text: Inspect the protected operation, but do not run it unless authorized. {{clock}}
+- text: You Inspect the protected operation, but do not run it unless authorized. {{clock}}
 - button "Copy":
   - img
 - text: Failed
@@ -43,7 +43,7 @@
 
 - banner:
   - navigation "Session hierarchy":
-    - button "{{workspace}}" [disabled]
+    - button "dsh-web-e2e-ws-YFYBCb" [disabled]
   - button "More actions":
     - img
   - button "Open right sidebar":
@@ -51,7 +51,7 @@
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
-- text: Inspect the protected operation, but do not run it unless authorized. {{clock}}
+- text: You Inspect the protected operation, but do not run it unless authorized. {{clock}}
 - button "Copy":
   - img
 - text: Failed
@@ -88,7 +88,7 @@
 
 - banner:
   - navigation "Session hierarchy":
-    - button "{{workspace}}" [disabled]
+    - button "dsh-web-e2e-ws-YFYBCb" [disabled]
   - button "More actions":
     - img
   - button "Open right sidebar":

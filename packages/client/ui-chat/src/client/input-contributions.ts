@@ -5,7 +5,11 @@ import { notifySubscribers } from '@deepseek-ai/dsh-client-store'
 
 /** Custom renderers suppress generic input only for their effect-scoped source kinds. */
 export interface IChatInputs {
-  /** @param source - custom source kind handled by an installed Definition. @returns idempotent disposer restoring generic rendering. */
+  /**
+   * Suppress generic input rendering while a custom Definition owns the source kind.
+   * @param source - custom source kind handled by an installed Definition.
+   * @returns idempotent disposer restoring generic rendering.
+   */
   excludeSource(source: MessageSource['kind']): () => void
 }
 
@@ -33,9 +37,17 @@ export class ChatInputs extends Service implements IChatInputs {
     }, `ui-chat: input source ${source}`)
     return () => { void dispose() }
   }
-  /** @param source - recorded source kind. @returns whether a custom renderer owns it. */
+  /**
+   * Check active custom-renderer ownership for a recorded source kind.
+   * @param source - recorded source kind.
+   * @returns whether a custom renderer owns it.
+   */
   excludes(source: MessageSource['kind']): boolean { return this.sources.has(source) }
-  /** @param listener - definition-rebuild listener. @returns unsubscribe. */
+  /**
+   * Observe renderer ownership changes.
+   * @param listener - definition-rebuild listener.
+   * @returns unsubscribe.
+   */
   subscribe(listener: () => void): () => void { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   private changed(): void { notifySubscribers(this.listeners, '[ui-chat] input contributions') }
 }

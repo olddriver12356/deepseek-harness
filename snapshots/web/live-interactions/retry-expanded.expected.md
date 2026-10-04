@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
+- text: You Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
 - button "Thought for a while" [expanded]:
@@ -25,7 +25,9 @@
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
 - group:
+  - text: ↻
   - status: Retried model request (1/5) · {{duration}}
+- text: Agent
 - button "Think The user is asking for a one-sentence description of event sourcing. This is a straightforward knowledge question that doesn't require any skill loading or tool calls.":
   - img
   - img

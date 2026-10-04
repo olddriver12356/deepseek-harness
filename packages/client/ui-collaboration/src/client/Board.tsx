@@ -35,7 +35,7 @@ export function Board({
     dialog.current?.querySelector<HTMLButtonElement>('button')?.focus()
     return () => { dialog.current?.close(); previous?.focus() }
   }, [state.open])
-  if (!state.open || sessionId === undefined) return null
+  if (!state.open) return null
   const draft = state.draft
   const current = sessions.byId[sessionId]
   const peer = sessions.byId[draft.peerId as SessionId]

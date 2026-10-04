@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import shutil
 import subprocess
 import threading
 import time
@@ -466,7 +467,16 @@ class HarnessClient:
                 ) from exc
             base = resolve_bundled_launch_args()
         else:
-            base = (str(Path(self.config.dsh_bin).expanduser().resolve()),)
+            dsh_bin = Path(self.config.dsh_bin).expanduser().resolve()
+            if dsh_bin.suffix == ".js":
+                node = shutil.which("node")
+                if node is None:
+                    raise FileNotFoundError(
+                        "the built JavaScript dsh CLI needs a system `node` (>=22.19) on PATH"
+                    )
+                base = (node, str(dsh_bin))
+            else:
+                base = (str(dsh_bin),)
 
         if self.config.dsh_home is not None:
             if not self.config.dsh_home.strip():

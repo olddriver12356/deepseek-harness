@@ -60,7 +60,7 @@ export class PeerInbox extends Service {
   static inject = ['agents']
   static Config = Config
   /** Effective listening port, available after plugin activation. */
-  port = 0
+  port: number = 0
   private readonly runtimeId = randomUUID()
   private readonly pending = new Map<string, Pending>()
   private ledger!: Ledger

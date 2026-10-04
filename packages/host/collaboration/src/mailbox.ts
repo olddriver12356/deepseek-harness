@@ -98,10 +98,16 @@ export class CollaborationMailbox {
     for (const row of this.store.read().outbox) if (row.state === 'queued' || row.state === 'admitted') this.schedule(row.recipient)
   }
 
-  /** @returns completion of currently scheduled mailbox work, excluding model execution. */
+  /**
+   * Drain the mailbox's currently scheduled delivery jobs.
+   * @returns completion of currently scheduled mailbox work, excluding model execution.
+   */
   async whenSettled(): Promise<void> { while (this.deliveries.size > 0) await Promise.all(this.deliveries.values()) }
 
-  /** @returns quiescence after stopping admission, unregistering effects, and draining owned delivery jobs. */
+  /**
+   * Stop new admissions and release owned effects before draining delivery jobs.
+   * @returns quiescence after stopping admission, unregistering effects, and draining owned delivery jobs.
+   */
   async close(): Promise<void> {
     this.stopped.abort(new Error('collaboration mailbox disposed'))
     for (const release of this.releases.splice(0).reverse()) release()

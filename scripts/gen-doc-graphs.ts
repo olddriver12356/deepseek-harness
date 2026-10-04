@@ -727,6 +727,31 @@ const SERVICE_ROLES: ServiceRole[] = [
     consumers: ['tool-cordis'],
     note: 'Registers host inspect providers, mirrors the client provider manifest, and routes client queries through the dynamic Cordis transport.',
   },
+  {
+    key: 'collaborationStore', pkg: 'host-collaboration', title: 'Committed discussion aggregate', mode: 'core',
+    consumers: ['host-collaboration'],
+    note: 'Owns bounded connection, grant, outbox and request receipt state with committed revision checks.',
+  },
+  {
+    key: 'collaborationMailbox', pkg: 'host-collaboration', title: 'Durable Peer discussion delivery', mode: 'core',
+    consumers: ['host-collaboration'],
+    note: 'Appends attributed inputs through the admission policy and reconciles restart delivery from committed state.',
+  },
+  {
+    key: 'collaborationRemote', pkg: 'host-collaboration', title: 'Human discussion controls and Peer views', mode: 'core',
+    consumers: ['client-ui-collaboration'],
+    note: 'Separates authenticated human mutations and management views from grant-filtered Peer observations.',
+  },
+  {
+    key: 'experts', pkg: 'host-experts', title: 'Human-authored Expert catalog', mode: 'core',
+    consumers: ['client-ui-experts'],
+    note: 'Persists Expert definitions and prepares explicitly delegated subagent work through existing dispatch owners.',
+  },
+  {
+    key: 'peerInbox', pkg: 'peer-inbox', title: 'Explicit Peer Inbox transport', mode: 'core',
+    consumers: ['peer-inbox'],
+    note: 'Receives addressed inputs through its authenticated HTTP route and existing Agent Inbox admission.',
+  },
 ]
 
 function generatedHeader(title: string): string[] {

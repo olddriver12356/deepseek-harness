@@ -322,15 +322,14 @@ function contextOf(logs: readonly { content: string; header: Record<string, unkn
   return {
     sessionIds: logs.flatMap(log => typeof log.header.id === 'string' ? [log.header.id] : []),
     cwd,
+    cwdAliases: [JSON.stringify(cwd).slice(1, -1)],
   }
 }
 
 function contextOfContents(contents: readonly string[]): NormalizeContext {
   const headers = contents.map(content => JSON.parse(content.slice(0, content.indexOf('\n'))) as Record<string, unknown>)
-  return {
-    sessionIds: headers.flatMap(header => typeof header.id === 'string' ? [header.id] : []),
-    cwd: typeof headers[0]?.cwd === 'string' ? headers[0].cwd : '\0no-cwd\0',
-  }
+  return contextOf(headers.map(header => ({ content: '', header })),
+    typeof headers[0]?.cwd === 'string' ? headers[0].cwd : '\0no-cwd\0')
 }
 
 async function fixtureFiles(scenario: CorpusScenario): Promise<string[]> {
@@ -843,7 +842,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
 
       if (recording) {
         expectedContents = redactSessionSnapshotIds(stabilizeFixtureMessageIds(
-          ordered.map(log => scrubSessionSnapshot(tokenizeSessionFixtureCwd(log.content))),
+          ordered.map(log => scrubSessionSnapshot(tokenizeSessionFixtureCwd(log.content, actualContext.cwdAliases))),
           expectedContents,
         ))
       }
@@ -861,6 +860,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           if (existing === undefined) throw new Error(`no fixture for persisted log ${index}`)
           return scrubSessionSnapshot(tokenizeSessionFixtureCwd(
             stabilizeRefreshLog(log.content, existing, replacements, actualContext),
+            actualContext.cwdAliases,
           ))
         })
         expectedContents = redactSessionSnapshotIds(stabilizeFixtureMessageIds(refreshed, expectedContents))

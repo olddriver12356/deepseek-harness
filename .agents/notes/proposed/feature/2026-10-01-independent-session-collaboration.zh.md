@@ -16,11 +16,19 @@ Status: proposed
 
 回合权限归实际执行的 Agent（智能体）所有。唯一的分类是 `human` 和 `peer-discussion`。对等和未知来源的输入使回合更严格；受支持的工具与插件上下文是中性的。`tools.guard` 在可扩展的执行前策略之后拒绝对等执行工具。配置只能选择已审查的 `read`、`glob`、`grep`、`collaboration_status` 和 `peer_send` 名称；不能仅通过添加名称准入任意能力。这使用已有运行时扩展点，不改变共享运行时的负责模块。
 
-对等消息传递必须在准入输入之前要求已安装协作权限，冷接收方也不例外。`requireCollaborationAuthority(ctx)` 提供此存在性检查，并随策略注册一起移除。消息传递与接收方解析模块还必须在对受保护的对等工作默认拒绝的同时，保留普通人类会话的恢复行为。当前全局安装函数把每个未分类的 Agent 默认视为讨论；它自身并不解析这种区别。
+对等消息传递在准入输入之前要求已安装协作权限，冷接收方也不例外。`requireCollaborationAuthority(ctx)` 提供此存在性检查，并随策略注册一起移除。消息传递与接收方解析模块在对受保护的对等工作默认拒绝的同时，保留普通人类会话的恢复行为。已安装策略保守分类无法识别的输入；缺少权限负责模块时，受保护的待处理输入不能恢复。
 
 持久化里程碑在版本 1 的 domain `collaboration`、table `state`、record `current` 中保存 V1a 注册信息、会话对、outbox 消息、预算、journal 条目和 actor 隔离的原始请求回执。`KvTable.update` 在持久写入后原子发布完整聚合记录和有序 journal；它以重写保留数据为代价，避免跨记录权限归属和 outbox 竞态。明确验证的容量限制会停止写入，而不会丢弃权限或待处理工作。仅供任务使用的 schema 继续延后。排队消息的 `activationReserved` 事实与预算扣减一起提交；持久的接收方接受是独立的 `admitted` 迁移，因此断开连接仍可取消已预留的排队工作，而不虚报接收方输入状态。
 
 Remote 里程碑通过存储的 Session header 观察派生普通会话身份和 cwd，不唤醒 Agent，也不读取对话事件。人类显示标题是明确输入；允许普通 fork 和不同工作区。首次连接在一次事务中注册两个端点并授权会话对。系统在生成新的 Host 身份或元数据前检查原始请求意图，因此后续 header 改变也不会破坏重试。snapshot/follow 只返回已授权的成对记录。完整 revision 快照允许重连和缺口恢复，每条流只保存一个待发布视图；即使直接消费者停止拉取，dispose 也会移除监听器。
+
+## V1a 实现
+
+仅讨论的组合现位于可选 `@deepseek-ai/dsh-collaboration` 组合包、`packages/host/collaboration` 及 `packages/client/ui-collaboration` 中。Host 包的独立 `/tool` 入口负责模型工具。权限标记由构建后的 Host 与工具入口共享。消息传递在冷准入之前检查已安装策略与普通存储 Session 身份，同时没有此可选功能仍支持纯人类会话恢复。模型可以读取状态，并通过显式归属发送对等讨论；私有 Session 历史不进入协作 snapshot/follow 视图。侧栏使用可撤销的聊天输入归属、专用 Peer 呈现、显式披露/授权/预算控制，以及暂停/恢复/断开操作。
+
+Session V4 记录已准入对等来源元数据及回执身份。版本 3 到 4 的迁移提供完整的当前历史，并拒绝不受支持的对等输入。当前 writer 的快照 refresh 在不可变的前代旁创建后继代；历史 owner 保留显式代。SDK 投影仅规范化已声明的自有 cwd 写法，包括 JSON 转义后的 Windows 策略文本。Python SDK 文档所述的显式构建 JavaScript carrier 通过 Node 启动，不改变 executable carrier 行为。
+
+实际的可选 Gateway 录制、离线重放、完全停止后的进程重启及 Chromium 交互覆盖独立 Session 讨论、归属、写入拒绝、私有历史排除、持久预算与人工控制。提案、领取、评审、集成及 enrollment 任务仍未实现，等待 Prerequisite P。完整提案包括这些延后的执行工作流，因此本说明仍为 proposed；V1a 讨论里程碑已经实现。
 
 ## 已考虑的替代方案
 
@@ -44,4 +52,4 @@ Remote 里程碑通过安装生产 Connection/Gateway、JSON 存储和 JSONL Ses
 
 ## 风险
 
-执行器策略要求调用方携带实际 Agent。任意 Host 代码可以直接调用服务或省略该身份；此插件不是进程沙箱。已安装策略标记证明的是存在性，并不隔离 Host 代码。在解析器实施接收方范围和已安装策略检查之前，生产环境消息传递仍不可用。已有沙箱、批准和工具策略继续生效。解除 Prerequisite P 是任何未来执行权限能力的独立前置条件。
+执行器策略要求调用方携带实际 Agent。任意 Host 代码可以直接调用服务或省略该身份；此插件不是进程沙箱。已安装策略标记证明的是存在性，并不隔离 Host 代码。解析器对受保护的消息传递实施接收方范围和已安装策略检查。已有沙箱、批准和工具策略继续生效。解除 Prerequisite P 是任何未来执行权限能力的独立前置条件。

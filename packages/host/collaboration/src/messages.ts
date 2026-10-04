@@ -21,7 +21,7 @@ const receiptProjectionSchema = z.object({
   turn: z.number().int().nonnegative(), turnClass: z.enum(['human', 'peer-discussion']).optional(),
 })
 type ReceiptProjection = z.infer<typeof receiptProjectionSchema>
-declare module '@deepseek-ai/dsh-session-projection' {
+declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionStateMap { collaborationReceipts: ReceiptProjection }
 }
 

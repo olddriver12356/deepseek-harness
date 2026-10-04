@@ -14,12 +14,13 @@
   - img
   - img
   - text: System prompt
-- text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
+- text: You Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
 - button "Thought for a while":
   - text: Thought for a while
   - img
+- text: Agent
 - paragraph: partial
 - text: Stopped
 - button "Copy":

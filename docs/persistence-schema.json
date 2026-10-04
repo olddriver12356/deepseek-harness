@@ -33827,8 +33827,8 @@
         "packages/experimental/agent-team/src/types.ts:8",
         "packages/feedback/message-feedback/src/types.ts:14",
         "packages/goal/goal/src/types.ts:17",
-        "packages/host/collaboration/src/types.ts:10",
-        "packages/host/collaboration/src/types.ts:12",
+        "packages/host/collaboration/src/types.ts:24",
+        "packages/host/collaboration/src/types.ts:26",
         "packages/interaction/commands/src/brand.ts:31",
         "packages/interaction/user-approval/src/types.ts:17",
         "packages/llm/llm-retry/src/brand.ts:4",
@@ -61856,7 +61856,7 @@
         "event:personal/observation-request.data"
       ],
       "sources": [
-        "packages/client/ui-personal/src/observer.ts:19"
+        "packages/client/ui-personal/src/observer.ts:25"
       ]
     },
     {
@@ -69335,7 +69335,7 @@
         "event:personal/observation-result.data"
       ],
       "sources": [
-        "packages/client/ui-personal/src/observer.ts:21"
+        "packages/client/ui-personal/src/observer.ts:27"
       ]
     },
     {

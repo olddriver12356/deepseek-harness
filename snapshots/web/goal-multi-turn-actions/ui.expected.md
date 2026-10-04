@@ -25,6 +25,7 @@
 - button "6 tool calls":
   - text: 6 tool calls
   - img
+- text: Agent
 - paragraph:
   - strong: Turn 1 / 2
   - text: — 随机选中的包：
@@ -54,6 +55,7 @@
 - button "5 tool calls · 2 messages":
   - text: 5 tool calls · 2 messages
   - img
+- text: Agent
 - paragraph: 两个 turn 都完成了 ✅
 - paragraph:
   - strong: 总结：

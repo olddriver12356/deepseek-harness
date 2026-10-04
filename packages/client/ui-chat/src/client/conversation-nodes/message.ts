@@ -46,7 +46,11 @@ function isCompactionCheckpoint(event: Parameters<ConversationNodeDefinition['ma
 /** User, steering, and injected-context message classification Definition. */
 export const messageDefinition = createMessageDefinition(() => false)
 
-/** @param excluded - installed custom source-kind ownership. @returns the generic input Definition with original-source fallback. */
+/**
+ * Classify ordinary inputs while preserving generic fallback when their custom renderer is absent.
+ * @param excluded - installed custom source-kind ownership.
+ * @returns the generic input Definition with original-source fallback.
+ */
 export function createMessageDefinition(excluded: (source: MessageSource['kind']) => boolean): ConversationNodeDefinition<MessageState> {
   return {
     kind: 'input-message',

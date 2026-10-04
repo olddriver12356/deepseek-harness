@@ -207,7 +207,7 @@ export function parseSessionLog(text: string): SessionEvent[] {
 }
 
 /** Parse, complete, decode, and migrate one projected snapshot artifact without writing its source. */
-function parseSessionFixture(text: string): ParsedSessionFixture {
+function parseSessionFixture(text: string, physicalRows?: Record<string, unknown>[]): ParsedSessionFixture {
   let headerLineNumber: number | undefined
   let sourceHeader: Record<string, unknown> | undefined
   let restore: ReturnType<typeof sessionFormatCatalog.createRestore> | undefined
@@ -231,6 +231,7 @@ function parseSessionFixture(text: string): ParsedSessionFixture {
     if (restore === undefined) {
       headerLineNumber = lineNumber
       sourceHeader = recordValue
+      physicalRows?.push(normalizeProjectedHeader(recordValue))
       try {
         restore = sessionFormatCatalog.createRestore(normalizeProjectedHeader(recordValue), {
           recovery: 'strict',
@@ -265,6 +266,7 @@ function parseSessionFixture(text: string): ParsedSessionFixture {
     rowLines.push(lineNumber)
     eventLines.push(...Array.from({ length: cardinality }, () => lineNumber))
     nextSeq += cardinality
+    physicalRows?.push(record)
     try {
       restore.decodeRow(record)
     } catch (error: unknown) {
@@ -305,6 +307,18 @@ function parsedSessionFixture(
 export function prepareSessionSnapshotFixtureForComparison(text: string): string {
   const parsed = parseSessionFixture(text)
   return encodeCurrentSessionSnapshotFixture(text, parsed)
+}
+
+/**
+ * Complete a projected fixture's physical envelopes for a real persistence migration without changing its source format.
+ * Uses the same declared fixture-token materialization and validation as the replay reader.
+ * @param text - complete source-generation Session fixture.
+ * @returns validated source-format JSONL with dense sequence and timestamp envelopes.
+ */
+export function materializeSessionSnapshotFixtureForPersistence(text: string): string {
+  const rows: Record<string, unknown>[] = []
+  parseSessionFixture(text, rows)
+  return rows.map(row => JSON.stringify(row)).join('\n') + '\n'
 }
 
 /** Restore fixture tokens materialized only to satisfy released-format validation. */

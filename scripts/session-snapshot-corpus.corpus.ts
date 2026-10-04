@@ -23,6 +23,7 @@ const repoRoot = resolve(import.meta.dirname, '..')
 const corpusRoot = join(repoRoot, 'snapshots')
 const profiles = ['acp', 'sdk', 'session', 'web'] as const
 const snapshotAdapters = [
+  'apps/web/tests/fixture-generation.snapshot.ts',
   'apps/web/tests/message-feedback-protocol.snapshot.ts',
   'apps/web/tests/minimal-preset.snapshot.ts',
   'apps/web/tests/preset-migration.snapshot.ts',
@@ -205,7 +206,7 @@ it('keeps a current-writer majority plus bounded declared historical migration c
   })))
 
   expect(assertSnapshotCorpusPolicy(inventory)).toMatchObject({
-    retainedRoles: 9,
-    retainedScenarios: 7,
+    retainedRoles: 10,
+    retainedScenarios: 8,
   })
 })

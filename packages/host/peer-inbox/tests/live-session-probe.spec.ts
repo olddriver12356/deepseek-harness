@@ -6,7 +6,7 @@ import LlmRuntime from '@deepseek-ai/dsh-llm'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SessionPersistence from '@deepseek-ai/dsh-session-persistence'
-import * as SessionPersistenceJsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
+import SessionPersistenceJsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -26,7 +26,7 @@ afterEach(async () => {
   delete process.env.DSH_PROBE_TOKEN
 })
 interface RelayModule {
-  createDshPeer(options: Record<string, unknown>): {
+  createDshPeer: (options: Record<string, unknown>) => {
     start(context: { stateDir: string }): Promise<void>
     stop(): Promise<void>
     handle(event: Record<string, unknown>, context: Record<string, unknown>): Promise<{ reply?: { text: string } } | undefined>

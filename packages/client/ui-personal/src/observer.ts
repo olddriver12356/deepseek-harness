@@ -5,11 +5,17 @@ import type { PersonalWorker } from './worker.ts'
 
 /** Deployment limits for opt-in background conversation observation. */
 export interface ObserverConfig {
+  /** Whether new human turns enter the background observation queue. */
   enabled: boolean
+  /** Maximum complete human-message bytes retained for one observed turn. */
   maxInputBytes: number
+  /** Maximum model output tokens requested for one observation. */
   maxOutputTokens: number
+  /** Maximum complete model response bytes accepted for one observation. */
   maxOutputBytes: number
+  /** Maximum queued turns awaiting background observation. */
   maxPendingTurns: number
+  /** Maximum observation request lifetime in milliseconds. */
   timeoutMs: number
 }
 

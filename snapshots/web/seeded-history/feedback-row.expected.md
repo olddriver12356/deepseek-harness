@@ -15,12 +15,13 @@
   - img
   - img
   - text: System prompt
-- text: "Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
+- text: "You Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy":
   - img
 - button "2 tool calls" [expanded]:
   - text: 2 tool calls
   - img
+- text: Agent
 - button "Think The user wants me to read a.txt and b.txt, then reply with \"DONE\". Let me do both reads in parallel.":
   - img
   - img
@@ -35,6 +36,7 @@
   - img
   - text: Read
   - button "b.txt"
+- text: Agent
 - button "Think Both files have been read. a.txt contains \"alpha\" and b.txt contains \"beta\". I'll now reply with DONE as instructed.":
   - img
   - img
@@ -52,11 +54,7 @@
   - img
   - text: Ran for {{duration}}
 - text: {{clock}}
-- button "compact Compacted 5 history items (~{{tokens}} tokens)"
-- button "Context injection AGENTS.md":
-  - img
-  - img
-  - text: Context injection AGENTS.md
+- button "▤ compact Compacted 5 history items (~{{tokens}} tokens)"
 - img
 - text: permission preset read-only
 - 'button "feedback Feedback recorded for session {{seededId}} Anonymous user: {{uuid}}." [expanded]':

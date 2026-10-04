@@ -59,13 +59,20 @@ Focused component, production Loader/renderer and HMR disposal tests cover blank
 <a id="model-experience"></a>
 ## Model Experience
 
-This browser package adds no model-facing tools, prompt instructions or automatic forwarding. Its shared AgentLoop correction preserves the original required-policy source while keeping listener-transformed content, so the durable model request and human transcript agree about Peer attribution. It does not change the framed discussion body or grant action authority. Host discussion tools retain their existing schemas and peer grant filters.
+### Durable Peer attribution
+
+#### What the model sees
+
+The reconstructed `user/message` keeps its original `collaboration-peer` source and listener-transformed content. This browser package adds no tools, prompt instructions or automatic forwarding; the [Host owner](../../host/collaboration/README.md#model-experience) defines the framed discussion body and grant-filtered tools.
+
+#### Token effect
+
+Browser state contributes no request tokens. Retaining `requiredAdmissionPolicy` and source identities does not duplicate the message or change its body.
 
 #### KV Cache effect
 
 No browser presentation state enters a provider request. Preserving source metadata does not append a second message or modify its text; provider adapters remain responsible for translating the same reconstructed messages.
 
-<a id="known-limitations-and-deferred-work"></a>
 ## Known Limitations and Deferred Work
 
-The authenticated human control view assumes one human owns every Session on this Host. Sessions and same-user Gateway processes share OS credentials; this UI does not isolate action authority (Prerequisite P). It never reads private Session histories for connection display. Historical logs already written with a rewritten source cannot recover missing attribution from this UI alone. No data migration or new Session format is introduced.
+- The authenticated human control view assumes one human owns every Session on this Host. Sessions and same-user Gateway processes share OS credentials; this UI does not isolate action authority (Prerequisite P). It never reads private Session histories for connection display. Historical logs already written with a rewritten source cannot recover missing attribution from this UI alone. No data migration or new Session format is introduced.

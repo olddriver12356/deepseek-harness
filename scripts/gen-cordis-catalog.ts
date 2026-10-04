@@ -54,6 +54,11 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  collaborationRemote: 'collaboration.md',
+  collaborationStore: 'collaboration.md',
+  collaborationMailbox: 'collaboration.md',
+  experts: 'experts.md',
+  peerInbox: 'web-server.md',
   skillFilesController: 'workspace.md',
   mcpResources: 'mcp.md',
   agentLoop: 'core.md',
@@ -152,6 +157,7 @@ export const SERVICE_PAGE: Record<string, string> = {
  * to a model as `cordis_runtime_inspect what:"client"`).
  */
 export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
+  chatInputs: 'Client-only chat input assembly and source exclusion are owned by packages/client/ui-chat/README.md.',
   webTerminals: 'client-side terminal view models — packages/api/terminal-controller/README.md owns the API',
   appReady: 'not a service: launcher-provided successful-startup signal — packages/boot/cmdline/README.md owns the launcher contract',
   appExit: 'not a service: launcher-provided bounded process-exit callback — packages/boot/cmdline/README.md owns the launcher contract',
@@ -570,6 +576,21 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   TeamView: 'agent-team.md',
   TeamWaitResult: 'agent-team.md',
   UpdateTeamTaskRequest: 'agent-team.md',
+  MessageReceipt: 'collaboration.md',
+  SendPeerRequest: 'collaboration.md',
+  AddPeerRequest: 'collaboration.md',
+  CollaborationMutationResult: 'collaboration.md',
+  PeerControlRequest: 'collaboration.md',
+  PeerBudgetRequest: 'collaboration.md',
+  CollaborationSnapshot: 'collaboration.md',
+  CollaborationControlSnapshot: 'collaboration.md',
+  CollaborationViewRequest: 'collaboration.md',
+  CollaborationState: 'collaboration.md',
+  ExpertRecord: 'experts.md',
+  ExpertCreateRequest: 'experts.md',
+  ExpertUpdateRequest: 'experts.md',
+  ExpertDeleteRequest: 'experts.md',
+  ExpertDeleteValue: 'experts.md',
   TokenMeasurement: 'token-meter.md',
   PtcDispatchLog: 'tools.md',
   PostToolDecision: 'tools.md',

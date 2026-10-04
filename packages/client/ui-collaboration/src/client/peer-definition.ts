@@ -14,7 +14,10 @@ declare module '@deepseek-ai/dsh-client-ui-chat/client' {
   interface ChatNodeDataMap { /** Original attributed discussion input. */ 'collaboration-peer': PeerMessageData }
 }
 
-/** @returns the business-owned Peer Definition using exact recorded attribution. */
+/**
+ * Project attributed discussion inputs from their durable message source.
+ * @returns the business-owned Peer Definition using exact recorded attribution.
+ */
 export function createPeerDefinition(): ConversationNodeDefinition<PeerMessageData | null> {
   return {
     kind: 'collaboration-peer', target: 'chat',

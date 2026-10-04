@@ -22,6 +22,8 @@
   // this client-registered project must not also hold them (one program
   // cannot see both sides of the cordis Context merges).
   "exclude": [
+    "tests/collaboration.e2e.ts",
+    "tests/fixture-generation.snapshot.ts",
     "tests/skills-panel.e2e.ts",
     "tests/fixtures/skills-panel",
     "tests/default-product-isolation.e2e.ts",

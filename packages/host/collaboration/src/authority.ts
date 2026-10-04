@@ -40,6 +40,7 @@ export function createHumanControlAdmission(scope: HumanControlScope): HumanCont
  * Reject any value that was not minted by {@link createHumanControlAdmission}.
  * @param admission - the caller-supplied value; typed as unknown because a forged value must fail at runtime.
  * @param scope - the scope the operation needs.
+ * @returns normally only for a minted admission with the requested scope.
  * @throws Error when the value was not minted here or carries a different scope.
  */
 export function requireHumanControl(admission: unknown, scope: HumanControlScope = 'discussion'): asserts admission is HumanControlAdmission {

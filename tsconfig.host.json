@@ -8,6 +8,8 @@
     "rewriteRelativeImportExtensions": false
   },
   "include": [
+    "apps/web/tests/collaboration.e2e.ts",
+    "apps/web/tests/fixture-generation.snapshot.ts",
     "apps/web/product-isolation.ts",
     "apps/web/tests/default-product-isolation.e2e.ts",
     "apps/web/tests/diff-context.e2e.ts",

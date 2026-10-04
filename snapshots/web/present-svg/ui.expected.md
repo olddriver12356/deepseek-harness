@@ -2,7 +2,7 @@
   - img
   - img
   - text: 系统提示词
-- text: 简单画一个 SVG 表示冯诺依曼架构, 保存为 von-neumann.svg {{clock}}
+- text: 你 简单画一个 SVG 表示冯诺依曼架构, 保存为 von-neumann.svg {{clock}}
 - button "复制":
   - img
 - button "2 次工具调用 · 1 条消息" [expanded]:
@@ -12,6 +12,7 @@
   - img
   - img
   - text: 上下文注入 @deepseek-ai/dsh-system-prompt
+- text: 智能体
 - button "思考 The user wants a simple SVG diagram of the von Neumann architecture, saved as von-neumann.svg. Let me create a clean SVG showing CPU (control unit, ALU), memory, input, and output with bidirectional data/control buses.":
   - img
   - img
@@ -23,6 +24,7 @@
   - text: 写入
   - button "von-neumann.svg"
   - text: +83 -0
+- text: 智能体
 - button "思考 The file is created. Let me present it as a deliverable.":
   - img
   - img
@@ -30,6 +32,7 @@
 - button "交付文件 已交付 von-neumann.svg":
   - img
   - text: 交付文件 已交付 von-neumann.svg
+- text: 智能体
 - paragraph:
   - text: 已创建
   - code:

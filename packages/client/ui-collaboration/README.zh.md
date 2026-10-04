@@ -59,13 +59,21 @@ Focused component、生产 Loader/renderer 和 HMR disposal 测试覆盖空白 s
 <a id="model-experience"></a>
 ## 模型体验
 
-这个浏览器包不增加模型工具、prompt 指令或自动转发。它配套的 AgentLoop 修复保留原始 required-policy source，同时保留 listener 转换后的 content，使持久化模型请求与人类 transcript 对 Peer 来源保持一致。它不改变 framed discussion body，也不授予 action authority。Host discussion tools 的 schema 和 peer grant 过滤保持原有行为。
+### 持久化 Peer 来源
+
+#### What the model sees
+
+重建的 `user/message` 保留原始 `collaboration-peer` source 和 listener 转换后的 content。这个浏览器包不增加工具、prompt 指令或自动转发；[Host 所有者](../../host/collaboration/README.zh.md#model-experience)定义带边界的讨论正文和按 grant 过滤的工具。
+
+#### Token effect
+
+浏览器状态不增加请求 token。保留 `requiredAdmissionPolicy` 和来源身份不会重复消息，也不会改变正文。
 
 #### KV Cache effect
 
 浏览器展示状态不会进入 provider request。保留来源 metadata 不增加第二条消息，也不修改正文，provider adapter 仍负责转换同样的重建消息。
 
-<a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与后续工作
+<a id="known-limitations-and-deferred-work"></a>
 
-经过认证的人类 control view 假设同一人拥有这个 Host 上的所有 Session。Session 和同用户 Gateway process 共享 OS credentials，本 UI 不隔离 action authority（Prerequisite P）。连接展示从不读取私有 Session history。已写入错误 source 的历史日志不能仅靠本 UI 恢复缺失来源。本次不增加数据迁移或 Session format。
+- 经过认证的人类 control view 假设同一人拥有这个 Host 上的所有 Session。Session 和同用户 Gateway process 共享 OS credentials，本 UI 不隔离 action authority（Prerequisite P）。连接展示从不读取私有 Session history。已写入错误 source 的历史日志不能仅靠本 UI 恢复缺失来源。本次不增加数据迁移或 Session format。

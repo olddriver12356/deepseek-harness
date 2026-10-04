@@ -198,7 +198,7 @@ export async function runDiscussionFlow(
       await surface.rpc('collaboration/' + operation, { sessionId: 'ordinary-peer-a', connectionId, requestId: operation, expectedRevision: (await snapshot()).revision })
     }
     expect((await snapshot()).connections).toEqual([])
-  }, { root, patches: [bundle, patch, ...replayPatches], env: { DSH_COLLABORATION_TEST_MODEL_URL: 'http://127.0.0.1:' + address.port, ...replayEnv } })
+  }, { root, patches: [bundle, patch, ...replayPatches], env: { DSH_COLLABORATION_TEST_MODEL_URL: `http://127.0.0.1:${address.port}`, ...replayEnv } })
   captured = await readLogs()
   for (const [index, log] of captured.entries()) {
     const previous = beforeRestart[index]!

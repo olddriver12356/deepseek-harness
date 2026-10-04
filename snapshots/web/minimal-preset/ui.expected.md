@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: "Use the bash tool to run exactly: printf 'MINIMAL_BASH_CARD_OK\\n'. Then reply exactly MINIMAL_PRESET_REQUEST_OK and stop. {{clock}}"
+- text: "You Use the bash tool to run exactly: printf 'MINIMAL_BASH_CARD_OK\\n'. Then reply exactly MINIMAL_PRESET_REQUEST_OK and stop. {{clock}}"
 - button "Copy":
   - img
 - button "1 tool call" [expanded]:
@@ -25,6 +25,7 @@
   - text: Bash printf 'MINIMAL_BASH_CARD_OK\n'
 - text: "IN { \"command\": \"printf 'MINIMAL_BASH_CARD_OK\\\\n'\" } OUT MINIMAL_BASH_CARD_OK [Command finished with exit code 0]"
 - button "Inspect"
+- text: Agent
 - paragraph: MINIMAL_PRESET_REQUEST_OK
 - button "Copy":
   - img

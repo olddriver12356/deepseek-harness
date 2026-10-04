@@ -26,7 +26,7 @@ it('renders pair grants, explicit charged budget and delivered discussion withou
 it('requires accepted disclosure, pair grants and an entered numeric activation limit before connecting', () => {
   const p = props(true)
   render(<Board {...p as unknown as BoardProps} />)
-  expect((screen.getByRole('button', { name: 'Connect' }) as HTMLButtonElement).disabled).toBe(true)
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Connect' }).disabled).toBe(true)
   expect((screen.getAllByLabelText('Automatic activation limit')[0] as HTMLInputElement).value).toBe('')
   expect(screen.getByText(/share OS credentials/u)).toBeTruthy()
 })

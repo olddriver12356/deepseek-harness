@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: "Use the bash tool to run exactly: echo WEB_E2E_OK. Then reply with the single word DONE and stop. {{clock}}"
+- text: "You Use the bash tool to run exactly: echo WEB_E2E_OK. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy":
   - img
 - button "1 tool call" [expanded]:
@@ -24,6 +24,7 @@
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
+- text: Agent
 - button "Think The user wants me to run a simple bash command and reply with \"DONE\".":
   - img
   - img
@@ -32,6 +33,7 @@
   - img
   - img
   - text: Bash Echo the test string
+- text: Agent
 - button "Think The command executed successfully and output \"WEB_E2E_OK\". I just need to reply with \"DONE\".":
   - img
   - img

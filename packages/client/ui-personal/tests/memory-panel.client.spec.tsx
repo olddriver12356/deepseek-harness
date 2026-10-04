@@ -35,7 +35,7 @@ it('groups episodes by month and facts by source folder while showing real file 
 it('opens today, filters source names, reads another tier and refreshes without writing', async () => {
   const modified = '2026-09-20T12:00:00Z'
   const api: MemoryApi = {
-    list: vi.fn(async () => [{ path: 'Working Memory.md', title: 'Working Memory', tier: 'working', modified }, { path: 'Semantic/Profile.md', title: 'Profile', tier: 'semantic', modified }]),
+    list: vi.fn<MemoryApi['list']>(async () => [{ path: 'Working Memory.md', title: 'Working Memory', tier: 'working', modified }, { path: 'Semantic/Profile.md', title: 'Profile', tier: 'semantic', modified }]),
     read: vi.fn(async (path: string) => ({ path, content: path === 'Working Memory.md' ? '# Working Memory\nMaintenance contract.\n## Today 2026-09-20\nOwner text.' : '# ' + path + '\nOwner text.', modified })),
   }
   const { container } = render(<MemoryPanel api={api} t={key => memoryEn[key]} />)

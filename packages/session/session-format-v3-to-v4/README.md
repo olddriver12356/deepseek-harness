@@ -27,6 +27,6 @@ Identity migration preserves existing model records and reusable request prefixe
 
 ## Known Limitations and Deferred Work
 
-The library does not supply a runtime policy or downgrade support. The [format status authority](../../../docs/session-format-status.md) distinguishes the checkout writer from released formats. A current writer requires version-named snapshot successors while every committed predecessor remains unchanged.
+- The library does not supply a runtime policy or downgrade support. The [format status authority](../../../docs/session-format-status.md) distinguishes the checkout writer from released formats. A current writer requires version-named snapshot successors while every committed predecessor remains unchanged.
 
 **Runtime invariant:** No companion is published. Each stage validates its owned artifact directly and maintains no independent runtime observation.
