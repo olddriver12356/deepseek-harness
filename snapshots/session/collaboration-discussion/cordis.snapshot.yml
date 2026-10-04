@@ -1,14 +1,19 @@
-# Owning profile contribution for the assembled recorded collaboration scenario.
-# Task 10 owns its Session roles, human controls, replay adapter, and recorded outputs.
+# Keyless replay over the opt-in collaboration composition and test model patch.
+- id: llm-deepseek
+  disabled: true
 - insert:
-    - id: collaboration
-      name: '@deepseek-ai/dsh-host-collaboration'
+    - id: llm-replay
+      name: '@deepseek-ai/dsh-llm-replay'
       config:
-        peerDiscussionTools: [read, glob, grep, collaboration_status, peer_send]
-        maxFramedMessageBytes: 16384
-        stateLimits:
-          maxStateBytes: 1000000
-          maxJournalEntries: 1000
-          maxRequests: 1000
-    - id: collaboration-tools
-      name: '@deepseek-ai/dsh-host-collaboration/tool'
+        providers:
+          - id: deepseek-official
+            name: DeepSeek
+            models:
+              - id: discussion-alpha
+                reasoningEfforts: [off]
+                defaultReasoningEffort: off
+                defaultMaxTokens: 256000
+              - id: discussion-beta
+                reasoningEfforts: [off]
+                defaultReasoningEffort: off
+                defaultMaxTokens: 256000

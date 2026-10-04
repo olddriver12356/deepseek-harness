@@ -4,13 +4,14 @@ import { afterEach, expect, it } from 'vitest'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { Portal } from '../src/client/Portal.tsx'
 import { zh } from '../src/client/locales.ts'
-import { props, snapshot, peer } from './fixtures.ts'
+import type { PortalProps } from '../src/client/types.ts'
+import { props, snapshot, peer } from './fixtures.client.ts'
 
 afterEach(cleanup)
 
 it('shows an inactive but reachable connection and opens discussion details', () => {
   const p = props()
-  render(<Portal {...p as never} />)
+  render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Reviewer')).toBeTruthy()
   expect(screen.getByText('Inactive · reachable')).toBeTruthy()
   expect(screen.getByText('/repo/review')).toBeTruthy()
@@ -22,7 +23,7 @@ it('shows an inactive but reachable connection and opens discussion details', ()
 it('surfaces Remote failure and offers refresh without inventing availability', () => {
   const p = props()
   p.useCollaboration = select => select({ view: null, phase: 'failed', error: 'session unavailable' })
-  render(<Portal {...p as never} />)
+  render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByRole('alert').textContent).toContain('session unavailable')
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
   expect(p.refresh).toHaveBeenCalledOnce()
@@ -31,18 +32,18 @@ it('surfaces Remote failure and offers refresh without inventing availability', 
 it('follows live Session running changes without a collaboration revision change', () => {
   const p = props()
   p.useCollaboration = select => select({ view: { ...snapshot, observations: [{ sessionId: peer, availability: 'inactive', git: { kind: 'unavailable' } }] }, phase: 'ready', error: null })
-  const { rerender } = render(<Portal {...p as never} />)
+  const { rerender } = render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Inactive · reachable')).toBeTruthy()
   const readSessions = p.useSessions
   p.useSessions = select => readSessions((value) => {
     const sessions = value as { byId: { b: { running: boolean } } }
     return select({ ...sessions, byId: { ...sessions.byId, b: { ...sessions.byId.b, running: true } } })
   })
-  rerender(<Portal {...p as never} />)
+  rerender(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Active')).toBeTruthy()
   expect(screen.queryByText('Inactive · reachable')).toBeNull()
   p.useSessions = readSessions
-  rerender(<Portal {...p as never} />)
+  rerender(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Inactive · reachable')).toBeTruthy()
 })
 
@@ -50,7 +51,7 @@ it.each(['missing', 'unknown'])('preserves %s availability without a live Sessio
   const p = props()
   p.useSessions = select => select({ ids: [], phase: 'ready', byId: {} })
   p.useCollaboration = select => select({ view: { ...snapshot, observations: [{ sessionId: peer, availability, git: { kind: 'unavailable' } }] }, phase: 'ready', error: null })
-  render(<Portal {...p as never} />)
+  render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Availability unknown')).toBeTruthy()
   expect(screen.queryByText('Inactive · reachable')).toBeNull()
 })
@@ -58,24 +59,24 @@ it.each(['missing', 'unknown'])('preserves %s availability without a live Sessio
 it('localizes the unread indication in Chinese', () => {
   const p = props()
   p.t = makeTranslate(zh)
-  render(<Portal {...p as never} />)
+  render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('未读消息: 1')).toBeTruthy()
 })
 
 it('derives unread incoming messages from each complete replacement and the local reading position', () => {
   const p = props()
-  const { rerender } = render(<Portal {...p as never} />)
+  const { rerender } = render(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Unread messages: 1')).toBeTruthy()
   p.state.readThrough.pair = 'message'
-  rerender(<Portal {...p as never} />)
+  rerender(<Portal {...p as unknown as PortalProps} />)
   expect(screen.queryByText(/Unread messages/u)).toBeNull()
   p.useCollaboration = select => select({ view: { ...snapshot, revision: 9, outbox: [
     ...snapshot.outbox, { ...snapshot.outbox[0], id: 'new-incoming' },
     { ...snapshot.outbox[0], id: 'outgoing', sender: 'a', recipient: peer },
   ] }, phase: 'ready', error: null })
-  rerender(<Portal {...p as never} />)
+  rerender(<Portal {...p as unknown as PortalProps} />)
   expect(screen.getByText('Unread messages: 1')).toBeTruthy()
   p.useCollaboration = select => select({ view: { ...snapshot, revision: 10, outbox: [] }, phase: 'ready', error: null })
-  rerender(<Portal {...p as never} />)
+  rerender(<Portal {...p as unknown as PortalProps} />)
   expect(screen.queryByText(/Unread messages/u)).toBeNull()
 })

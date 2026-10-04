@@ -36,7 +36,7 @@ kind: "package-reference"
 
 `data.ts` 为每个被查看的 Session 持有一个权威完整 Remote control view。`controlSnapshot` 与 `controlFollow` 的人类管理可见性一致：查看者拥有的所有 pair 和显式共享 outbox 记录始终可见，不受 peer snapshot/follow grants 影响。面向 peer 的两个 channel 保留各自的 grant 过滤。已提交全局 revision 的跳跃会替换整个 UI view。Refresh 拒绝过期 snapshot，终止性错误后创建新的单消费者 logical stream。插件卸载取消并等待所有 stream，再清理订阅者。
 
-Portal 注册到 `shell.activity.selectors`，Board 注册到 `shell.app-overlay`。两个 renderer scope 分别是 `session` 和 `session-maybe`，因此使用独立 store handle，但每个 Session 只共享一个底层草稿、选择、打开状态和每条连接的阅读位置实例。store 不持有权威连接状态。组件接收 renderer 绑定的 observable hooks、JSON 兼容数据和 callback，不接收 Cordis context，也不直接订阅 Remote service。
+Portal 注册到 `shell.activity.selectors`。`shell.app-overlay` 中不持有 store 的 wrapper 等待 Session 被选中，再通过严格作用域的 `collaboration.board` 子 slot 渲染 Board，因此尚无 Session 的空白 shell 也能安全挂载。Portal 和 Board 共享一个由 renderer 管理的 Session store handle，保存草稿、选择、打开状态和阅读位置。store 不持有权威连接状态。组件接收 renderer 绑定的 observable hooks、JSON 兼容数据和 callback，不接收 Cordis context，也不直接订阅 Remote service。
 
 存在实时 Session row 时，可用性跟随 Session Controller running 状态，即使 collaboration revision 没有变化。缺少该 row 时，metadata observation 保留 missing 或 unknown 含义。Portal 未读数量根据当前权威 incoming outbox 顺序，统计该连接最后已读 message ID 之后的消息。查看连接详情仅推进对应的本地阅读位置，也包含详情保持打开时收到的新消息。完整 view replacement 决定可见消息和数量；本地 store 不复制消息正文或权威状态。
 
@@ -48,6 +48,13 @@ Portal 注册到 `shell.activity.selectors`，Board 注册到 `shell.app-overlay
 - [Host collaboration](../../host/collaboration/README.zh.md) 说明状态、投递、grants 和同用户限制。
 - [Chat](../ui-chat/README.zh.md) 持有 generic source-kind presentation exclusion。
 - [实现说明](../../../.agents/notes/implemented/feature/2026-10-03-session-discussion-ui.zh.md) 说明已获准的共享 owner 修改和替代方案。
+
+<a id="dev-note"></a>
+## 开发说明
+
+Focused component、生产 Loader/renderer 和 HMR disposal 测试覆盖空白 shell 挂载后选择 Session、共享本地 store、原始来源回退和 stream 取消。Assembly replay、recorded manifests、exported-entry smoke 和 combined GUI gate 由 Task 10 负责。
+
+**Runtime invariant:** 不发布 companion。这个插件不发出 domain event，也不拥有 authority；现有已提交 Host aggregate、renderer registry 和 focused disposal 测试约束其边界。
 
 <a id="model-experience"></a>
 ## 模型体验
@@ -62,10 +69,3 @@ Portal 注册到 `shell.activity.selectors`，Board 注册到 `shell.app-overlay
 ## 已知限制与后续工作
 
 经过认证的人类 control view 假设同一人拥有这个 Host 上的所有 Session。Session 和同用户 Gateway process 共享 OS credentials，本 UI 不隔离 action authority（Prerequisite P）。连接展示从不读取私有 Session history。已写入错误 source 的历史日志不能仅靠本 UI 恢复缺失来源。本次不增加数据迁移或 Session format。
-
-<a id="dev-note"></a>
-## 开发说明
-
-Focused component、生产 Loader/renderer 和 HMR disposal 测试覆盖已声明 slots、本地 store bridge、原始来源回退和 stream 取消。Assembly replay、recorded manifests、exported-entry smoke 和 combined GUI gate 由 Task 10 负责。
-
-**Runtime invariant:** 不发布 companion。这个插件不发出 domain event，也不拥有 authority；现有已提交 Host aggregate、renderer registry 和 focused disposal 测试约束其边界。

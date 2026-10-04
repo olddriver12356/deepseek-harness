@@ -1,0 +1,10 @@
+version: 1
+scenario: collaboration-discussion
+profile: web
+composition: collaboration-discussion
+recording: authored
+header:
+  class: collaboration-discussion
+  pin: true
+  childSystemPrompts: [1]
+  childToolSchemas: [1]

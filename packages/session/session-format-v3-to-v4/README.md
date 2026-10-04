@@ -19,7 +19,11 @@ Native V4 retains V3 physical framing and validates required admission metadata 
 
 ## Model Experience
 
-No prompt or tool text is added by this library. Identity migration preserves model input and reusable prefixes. Runtime admission belongs to the [Agent owner](../../core/agent/README.md); the library validates persisted requirements without granting permission.
+None, as this library validates persisted requirements without adding model input. Runtime admission belongs to the [Agent owner](../../core/agent/README.md).
+
+#### KV Cache effect
+
+Identity migration preserves existing model records and reusable request prefixes; it introduces no replacement prompt or tool schema.
 
 ## Known Limitations and Deferred Work
 

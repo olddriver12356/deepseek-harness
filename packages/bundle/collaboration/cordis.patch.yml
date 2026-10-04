@@ -1,0 +1,16 @@
+# Install after the base and Web bundles. Deployment limits must be explicit.
+# A later profile patch may replace the complete collaboration config instead.
+- insert:
+    - id: collaboration
+      name: '@deepseek-ai/dsh-host-collaboration'
+      config:
+        peerDiscussionTools: [read, glob, grep, collaboration_status, peer_send]
+        maxFramedMessageBytes: !!js Number(process.env.DSH_COLLABORATION_MAX_MESSAGE_BYTES)
+        stateLimits:
+          maxStateBytes: !!js Number(process.env.DSH_COLLABORATION_MAX_STATE_BYTES)
+          maxJournalEntries: !!js Number(process.env.DSH_COLLABORATION_MAX_JOURNAL_ENTRIES)
+          maxRequests: !!js Number(process.env.DSH_COLLABORATION_MAX_REQUESTS)
+    - id: collaboration-tools
+      name: '@deepseek-ai/dsh-host-collaboration/tool'
+    - id: ui-collaboration
+      name: '@deepseek-ai/dsh-client-ui-collaboration'

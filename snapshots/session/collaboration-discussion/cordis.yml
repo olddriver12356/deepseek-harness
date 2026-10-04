@@ -1,0 +1,25 @@
+- id: llm-deepseek
+  config:
+    protocol: chat-completions
+    baseURL: !!js process.env.DSH_COLLABORATION_TEST_MODEL_URL
+    thinking: disabled
+    models:
+      - id: discussion-alpha
+      - id: discussion-beta
+- id: agent-default-model
+  config: { provider: deepseek-official, model: discussion-alpha }
+- id: session-title-llm
+  disabled: true
+- id: session-log-deepseek
+  disabled: true
+- id: session-telemetry-otel
+  disabled: true
+- id: session-persistence-jsonl
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+- id: collaboration
+  config:
+    peerDiscussionTools: [read, glob, grep, collaboration_status, peer_send]
+    maxFramedMessageBytes: 16384
+    stateLimits: { maxStateBytes: 1000000, maxJournalEntries: 1000, maxRequests: 1000 }

@@ -44,6 +44,8 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  * blocks. A package moves on or off this list with its context behavior.
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
+  'packages/bundle/collaboration': { kind: 'indirect', reason: 'Static opt-in patch delegates all model context to the Host discussion owner.' },
+  'packages/session/session-format-v3-to-v4': { kind: 'none', reason: 'Adjacent format validation preserves existing model records and registers no prompt or tools.' },
   'packages/client/ui-apps': { kind: 'none', reason: 'The launcher displays Host process state without model input.' },
   'packages/client/ui-layout-core': { kind: 'none', reason: 'The shared layout store and browser title never enter model input.' },
   'packages/host/apps': { kind: 'none', reason: 'The local process launcher has no model-facing registrations.' },

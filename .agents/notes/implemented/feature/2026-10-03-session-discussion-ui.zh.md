@@ -10,7 +10,7 @@ V1a 需要在现有 UI 内供人类管理普通 Session 的讨论 pair。Peer re
 
 ## 决定
 
-可选 `ui-collaboration` 浏览器包向 `shell.activity.selectors` 提供 Portal，向 `shell.app-overlay` 提供原生讨论 dialog，并注册 keyed Peer renderer。不修改 shell 背景或父组件。两个 slot 的 renderer scope 不同，因此使用独立 handle，但每个 Session 只共享一个本地草稿、选择、可见性和每条连接的阅读位置 store 实例。已提交 Remote view 只存在于 data owner。
+可选 `ui-collaboration` 浏览器包向 `shell.activity.selectors` 提供 Portal，向 `shell.app-overlay` 提供不持有 store 的 wrapper，并注册 keyed Peer renderer。wrapper 仅在选中 Session 后挂载严格 Session 作用域的 `collaboration.board` 子 slot。直接在可选 Session overlay 注册 scoped store 会导致空白 shell 挂载失败，用户还未选择 Session 就失去该界面。Portal 和 Board 现在共享一个由 renderer 管理的 Session store handle，保存草稿、选择、可见性和阅读位置。不修改 shell 背景、父组件或核心 renderer。已提交 Remote view 只存在于 data owner。
 
 Host `controlSnapshot` 与 `controlFollow` 返回相同的完整人类管理投影：所选 Session 拥有的连接、端点注册与观察结果、显式共享 outbox 记录，不受 peer grants 影响。现有 peer `snapshot`、`follow` 和 model status 保留原有过滤。两个 stream 使用同一套 committed-store notification、coalescing 和 disposal 实现。观察结果来自存储的 header、不会 resolve Agent 的现有 registry，以及原生只读 Git metadata；缺失或格式错误的事实明确显示为不可用。
 

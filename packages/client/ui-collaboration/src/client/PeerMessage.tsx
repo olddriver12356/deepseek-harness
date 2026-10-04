@@ -1,6 +1,6 @@
 /** Distinct inert-text presentation of durable attributed Peer input. */
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type {} from './peer-definition.ts'
+export type { PeerMessageData } from './peer-definition.ts'
 import css from './Collaboration.module.css'
 
 /** Peer keyed renderer props with the feature's own typed locale. */

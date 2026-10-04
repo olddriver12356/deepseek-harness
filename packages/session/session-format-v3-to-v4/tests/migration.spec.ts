@@ -52,7 +52,7 @@ it.each([
   { ...peerSource, forgedHuman: true },
   { ...peerSource, messageId: '' },
 ])('refuses malformed policy attribution before interrupted-tail recovery', (attribution) => {
-  const decoder = sessionFormatCatalog.createRestore({ ...source, version: 4 }, { recovery: 'interrupted-tail', validation: 'current' })
+  const decoder = sessionFormatCatalog.createRestore({ ...source, version: 4 }, { recovery: 'recoverable', validation: 'current' })
   expect(() =>{  decoder.decodeRow(inbox(attribution)) }).toThrow()
 })
 

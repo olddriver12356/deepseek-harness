@@ -28,7 +28,8 @@ it('holds deferred initiating input and neutral context without a turn until an 
     h.agent.wake()
     await h.agent.whenIdle()
     expect(h.requests).toHaveLength(1)
-    expect(h.agent.inbox.hasPending).toBe(false)
+    expect(h.agent.inbox.nextTurn).toHaveLength(0)
+    expect(h.agent.inbox.nextStep).toHaveLength(0)
   } finally { dispose() }
 })
 
@@ -54,7 +55,8 @@ it('lets humans bypass deferred input in FIFO order and refuses it once its poli
     h.agent.followup(human('third'))
     await h.agent.whenIdle()
     expect(h.requests).toHaveLength(3)
-    expect(h.agent.inbox.hasPending).toBe(false)
+    expect(h.agent.inbox.nextTurn).toHaveLength(0)
+    expect(h.agent.inbox.nextStep).toHaveLength(0)
     expect((await h.storedEvents()).filter(event => event.type === 'turn/end' && event.data.reason.kind === 'blocked')).toHaveLength(1)
   } finally { dispose() }
 })

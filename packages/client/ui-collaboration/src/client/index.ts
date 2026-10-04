@@ -10,7 +10,8 @@ import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { CollaborationDataSource, valueOf } from './data.ts'
-import { createCollaborationStores } from './stores.ts'
+import { createCollaborationStore } from './stores.ts'
+import { BoardOutlet } from './BoardOutlet.tsx'
 import { Portal } from './Portal.tsx'
 import { Board } from './Board.tsx'
 import { PeerMessage } from './PeerMessage.tsx'
@@ -22,6 +23,14 @@ export { createCollaborationStore } from './stores.ts'
 export type { PortalProps, BoardProps, CollaborationInjected } from './types.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface SlotMap {
+    /**
+     * Render the selected Session's discussion dialog with no owner payload.
+     * The renderer supplies a definite Session binding; a registration replaces
+     * the single dialog seat. Without a registration no dialog is rendered.
+     */
+    'collaboration.board': { kind: 'single'; scope: 'session' }
+  }
   interface LocaleNamespaceMap { /** Discussion-only UI copy. */ collaboration: CollaborationKey }
 }
 
@@ -31,8 +40,7 @@ export const inject = ['slots', 'sessions', 'remote', 'remote.collaboration', 'u
 /** @param ctx - Client plugin scope providing transport, sessions and renderer registries. */
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register('collaboration', { en, zh }), 'ui-collaboration: dictionaries')
-  const stores = createCollaborationStores()
-  ctx.effect(() => () => { stores.dispose() }, 'ui-collaboration: view store lifetime')
+  const store = createCollaborationStore()
   const sources = new Map<SessionId, CollaborationDataSource>()
   const empty: CollaborationData = { view: null, phase: 'loading', error: null }
   const noSession = { getSnapshot: () => empty, subscribe: () => () => {} }
@@ -71,10 +79,13 @@ export function apply(ctx: Context): void {
     }
   }
   ctx.slots.inject('shell.activity.selectors', () => ctx.slots.register({
-    name: 'shell.activity.selectors', id: 'collaboration', order: 30, locale: 'collaboration', store: stores.portal, inject: injected,
+    name: 'shell.activity.selectors', id: 'collaboration', order: 30, locale: 'collaboration', store, inject: injected,
   }, Portal))
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({
-    name: 'shell.app-overlay', id: 'collaboration', locale: 'collaboration', store: stores.board, inject: injected,
+    name: 'shell.app-overlay', id: 'collaboration', children: { 'collaboration.board': { kind: 'single', scope: 'session' } },
+  }, BoardOutlet))
+  ctx.slots.inject('collaboration.board', () => ctx.slots.register({
+    name: 'collaboration.board', locale: 'collaboration', store, inject: injected,
   }, Board))
   ctx.uiConversation.events.register(createPeerDefinition())
   ctx.chatInputs.excludeSource('collaboration-peer')

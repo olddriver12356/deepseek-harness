@@ -49,6 +49,7 @@ export {
   scrubSystemPrompts,
   scrubToolSchemas,
   tokenizeSessionFixtureCwd,
+  materializeSessionFixtureCwd,
   type CwdPathMode,
   type NormalizeContext,
   type NormalizeOptions,

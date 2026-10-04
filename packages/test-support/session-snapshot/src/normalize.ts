@@ -285,6 +285,16 @@ export function tokenizeSessionFixtureCwd(rawLog: string): string {
 }
 
 /**
+ * Hydrate cwd tokens inside serialized fixture strings without changing JSON escaping.
+ * @param fixture - Valid JSONL containing optional `{{cwd}}` tokens.
+ * @param cwd - The test-owned workspace path represented by each token.
+ * @returns JSONL with the workspace path escaped as JSON string data.
+ */
+export function materializeSessionFixtureCwd(fixture: string, cwd: string): string {
+  return fixture.replaceAll('{{cwd}}', JSON.stringify(cwd).slice(1, -1))
+}
+
+/**
  * Normalize a raw stdout transcript (newline-delimited JSON-RPC frames) into a stable expected output
  * in the same shape as the wire: one compact JSON frame per line (NDJSON), with the JSON-RPC
  * `id` rewritten to a per-transcript sequence (1, 2, 3, …) and all volatile strings scrubbed.

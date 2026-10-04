@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { CollaborationDataSource } from '../src/client/data.ts'
-import { sid, snapshot } from './fixtures.ts'
+import { sid, snapshot } from './fixtures.client.ts'
 
 function remote() {
   let emit: ((value: typeof snapshot) => void) | undefined

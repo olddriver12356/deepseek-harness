@@ -11,7 +11,7 @@ export const snapshot = {
   registrations: [{ sessionId: sid, title: 'Author', cwd: '/repo/main' }, { sessionId: peer, title: 'Reviewer', cwd: '/repo/review' }],
   connections: [{ id: 'pair', sessions: [sid, peer], disclosureAccepted: true, grants: { snapshot: true, follow: true }, budget: { limit: 3, used: 1 }, paused: false }],
   outbox: [{ id: 'message', connectionId: 'pair', sender: peer, recipient: sid, text: 'Check the parser', state: 'admitted' }],
-} as CollaborationControlSnapshot
+} as unknown as CollaborationControlSnapshot
 
 export function props(open = false) {
   const state = { open, selected: 'pair', readThrough: {} as Record<string, string | undefined>, draft: { peerId: '', title: '', peerTitle: '', activationLimit: '', snapshot: false, follow: false, disclosure: false }, budget: '' }

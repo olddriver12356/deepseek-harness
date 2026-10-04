@@ -35,19 +35,3 @@ export function createCollaborationStore() {
     },
   })
 }
-
-/**
- * Bridge two declared renderer scopes onto the same Session's local view state.
- * Each handle belongs to one slot scope; only drafts, selection, visibility and reading positions are shared.
- * @returns separately scoped handles and their plugin-lifetime cleanup.
- */
-export function createCollaborationStores() {
-  const factory = createCollaborationStore()
-  const instances = new Map<string | undefined, ReturnType<typeof factory.create>>()
-  const create = (scopeKey?: string) => {
-    let instance = instances.get(scopeKey)
-    if (instance === undefined) { instance = factory.create(scopeKey); instances.set(scopeKey, instance) }
-    return instance
-  }
-  return { portal: { ...factory, create }, board: { ...factory, create }, dispose: () => { instances.clear() } }
-}

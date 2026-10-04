@@ -12,6 +12,7 @@ import {
   scrubSystemPrompts,
   scrubToolSchemas,
   tokenizeSessionFixtureCwd,
+  materializeSessionFixtureCwd,
 } from '../src/normalize.ts'
 
 /**
@@ -23,6 +24,15 @@ const ctx: NormalizeContext = {
   sessionIds: ['11111111-2222-3333-4444-555555555555'],
   cwd: '/tmp/acp-snap-cwd-abc123',
 }
+
+describe('materializeSessionFixtureCwd', () => {
+  it('keeps Windows separators and quoted path data valid in hydrated JSONL', () => {
+    const cwd = 'C:\\Users\\Snapshot\\quoted"data'
+    const fixture = '{"type":"session","cwd":"{{cwd}}"}\n{"text":"read {{cwd}}/file.txt"}\n'
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line))
+    expect(rows).toEqual([{ type: 'session', cwd }, { text: `read ${cwd}/file.txt` }])
+  })
+})
 
 describe('normalizeStdout', () => {
   it('rewrites JSON-RPC ids to a stable first-seen sequence', () => {

@@ -36,7 +36,7 @@ Select a connection to see its endpoints, actual cwd, observed checkout and bran
 
 `data.ts` owns one authoritative complete Remote control view per viewed Session. `controlSnapshot` and `controlFollow` have identical human management visibility: all viewer-owned pairs and explicitly shared outbox records remain visible regardless of the peer snapshot/follow grants. The peer-facing channels retain their separate grant filters. A committed global revision gap replaces the entire UI view. Refresh rejects stale snapshots, and terminal failures create a fresh single-consumer logical stream. Feature disposal cancels and drains every stream before discarding subscribers.
 
-The Portal registers into `shell.activity.selectors` and Board into `shell.app-overlay`. Their renderer scopes are `session` and `session-maybe`, so they receive separate store handles sharing only one underlying draft, selection, open-state and per-connection reading-position instance per Session. No authoritative connection state lives in these stores. Components receive renderer-bound observable hooks, JSON-compatible data and callbacks; no component receives Cordis context or subscribes directly to Remote services.
+The Portal registers into `shell.activity.selectors`. A store-free wrapper in `shell.app-overlay` waits for a selected Session before rendering Board through the strict `collaboration.board` child slot. This lets the blank shell mount safely before any Session exists. Portal and Board share one renderer-managed Session store handle for drafts, selection, open state and reading positions. No authoritative connection state lives in this store. Components receive renderer-bound observable hooks, JSON-compatible data and callbacks; no component receives Cordis context or subscribes directly to Remote services.
 
 For a present live Session row, availability follows Session Controller running state even when the collaboration revision is unchanged. Without that row, the metadata observation retains its missing or unknown meaning. Portal unread counts derive from the current authoritative incoming outbox order after the connection's last-read message ID. Viewing a connection's details advances only that local reading position, including incoming messages while those details remain open. Complete view replacement determines the visible messages and counts; no message bodies or authoritative statuses are copied into the local store.
 
@@ -48,6 +48,13 @@ The native dialog supplies keyboard modality and Escape cancellation, focuses it
 - [Host collaboration](../../host/collaboration/README.md) documents state, delivery, grants and the same-user limitation.
 - [Chat](../ui-chat/README.md) owns generic source-kind presentation exclusion.
 - [Implementation note](../../../.agents/notes/implemented/feature/2026-10-03-session-discussion-ui.md) explains the approved shared-owner changes and alternatives.
+
+<a id="dev-note"></a>
+## Dev Note
+
+Focused component, production Loader/renderer and HMR disposal tests cover blank-shell mounting followed by Session selection, the shared local store, original source fallback and stream cancellation. Assembly replay, recorded manifests, exported-entry smoke and the combined GUI gate belong to Task 10.
+
+**Runtime invariant:** No companion is published. This plugin emits no domain events or authority; the existing committed Host aggregate, renderer registries and focused disposal tests enforce its boundaries.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -62,10 +69,3 @@ No browser presentation state enters a provider request. Preserving source metad
 ## Known Limitations and Deferred Work
 
 The authenticated human control view assumes one human owns every Session on this Host. Sessions and same-user Gateway processes share OS credentials; this UI does not isolate action authority (Prerequisite P). It never reads private Session histories for connection display. Historical logs already written with a rewritten source cannot recover missing attribution from this UI alone. No data migration or new Session format is introduced.
-
-<a id="dev-note"></a>
-## Dev Note
-
-Focused component, production Loader/renderer and HMR disposal tests cover the declared slots, shared local store bridge, original source fallback and stream cancellation. Assembly replay, recorded manifests, exported-entry smoke and the combined GUI gate belong to Task 10.
-
-**Runtime invariant:** No companion is published. This plugin emits no domain events or authority; the existing committed Host aggregate, renderer registries and focused disposal tests enforce its boundaries.

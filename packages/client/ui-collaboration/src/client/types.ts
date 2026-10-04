@@ -24,6 +24,6 @@ export interface CollaborationInjected {
 export type PortalProps = PropsRuntime<'shell.activity.selectors'> & InjectFace<CollaborationInjected>
   & PropsStore<ReturnType<typeof createCollaborationStore>> & PropsLocale<'collaboration'>
 
-/** Session-following discussion overlay props derived from renderer seats. */
-export type BoardProps = PropsRuntime<'shell.app-overlay'> & InjectFace<CollaborationInjected>
+/** Session-scoped discussion dialog props derived from renderer seats. */
+export type BoardProps = PropsRuntime<'collaboration.board'> & InjectFace<CollaborationInjected>
   & PropsStore<ReturnType<typeof createCollaborationStore>> & PropsLocale<'collaboration'>
