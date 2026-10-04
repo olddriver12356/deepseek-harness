@@ -890,6 +890,14 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         }
       }
 
+      // Verify real file effects independently of later transcript and platform header comparisons.
+      if (scenario.manifest.workspace?.final === true) {
+        const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))
+        expect(finalWorkspace, `${scenario.name}: complete final workspace`).toEqual(expectedWorkspace)
+      } else {
+        expect(finalWorkspace, `${scenario.name}: a changed workspace requires workspace.final`).toEqual(initialWorkspace)
+      }
+
       // Persisted transcripts match the committed fixtures.
       const expectedContext = contextOfContents(expectedContents)
       const actualSnapshots = normalizeSessionSnapshots(ordered.map(log => log.content), actualContext)
@@ -939,12 +947,6 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       }
 
       // Wire-shape invariants that must hold in every mode.
-      if (scenario.manifest.workspace?.final === true) {
-        const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))
-        expect(finalWorkspace, `${scenario.name}: complete final workspace`).toEqual(expectedWorkspace)
-      } else {
-        expect(finalWorkspace, `${scenario.name}: a changed workspace requires workspace.final`).toEqual(initialWorkspace)
-      }
       if (assertions.expectedTools !== undefined) {
         const parent = ordered[0]
         if (parent === undefined) throw new Error(`${scenario.name} has no parent session log`)

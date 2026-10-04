@@ -286,13 +286,56 @@ export function tokenizeSessionFixtureCwd(rawLog: string, cwdAliases: readonly s
 }
 
 /**
- * Hydrate cwd tokens inside serialized fixture strings without changing JSON escaping.
+ * Hydrate ordinary strings and the declared serialized Tool-call argument representations.
  * @param fixture - Valid JSONL containing optional `{{cwd}}` tokens.
  * @param cwd - The test-owned workspace path represented by each token.
- * @returns JSONL with the workspace path escaped as JSON string data.
+ * @returns JSONL retaining argument fragment boundaries and unrelated string contents.
  */
 export function materializeSessionFixtureCwd(fixture: string, cwd: string): string {
-  return fixture.replaceAll('{{cwd}}', JSON.stringify(cwd).slice(1, -1))
+  return fixture.split('\n').map(line => line.trim().length === 0
+    ? line
+    : JSON.stringify(materializeFixtureValue(JSON.parse(line), cwd))).join('\n')
+}
+
+/** Replace tokens in serialized argument fragments without parsing incomplete argument JSON. */
+function materializeArgumentFragments(fragments: readonly string[], cwd: string): string[] {
+  const replacement = JSON.stringify(cwd).slice(1, -1)
+  const matches = [...fragments.join('').matchAll(/\{\{cwd\}\}/gu)]
+  let offset = 0
+  return fragments.map((fragment) => {
+    const start = offset
+    const end = start + fragment.length
+    offset = end
+    let cursor = start
+    let result = ''
+    for (const match of matches) {
+      const tokenStart = match.index
+      const tokenEnd = tokenStart + match[0].length
+      if (tokenEnd <= start || tokenStart >= end) continue
+      result += fragment.slice(cursor - start, Math.max(cursor, tokenStart) - start)
+      if (tokenStart >= start) result += replacement
+      cursor = Math.min(end, tokenEnd)
+    }
+    return result + fragment.slice(cursor - start)
+  })
+}
+
+/** Only Tool-call fields contain an additional serialized JSON string layer. */
+function materializeFixtureValue(value: unknown, cwd: string, toolCallData = false): unknown {
+  if (typeof value === 'string') return value.replaceAll(CWD, cwd)
+  if (Array.isArray(value)) return value.map(item => materializeFixtureValue(item, cwd))
+  if (value === null || typeof value !== 'object') return value
+  const record = value as Record<string, unknown>
+  return Object.fromEntries(Object.entries(record).map(([key, item]) => {
+    const argument = key === 'arguments' && (toolCallData || record.type === 'tool-call')
+      || key === 'argumentsDelta' && record.type === 'tool-call-delta'
+    if (argument && typeof item === 'string') return [key, materializeArgumentFragments([item], cwd)[0]]
+    if (key === 'args' && record.type === 'tool-call-chunks'
+      && Array.isArray(item) && item.every((fragment): fragment is string => typeof fragment === 'string')) {
+      return [key, materializeArgumentFragments(item, cwd)]
+    }
+    return [key, materializeFixtureValue(item, cwd, key === 'data' && record.type === 'tool/call')]
+  }))
 }
 
 /**

@@ -32,6 +32,49 @@ describe('materializeSessionFixtureCwd', () => {
     const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line) as unknown)
     expect(rows).toEqual([{ type: 'session', cwd }, { text: `read ${cwd}/file.txt` }])
   })
+
+  it('hydrates serialized tool arguments and recorded fragments at their JSON string depth', () => {
+    const cwd = 'C:\\Users\\Snapshot\\quoted"data'
+    const args = '{ "path": "{{cwd}}/note.txt", "text": "keep \\n and spacing" }'
+    const fragments = ['{ "path": "{{cw', 'd}}/note.txt", ', '"text": "keep \\n and spacing" }']
+    const partial = '{"path":"{{cwd}}/unfinished'
+    const fixture = [
+      { type: 'tool/call', data: { arguments: args } },
+      {
+        type: 'assistant/message', data: {
+          message: { content: [{ type: 'tool-call', arguments: args }, { type: 'text', text: args }] },
+          stream: [
+            { type: 'tool-call-chunks', index: 0, args: fragments, dt: [1, 2] },
+            { type: 'chunk', chunk: { type: 'block-end', block: { type: 'tool-call', arguments: args } } },
+            { type: 'chunk', chunk: { type: 'tool-call-delta', index: 1, argumentsDelta: partial } },
+          ],
+        },
+      },
+    ].map(row => JSON.stringify(row)).join('\n') + '\n'
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n')
+      .map(line => JSON.parse(line) as unknown)
+    const expectedArgs = args.replace('{{cwd}}', JSON.stringify(cwd).slice(1, -1))
+    const call = rows[0] as { data: { arguments: string } }
+    const assistant = rows[1] as {
+      data: {
+        message: { content: { type: string; arguments?: string; text?: string }[] }
+        stream: [
+          { args: string[]; dt: number[] },
+          { chunk: { block: { arguments: string } } },
+          { chunk: { argumentsDelta: string } },
+        ]
+      }
+    }
+    expect(call.data.arguments).toBe(expectedArgs)
+    expect(JSON.parse(call.data.arguments)).toEqual({ path: `${cwd}/note.txt`, text: 'keep \n and spacing' })
+    expect(assistant.data.message.content[0]!.arguments).toBe(expectedArgs)
+    expect(assistant.data.message.content[1]!.text).toBe(args.replace('{{cwd}}', cwd))
+    expect(assistant.data.stream[0].args.join('')).toBe(expectedArgs)
+    expect(assistant.data.stream[0].args).toHaveLength(fragments.length)
+    expect(assistant.data.stream[0].dt).toEqual([1, 2])
+    expect(assistant.data.stream[1].chunk.block.arguments).toBe(expectedArgs)
+    expect(assistant.data.stream[2].chunk.argumentsDelta).toBe(partial.replace('{{cwd}}', JSON.stringify(cwd).slice(1, -1)))
+  })
 })
 
 describe('normalizeStdout', () => {
