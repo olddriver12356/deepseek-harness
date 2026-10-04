@@ -84,6 +84,12 @@ Acceptance persists before recipient activity. Activation reservation remains qu
 
 `recover()` reconciles queued work and wakes admitted input still pending after storage or lifecycle interruptions without another insertion or charge. The receipt projection distinguishes pending, claimed, started, consumed, refused and cancelled input; it rebuilds these phases from existing Session events. `whenSettled()` waits for mailbox jobs, not assistant completion. Disposal stops admission, removes registrations and drains jobs. Accepted receipts always retain the original queued acceptance revision. Admission describes durable recipient input, not a completed reply.
 
+Pause also defers already claimed input during pre-step or asynchronous request preparation until durable user admission. The loop restores its original identity and position without another insertion notification or activation charge. Resume preserves human FIFO before peer FIFO. A terminal refused or cancelled receipt settles an admitted row to `failed` with `input-refused`; pause alone does not create that outcome. Required-policy executor checks survive collaboration unload until the protected turn ends, and ordinary human work and remount remain available.
+
+Recipient resolution publishes a bounded `deliveryReason` in the committed human view and model status. `session/not-found` from the ordinary resolver fails queued work with `recipient-missing`; that resolver's `session/agent-busy` specifically denotes subagent ownership and fails it with `recipient-not-ordinary`. Missing resolver, `gateway/internal` and unknown thrown errors retain queued work with retryable `recipient-unavailable`. These mappings apply to `resolveAgent`, not other APIs using the same codes. Admitted history and reservations survive recovery failure; only a proven terminal input refusal marks it failed. Lifecycle events or identical send retries retry the same identity and budget. Successful resolution clears stale diagnostics; unchanged failures create no further journal entry. Exception text never enters shared state, and delivery never creates a replacement Session.
+
+The aggregate retains its existing domain version. The optional reason and system-owned `delivery-status` operation preserve old rows and journal replay without a migration. Older readers reject records containing the new diagnostic operation; retaining old data does not provide downgrade support. Session events, source fields and released generations are unchanged.
+
 <a id="model-discussion-tools"></a>
 ## Model discussion tools
 

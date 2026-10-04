@@ -27,7 +27,7 @@ declare module '@deepseek-ai/dsh-session-projection/types' {
 
 /** Own non-inherited durable inbox receipts and recorded turn origin; compaction never deletes original receipts. */
 export const collaborationReceiptProjection: ProjectionDefinition<'collaborationReceipts'> = {
-  key: 'collaborationReceipts', stateSchema: receiptProjectionSchema, stateVersion: 2,
+  key: 'collaborationReceipts', stateSchema: receiptProjectionSchema, stateVersion: 3,
   init: (header, inheritedEventCount) => ({ sessionId: header.id, inheritedEventCount, receipts: [], turn: 0,
     turnOpen: false, pendingTurns: [], pendingSteps: [] }),
   apply(state, event) {
@@ -55,6 +55,8 @@ export const collaborationReceiptProjection: ProjectionDefinition<'collaboration
       receipts = receipts.map(receipt => !removed.has(receipt.inputId) ? receipt : {
         ...receipt, phase: splice.outcome === 'canceled' ? 'cancelled' as const : 'claimed' as const, turn: state.turn,
       })
+      receipts = receipts.map(receipt => receipt.phase === 'claimed' && inserted.includes(receipt.inputId)
+        ? { ...receipt, phase: 'pending' as const, turn: undefined } : receipt)
     } else {
       // User-message commit follows the final request-policy check; it admits the original claimed batch even after source rewriting.
       receipts = receipts.map(receipt => receipt.phase === 'claimed' && receipt.turn === state.turn

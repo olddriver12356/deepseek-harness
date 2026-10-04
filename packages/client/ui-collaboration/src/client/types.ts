@@ -7,7 +7,7 @@ import type { createCollaborationStore } from './stores.ts'
 export interface CollaborationData {
   readonly view: CollaborationControlSnapshot | null
   readonly phase: 'loading' | 'ready' | 'failed'
-  readonly error: string | null
+  readonly error: string | { readonly key: 'followEnded' } | null
 }
 
 /** Private observable plus the only authorized discussion callbacks. */

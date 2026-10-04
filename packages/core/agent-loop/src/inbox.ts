@@ -130,6 +130,13 @@ export class ReactLoopInbox implements InboxContract {
     return claimed
   }
 
+  /** Restore deferred, unstarted claims at their original positions without new lifecycle notifications. */
+  restore(inputs: readonly { target: InboxTarget; index: number; message: UserMessage }[]): void {
+    for (const input of [...inputs].sort((a, b) => a.index - b.index)) {
+      this.mutate(input.target, input.index, 0, [input.message], false, false)
+    }
+  }
+
   /**
    * Append one message to a pending list.
    * @param target - pending list to extend.

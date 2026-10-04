@@ -72,6 +72,8 @@ async function bootJson(root: string) {
   await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(config).href } })
   await ctx.loader.await()
   expect([...ctx.loader.entries()].filter(entry => !entry.disabled && entry.fiber === undefined)).toEqual([])
+  // This owner tests aggregate persistence with no recipient runtime or resolver.
+  await ctx.collaborationMailbox.close()
   return { ctx, store: ctx.collaborationStore }
 }
 

@@ -31,6 +31,8 @@ kind: "package-reference"
 
 选择连接可查看两端、实际 cwd、观察到的 checkout 与 branch、已计费激活、显式 pair grants 和共享消息状态。暂停停止新的 admission，断开移除 pair 并取消排队工作，Open session 调用 Session Controller。修改上限不会退还激活额度，也不能低于已计费次数。这些控件只授予讨论能力。
 
+连接披露说明共享文本进入接收方持久会话历史，并可能发送给与发送方不同的已配置模型提供商。已提交的投递诊断在对应消息旁以类型化英文或中文文案显示。本地拥有的 follow 终止条件在 Portal 和 Board 使用 locale key；任意服务端错误文本保留原文。
+
 <a id="understand-the-implementation"></a>
 ## 理解实现
 

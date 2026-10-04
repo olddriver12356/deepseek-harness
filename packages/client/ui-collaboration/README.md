@@ -31,6 +31,8 @@ Choose Add peer, select an ordinary Session, enter display labels, accept the di
 
 Select a connection to see its endpoints, actual cwd, observed checkout and branch, charged activations, explicit pair grants and shared message states. Pause stops new admissions, disconnect removes the pair and cancels queued work, and Open session uses Session Controller. Changing a limit cannot refund charges or reduce it below the charged count. These controls grant discussion capability only.
 
+The connection disclosure explains that shared text enters recipient durable histories and may reach configured model providers different from the sender's. Committed delivery diagnostics appear beside their message with typed English or Chinese copy. The locally owned terminal follow condition uses a locale key in both Portal and Board; arbitrary server error text is preserved.
+
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 

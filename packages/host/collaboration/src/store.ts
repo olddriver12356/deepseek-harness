@@ -79,7 +79,7 @@ export class CollaborationStore {
       if (current.outbox.some(message => !next.outbox.some(row => row.id === message.id
         && row.connectionId === message.connectionId && row.sender === message.sender
         && row.recipient === message.recipient && row.text === message.text
-        && (message.state === 'queued' || row.state === message.state)
+        && (message.state === 'queued' || row.state === message.state || message.state === 'admitted' && row.state === 'failed')
         && (message.activationReserved !== true || row.activationReserved === true)))) {
         throw new Error('collaboration transaction cannot discard or rewrite retained messages or activation reservations')
       }

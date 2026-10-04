@@ -69,6 +69,8 @@ async function load() {
   await ctx.loader.await()
   expect([...ctx.loader.entries()].filter(entry => !entry.disabled && entry.fiber === undefined)).toEqual([])
   expect(ctx.get('collaborationStore')).toBeDefined()
+  // This owner tests authenticated controls with metadata-only Session fixtures.
+  await ctx.collaborationMailbox.close()
   for (const [id, meta] of [
     ['a', { cwd: root }], ['b', { cwd: join(root, 'other-worktree'), parentSession: SessionId('a') }],
     ['c', { cwd: root }], ['child', { cwd: root, origin: 'subagent' as const }],

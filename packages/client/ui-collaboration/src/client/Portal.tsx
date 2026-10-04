@@ -11,7 +11,7 @@ export function Portal({ sessionId, useCollaboration, useSessions, useStore, act
   return <section className={css.portal} aria-label={t('title')}>
     <div className={css.header}><strong>{t('title')}</strong><button type="button" onClick={() => { actions.open() }}>{t('add')}</button></div>
     {data.phase === 'loading' && <p role="status">{t('loading')}</p>}
-    {data.error !== null && <p role="alert">{data.error}</p>}
+    {data.error !== null && <p role="alert">{typeof data.error === 'string' ? data.error : t(data.error.key)}</p>}
     {data.view?.connections.length === 0 && <p>{t('empty')}</p>}
     {data.view?.connections.map((pair) => {
       const peerId = pair.sessions[0] === sessionId ? pair.sessions[1] : pair.sessions[0]

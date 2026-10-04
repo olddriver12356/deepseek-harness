@@ -85,6 +85,12 @@ outbox 状态为 `queued`、`admitted`、`cancelled` 和 `failed`。成功入队
 
 `recover()` 在存储或生命周期中断后核对排队工作，并唤醒仍待处理的已准入输入，不重复插入或扣减。回执投影区分 pending、claimed、started、consumed、refused 和 cancelled 输入，通过现有 Session 事件重建这些阶段。`whenSettled()` 等待 mailbox 作业，不等待助手完成。卸载停止准入、移除注册并排空作业。接受回执始终保留原始 queued 接受版本。准入表示持久接收方输入，不表示回复完成。
 
+暂停也会延后在 pre-step 或异步请求准备期间已领取、但尚未持久用户准入的输入。循环恢复其原身份与位置，不重复发布插入通知或扣减激活额度。恢复让人工 FIFO 排在 peer FIFO 前。终态 refused 或 cancelled 回执将已准入行结算为带 `input-refused` 的 `failed`；仅暂停不会产生该结果。必要策略的 executor 检查持续到受保护回合结束，覆盖 collaboration 卸载，后续普通人工工作和重新挂载仍可运行。
+
+接收方解析把有限的 `deliveryReason` 发布到已提交的人工视图和模型 status。普通 resolver 的 `session/not-found` 以 `recipient-missing` 使排队工作失败；该 resolver 的 `session/agent-busy` 专指 subagent 归属，以 `recipient-not-ordinary` 使其失败。resolver 缺失、`gateway/internal` 和未知抛出错误保留排队工作，并带可重试的 `recipient-unavailable`。这些映射仅适用于 `resolveAgent`，不适用于使用相同错误码的其他 API。恢复失败保留已准入历史和预留，仅有确证的终态输入拒绝才将其标记失败。生命周期事件或相同发送请求重试使用同一身份和预算。成功解析清除过期诊断；不变失败不会继续追加 journal。异常正文不会进入共享状态，投递不会创建替代 Session。
+
+聚合保持原有 domain version。可选原因字段和系统拥有的 `delivery-status` 操作保留旧行及 journal 重放，无需迁移。旧读取器拒绝包含新诊断操作的记录；保留旧数据不提供降级支持。Session 事件、来源字段和已发布前代保持不变。
+
 <a id="model-discussion-tools"></a>
 ## 模型讨论工具
 

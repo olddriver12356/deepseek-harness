@@ -71,3 +71,19 @@ it('does not let a delayed refresh replace a newer committed stream view', async
   expect(source.getSnapshot().view?.connections).toEqual([])
   await source.dispose()
 })
+
+it('represents its owned stream termination with a locale key and preserves server diagnostics', async () => {
+  const r = remote()
+  const source = new CollaborationDataSource({ ...r, $stream: (options: { ended: () => Error }) => ({
+    dispose: async () => {}, async *[Symbol.asyncIterator]() { throw options.ended(); yield undefined },
+  }) } as never, sid)
+  source.start()
+  await vi.waitFor(() => { expect(source.getSnapshot().error).toEqual({ key: 'followEnded' }) })
+  await source.dispose()
+  const server = new CollaborationDataSource({ ...r, $stream: () => ({ dispose: async () => {},
+    async *[Symbol.asyncIterator]() { throw new Error('server diagnostic'); yield undefined },
+  }) } as never, sid)
+  server.start()
+  await vi.waitFor(() => { expect(server.getSnapshot().error).toBe('server diagnostic') })
+  await server.dispose()
+})

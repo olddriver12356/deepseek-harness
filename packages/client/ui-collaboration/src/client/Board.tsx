@@ -50,7 +50,7 @@ export function Board({
   return <dialog ref={dialog} className={css.dialog} aria-label={t('details')} onCancel={() => { actions.close() }} onClose={() => { actions.close() }}>
     <div className={css.header}><h2>{t('details')}</h2><button type="button" onClick={() => { actions.close() }}>{t('close')}</button></div>
     <p>{t('purpose')}</p>
-    {(failure ?? data.error) !== null && <p role="alert">{failure ?? data.error}</p>}
+    {(failure ?? data.error) !== null && <p role="alert">{failure ?? (typeof data.error === 'string' ? data.error : data.error === null ? null : t(data.error.key))}</p>}
     <fieldset disabled={busy}><legend>{t('add')}</legend>
       <label>{t('peer')}<select value={draft.peerId} onChange={(event) => { actions.draft({ peerId: event.target.value }) }}>
         <option value="">{t('choose')}</option>
@@ -94,6 +94,7 @@ export function Board({
       </div>
       <h3>{t('activity')}</h3>
       {view?.outbox.filter(message => message.connectionId === pair.id).map(message => <article className={css.message} key={message.id}>
+        {message.deliveryReason !== undefined && <p role="alert">{t(message.deliveryReason)}</p>}
         <strong>{t(message.state)}</strong><dl><dt>{t('sender')}</dt><dd>{message.sender}</dd><dt>{t('recipient')}</dt><dd>{message.recipient}</dd><dt>{t('messageId')}</dt><dd>{message.id}</dd></dl>
         <p className={css.body}>{message.text}</p>
       </article>)}

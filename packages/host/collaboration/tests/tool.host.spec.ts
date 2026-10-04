@@ -54,6 +54,7 @@ it('installs only two opt-in tools and removes tools and policy on disposal', as
   const entry = [...h.ctx.loader.entries()].find(row => row.options.name === 'discussion-tools')!
   await entry.fiber!.dispose()
   expect(h.ctx.tools.schemas(h.agent).map(tool => tool.name)).not.toContain('peer_send')
+  expect(h.ctx.tools.schemas(h.agent).map(tool => tool.name)).not.toContain('collaboration_status')
   await h.deliverHumanTurn('hello')
   expect(JSON.stringify(h.requests.at(-1)?.messages)).not.toContain('Independent peers')
 })

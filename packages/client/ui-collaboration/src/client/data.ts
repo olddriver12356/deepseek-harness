@@ -3,6 +3,10 @@ import type { ClientRemote, CollaborationControlSnapshot, RemoteResult, SessionI
 import { notifySubscribers } from '@deepseek-ai/dsh-client-store'
 import type { CollaborationData } from './types.ts'
 
+class CollaborationFollowEnded extends Error {
+  constructor() { super('collaboration/follow-ended') }
+}
+
 /** A Session's authoritative last complete view; revision gaps are valid complete replacements. */
 export class CollaborationDataSource {
   private value: CollaborationData = { view: null, phase: 'loading', error: null }
@@ -22,7 +26,7 @@ export class CollaborationDataSource {
     return this.remote.$stream<CollaborationControlSnapshot>({
       name: 'Collaboration committed views',
       open: signal => this.remote.collaboration.controlFollow({ sessionId: this.sessionId }, signal),
-      ended: () => new Error('Collaboration follow ended; refresh to reopen the view'),
+      ended: () => new CollaborationFollowEnded(),
     })
   }
 
@@ -107,7 +111,8 @@ export class CollaborationDataSource {
 
   private fail(error: unknown): void {
     if (this.disposed) return
-    this.value = { ...this.value, phase: 'failed', error: error instanceof Error ? error.message : String(error) }
+    this.value = { ...this.value, phase: 'failed', error: error instanceof CollaborationFollowEnded
+      ? { key: 'followEnded' } : error instanceof Error ? error.message : String(error) }
     notifySubscribers(this.listeners, '[ui-collaboration]')
   }
 

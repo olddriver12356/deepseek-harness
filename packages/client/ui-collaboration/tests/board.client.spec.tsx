@@ -4,6 +4,8 @@ import { afterEach, beforeEach, expect, it } from 'vitest'
 import { Board } from '../src/client/Board.tsx'
 import type { BoardProps } from '../src/client/types.ts'
 import { props, snapshot } from './fixtures.client.ts'
+import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { en, zh } from '../src/client/locales.ts'
 
 afterEach(cleanup)
 beforeEach(() => {
@@ -65,4 +67,20 @@ it('advances only the viewed connection reading position and reads incoming addi
   p.actions.read.mockClear()
   rerender(<Board {...p as unknown as BoardProps} />)
   expect(p.actions.read).not.toHaveBeenCalled()
+})
+
+it.each([en, zh])('shows persistence and configured-provider disclosure before connecting', (dictionary) => {
+  const p = props(true)
+  render(<Board {...p as unknown as BoardProps} t={makeTranslate(dictionary)} />)
+  expect(screen.getByText(dictionary.warning)).toBeTruthy()
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: dictionary.connect }).disabled).toBe(true)
+})
+
+it('localizes owned termination and committed delivery failure for the Chinese view', () => {
+  const p = props(true)
+  p.useCollaboration = select => select({ view: { ...snapshot, outbox: [{ ...snapshot.outbox[0], state: 'failed', deliveryReason: 'recipient-missing' }] },
+    phase: 'failed', error: { key: 'followEnded' } })
+  render(<Board {...p as unknown as BoardProps} t={makeTranslate(zh)} />)
+  expect(screen.getByText(zh.followEnded)).toBeTruthy()
+  expect(screen.getByText(zh['recipient-missing'])).toBeTruthy()
 })

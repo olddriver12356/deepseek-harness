@@ -86,7 +86,7 @@ export function reduceDiscussionOperation(
       if (actor.kind !== 'session' || actor.sessionId !== message.sender) invalid('message sender must be the Host-derived acting session')
       if (connection.paused) invalid('connection is paused')
       if (!connection.sessions.includes(message.sender) || !connection.sessions.includes(message.recipient)) invalid('message endpoints must belong to the connection')
-      if (message.state !== 'queued' || message.activationReserved !== undefined || outbox.some(row => row.id === message.id)) invalid('new messages require a unique id, queued state, and no activation reservation')
+      if (message.state !== 'queued' || message.activationReserved !== undefined || message.deliveryReason !== undefined || outbox.some(row => row.id === message.id)) invalid('new messages require a unique id, queued state, and no activation reservation or delivery diagnostic')
       outbox = [...outbox, message]
       break
     }
@@ -98,7 +98,12 @@ export function reduceDiscussionOperation(
       if (connection.paused) invalid('connection is paused')
       if (connection.budget.used >= connection.budget.limit) invalid('activation budget exhausted; a human must increase the limit')
       replacePair({ ...connection, budget: { ...connection.budget, used: connection.budget.used + 1 } })
-      outbox = outbox.map(row => row.id === message.id ? { ...row, activationReserved: true as const } : row)
+      outbox = outbox.map((row) => {
+        if (row.id !== message.id) return row
+        const { deliveryReason, ...retained } = row
+        return { ...retained, activationReserved: true as const,
+          ...(deliveryReason === undefined ? {} : { deliveryReason }) }
+      })
       break
     }
     case 'admit': {
@@ -106,14 +111,33 @@ export function reduceDiscussionOperation(
       const message = outbox.find(row => row.id === operation.messageId)
       if (message === undefined || message.state !== 'queued' || message.activationReserved !== true) invalid('only queued messages with a reservation may be admitted')
       if (pair(message.connectionId).paused) invalid('connection is paused')
-      outbox = outbox.map(row => row.id === message.id ? { ...row, state: 'admitted' as const } : row)
+      outbox = outbox.map((row) => {
+        if (row.id !== message.id) return row
+        const { deliveryReason: _reason, ...retained } = row
+        return { ...retained, state: 'admitted' as const }
+      })
+      break
+    }
+    case 'delivery-status': {
+      if (actor.kind !== 'system') invalid('delivery diagnostics require the Host delivery worker')
+      const message = outbox.find(row => row.id === operation.messageId)
+      if (message === undefined || (message.state !== 'queued' && message.state !== 'admitted')) invalid('only pending deliveries may be blocked')
+      outbox = outbox.map((row) => {
+        if (row.id !== message.id) return row
+        const { deliveryReason: _reason, ...retained } = row
+        return { ...retained, ...(operation.deliveryReason === undefined ? {} : { deliveryReason: operation.deliveryReason }) }
+      })
       break
     }
     case 'settle': {
       if (actor.kind !== 'system') invalid('delivery settlement requires the Host delivery worker')
       const message = outbox.find(row => row.id === operation.messageId)
-      if (message === undefined || message.state !== 'queued') invalid('only queued messages may be cancelled or failed')
-      outbox = outbox.map(row => row.id === message.id ? { ...row, state: operation.state } : row)
+      if (message === undefined || (message.state !== 'queued' && message.state !== 'admitted')) invalid('only pending deliveries may be cancelled or failed')
+      if (message.state === 'admitted' && (operation.state !== 'failed' || operation.deliveryReason !== 'input-refused')) {
+        invalid('only queued messages may be cancelled; admitted failure requires terminal input refusal')
+      }
+      outbox = outbox.map(row => row.id === message.id ? { ...row, state: operation.state,
+        ...(operation.deliveryReason === undefined ? {} : { deliveryReason: operation.deliveryReason }) } : row)
       break
     }
     default:

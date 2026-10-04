@@ -42,7 +42,7 @@ export class CollaborationMailbox {
       const pair = store.read().connections.find(item => item.id === row.connectionId)
       if ((row.state !== 'queued' && row.state !== 'admitted') || pair === undefined
         || !pair.sessions.includes(row.sender) || !pair.sessions.includes(row.recipient)) return false
-      if (receipt?.phase === 'pending' && (pair.paused || row.state === 'queued')) return 'defer'
+      if ((receipt?.phase === 'pending' || receipt?.phase === 'claimed') && (pair.paused || row.state === 'queued')) return 'defer'
       return row.state === 'admitted' && !pair.paused
     }))
     this.releases.push(ctx.on('agent/status', ({ agent, status }) => { if (status === 'idle') this.schedule(agent.session.id) }))
@@ -159,14 +159,36 @@ export class CollaborationMailbox {
     let agent = this.ctx.agents.get(recipient)
     if (agent === undefined) {
       const resolver = this.ctx.get('sessionController')
-      if (resolver === undefined) throw new Error('ordinary session resolver is unavailable')
-      const result = await resolver.resolveAgent(recipient)
-      if ('error' in result) throw result.error
+      if (resolver === undefined) {
+        await this.recordResolutionFailure(recipient, 'recipient-unavailable', false)
+        return
+      }
+      let result: Awaited<ReturnType<typeof resolver.resolveAgent>>
+      try {
+        result = await resolver.resolveAgent(recipient)
+      } catch (error) {
+        if (this.stopped.signal.aborted) throw error
+        await this.recordResolutionFailure(recipient, 'recipient-unavailable', false)
+        return
+      }
+      if ('error' in result) {
+        const reason = result.error.code === 'session/not-found' ? 'recipient-missing'
+          : result.error.code === 'session/agent-busy' ? 'recipient-not-ordinary' : 'recipient-unavailable'
+        await this.recordResolutionFailure(recipient, reason, reason !== 'recipient-unavailable')
+        return
+      }
       agent = result.agent
     }
     this.stopped.signal.throwIfAborted()
     requireCollaborationAuthority(agent.ctx)
-    if (agent.session.header.origin === 'subagent') throw new Error('recipient must be an ordinary session')
+    if (agent.session.header.origin === 'subagent') {
+      await this.recordResolutionFailure(recipient, 'recipient-not-ordinary', true)
+      return
+    }
+    for (const row of this.store.read().outbox.filter(item => item.recipient === recipient
+      && (item.state === 'queued' || item.state === 'admitted') && item.deliveryReason !== undefined)) {
+      await this.update({ kind: 'delivery-status', messageId: row.id })
+    }
     if (agent.status !== 'idle') return
     const target = agent
     await target.runMaintenance(async (signal) => {
@@ -178,6 +200,10 @@ export class CollaborationMailbox {
         const pending = [...target.inbox.nextTurn, ...target.inbox.nextStep].find(message =>
           message.id === receipt?.inputId && message.source.kind === 'collaboration-peer' && message.source.messageId === row.id)
         if (row.state === 'admitted') {
+          if (pending === undefined && (receipt?.phase === 'refused' || receipt?.phase === 'cancelled')) {
+            await this.update({ kind: 'settle', messageId: row.id, state: 'failed', deliveryReason: 'input-refused' })
+            continue
+          }
           if (pending !== undefined && this.authorized(row)) this.wakeWithHumanPriority(target)
           continue
         }
@@ -219,5 +245,12 @@ export class CollaborationMailbox {
     // Keep neutral context at its original position and each source class in FIFO order.
     for (const [index, message] of desired.entries()) target.inbox.move(message.id, index)
     target.wake()
+  }
+
+  private async recordResolutionFailure(recipient: SessionId, deliveryReason: NonNullable<OutboxMessage['deliveryReason']>, permanent: boolean): Promise<void> {
+    for (const row of this.store.read().outbox.filter(item => item.recipient === recipient && (item.state === 'queued' || item.state === 'admitted'))) {
+      if (permanent && row.state === 'queued') await this.update({ kind: 'settle', messageId: row.id, state: 'failed', deliveryReason })
+      else if (row.deliveryReason !== deliveryReason) await this.update({ kind: 'delivery-status', messageId: row.id, deliveryReason })
+    }
   }
 }

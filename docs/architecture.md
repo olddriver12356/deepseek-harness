@@ -4,7 +4,7 @@ English | [中文](architecture.zh.md)
 
 Read this before changing anything under `packages/`. It assumes you know Cordis; if you do not, start with the [primer](cordis-primer.md) or the [tutorial](cordis-tutorial/index.md).
 
-We recommend using an agent to explore the codebase and understand its architecture.
+Use an agent to explore the architecture.
 
 ## Cordis
 
@@ -106,7 +106,7 @@ turn/end
 
 `turn/*`, `step/*`, `system/message`, `user/message`, `assistant/message`, `assistant/attempt`, and `tool/*` are durable session events; the rest are live extension points across three domains. `agent/assistant-stream` publishes process-local start, transient chunk, and end frames. The loop commits the complete compact stream as one message or log-only attempt before a committed end frame, and the Web Session-follow adapter is the live event's only remote consumer.
 
-[Agent](../packages/core/agent/README.md) owns required-source admission, reorder and wake ([decision](../.agents/notes/implemented/architecture/2026-10-03-required-input-admission.md)). AgentLoop preserves original required-policy attribution at durable message append while retaining pre-step content transformations ([contract](../packages/core/agent-loop/README.md#understand-the-implementation); [decision](../.agents/notes/implemented/feature/2026-10-03-session-discussion-ui.md)).
+[Agent](../packages/core/agent/README.md) owns admission, ordering and wake ([decision](../.agents/notes/implemented/architecture/2026-10-03-required-input-admission.md)). AgentLoop guards policies, restores unstarted deferrals and retains attribution ([contract](../packages/core/agent-loop/README.md#understand-the-implementation)).
 
 `agent/pre-step`, `agent/request`, `llm/stream`, and the three `tools/*` events are waterfalls, whose listeners must call `next()` to delegate; `agent/turn-stopping` is serial and has no `next()`.
 

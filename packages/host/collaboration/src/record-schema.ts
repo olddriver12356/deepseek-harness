@@ -18,6 +18,9 @@ const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER)
 const timestamp = z.iso.datetime()
 const grantsSchema = z.strictObject({ snapshot: z.boolean(), follow: z.boolean() }).readonly()
 
+/** Bounded public delivery diagnostics; resolver exception bodies never enter shared records. */
+export const deliveryReasonSchema = z.enum(['recipient-missing', 'recipient-unavailable', 'recipient-not-ordinary', 'input-refused'])
+
 /** Display data contains no capability or participant role. */
 export const registrationSchema = z.strictObject({ sessionId: sessionIdSchema, title: z.string(), cwd: z.string().min(1) }).readonly()
 /** Pair grants never authorize task execution or another pair. */
@@ -35,6 +38,7 @@ export const outboxSchema = z.strictObject({
   sender: sessionIdSchema, recipient: sessionIdSchema, text: z.string(),
   state: z.enum(['queued', 'admitted', 'cancelled', 'failed']),
   activationReserved: z.literal(true).optional(),
+  deliveryReason: deliveryReasonSchema.optional(),
 }).refine(value => value.sender !== value.recipient, 'sender and recipient must differ').readonly()
 /** Journal actors come from the adapter, outside request JSON. */
 export const actorSchema = z.discriminatedUnion('kind', [
@@ -54,17 +58,18 @@ export const discussionOperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('enqueue'), message: outboxSchema }),
   z.strictObject({ kind: z.literal('reserve-activation'), messageId: peerMessageIdSchema }),
   z.strictObject({ kind: z.literal('admit'), messageId: peerMessageIdSchema }),
-  z.strictObject({ kind: z.literal('settle'), messageId: peerMessageIdSchema, state: z.enum(['cancelled', 'failed']) }),
+  z.strictObject({ kind: z.literal('delivery-status'), messageId: peerMessageIdSchema, deliveryReason: deliveryReasonSchema.optional() }),
+  z.strictObject({ kind: z.literal('settle'), messageId: peerMessageIdSchema, state: z.enum(['cancelled', 'failed']), deliveryReason: deliveryReasonSchema.optional() }),
 ]).readonly()
 /** Monotonic journal with complete operation data for authoritative auditing. */
 export const journalSchema = z.strictObject({
   revision: count.min(1), actor: actorSchema,
-  operation: z.enum(['register', 'connect', 'add-peer', 'disconnect', 'pause', 'grants', 'budget', 'enqueue', 'reserve-activation', 'admit', 'settle']),
+  operation: z.enum(['register', 'connect', 'add-peer', 'disconnect', 'pause', 'grants', 'budget', 'enqueue', 'reserve-activation', 'admit', 'delivery-status', 'settle']),
   data: discussionOperationSchema, timestamp,
 }).superRefine((entry, ctx) => {
   const kind = entry.data.kind
   const expected = kind === 'enqueue' ? 'session'
-    : kind === 'reserve-activation' || kind === 'admit' || kind === 'settle' ? 'system' : 'human'
+    : kind === 'reserve-activation' || kind === 'admit' || kind === 'delivery-status' || kind === 'settle' ? 'system' : 'human'
   if (entry.actor.kind !== expected
     || entry.data.kind === 'enqueue' && entry.actor.kind === 'session' && entry.actor.sessionId !== entry.data.message.sender
     || entry.data.kind === 'add-peer' && entry.actor.kind === 'human' && entry.actor.sessionId !== entry.data.connection.sessions[0]) {

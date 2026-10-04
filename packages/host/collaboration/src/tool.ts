@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import { requireCollaborationAuthority } from './authority.ts'
 import { sendPeerRequestSchema } from './messages.ts'
+import { deliveryReasonSchema } from './record-schema.ts'
 import type {} from './index.ts'
 /** Loader plugin name. */
 export const name = 'collaboration-tools'
@@ -51,6 +52,7 @@ export function apply(ctx: Context): void {
               sender: { type: 'string', required: true }, recipient: { type: 'string', required: true }, text: { type: 'string', required: true },
               state: { type: 'string', required: true, enum: ['queued', 'admitted', 'cancelled', 'failed'] },
               activationReserved: { type: 'boolean', const: true },
+              deliveryReason: { type: 'string', enum: deliveryReasonSchema.options },
             },
           } },
         },
@@ -63,8 +65,9 @@ export function apply(ctx: Context): void {
       const view = await ctx.collaborationRemote.snapshot({ sessionId: agent.session.id })
       return { revision: view.revision, registrations: [...view.registrations],
         connections: view.connections.map(row => ({ ...row, sessions: [...row.sessions] })),
-        messages: view.outbox.map(({ activationReserved, ...row }) => ({ ...row,
-          ...(activationReserved === undefined ? {} : { activationReserved }) })) }
+        messages: view.outbox.map(({ activationReserved, deliveryReason, ...row }) => ({ ...row,
+          ...(activationReserved === undefined ? {} : { activationReserved }),
+          ...(deliveryReason === undefined ? {} : { deliveryReason }) })) }
     },
     presentCall: args => ({ card: 'generic', title: 'Peer discussion status', kind: 'read', rawInput: args }),
     presentResult: (_args, result) => ({ card: 'generic', title: 'Peer discussion status', content: result.content }),

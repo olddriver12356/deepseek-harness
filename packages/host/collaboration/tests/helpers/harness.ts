@@ -114,6 +114,8 @@ export interface CollaborationHarness {
   storedEvents(): Promise<readonly SessionEvent[]>
   /** Dispose only the collaboration plugin, leaving the rest of the runtime running. */
   unloadCollaboration(): Promise<void>
+  /** Remount the original production collaboration Loader entry. */
+  remountCollaboration(): Promise<void>
   dispose(): Promise<void>
 }
 
@@ -294,6 +296,11 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
       async unloadCollaboration() {
         const entry = [...ctx.loader.entries()].find(candidate => candidate.options.name === 'collaboration')
         await entry?.fiber?.dispose()
+      },
+      async remountCollaboration() {
+        const entry = [...ctx.loader.entries()].find(candidate => candidate.options.name === 'collaboration')!
+        await entry.init()
+        await ctx.loader.await()
       },
       async dispose() {
         try { await ctx.fiber.dispose() } finally { await rm(workspace, { recursive: true, force: true }) }
