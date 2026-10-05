@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { get } from 'node:http'
 import type { IncomingHttpHeaders } from 'node:http'
 import { resolveExampleLaunch } from '@deepseek-ai/dsh-loader-smoke'
+import { materializeProfilePatch } from '@deepseek-ai/dsh-session-snapshot'
 import ts from 'typescript'
 import { expect } from 'vitest'
 import type { TestContext } from 'vitest'
@@ -19,18 +20,33 @@ const repoRoot = fileURLToPath(new URL('../../../../../../', import.meta.url))
 /** Live process whose IPC observer reports independently collected runtime state. */
 interface DefaultWeb {
   url: string
+  root: string
   request: (command: 'roster' | 'mount-experimental' | 'mount-experimental-entry') => Promise<RuntimeRoster>
+}
+
+/** Explicit test-owned additions to the shipped Web profile. */
+export interface WebProcessOptions {
+  /** Existing test-owned root, retained between fully stopped profile launches. The caller owns removal. */
+  readonly root?: string
+  /** Ordered overlays resolved from their owning package installations. */
+  readonly patches?: readonly string[]
+  /** Invocation-only configuration for this isolated process. */
+  readonly env?: NodeJS.ProcessEnv
 }
 
 /**
  * Boot the built Web profile under plain Node and dispose it to quiescence after an assertion callback.
  * @param test - owning Vitest case, including its timeout, cancellation, and cleanup hooks.
  * @param inspect - assertions against the running process and its ephemeral loopback URL.
+ * @param options - optional overlays and isolated environment configuration.
  */
-export async function withDefaultWeb(test: TestContext, inspect: (app: DefaultWeb) => Promise<void>): Promise<void> {
-  const root = await mkdtemp(join(tmpdir(), 'dsh-web-default-isolation-'))
+export async function withDefaultWeb(
+  test: TestContext, inspect: (app: DefaultWeb) => Promise<void>, options: WebProcessOptions = {},
+): Promise<void> {
+  const root = options.root ?? await mkdtemp(join(tmpdir(), 'dsh-web-default-isolation-'))
   let removal: Promise<void> | undefined
-  const removeRoot = (): Promise<void> => removal ??= rm(root, { recursive: true, force: true })
+  const removeRoot = (): Promise<void> => removal ??= options.root === undefined
+    ? rm(root, { recursive: true, force: true }) : Promise.resolve()
   test.onTestFinished(removeRoot)
   try {
     await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }) + '\n')
@@ -50,19 +66,21 @@ export async function withDefaultWeb(test: TestContext, inspect: (app: DefaultWe
       name: pathToFileURL(join(root, 'fixtures/runtime-roster-observer.js')).href,
       config: { negativeControl: pathToFileURL(join(repoRoot, 'packages/experimental/client-ui-agent-team/lib/index.js')).href },
     }] }]) + '\n')
+    const patches = (options.patches ?? []).map((source, index) => materializeProfilePatch(source, root, 'web', root, index))
     const launch = resolveExampleLaunch({
       srcBin: join(repoRoot, 'apps/cli/src/bin.ts'),
       mode: 'lib',
-      configArgs: ['--profile', 'web', '--patch', patch, '--host', '127.0.0.1', '--port', '0', '--no-open'],
+      configArgs: ['--profile', 'web', ...patches.flatMap(path => ['--patch', path]), '--patch', patch, '--host', '127.0.0.1', '--port', '0', '--no-open'],
       env: {
         NODE_OPTIONS: undefined,
         NODE_PATH: undefined,
         TSX_TSCONFIG_PATH: undefined,
-        DSH_HOME: join(root, 'home'),
+        DSH_HOME: join(root, '.dsh'),
         DSH_AGENTS_HOME: join(root, '.agents'),
         DSH_TELEMETRY_DISABLED: '1',
         DEEPSEEK_API_KEY: 'keyless-default-web-no-call',
         NODE_NO_WARNINGS: '1',
+        ...options.env,
       },
     })
     test.signal.throwIfAborted()
@@ -143,9 +161,11 @@ export async function withDefaultWeb(test: TestContext, inspect: (app: DefaultWe
         test.signal.throwIfAborted()
         if (exited) throw new Error(`Web exited before readiness\n${stdout}\n${stderr}`)
         return /dsh web: (http:\/\/[^\s]+)/u.exec(stdout)?.[1]
-      }, { timeout: test.task.timeout }).toBeDefined()
+      }, { timeout: Math.floor(test.task.timeout / 2) }).toBeDefined().catch((error: unknown) => {
+        throw new Error(`Web profile did not report readiness\n${stdout}\n${stderr}`, { cause: error })
+      })
       const url = /dsh web: (http:\/\/[^\s]+)/u.exec(stdout)![1]!
-      await inspect({ url, request })
+      await inspect({ url, root, request })
     } finally {
       const result = await close()
       test.signal.removeEventListener('abort', abort)

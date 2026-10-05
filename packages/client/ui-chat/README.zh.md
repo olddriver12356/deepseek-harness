@@ -96,3 +96,5 @@ Chat 会在历史前插与 renderer 重新挂载时恢复语义锚点。没有�
 </details>
 
 **运行时不变式：** 不发布伴生入口。Conversation 与 slot 注册已经强制 Chat target 一致。
+
+自定义 attributed input renderer 通过 `ctx.chatInputs.excludeSource(kind)` 提供可逆的 source-kind ownership。Generic input Definition 在 roster 变化时重建，避免自定义 node 重复出现。Contribution 卸载后按照持久化 recorded source 恢复 generic context，普通 human message 保留原有展示。Registry rebuild 在正在卸载的 contributor effect 之外执行，并在 Chat 卸载时停止。

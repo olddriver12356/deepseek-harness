@@ -240,6 +240,16 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_host_collaboration["host-collaboration"]
+  svc_collaborationStore["ctx.collaborationStore<br/>Committed discussion aggregate"]
+  svc_collaborationMailbox["ctx.collaborationMailbox<br/>Durable Peer discussion delivery"]
+  svc_collaborationRemote["ctx.collaborationRemote<br/>Human discussion controls and Peer views"]
+  pkg_client_ui_collaboration["client-ui-collaboration"]
+  pkg_host_experts["host-experts"]
+  svc_experts["ctx.experts<br/>Human-authored Expert catalog"]
+  pkg_client_ui_experts["client-ui-experts"]
+  pkg_peer_inbox["peer-inbox"]
+  svc_peerInbox["ctx.peerInbox<br/>Explicit Peer Inbox transport"]
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -288,9 +298,13 @@ flowchart LR
   pkg_fs_sandbox --> svc_fs
   pkg_fs_ssh --> svc_fs
   pkg_goal --> svc_goals
+  pkg_host_collaboration --> svc_collaborationMailbox
+  pkg_host_collaboration --> svc_collaborationRemote
+  pkg_host_collaboration --> svc_collaborationStore
   pkg_host_directory_picker --> svc_directoryPicker
   pkg_host_directory_picker_browse --> svc_directoryPicker
   pkg_host_directory_picker_native --> svc_directoryPicker
+  pkg_host_experts --> svc_experts
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
   pkg_invariants --> svc_invariants
@@ -305,6 +319,7 @@ flowchart LR
   pkg_mcp_client --> svc_mcpResources
   pkg_mcp_resources --> svc_mcpResources
   pkg_message_feedback --> svc_messageFeedback
+  pkg_peer_inbox --> svc_peerInbox
   pkg_permission_presets --> svc_permissionPresets
   pkg_plan_mode --> svc_planMode
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
@@ -392,6 +407,9 @@ flowchart LR
   svc_browserUse --> pkg_experimental_browser_use_playwright_mcp
   svc_browserUse --> pkg_experimental_browser_use_stagehand_native
   svc_clientModules --> pkg_client_hmr
+  svc_collaborationMailbox --> pkg_host_collaboration
+  svc_collaborationRemote --> pkg_client_ui_collaboration
+  svc_collaborationStore --> pkg_host_collaboration
   svc_compaction --> pkg_compaction_basic
   svc_computerUse --> pkg_experimental_computer_use_cua_driver_mcp
   svc_computerUse --> pkg_experimental_computer_use_cua_driver_native
@@ -402,6 +420,7 @@ flowchart LR
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
   svc_directoryPicker --> pkg_api_workspace_controller
   svc_dynamicCordisRunner --> pkg_tool_cordis
+  svc_experts --> pkg_client_ui_experts
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
   svc_fs --> pkg_tool_fs
@@ -417,6 +436,7 @@ flowchart LR
   svc_llm --> pkg_compaction_basic
   svc_lsp --> pkg_tool_lsp
   svc_mcpResources --> pkg_mcp_resources
+  svc_peerInbox --> pkg_peer_inbox
   svc_ptcRuntime --> pkg_tools
   svc_ptcRuntime --> pkg_workflow_ptc
   svc_sandbox --> pkg_bash_sandbox
@@ -587,5 +607,10 @@ flowchart LR
 | `ctx.lsp` | `seam` | [`lsp`](../packages/lsp/lsp) | [`lsp-stdio`](../packages/lsp/lsp-stdio) | [`tool-lsp`](../packages/lsp/tool-lsp) | - | Provider registration and selection plus normalized query execution over exactly four operations; the seam offers no protocol escape hatch, so a backend translates into the normalized request and result. |
 | `ctx.dynamicCordisRunner` | `core` | [`cordis-host-runner`](../packages/extensions/cordis-host-runner) | - | [`tool-cordis`](../packages/extensions/tool-cordis) | - | Owns the in-memory definition registry, the vm sandbox for host halves, and the request-run round trip; browser pages reach the same service over the wire through its remote namespace. |
 | `ctx.cordisInspect` | `core` | [`cordis-host-runner`](../packages/extensions/cordis-host-runner) | - | [`tool-cordis`](../packages/extensions/tool-cordis) | - | Registers host inspect providers, mirrors the client provider manifest, and routes client queries through the dynamic Cordis transport. |
+| `ctx.collaborationStore` | `core` | [`host-collaboration`](../packages/host/collaboration) | - | [`host-collaboration`](../packages/host/collaboration) | - | Owns bounded connection, grant, outbox and request receipt state with committed revision checks. |
+| `ctx.collaborationMailbox` | `core` | [`host-collaboration`](../packages/host/collaboration) | - | [`host-collaboration`](../packages/host/collaboration) | - | Appends attributed inputs through the admission policy and reconciles restart delivery from committed state. |
+| `ctx.collaborationRemote` | `core` | [`host-collaboration`](../packages/host/collaboration) | - | [`client-ui-collaboration`](../packages/client/ui-collaboration) | - | Separates authenticated human mutations and management views from grant-filtered Peer observations. |
+| `ctx.experts` | `core` | [`host-experts`](../packages/host/experts) | - | [`client-ui-experts`](../packages/client/ui-experts) | - | Persists Expert definitions and prepares explicitly delegated subagent work through existing dispatch owners. |
+| `ctx.peerInbox` | `core` | [`peer-inbox`](../packages/host/peer-inbox) | - | [`peer-inbox`](../packages/host/peer-inbox) | - | Receives addressed inputs through its authenticated HTTP route and existing Agent Inbox admission. |
 
 Maintenance mode: hybrid: services are discovered from Cordis declarations; interface/implementation/consumer roles are classified in `scripts/gen-doc-graphs.ts` with a completeness guard.

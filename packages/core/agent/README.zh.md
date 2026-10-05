@@ -68,6 +68,10 @@ await handle.agent.whenIdle()
 
 -----
 
+`AgentRegistry.registerInputPolicy(name, accepts)` 通过可逆的所有者 effect 注册同步输入判定函数。来源可通过 `requiredAdmissionPolicy` 要求该名称；没有注册时拒绝输入。循环保留原始要求，防止下游来源改写移除，并在提交模型输入之前再次检查。策略拒绝记录 blocked 回合并继续处理后续排队人工输入。普通人工来源不要求策略。`wake()` 不创建消息或权限，在 maintenance 期间保留已有工作；已卸载 Agent 或空 inbox 不执行工作。`Inbox.move(messageId, index)` 在同一列表内记录一次重排 splice，保留身份和内容，不发布 inserted/discarded 通知。
+
+策略返回 `true` 表示准入、`false` 表示拒绝、`'defer'` 表示在领取前保留待处理输入。driver 跳过延后的身份，同时保持就绪输入的顺序；只剩延后的发起输入时进入空闲，中性上下文本身不会启动这些工作。所有者在就绪条件变化后调用 `wake()`。实际领取和准备后请求检查必须得到 `true`；延后不授予模型输入权限。就绪检查与最终排空决定同步执行。
+
 <a id="understand-the-implementation"></a>
 ## 理解实现
 

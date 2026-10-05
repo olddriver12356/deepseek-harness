@@ -22,6 +22,12 @@ English | [中文](README.zh.md)
 
 -----
 
+Required source admission and pending-input wake/reorder semantics are owned by the [Agent API](../agent/README.md). The loop refuses absent policies after asynchronous request preparation, retaining original requirements for the active turn. This refusal reaches the existing pending-input drain; ordinary pre-step rejection retains its stopping behavior.
+
+An Agent-scoped executor guard checks retained required policies until the turn ends, including native and alternate execution after an in-flight response outlives its policy plugin. The scope owns disposal, and turn completion releases retained inputs so later human turns work normally. If an originally claimed input explicitly becomes deferred before its first durable user admission, the internal inbox restores its exact identity, content, list and original position through existing splices without insertion or cancellation notifications. Ready human input continues in FIFO order; a later owner wake resumes deferred work once.
+
+For each admitted input with an original required policy, the durable `user/message` keeps the earliest captured source for its exact message ID while retaining pre-step transformed content. Later source rewrites cannot turn Peer data into human input in either the actual reconstructed request or a truncated browser history page. Inputs without an original required policy remain unchanged; no Session field or format migration is added.
+
 <a id="use-this-package"></a>
 ## Use this package
 

@@ -420,8 +420,9 @@ export interface LaunchOptions {
 async function cleanupScaffoldWorld(ctx: Context, workspaceCwd: string, persistenceRoot: string): Promise<unknown[]> {
   const failures: unknown[] = []
   await Promise.resolve(ctx.fiber.dispose()).catch((error: unknown) => failures.push(error))
-  await rm(workspaceCwd, { recursive: true, force: true }).catch((error: unknown) => failures.push(error))
-  await rm(persistenceRoot, { recursive: true, force: true }).catch((error: unknown) => failures.push(error))
+  await rm(workspaceCwd, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }).catch((error: unknown) => failures.push(error))
+  await rm(persistenceRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
+    .catch((error: unknown) => failures.push(error))
   return failures
 }
 

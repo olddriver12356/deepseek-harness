@@ -11,7 +11,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { isPromise } from 'node:util/types'
 import { scopeTarget } from '@deepseek-ai/dsh-scope'
 import type { Scoped } from '@deepseek-ai/dsh-scope'
-import type { SessionEvent, SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
+import type { SessionEvent, SessionId, SessionLogOffset, UserMessage } from '@deepseek-ai/dsh-session'
 import type { Agent } from './types.ts'
 import type { AgentOptions, SessionStartSource } from './runtime-types.ts'
 
@@ -243,6 +243,47 @@ interface FactorySlot {
  * nested lineage that starts an owning-fiber unload is excluded from its own drain.
  */
 export class AgentRegistry extends Service {
+  private readonly inputPolicies = new Map<string, (agent: Agent, message: UserMessage) => boolean | 'defer'>()
+
+  /**
+   * Register an input policy required by durable message attribution. Missing policies deny admission.
+   * @param name - exact source requirement identifier.
+   * @param accepts - synchronous check; defer preserves pending input until a later wake, true admits, false refuses.
+   * @returns reversible registration owned by the caller's fiber.
+   */
+  registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean | 'defer'): () => void {
+    // oxlint-disable-next-line typescript/no-misused-promises -- synchronous cleanup; preserve the exact owner effect disposer
+    return this.ctx.effect(() => {
+      if (this.inputPolicies.has(name)) throw new Error(`input policy "${name}" is already registered`)
+      this.inputPolicies.set(name, accepts)
+      return () => { this.inputPolicies.delete(name) }
+    }, `agents.inputPolicy(${name})`)
+  }
+
+  /**
+   * Check every original and rewritten input immediately before admitting a request.
+   * @param agent - actual recipient.
+   * @param messages - original claimed inputs and downstream admitted inputs.
+   * @returns false if a required policy is absent, disposed, or refuses any input.
+   */
+  acceptsInput(agent: Agent, messages: readonly UserMessage[]): boolean {
+    return messages.every((message) => {
+      const name = message.source.requiredAdmissionPolicy
+      return name === undefined || this.inputPolicies.get(name)?.(agent, message) === true
+    })
+  }
+
+  /**
+   * Check whether pending input must remain unclaimed until a later owner wake.
+   * @param agent - actual recipient.
+   * @param message - pending input, before any durable removal.
+   * @returns true only when its installed policy explicitly defers; missing policies remain a refusal.
+   */
+  defersInput(agent: Agent, message: UserMessage): boolean {
+    const name = message.source.requiredAdmissionPolicy
+    return name !== undefined && this.inputPolicies.get(name)?.(agent, message) === 'defer'
+  }
+
   private store = new Map<SessionId, AgentEntry>()
   private factory: FactorySlot | undefined
   private readonly initiators = new AsyncLocalStorage<Agent | undefined>()

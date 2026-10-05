@@ -43,6 +43,7 @@ import {
   stabilizeFixtureMessageIds,
   stabilizeRefreshLog,
   tokenizeSessionFixtureCwd,
+  materializeSessionFixtureCwd,
   writesCurrentSessionFixtures,
   materializeProfilePatch,
   formatSystemPromptSnapshot,
@@ -321,15 +322,14 @@ function contextOf(logs: readonly { content: string; header: Record<string, unkn
   return {
     sessionIds: logs.flatMap(log => typeof log.header.id === 'string' ? [log.header.id] : []),
     cwd,
+    cwdAliases: [JSON.stringify(cwd).slice(1, -1)],
   }
 }
 
 function contextOfContents(contents: readonly string[]): NormalizeContext {
   const headers = contents.map(content => JSON.parse(content.slice(0, content.indexOf('\n'))) as Record<string, unknown>)
-  return {
-    sessionIds: headers.flatMap(header => typeof header.id === 'string' ? [header.id] : []),
-    cwd: typeof headers[0]?.cwd === 'string' ? headers[0].cwd : '\0no-cwd\0',
-  }
+  return contextOf(headers.map(header => ({ content: '', header })),
+    typeof headers[0]?.cwd === 'string' ? headers[0].cwd : '\0no-cwd\0')
 }
 
 async function fixtureFiles(scenario: CorpusScenario): Promise<string[]> {
@@ -346,7 +346,7 @@ async function hydrateReplayFixtures(scenario: CorpusScenario, cwd: string): Pro
   await mkdir(root, { recursive: true })
   return Promise.all((await fixtureFiles(scenario)).map(async (source) => {
     const destination = join(root, basename(source))
-    await writeFile(destination, (await readFile(source, 'utf8')).replaceAll('{{cwd}}', cwd))
+    await writeFile(destination, materializeSessionFixtureCwd(await readFile(source, 'utf8'), cwd))
     return destination
   }))
 }
@@ -842,7 +842,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
 
       if (recording) {
         expectedContents = redactSessionSnapshotIds(stabilizeFixtureMessageIds(
-          ordered.map(log => scrubSessionSnapshot(tokenizeSessionFixtureCwd(log.content))),
+          ordered.map(log => scrubSessionSnapshot(tokenizeSessionFixtureCwd(log.content, actualContext.cwdAliases))),
           expectedContents,
         ))
       }
@@ -860,6 +860,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           if (existing === undefined) throw new Error(`no fixture for persisted log ${index}`)
           return scrubSessionSnapshot(tokenizeSessionFixtureCwd(
             stabilizeRefreshLog(log.content, existing, replacements, actualContext),
+            actualContext.cwdAliases,
           ))
         })
         expectedContents = redactSessionSnapshotIds(stabilizeFixtureMessageIds(refreshed, expectedContents))
@@ -887,6 +888,14 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         for (const [index, content] of expectedContents.entries()) {
           expect(sessionHeaderVersion(content, writerSnapshotName(index))).toBe(SESSION_FORMAT_VERSION)
         }
+      }
+
+      // Verify real file effects independently of later transcript and platform header comparisons.
+      if (scenario.manifest.workspace?.final === true) {
+        const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))
+        expect(finalWorkspace, `${scenario.name}: complete final workspace`).toEqual(expectedWorkspace)
+      } else {
+        expect(finalWorkspace, `${scenario.name}: a changed workspace requires workspace.final`).toEqual(initialWorkspace)
       }
 
       // Persisted transcripts match the committed fixtures.
@@ -938,12 +947,6 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       }
 
       // Wire-shape invariants that must hold in every mode.
-      if (scenario.manifest.workspace?.final === true) {
-        const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))
-        expect(finalWorkspace, `${scenario.name}: complete final workspace`).toEqual(expectedWorkspace)
-      } else {
-        expect(finalWorkspace, `${scenario.name}: a changed workspace requires workspace.final`).toEqual(initialWorkspace)
-      }
       if (assertions.expectedTools !== undefined) {
         const parent = ordered[0]
         if (parent === undefined) throw new Error(`${scenario.name} has no parent session log`)

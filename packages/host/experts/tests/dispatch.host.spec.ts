@@ -112,6 +112,7 @@ describe('runExpertTool', () => {
       subagents: { startContinuable: async (spec: Parameters<ExpertToolContext['subagents']['startContinuable']>[0]) => {
         started.push(spec)
         if (fail) throw new Error('startup failed')
+        if (spec.childId === undefined) throw new Error('dispatch must allocate a child id before startup')
         return { childId: spec.childId }
       } },
     }

@@ -18,7 +18,7 @@
   - img
   - img
   - text: System prompt
-- text: "Use only Cordis tools. First call cordis_inspect_self with no arguments. Then call cordis_define with plugin kind \"new\", idPrefix \"snap\", name \"snapshot noop\", purpose \"does nothing, for the snapshot\", code.host exactly \"return { name: \\\"snapshot-noop\\\", apply(ctx) {} }\" and code.client exactly \"return { inject: [\\\"slots\\\"], apply(ctx) { ctx.slots.register({ name: \\\"shell.overlay\\\", id: \\\"snapshot-probe\\\" }, () => React.createElement(\\\"div\\\", { \\\"data-snapshot-probe\\\": \\\"loaded\\\" })) } }\". Read its returned pluginId and packageId, then call cordis_run with those exact IDs and mode \"run\". After the run request returns, reply exactly CORDIS_UI_READY and stop. {{clock}}"
+- text: "You Use only Cordis tools. First call cordis_inspect_self with no arguments. Then call cordis_define with plugin kind \"new\", idPrefix \"snap\", name \"snapshot noop\", purpose \"does nothing, for the snapshot\", code.host exactly \"return { name: \\\"snapshot-noop\\\", apply(ctx) {} }\" and code.client exactly \"return { inject: [\\\"slots\\\"], apply(ctx) { ctx.slots.register({ name: \\\"shell.overlay\\\", id: \\\"snapshot-probe\\\" }, () => React.createElement(\\\"div\\\", { \\\"data-snapshot-probe\\\": \\\"loaded\\\" })) } }\". Read its returned pluginId and packageId, then call cordis_run with those exact IDs and mode \"run\". After the run request returns, reply exactly CORDIS_UI_READY and stop. {{clock}}"
 - button "Copy":
   - img
 - button "3 tool calls" [expanded]:
@@ -28,6 +28,7 @@
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
+- text: Agent
 - button "Think I will inspect the current Session's dynamic Cordis Plugins before defining the snapshot Package.":
   - img
   - img
@@ -36,6 +37,7 @@
   - img
   - img
   - text: "Tool call cordis_inspect_self · {}"
+- text: Agent
 - button "Think No dynamic Plugins are present, so I will define the requested Host and Client Package.":
   - img
   - img
@@ -52,6 +54,7 @@
   - code: "return { name: \"snapshot-noop\", apply(ctx) {} }"
 - text: Result Defined snap-1/pkg-1 (snapshot noop); it is not running yet. Use cordis_run to activate this Package. Run controls live in the Cordis panel above Settings
 - button "Inspect"
+- text: Agent
 - button "Think The Host returned snap-1/pkg-1, so I will request its first activation.":
   - img
   - img
@@ -59,7 +62,7 @@
 - img
 - text: Run Cordis Plugin snap-1 · pkg-1 Ready
 - button "Inspect"
-- text: snap-1/pkg-1 is awaiting user approval (run-1).
+- text: snap-1/pkg-1 is awaiting user approval (run-1). Agent
 - button "Think The activation request has been submitted, so I will return the requested readiness marker.":
   - img
   - img
@@ -80,6 +83,7 @@
 - button "Thought for a while":
   - text: Thought for a while
   - img
+- text: Agent
 - paragraph: The Cordis Plugin is running.
 - button "Copy":
   - img
@@ -92,7 +96,7 @@
 - button "Ran for {{duration}}":
   - img
   - text: Ran for {{duration}}
-- text: {{clock}} Use only Cordis tools. Call cordis_stop with pluginId "snap-1". After it succeeds, reply exactly CORDIS_UI_DONE and stop. {{clock}}
+- text: {{clock}} You Use only Cordis tools. Call cordis_stop with pluginId "snap-1". After it succeeds, reply exactly CORDIS_UI_DONE and stop. {{clock}}
 - button "Copy":
   - img
 - button "1 tool call" [expanded]:
@@ -101,7 +105,7 @@
 - img
 - text: Stop Cordis Plugin snap-1
 - button "Inspect"
-- text: Dynamic Plugin snap-1 is stopped; its definition and versions remain.
+- text: Dynamic Plugin snap-1 is stopped; its definition and versions remain. Agent
 - paragraph: CORDIS_UI_DONE
 - button "Copy":
   - img

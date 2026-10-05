@@ -48,15 +48,16 @@ type Phase =
   }
   | { kind: 'running'; abort: AbortController; turn: number; step: number; wakeRequested: boolean }
 
-type StepEndReason = Extract<TurnEndReason, { kind: 'completed' | 'max-tokens' }>
+type StepEndReason = Extract<TurnEndReason, { kind: 'completed' | 'max-tokens' | 'blocked' }>
 
 type PreparedStep =
-  | { kind: 'reject' }
+  | { kind: 'reject'; inputPolicyDenied?: true }
   | {
     kind: 'enter'
     messages: UserMessage[]
     startsRequestSeries?: true
     assembly: PromptAssembly
+    claimed: readonly UserMessage[]
   }
 
 /** Remove adapter-derived values before plugins propose the next request config. */
@@ -70,8 +71,11 @@ function requestProposal(header: EpochHeader): LlmCallConfig {
 
 /** Drives one session through turn and step boundaries. */
 export class ReactLoopAgent implements Agent {
+  private turnPolicyInputs: readonly UserMessage[] = []
+  private unstartedInputs: Array<{ target: InboxTarget; index: number; message: UserMessage }> = []
   readonly inbox: ReactLoopInbox
   private phase: Phase
+  private closed = false
   private activityDone: Promise<void> = Promise.resolve()
 
   /** The agent-scoped registration boundary; the lifecycle owner unwinds it after the driver exits. */
@@ -103,6 +107,8 @@ export class ReactLoopAgent implements Agent {
     this.dispatch = agentEvents(loopCtx, this)
     this.scope = createScope(loopCtx, this)
     this.ctx = this.scope.ctx
+    this.ctx.tools.guard(() => this.loopCtx.agents.acceptsInput(this, this.turnPolicyInputs)
+      ? undefined : 'Required input policy is unavailable or refuses execution for this turn.')
     this.inbox = new ReactLoopInbox(this.ctx.sessionProjections, session, this.dispatch)
     /* v8 ignore next -- the loop registers its own turnBoundary unit, so the key is always present */
     const lastTurn = this.loopCtx.sessionProjections.stateOf(session, 'turnBoundary')?.lastTurn ?? 0
@@ -138,6 +144,10 @@ export class ReactLoopAgent implements Agent {
     this.send(input, 'next-turn', true)
   }
 
+  wake(): void {
+    if (!this.closed && this.inbox.hasPending) this.wakeDriver()
+  }
+
   steer(input: UserMessage): void {
     this.send(input, 'next-step', true)
   }
@@ -147,6 +157,7 @@ export class ReactLoopAgent implements Agent {
   }
 
   cancel(cause: AgentCancelCause, options: CancelOptions = {}): void {
+    if (cause.kind === 'disposed') this.closed = true
     if (!options.keepInbox) {
       this.inbox.clear()
       if (this.phase.kind !== 'idle') this.phase.wakeRequested = false
@@ -186,6 +197,7 @@ export class ReactLoopAgent implements Agent {
    *   the inbox insertion so a reentrant cancel cannot reclassify it.
    */
   private wakeDriver(wakeAfterAbort = false): void {
+    if (this.closed) return
     if (this.phase.kind !== 'idle') {
       // Maintenance and aborted drivers cannot deliver the wake: latch it for
       // replay at convergence. Live drivers claim queued work themselves;
@@ -196,6 +208,7 @@ export class ReactLoopAgent implements Agent {
       }
       return
     }
+    if (this.inbox.hasPending && !this.hasReadyInput()) return
     const driver = Promise.withResolvers<void>()
     this.activityDone = driver.promise
     this.setPhase({
@@ -242,7 +255,12 @@ export class ReactLoopAgent implements Agent {
     /* v8 ignore next -- private callers establish the running phase before proposing a step */
     if (this.phase.kind !== 'running') throw new Error(`agent "${this.id}": pre-step outside running phase`)
     const signal = this.phase.abort.signal
-    const claimed = this.inbox.claim(target, position.turn)
+    const pending = (['next-step', ...(target === 'next-turn' ? ['next-turn'] as const : [])] as const)
+      .flatMap(list => (list === 'next-step' ? this.inbox.nextStep : this.inbox.nextTurn)
+        .map((message, index) => ({ target: list, index, message })))
+    const claimed = this.inbox.claim(target, position.turn, message => !this.loopCtx.agents.defersInput(this, message))
+    const requiredInputs = claimed.filter(message => message.source.requiredAdmissionPolicy !== undefined)
+    this.unstartedInputs.push(...pending.filter(input => requiredInputs.some(message => message.id === input.message.id)))
     const assembly = await this.loopCtx.systemPrompt.assemble(assembleContextFor(this, signal))
     signal.throwIfAborted()
     const sections = renderContextSections(assembly)
@@ -256,7 +274,13 @@ export class ReactLoopAgent implements Agent {
     )
     signal.throwIfAborted()
     if (decision.kind === 'reject') return decision
-    return { ...decision, assembly }
+    this.turnPolicyInputs = [...this.turnPolicyInputs, ...requiredInputs, ...decision.messages]
+      .filter(message => message.source.requiredAdmissionPolicy !== undefined)
+    if (!this.loopCtx.agents.acceptsInput(this, this.turnPolicyInputs)) {
+      this.restoreDeferredInput()
+      return { kind: 'reject', inputPolicyDenied: true }
+    }
+    return { ...decision, assembly, claimed: this.turnPolicyInputs }
   }
 
   /** Whether the assembled tool schemas differ from the logged request header's. */
@@ -272,6 +296,7 @@ export class ReactLoopAgent implements Agent {
       this.throwError(new Error(`agent "${this.id}": turn without driver reservation`))
     }
     const phase = this.phase
+    if (this.inbox.hasPending && !this.hasReadyInput()) return false
     const { signal } = phase.abort
     signal.throwIfAborted()
     const turn = phase.turn + 1
@@ -281,6 +306,8 @@ export class ReactLoopAgent implements Agent {
       this.throwError(error)
     }
     phase.turn = turn
+    this.turnPolicyInputs = []
+    this.unstartedInputs = []
     let turnEnds: TurnEndReason | null = null
     let target: InboxTarget = 'next-turn'
     try {
@@ -290,6 +317,7 @@ export class ReactLoopAgent implements Agent {
         const decision = await this.preStep(target, { turn, step })
         if (decision.kind === 'reject') {
           turnEnds = { kind: 'blocked' }
+          if (decision.inputPolicyDenied === true) break
           return false
         }
         if (turnEnds && decision.messages.length === 0) break
@@ -313,11 +341,11 @@ export class ReactLoopAgent implements Agent {
           this.session.append('step/end', { turn, step })
         }
         signal.throwIfAborted()
-        if (turnEnds && this.inbox.nextStep.length === 0) {
+        if (turnEnds && !this.hasReadyStepInput()) {
           await this.dispatch.serial('agent/turn-stopping', { turn, signal })
           signal.throwIfAborted()
         }
-        if (turnEnds && this.inbox.nextStep.length === 0) break
+        if (turnEnds && !this.hasReadyStepInput()) break
         target = 'next-step'
       }
     } catch (error: unknown) {
@@ -338,16 +366,35 @@ export class ReactLoopAgent implements Agent {
       try {
         // oxlint-disable-next-line typescript/no-non-null-assertion -- every exit assigns a turn ending
         this.session.append('turn/end', { turn, reason: turnEnds! })
+        this.turnPolicyInputs = []
+        this.unstartedInputs = []
       } catch (error: unknown) {
         this.throwError(error)
       }
     }
-    if (!this.inbox.hasPending) return false
+    if (!this.hasReadyInput()) return false
     phase.abort = new AbortController()
     // A fresh controller makes a latch set on the old one stale: the live driver claims the queue itself.
     phase.wakeRequested = false
     phase.step = 0
     return true
+  }
+
+  private hasReadyStepInput(): boolean {
+    return this.inbox.nextStep.some(message => !this.loopCtx.agents.defersInput(this, message))
+  }
+
+  private restoreDeferredInput(): void {
+    this.inbox.restore(this.unstartedInputs.filter(input => this.loopCtx.agents.defersInput(this, input.message)))
+    this.unstartedInputs = []
+  }
+
+  private hasReadyInput(): boolean {
+    const ready = (message: UserMessage) => !this.loopCtx.agents.defersInput(this, message)
+    if (this.inbox.nextTurn.some(ready)) return true
+    const deferredTurn = [...this.inbox.nextTurn, ...this.inbox.nextStep].some(message => !ready(message))
+    return this.inbox.nextStep.some(message => ready(message)
+      && (!deferredTurn || (message.source.kind !== 'plugin' && message.source.kind !== 'tool')))
   }
 
   private async step(decision: Extract<PreparedStep, { kind: 'enter' }>): Promise<StepEndReason | null> {
@@ -361,6 +408,10 @@ export class ReactLoopAgent implements Agent {
     let firstAttempt = true
     while (true) {
       const { config, preparedCall } = await this.prepareRequest(turn, step, signal)
+      if (!this.loopCtx.agents.acceptsInput(this, [...decision.claimed, ...decision.messages])) {
+        this.restoreDeferredInput()
+        return { kind: 'blocked' }
+      }
       const startsRequestSeries = firstAttempt && decision.startsRequestSeries === true
       const commits = this.systemPrompt.project(renderedPrompt, {
         inHistory: preparedCall?.systemPromptUpdate === 'in-history',
@@ -372,9 +423,17 @@ export class ReactLoopAgent implements Agent {
         this.session.append('system/message', { turn, step, message }, intent)
       }
       if (firstAttempt) {
-        for (const message of decision.messages) {
-          this.session.append('user/message', message, { surfaceOp: 'append' })
+        const originalSources = new Map<UserMessage['id'], UserMessage['source']>()
+        for (const input of decision.claimed) {
+          if (input.source.requiredAdmissionPolicy !== undefined && !originalSources.has(input.id)) {
+            originalSources.set(input.id, input.source)
+          }
         }
+        for (const message of decision.messages) {
+          const source = originalSources.get(message.id)
+          this.session.append('user/message', source === undefined ? message : { ...message, source }, { surfaceOp: 'append' })
+        }
+        this.unstartedInputs = []
       }
       firstAttempt = false
       const request = this.buildRequest(config, preparedCall, assembly.tools, startsRequestSeries, signal)

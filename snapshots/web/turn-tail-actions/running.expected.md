@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: Begin your reply with the plain sentence "Reading the workspace now." as text, and in that same message call the bash tool with the command "echo alpha". After the tool result, reply with the single word DONE and stop. {{clock}}
+- text: You Begin your reply with the plain sentence "Reading the workspace now." as text, and in that same message call the bash tool with the command "echo alpha". After the tool result, reply with the single word DONE and stop. {{clock}}
 - button "Copy":
   - img
 - tooltip "Copy"
@@ -22,6 +22,7 @@
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
+- text: Agent
 - button "Think The user wants me to begin with \"Reading the workspace now.\" and call bash with \"echo alpha\" in the same message. Then after the tool result, reply with the single word DONE and stop.":
   - img
   - img
@@ -31,8 +32,12 @@
   - img
   - img
   - text: Bash Print alpha to stdout
+- text: Agent
 - paragraph: partial
 - status: Deep diving...
+- status "Task running":
+  - text: Task running
+  - 'group "Current send mode: queue"': ↳ Steer current taskQueue next
 - textbox "Message or run a task, / commands, @ files or sessions"
 - button "Add files or run commands":
   - img

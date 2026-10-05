@@ -35,6 +35,7 @@ kind: "package-group"
 | [`open-in-app/`](open-in-app/README.zh.md) | 在已安装应用中打开 workspace 目录的应用探测、图标与启动路由 | 消费 `ctx.webServer` |
 | [`plugin-inventory/`](plugin-inventory/README.zh.md) | 当前 Loader 条目的只读投影 | Remote `pluginInventory/list` |
 | [`knowledge/`](knowledge/README.zh.md) | 对话保存与上游 Agent Layer 阅读 | Remote `knowledge` |
+| [`collaboration/`](collaboration/README.zh.md) | 显式启用的独立 Session 讨论、持久连接授权及邮箱 | `ctx.collaborationStore`, `ctx.collaborationMailbox`, `ctx.collaborationRemote` |
 
 -----
 
@@ -45,6 +46,7 @@ kind: "package-group"
 
 - [HTTP 服务器子系统](../../docs/subsystems/web-server.zh.md)——webserver 的路由、匹配顺序与配置。
 - [工作区子系统](../../docs/subsystems/workspace.zh.md)——目录选择器所喂给的工作区记录。
+- [独立 Session 协作](../../docs/subsystems/collaboration.zh.md) 记录讨论请求、授权、持久发件箱及恢复约定。
 - [Web 配置树启动与传输分层](../../.agents/notes/implemented/architecture/2026-07-24-web-config-tree-boot-and-transport-layering.zh.md)——Web 传输各层的所有权。
 
 <a id="dev-note"></a>

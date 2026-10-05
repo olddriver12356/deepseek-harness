@@ -125,7 +125,10 @@ export function boundContextSummary(summary: string): string {
 }
 
 /** Any known message source, derived from {@link MessageSourceMap}; switch on `kind` and fall through unknowns (merge-extensible). */
-export type MessageSource = MessageSourceMap[keyof MessageSourceMap]
+export type MessageSource = MessageSourceMap[keyof MessageSourceMap] & {
+  /** Required synchronous Agent input policy; absence of its registration refuses admission, including after restore. */
+  readonly requiredAdmissionPolicy?: string
+}
 
 /** One immutable message representation shared by delivery, durable history, and model requests. */
 export interface Message {

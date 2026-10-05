@@ -440,6 +440,61 @@ export interface Config {
 
 Source: [`packages/client/hmr/src/index.ts:31`](../packages/client/hmr/src/index.ts)
 
+<a id="deepseek-aidsh-client-ui-personal"></a>
+
+## `@deepseek-ai/dsh-client-ui-personal`
+
+Requires: `webServer` · `connection` · `tools`
+
+```ts config-catalog
+export interface Config {
+  /** Local Bok runtime Vault, separate from the user's knowledge Vault. */
+  vaultRoot: string
+  /** Private root outside the runtime Vault and any Git repository. */
+  personalCoreRoot: string
+  /** Python 3 executable. */
+  python: string
+  /** Whole worker request deadline in milliseconds. */
+  requestTimeoutMs: number
+  /** Owner's Vault; quick notes write exclusively to Ideas/Draft. */
+  ideasVaultRoot: string
+  /** Explicit opt-in and resource limits for automatic observation of new conversations. */
+  observer?: ObserverConfig | undefined
+  /** Resource limits for the owner-started understanding tidy-up; absent disables it. */
+  compaction?: CompactionConfig | undefined
+}
+
+/** Deployment limits for opt-in background conversation observation. */
+export interface ObserverConfig {
+  /** Whether new human turns enter the background observation queue. */
+  enabled: boolean
+  /** Maximum complete human-message bytes retained for one observed turn. */
+  maxInputBytes: number
+  /** Maximum model output tokens requested for one observation. */
+  maxOutputTokens: number
+  /** Maximum complete model response bytes accepted for one observation. */
+  maxOutputBytes: number
+  /** Maximum queued turns awaiting background observation. */
+  maxPendingTurns: number
+  /** Maximum observation request lifetime in milliseconds. */
+  timeoutMs: number
+}
+
+/** Deployment limits for one owner-started understanding tidy-up. */
+export interface CompactionConfig {
+  /** Largest serialized model request, in bytes; larger claim sets are refused before dispatch. */
+  maxInputBytes: number
+  /** Output token limit sent with the model request. */
+  maxOutputTokens: number
+  /** Largest streamed text and reasoning output, in bytes, before the request is cancelled. */
+  maxOutputBytes: number
+  /** Whole proposal deadline in milliseconds. */
+  timeoutMs: number
+}
+```
+
+Source: [`packages/client/ui-personal/src/index.ts:18`](../packages/client/ui-personal/src/index.ts)
+
 <a id="deepseek-aidsh-compaction-basic"></a>
 
 ## `@deepseek-ai/dsh-compaction-basic`
@@ -995,6 +1050,31 @@ export interface RuntimeConfig {
 
 Source: [`packages/host/apps/src/runtime.ts:7`](../packages/host/apps/src/runtime.ts)
 
+<a id="deepseek-aidsh-host-collaboration"></a>
+
+## `@deepseek-ai/dsh-host-collaboration`
+
+Requires: `tools` · `storageDomain` · `agents` · `sessionProjections` · `sessionPersistence`
+
+```ts config-catalog
+/** Validated plugin configuration. */
+export interface Config {
+  /** Reviewed read and collaboration tools a peer turn may call; other names fail loading. */
+  readonly peerDiscussionTools: Array<(typeof peerDiscussionToolNames)[number]>
+  /** Explicit limits for complete durable aggregate bytes, journal entries, and retry receipts. */
+  readonly stateLimits: StateLimits
+  /** Complete framed content UTF-8 bound; deployment must choose an explicit positive value. */
+  readonly maxFramedMessageBytes: number
+}
+
+/** Validated persisted-size and retention capacities. */
+export type StateLimits = z.infer<typeof stateLimitsSchema>
+```
+
+Depends on: `z` (`zod`)
+
+Source: [`packages/host/collaboration/src/index.ts:43`](../packages/host/collaboration/src/index.ts)
+
 <a id="deepseek-aidsh-host-directory-picker-browse"></a>
 
 ## `@deepseek-ai/dsh-host-directory-picker-browse`
@@ -1013,14 +1093,22 @@ Source: [`packages/host/directory-picker-browse/src/index.ts:181`](../packages/h
 
 ## `@deepseek-ai/dsh-host-experts`
 
+Requires: `agents` · `tools` · `sessionProjections`
+
 ```ts config-catalog
 export interface Config {
   /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
   readonly vaultRoot: string
+  /** Maximum concurrent expert delegations for one parent Agent. */
+  readonly maxConcurrent?: number
+  /** Tool names that an expert may execute without write authorization. */
+  readonly readOnlyTools?: string[]
+  /** Tool names that require the expert's write authorization. */
+  readonly writeTools?: string[]
 }
 ```
 
-Source: [`packages/host/experts/src/index.ts:16`](../packages/host/experts/src/index.ts)
+Source: [`packages/host/experts/src/index.ts:19`](../packages/host/experts/src/index.ts)
 
 <a id="deepseek-aidsh-host-frontend-static"></a>
 
@@ -1075,7 +1163,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/host/news/src/index.ts:22`](../packages/host/news/src/index.ts)
+Source: [`packages/host/news/src/index.ts:21`](../packages/host/news/src/index.ts)
 
 <a id="deepseek-aidsh-host-open-in-app"></a>
 
@@ -1815,6 +1903,42 @@ export interface Config {
 ```
 
 Source: [`packages/feedback/message-feedback/src/index.ts:40`](../packages/feedback/message-feedback/src/index.ts)
+
+<a id="deepseek-aidsh-peer-inbox"></a>
+
+## `@deepseek-ai/dsh-peer-inbox`
+
+Requires: `agents`
+
+```ts config-catalog
+/** Explicit deployment policy; loading this plugin enables the separate listener. */
+export interface Config {
+  /** Environment variable containing an ASCII bearer secret of at least 32 bytes. */
+  tokenEnv: string
+  /** IPv4 loopback port; zero requests an OS-assigned port. */
+  port: number
+  /** Absolute owner-private directory, never shared between running plugin instances. */
+  ledgerDir: string
+  /** Exact live root Session IDs the trusted owner relay may address. */
+  allowedSessionIds: string[]
+  /** Maximum complete incoming JSON bytes. */
+  maxRequestBytes: number
+  /** Maximum complete response JSON bytes; at least 512. */
+  maxOutputBytes: number
+  /** Maximum simultaneous HTTP requests. */
+  maxConcurrentRequests: number
+  /** Maximum queued or running relay requests. */
+  maxPendingRequests: number
+  /** Lifetime request tombstone capacity; entries are never evicted automatically. */
+  maxLedgerEntries: number
+  /** Maximum HTTP request lifetime in milliseconds. */
+  requestTimeoutMs: number
+  /** Maximum observation time per admitted request in milliseconds. */
+  executionTimeoutMs: number
+}
+```
+
+Source: [`packages/host/peer-inbox/src/index.ts:13`](../packages/host/peer-inbox/src/index.ts)
 
 <a id="deepseek-aidsh-permission-presets"></a>
 
@@ -3752,6 +3876,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-attachment` ([`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-brand-official` ([`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-chat` ([`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-collaboration` ([`packages/client/ui-collaboration/src/index.ts`](../packages/client/ui-collaboration/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-commands` ([`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-conversation` ([`packages/client/ui-conversation/src/index.ts`](../packages/client/ui-conversation/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-cordis` ([`packages/extensions/ui-cordis/src/index.ts`](../packages/extensions/ui-cordis/src/index.ts))
@@ -3877,6 +4002,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-client-ui-slots` ([`packages/client/ui-slots/src/index.ts`](../packages/client/ui-slots/src/index.ts))
 - `@deepseek-ai/dsh-client-web` ([`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts))
 - `@deepseek-ai/dsh-cmdline` ([`packages/boot/cmdline/src/index.ts`](../packages/boot/cmdline/src/index.ts))
+- `@deepseek-ai/dsh-collaboration` ([`packages/bundle/collaboration/src/index.ts`](../packages/bundle/collaboration/src/index.ts))
 - `@deepseek-ai/dsh-deque` ([`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-profile` ([`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-web-profile` ([`packages/experimental/agent-team-web-profile/src/index.ts`](../packages/experimental/agent-team-web-profile/src/index.ts))
@@ -3904,6 +4030,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-session-format-v0-to-v1` ([`packages/session/session-format-v0-to-v1/src/index.ts`](../packages/session/session-format-v0-to-v1/src/index.ts))
 - `@deepseek-ai/dsh-session-format-v1-to-v2` ([`packages/session/session-format-v1-to-v2/src/index.ts`](../packages/session/session-format-v1-to-v2/src/index.ts))
 - `@deepseek-ai/dsh-session-format-v2-to-v3` ([`packages/session/session-format-v2-to-v3/src/index.ts`](../packages/session/session-format-v2-to-v3/src/index.ts))
+- `@deepseek-ai/dsh-session-format-v3-to-v4` ([`packages/session/session-format-v3-to-v4/src/index.ts`](../packages/session/session-format-v3-to-v4/src/index.ts))
 - `@deepseek-ai/dsh-session-snapshot` ([`packages/test-support/session-snapshot/src/index.ts`](../packages/test-support/session-snapshot/src/index.ts))
 - `@deepseek-ai/dsh-session-telemetry` ([`packages/session/session-telemetry/src/index.ts`](../packages/session/session-telemetry/src/index.ts))
 - `@deepseek-ai/dsh-session-title-llm` ([`packages/session/session-title-llm/src/index.ts`](../packages/session/session-title-llm/src/index.ts))

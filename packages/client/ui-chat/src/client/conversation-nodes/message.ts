@@ -1,9 +1,11 @@
 import type { Context } from '@deepseek-ai/cordis'
+import type { MessageSource } from '@deepseek-ai/dsh-llm'
 import type {
   ContextMessageNode, ConversationNodeDefinition, SteeringMessageNode, UserMessageNode,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { isAppendSurfaceEvent, isReplacementSurfaceEvent } from '@deepseek-ai/dsh-session/surface'
 import type { InboxState } from './inbox.ts'
+import { ChatInputs } from '../input-contributions.ts'
 import { chatNode } from './common.ts'
 import { contextForm, contextProducer } from './event-projection.ts'
 
@@ -22,6 +24,7 @@ interface ReferencedSteeringMessageNode extends SteeringMessageNode {
 }
 
 type MessageNode = ReferencedUserMessageNode | ReferencedSteeringMessageNode | ContextMessageNode
+type MessageState = { readonly node: MessageNode; readonly excluded: boolean }
 
 declare module '../contract/chat-nodes.ts' {
   interface ChatNodeDataMap {
@@ -41,52 +44,63 @@ function isCompactionCheckpoint(event: Parameters<ConversationNodeDefinition['ma
 }
 
 /** User, steering, and injected-context message classification Definition. */
-export const messageDefinition: ConversationNodeDefinition<MessageNode> = {
-  kind: 'input-message',
-  target: 'chat',
-  match: event => event.type === 'user/message'
+export const messageDefinition = createMessageDefinition(() => false)
+
+/**
+ * Classify ordinary inputs while preserving generic fallback when their custom renderer is absent.
+ * @param excluded - installed custom source-kind ownership.
+ * @returns the generic input Definition with original-source fallback.
+ */
+export function createMessageDefinition(excluded: (source: MessageSource['kind']) => boolean): ConversationNodeDefinition<MessageState> {
+  return {
+    kind: 'input-message',
+    target: 'chat',
+    match: event => event.type === 'user/message'
     && isAppendSurfaceEvent(event)
     && !isCompactionCheckpoint(event)
-    ? { id: String(event.data.id), role: 'start' }
-    : null,
-  start: (_context, match, reader) => {
-    if (match.event.type !== 'user/message') throw new Error('input-message start requires user/message')
-    const event = match.event
-    if (event.data.source.kind !== 'user') {
-      return {
-        kind: 'context',
-        seq: event.seq,
-        time: event.time,
-        content: event.data.content,
-        source: event.data.source,
-        producer: contextProducer(event.data.source),
-        form: contextForm(event.data.source),
+      ? { id: String(event.data.id), role: 'start' }
+      : null,
+    start: (_context, match, reader) => {
+      if (match.event.type !== 'user/message') throw new Error('input-message start requires user/message')
+      const event = match.event
+      const source = event.data.source
+      if (event.data.source.kind !== 'user') {
+        return { excluded: excluded(source.kind), node: {
+          kind: 'context',
+          seq: event.seq,
+          time: event.time,
+          content: event.data.content,
+          source: event.data.source,
+          producer: contextProducer(event.data.source),
+          form: contextForm(event.data.source),
+        } }
       }
-    }
-    const claimed = reader.previous<InboxState>('inbox-next-step')
-      ?.state.currentClaimed.has(String(event.data.id)) === true
-    return claimed
-      ? {
-        kind: 'steering',
-        messageId: event.data.id,
-        seq: event.seq,
-        time: event.time,
-        content: event.data.content,
-        source: event.data.source,
-      }
-      : {
-        kind: 'user',
-        seq: event.seq,
-        time: event.time,
-        content: event.data.content,
-        source: event.data.source,
-      }
-  },
-  update: context => context.state,
-  buildViewNode: (context) => {
-    if (context.state === undefined) return null
-    return chatNode(context, context.state.kind, context.state.seq, context.state)
-  },
+      const claimed = reader.previous<InboxState>('inbox-next-step')
+        ?.state.currentClaimed.has(String(event.data.id)) === true
+      return { excluded: excluded(source.kind), node: claimed
+        ? {
+          kind: 'steering',
+          messageId: event.data.id,
+          seq: event.seq,
+          time: event.time,
+          content: event.data.content,
+          source: event.data.source,
+        }
+        : {
+          kind: 'user',
+          seq: event.seq,
+          time: event.time,
+          content: event.data.content,
+          source: event.data.source,
+        } }
+    },
+    update: context => context.state,
+    buildViewNode: (context) => {
+      if (context.state === undefined) return null
+      if (context.state.excluded) return null
+      return chatNode(context, context.state.node.kind, context.state.node.seq, context.state.node)
+    },
+  }
 }
 
 /**
@@ -94,5 +108,22 @@ export const messageDefinition: ConversationNodeDefinition<MessageNode> = {
  * @param ctx - owning UI Conversation context.
  */
 export function registerMessageConversationNode(ctx: Context): void {
-  ctx.uiConversation.events.register(messageDefinition)
+  const inputs = new ChatInputs(ctx)
+  const registry = ctx.uiConversation.events
+  let disposeDefinition = registry.register(createMessageDefinition(source => inputs.excludes(source)))
+  ctx.effect(() => {
+    let stopped = false
+    let queued = false
+    const stop = inputs.subscribe(() => {
+      if (queued || stopped) return
+      queued = true
+      queueMicrotask(() => {
+        queued = false
+        if (stopped) return
+        disposeDefinition()
+        disposeDefinition = registry.register(createMessageDefinition(source => inputs.excludes(source)))
+      })
+    })
+    return () => { stopped = true; stop(); disposeDefinition() }
+  }, 'ui-chat: input contribution rebuild')
 }

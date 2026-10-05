@@ -22,7 +22,6 @@
             "type": "string",
             "description": "Wider sandbox mode for this complete program execution; requires justification and approval.",
             "enum": [
-              "workspace-write",
               "danger-full-access"
             ]
           },

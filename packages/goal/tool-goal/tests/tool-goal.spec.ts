@@ -54,7 +54,7 @@ function stubAgent(rawId: string, supplied?: Session, suppliedCtx?: Context): St
     get status() { return status },
     ctx: agentCtx,
     send: () => {},
-    followup: () => {},
+    wake: () => {}, followup: () => {},
     steer: () => ({ outcome: Promise.resolve({ status: 'rejected' as const }) }),
     inject(input) {
       this.inbox.append('next-step', input)

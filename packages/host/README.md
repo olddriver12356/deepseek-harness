@@ -35,6 +35,7 @@ The packages below play the host roles; each package README owns its contract an
 | [`open-in-app/`](open-in-app/README.md) | Application probe, icon, and launch routes opening the workspace directory in an installed application | consumes `ctx.webServer` |
 | [`plugin-inventory/`](plugin-inventory/README.md) | Read-only projection of current Loader entries | Remote `pluginInventory/list` |
 | [`knowledge/`](knowledge/README.md) | Conversation capture and upstream Agent Layer reads | Remote `knowledge` |
+| [`collaboration/`](collaboration/README.md) | Opt-in independent Session discussion, durable pair grants and mailbox | `ctx.collaborationStore`, `ctx.collaborationMailbox`, `ctx.collaborationRemote` |
 
 -----
 
@@ -45,6 +46,7 @@ Start with the subsystem references for the transport and the workspace records,
 
 - [HTTP server subsystem](../../docs/subsystems/web-server.md) — the webserver's routes, matching order, and config.
 - [Workspace subsystem](../../docs/subsystems/workspace.md) — the workspace records the directory picker feeds.
+- [Independent Session collaboration](../../docs/subsystems/collaboration.md) records the discussion requests, grants, durable outbox, and recovery contract.
 - [Web config-tree boot and transport layering](../../.agents/notes/implemented/architecture/2026-07-24-web-config-tree-boot-and-transport-layering.md) — ownership of the Web transport layers.
 
 <a id="dev-note"></a>

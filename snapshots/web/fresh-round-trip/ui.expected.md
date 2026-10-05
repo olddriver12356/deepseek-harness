@@ -14,12 +14,13 @@
   - img
   - img
   - text: System prompt
-- text: "Use the bash tool to run exactly: echo WEB_E2E_OK. Then reply with the single word DONE and stop. {{clock}}"
+- text: "You Use the bash tool to run exactly: echo WEB_E2E_OK. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy":
   - img
 - button "1 tool call":
   - text: 1 tool call
   - img
+- text: Agent
 - paragraph: DONE
 - button "Copy":
   - img

@@ -26,6 +26,7 @@ try {
     session,
     inbox: unsupportedInbox(),
     status: 'idle',
+    wake: () => {},
     send: () => {},
     followup: () => {},
     steer: () => {},

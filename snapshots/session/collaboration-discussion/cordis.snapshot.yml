@@ -1,0 +1,19 @@
+# Keyless replay over the opt-in collaboration composition and test model patch.
+- id: llm-deepseek
+  disabled: true
+- insert:
+    - id: llm-replay
+      name: '@deepseek-ai/dsh-llm-replay'
+      config:
+        providers:
+          - id: deepseek-official
+            name: DeepSeek
+            models:
+              - id: discussion-alpha
+                reasoningEfforts: [off]
+                defaultReasoningEffort: off
+                defaultMaxTokens: 256000
+              - id: discussion-beta
+                reasoningEfforts: [off]
+                defaultReasoningEffort: off
+                defaultMaxTokens: 256000

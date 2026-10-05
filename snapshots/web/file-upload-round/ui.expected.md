@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: poem.txt TXT 16B
+- text: You poem.txt TXT 16B
 - button "reference-1.png, click to view original":
   - img "reference-1.png"
 - text: Read the attached file with the read tool, reply with exactly the single word it contains, and stop. {{clock}}
@@ -23,6 +23,7 @@
 - button "1 tool call":
   - text: 1 tool call
   - img
+- text: Agent
 - paragraph: UPLOAD_ROUND_OK
 - button "Copy":
   - img
@@ -42,7 +43,7 @@
 - textbox "Message or run a task, / commands, @ files or sessions"
 - button "Add files or run commands":
   - img
-- 'button "Access mode, current: Workspace Write"': Workspace Write
+- 'button "Access mode, current: Workspace Write"'
 - button "Select model, current DeepSeek-V4-Flash-Vision-Exp, reasoning effort high":
   - text: DeepSeek-V4-Flash-Vision-Exp high
   - img

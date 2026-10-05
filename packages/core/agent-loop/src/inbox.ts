@@ -106,13 +106,35 @@ export class ReactLoopInbox implements InboxContract {
    * Remove and return the complete batch proposed for one step.
    * @param target - whether this boundary also consumes one queued turn.
    * @param turn - turn that will own the claimed batch.
+   * @param ready - synchronous admission readiness; false retains the exact pending identity.
    * @returns next-step input followed by the queued turn, when requested.
    */
-  claim(target: InboxTarget, turn: number): UserMessage[] {
-    const claimed = this.mutate('next-step', 0, this.nextStep.length, [], false)
-    if (target === 'next-turn') claimed.push(...this.mutate('next-turn', 0, 1, [], false))
+  claim(target: InboxTarget, turn: number, ready: (message: UserMessage) => boolean = () => true): UserMessage[] {
+    const claimed: UserMessage[] = []
+    for (let index = 0; index < this.nextStep.length;) {
+      const pending = this.nextStep
+      let end = index
+      while (end < pending.length) {
+        const candidate = pending[end]
+        if (candidate === undefined || !ready(candidate)) break
+        end++
+      }
+      if (end > index) claimed.push(...this.mutate('next-step', index, end - index, [], false))
+      else index++
+    }
+    if (target === 'next-turn') {
+      const index = this.nextTurn.findIndex(ready)
+      if (index >= 0) claimed.push(...this.mutate('next-turn', index, 1, [], false))
+    }
     for (const message of claimed) this.dispatch.emit('agent/inbox/claimed', { message, turn })
     return claimed
+  }
+
+  /** Restore deferred, unstarted claims at their original positions without new lifecycle notifications. */
+  restore(inputs: readonly { target: InboxTarget; index: number; message: UserMessage }[]): void {
+    for (const input of [...inputs].sort((a, b) => a.index - b.index)) {
+      this.mutate(input.target, input.index, 0, [input.message], false, false)
+    }
   }
 
   /**
@@ -143,6 +165,22 @@ export class ReactLoopInbox implements InboxContract {
     const location = this.locate(messageId)
     if (location === undefined) return false
     this.splice(location.target, location.index, 1, [newMessage])
+    return true
+  }
+
+  /** Move one pending identity without reporting cancellation or a new insertion. */
+  move(messageId: MessageId, index: number): boolean {
+    const location = this.locate(messageId)
+    if (location === undefined) return false
+    const inbox = this.current()[location.target]
+    const destination = Math.max(0, Math.min(Number.isNaN(index) ? 0 : Math.trunc(index), inbox.length - 1))
+    if (destination === location.index) return true
+    const start = Math.min(destination, location.index)
+    const end = Math.max(destination, location.index)
+    const reordered = inbox.slice(start, end + 1)
+    const moved = reordered.splice(location.index - start, 1)
+    reordered.splice(destination - start, 0, ...moved)
+    this.mutate(location.target, start, reordered.length, reordered, false, false)
     return true
   }
 
@@ -204,6 +242,7 @@ export class ReactLoopInbox implements InboxContract {
     deleteCount: number,
     inserted: UserMessage[],
     discardRemoved: boolean,
+    notifyInserted = true,
   ): UserMessage[] {
     const state = this.current()
     const inbox = state[target]
@@ -239,9 +278,7 @@ export class ReactLoopInbox implements InboxContract {
     if (discardRemoved) {
       for (const message of removed) this.dispatch.emit('agent/inbox/discarded', { message })
     }
-    for (const message of event.data.inserted) {
-      this.dispatch.emit('agent/inbox/inserted', { message })
-    }
+    if (notifyInserted) for (const message of event.data.inserted) this.dispatch.emit('agent/inbox/inserted', { message })
     return removed
   }
 }

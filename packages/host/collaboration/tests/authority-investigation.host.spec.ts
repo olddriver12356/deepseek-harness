@@ -51,7 +51,7 @@ it('the authenticated Gateway accepts a same-user shell cookie forged from a tes
   const route = routes.find(candidate => candidate.path === '/api')!
   const server = createServer((req, res) => { void route.handler(req, res) })
   cleanups.push(() => new Promise<void>((resolve, reject) => {
-    server.close(error => error === undefined ? resolve() : reject(error))
+    server.close((error) => { if (error === undefined) resolve(); else reject(error) })
     server.closeAllConnections()
   }))
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))

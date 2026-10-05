@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
+- text: You Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
@@ -22,9 +22,10 @@
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
 - group:
+  - text: ↻
   - status: Retried model request (2/2) · {{duration}}
 - status:
-  - text: This turn failedupstream 503
+  - text: ✕ This turn failedupstream 503
   - code: SERVER
 - textbox "Message or run a task, / commands, @ files or sessions"
 - button "Add files or run commands":

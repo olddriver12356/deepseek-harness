@@ -255,6 +255,24 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Agent service (`ctx.agents`): tracks live agents and carries the initiating Agent through one process-local asynchronous driver chain. Agent *creation* is provided by whichever plugin implements the AgentFactory (`@deepseek-ai/dsh-agent-loop`), registered via setFactory.\n\nInitiator methods provide same-process causal attribution only. Ambient presence is neither liveness proof nor authorization; subjects and owners remain explicit, as does identity at worker, process, persistence, and wire boundaries. Returned Promise boundaries drain during teardown, except a nested lineage that starts an owning-fiber unload is excluded from its own drain.',
     methods: [
       {
+        signature: 'registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean | \'defer\'): () => void',
+        description: 'Register an input policy required by durable message attribution. Missing policies deny admission.',
+        parameters: [{ name: 'name', description: 'exact source requirement identifier.' }, { name: 'accepts', description: 'synchronous check; defer preserves pending input until a later wake, true admits, false refuses.' }],
+        returns: 'reversible registration owned by the caller\'s fiber.',
+      },
+      {
+        signature: 'acceptsInput(agent: Agent, messages: readonly UserMessage[]): boolean',
+        description: 'Check every original and rewritten input immediately before admitting a request.',
+        parameters: [{ name: 'agent', description: 'actual recipient.' }, { name: 'messages', description: 'original claimed inputs and downstream admitted inputs.' }],
+        returns: 'false if a required policy is absent, disposed, or refuses any input.',
+      },
+      {
+        signature: 'defersInput(agent: Agent, message: UserMessage): boolean',
+        description: 'Check whether pending input must remain unclaimed until a later owner wake.',
+        parameters: [{ name: 'agent', description: 'actual recipient.' }, { name: 'message', description: 'pending input, before any durable removal.' }],
+        returns: 'true only when its installed policy explicitly defers; missing policies remain a refusal.',
+      },
+      {
         signature: 'currentInitiator(): Agent | undefined',
         description: 'Read the Agent that initiated the inherited asynchronous driver chain. Use this optional form for logging, tracing, metrics, or host attribution that also supports agentless calls. When a parent creates a child, setup reports the causal parent while the setup callback\'s Agent parameter identifies the child.',
         parameters: [],
@@ -657,6 +675,122 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'collaborationMailbox',
+    summary: 'Host-owned durable discussion service; acceptance never promises assistant completion.',
+    description: 'Host-owned durable discussion service; acceptance never promises assistant completion.',
+    methods: [
+      {
+        signature: 'async send(caller: Agent, request: SendPeerRequest): Promise<MessageReceipt>',
+        description: 'Accept one sender-scoped request durably before scheduling any recipient activity.',
+        parameters: [{ name: 'caller', description: 'actual live Host Agent from tool execution, never model JSON.' }, { name: 'request', description: 'strict peer message data with stable retry identity.' }],
+        returns: 'original durable acceptance receipt, also on identical retries.',
+      },
+      {
+        signature: 'recover(): void',
+        description: 'Reschedule committed pending work; callers need not supply or reconstruct message bodies.',
+        parameters: [],
+      },
+      {
+        signature: 'async whenSettled(): Promise<void>',
+        description: 'Drain the mailbox\'s currently scheduled delivery jobs.',
+        parameters: [],
+        returns: 'completion of currently scheduled mailbox work, excluding model execution.',
+      },
+      {
+        signature: 'async close(): Promise<void>',
+        description: 'Stop new admissions and release owned effects before draining delivery jobs.',
+        parameters: [],
+        returns: 'quiescence after stopping admission, unregistering effects, and draining owned delivery jobs.',
+      },
+    ],
+  },
+  {
+    key: 'collaborationRemote',
+    summary: 'Owns the generated collaboration Remote namespace; Connection authenticates its wire transport.',
+    description: 'Owns the generated collaboration Remote namespace; Connection authenticates its wire transport.',
+    methods: [
+      {
+        signature: '@Remote async addPeer(request: AddPeerRequest): Promise<CollaborationMutationResult>',
+        description: 'Register both ordinary Sessions and grant their bidirectional connection in one durable transition. Retries compare original caller intent before refreshing headers or generating another pair identity.',
+        parameters: [{ name: 'request', description: 'explicit UI disclosure, labels, observed workspaces, grants, budget, revision and retry key.' }],
+        returns: 'the original committed receipt, also for a concurrent identical retry.',
+      },
+      {
+        signature: '@Remote removePeer(request: PeerControlRequest): Promise<CollaborationMutationResult>',
+        description: 'Revoke the pair and cancel its unadmitted work in one durable transition; admitted work remains recorded.',
+        parameters: [{ name: 'request', description: 'owned pair, expected revision and stable request key.' }],
+        returns: 'original disconnect receipt; disconnection does not undo recipient input.',
+      },
+      {
+        signature: '@Remote pause(request: PeerControlRequest): Promise<CollaborationMutationResult>',
+        description: 'Stop new peer activations without revoking the pair\'s record-view grants.',
+        parameters: [{ name: 'request', description: 'owned pair, expected revision and stable request key.' }],
+        returns: 'original committed receipt.',
+      },
+      {
+        signature: '@Remote resume(request: PeerControlRequest): Promise<CollaborationMutationResult>',
+        description: 'Allow new peer activations within the existing explicit budget.',
+        parameters: [{ name: 'request', description: 'owned pair, expected revision and stable request key.' }],
+        returns: 'original committed receipt.',
+      },
+      {
+        signature: '@Remote budget(request: PeerBudgetRequest): Promise<CollaborationMutationResult>',
+        description: 'Replace the pair\'s activation limit without refunding already charged activations.',
+        parameters: [{ name: 'request', description: 'owned pair, total limit, expected revision and stable request key.' }],
+        returns: 'original committed receipt.',
+      },
+      {
+        signature: '@Remote async snapshot(request: CollaborationViewRequest): Promise<CollaborationSnapshot>',
+        description: 'Read only collaboration records for the viewer\'s pairs with snapshot grants; no Session log is read.',
+        parameters: [{ name: 'request', description: 'ordinary stored viewing Session.' }],
+        returns: 'a complete filtered committed view with its aggregate revision.',
+      },
+      {
+        signature: '@Remote async controlSnapshot(request: CollaborationViewRequest): Promise<CollaborationControlSnapshot>',
+        description: 'Read human-owned pair controls and explicitly shared discussion records, independent of peer grants. The same-user Host assumption does not provide action-authority isolation; no private Session log is read.',
+        parameters: [{ name: 'request', description: 'ordinary stored Session selected by the authenticated human UI.' }],
+        returns: 'one complete committed management view with current metadata observations.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *controlFollow(request: CollaborationViewRequest, signal: AbortSignal): AsyncIterable<CollaborationControlSnapshot>',
+        description: 'Stream complete human management views with the same record visibility as controlSnapshot.',
+        parameters: [{ name: 'request', description: 'ordinary stored viewer whose owned pairs define visibility.' }, { name: 'signal', description: 'Remote generation cancellation.' }],
+        returns: 'complete committed controls and shared records; no private history or task authority.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *follow(request: CollaborationViewRequest, signal: AbortSignal): AsyncIterable<CollaborationSnapshot>',
+        description: 'Stream an initial filtered snapshot and complete committed revision views; gaps require no authority cache. Slow readers coalesce pending views to the latest full snapshot. Disposal ends every active generation.',
+        parameters: [{ name: 'request', description: 'ordinary stored viewing Session; follow grants filter every item anew.' }, { name: 'signal', description: 'Remote generation cancellation.' }],
+        returns: 'complete snapshots of committed state only, including grant revocation and disconnection.',
+      },
+    ],
+  },
+  {
+    key: 'collaborationStore',
+    summary: 'Storage owner; consumers publish snapshots only from committed domain/changed events.',
+    description: 'Storage owner; consumers publish snapshots only from committed domain/changed events.',
+    methods: [
+      {
+        signature: 'read(): CollaborationState',
+        description: 'Read the authoritative immutable committed aggregate; no secondary cache exists.',
+        parameters: [],
+        returns: 'current state; reads reject after storage closes.',
+      },
+      {
+        signature: 'transact(expectedRevision: number, transform: (current: CollaborationState) => CollaborationState): Promise<CollaborationState>',
+        description: 'Serialize one synchronous pure transform with revision checking at its queue slot. Persistence failure leaves reads and notifications unchanged. Stale revisions reject before transformation. Consumers resolve actor-scoped retry receipts before calling, then reread after a concurrency conflict.',
+        parameters: [{ name: 'expectedRevision', description: 'aggregate revision observed by the caller.' }, { name: 'transform', description: 'pure operation producing the next state and one appended journal entry.' }],
+        returns: 'new state after durable commit and domain/changed publication.',
+      },
+      {
+        signature: 'close(): Promise<void>',
+        description: 'Reject new writes immediately, drain admitted updates, and release the domain handle.',
+        parameters: [],
+        returns: 'storage teardown completion; repeated calls share the domain\'s close promise.',
+      },
+    ],
+  },
+  {
     key: 'commands',
     summary: 'Human-command registry.',
     description: 'Human-command registry. Plain-context definitions are global; definitions registered through a command-injected child of an agent context shadow globals for that agent.',
@@ -871,6 +1005,43 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Create one child directory for a Remote caller\'s in-app browser.',
         parameters: [{ name: 'path', description: 'absolute existing parent directory.' }, { name: 'name', description: 'single non-blank path segment.' }],
         returns: 'the created directory\'s absolute path.',
+      },
+    ],
+  },
+  {
+    key: 'experts',
+    summary: 'Vault-backed Expert definitions and bounded parent-owned delegation admission.',
+    description: 'Vault-backed Expert definitions and bounded parent-owned delegation admission.',
+    methods: [
+      {
+        signature: 'reserveDelegation(parent: Agent, childId: SessionId, expert: ExpertRecord): () => void',
+        description: 'Reserve one child before publication; only a root Agent may delegate within its configured concurrency limit.',
+        parameters: [{ name: 'parent', description: 'live root Agent whose tools bound the expert\'s available tools.' }, { name: 'childId', description: 'child identity reserved before Agent creation.' }, { name: 'expert', description: 'stored Expert definition supplying access policy.' }],
+        returns: 'cleanup releasing startup admission only.',
+      },
+      {
+        signature: '@Remote(\'list\') list(): Promise<readonly ExpertRecord[]>',
+        description: 'Read stored Expert definitions without creating or resolving an Agent.',
+        parameters: [],
+        returns: 'current definitions from the configured Vault.',
+      },
+      {
+        signature: '@Remote(\'create\') create(request: ExpertCreateRequest): Promise<ExpertRecord>',
+        description: 'Persist a new Expert definition through the serialized mutation queue.',
+        parameters: [{ name: 'request', description: 'validated new definition.' }],
+        returns: 'the stored definition.',
+      },
+      {
+        signature: '@Remote(\'update\') update(request: ExpertUpdateRequest): Promise<ExpertRecord>',
+        description: 'Replace one stored Expert definition through the serialized mutation queue.',
+        parameters: [{ name: 'request', description: 'existing identity and replacement definition.' }],
+        returns: 'the stored definition.',
+      },
+      {
+        signature: '@Remote(\'delete\') async delete(request: ExpertDeleteRequest): Promise<ExpertDeleteValue>',
+        description: 'Remove one stored Expert definition through the serialized mutation queue.',
+        parameters: [{ name: 'request', description: 'identity to remove.' }],
+        returns: 'successful deletion acknowledgement after storage completes.',
       },
     ],
   },
@@ -1331,6 +1502,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Delete one item after checking its version; absence succeeds without an event.',
         parameters: [{ name: 'request', description: 'Session, message, and observed item version.' }],
         returns: 'the stable absent postcondition or an explicit failure.',
+      },
+    ],
+  },
+  {
+    key: 'peerInbox',
+    summary: 'Listener lifecycle and request observation; never creates, resumes, steers, or cancels an Agent.',
+    description: 'Listener lifecycle and request observation; never creates, resumes, steers, or cancels an Agent.',
+    methods: [
+      {
+        signature: 'port: number = 0',
+        description: 'Effective listening port, available after plugin activation.',
+        parameters: [],
       },
     ],
   },
@@ -3760,6 +3943,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AdapterRegistrationHandle {\n    (): void;\n    replace(providers: string[]): void;\n}',
   },
   {
+    name: 'AddPeerRequest',
+    declaration: 'export interface AddPeerRequest extends CollaborationMutationRequest {\n    readonly peerSessionId: SessionId;\n    readonly title: string;\n    readonly peerTitle: string;\n    readonly cwd: string;\n    readonly peerCwd: string;\n    readonly disclosureAccepted: true;\n    readonly grants: {\n        readonly snapshot: boolean;\n        readonly follow: boolean;\n    };\n    readonly activationLimit: number;\n}',
+  },
+  {
     name: 'AdmittedPromptContentPart',
     declaration: 'export type AdmittedPromptContentPart = {\n    readonly type: \'text\';\n    readonly text: string;\n} | {\n    readonly type: \'image\';\n    readonly attachment: ImageAttachmentRef;\n} | {\n    readonly type: \'file\';\n    readonly attachment: FileAttachmentRef;\n};',
   },
@@ -4008,6 +4195,34 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ClientArtifactBaseline {\n    readonly path: string;\n    readonly mtimeMs: number;\n    readonly size: number;\n}',
   },
   {
+    name: 'CollaborationControlSnapshot',
+    declaration: 'export interface CollaborationControlSnapshot extends CollaborationSnapshot {\n    readonly observations: readonly ParticipantObservation[];\n}',
+  },
+  {
+    name: 'CollaborationMutationRequest',
+    declaration: 'export interface CollaborationMutationRequest {\n    readonly sessionId: SessionId;\n    readonly expectedRevision: number;\n    readonly requestId: CollaborationRequestId;\n}',
+  },
+  {
+    name: 'CollaborationMutationResult',
+    declaration: 'export type CollaborationMutationResult = RequestReceipt[\'result\'];',
+  },
+  {
+    name: 'CollaborationRequestId',
+    declaration: 'export type CollaborationRequestId = Branded<\'CollaborationRequestId\'>;',
+  },
+  {
+    name: 'CollaborationSnapshot',
+    declaration: 'export interface CollaborationSnapshot {\n    readonly revision: number;\n    readonly registrations: readonly Registration[];\n    readonly connections: readonly Connection[];\n    readonly outbox: readonly OutboxMessage[];\n}',
+  },
+  {
+    name: 'CollaborationState',
+    declaration: 'export type CollaborationState = z.infer<typeof collaborationStateSchema>;',
+  },
+  {
+    name: 'CollaborationViewRequest',
+    declaration: 'export interface CollaborationViewRequest {\n    readonly sessionId: SessionId;\n}',
+  },
+  {
     name: 'CollectedOutput',
     declaration: 'export interface CollectedOutput {\n    text: string;\n    truncated: boolean;\n    spillPath?: string;\n}',
   },
@@ -4082,6 +4297,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ConfinedSandboxMode',
     declaration: 'export type ConfinedSandboxMode = Exclude<SandboxMode, \'danger-full-access\'>;',
+  },
+  {
+    name: 'Connection',
+    declaration: 'export type Connection = z.infer<typeof connectionSchema>;',
+  },
+  {
+    name: 'ConnectionId',
+    declaration: 'export type ConnectionId = Branded<\'CollaborationConnectionId\'>;',
   },
   {
     name: 'ContentBlockMap',
@@ -4370,6 +4593,38 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EpochHeader',
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    tools?: ToolSchema[];\n}',
+  },
+  {
+    name: 'ExpertCreateRequest',
+    declaration: 'export interface ExpertCreateRequest {\n    readonly expert: ExpertDraft;\n}',
+  },
+  {
+    name: 'ExpertDeleteRequest',
+    declaration: 'export interface ExpertDeleteRequest {\n    readonly id: string;\n}',
+  },
+  {
+    name: 'ExpertDeleteValue',
+    declaration: 'export interface ExpertDeleteValue {\n    readonly deleted: true;\n}',
+  },
+  {
+    name: 'ExpertDraft',
+    declaration: 'export interface ExpertDraft extends Omit<ExpertRecord, \'id\' | \'updatedAt\'> {\n}',
+  },
+  {
+    name: 'ExpertExecution',
+    declaration: 'export type ExpertExecution = \'conversational\' | \'delegated\';',
+  },
+  {
+    name: 'ExpertRecord',
+    declaration: 'export interface ExpertRecord {\n    readonly id: string;\n    readonly name: string;\n    readonly category: string;\n    readonly description: string;\n    readonly instructions: string;\n    readonly status: ExpertStatus;\n    readonly execution: ExpertExecution;\n    readonly model: string;\n    readonly reasoning: string;\n    readonly access?: \'read-only\' | \'write\';\n    readonly contextMode?: \'fresh\' | \'fork\';\n    readonly updatedAt: string;\n}',
+  },
+  {
+    name: 'ExpertStatus',
+    declaration: 'export type ExpertStatus = \'draft\' | \'approved\' | \'suspended\';',
+  },
+  {
+    name: 'ExpertUpdateRequest',
+    declaration: 'export interface ExpertUpdateRequest {\n    readonly id: string;\n    readonly expert: ExpertDraft;\n}',
   },
   {
     name: 'FeedbackCategory',
@@ -4868,8 +5123,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type MessageId = Branded<\'MessageId\'>;',
   },
   {
+    name: 'MessageReceipt',
+    declaration: 'export interface MessageReceipt {\n    readonly messageId: PeerMessageId;\n    readonly revision: number;\n    readonly state: \'queued\';\n}',
+  },
+  {
     name: 'MessageSource',
-    declaration: 'export type MessageSource = MessageSourceMap[keyof MessageSourceMap];',
+    declaration: 'export type MessageSource = MessageSourceMap[keyof MessageSourceMap] & {\n    readonly requiredAdmissionPolicy?: string;\n};',
   },
   {
     name: 'MessageSourceMap',
@@ -4922,6 +5181,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'OptionalSessionSeq',
     declaration: 'export type OptionalSessionSeq = SessionSeq | null;',
+  },
+  {
+    name: 'OutboxMessage',
+    declaration: 'export type OutboxMessage = z.infer<typeof outboxSchema>;',
+  },
+  {
+    name: 'ParticipantObservation',
+    declaration: 'export interface ParticipantObservation {\n    readonly sessionId: SessionId;\n    readonly cwd?: string;\n    readonly availability: \'running\' | \'inactive\' | \'unknown\' | \'missing\';\n    readonly git: {\n        readonly kind: \'unavailable\';\n    } | {\n        readonly kind: \'observed\';\n        readonly root: string;\n        readonly branch: string | null;\n        readonly linkedWorktree: boolean;\n    };\n}',
+  },
+  {
+    name: 'PeerBudgetRequest',
+    declaration: 'export interface PeerBudgetRequest extends PeerControlRequest {\n    readonly limit: number;\n}',
+  },
+  {
+    name: 'PeerControlRequest',
+    declaration: 'export interface PeerControlRequest extends CollaborationMutationRequest {\n    readonly connectionId: ConnectionId;\n}',
+  },
+  {
+    name: 'PeerMessageId',
+    declaration: 'export type PeerMessageId = Branded<\'CollaborationPeerMessageId\'>;',
   },
   {
     name: 'PermissionCatalog',
@@ -5092,6 +5371,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
   },
   {
+    name: 'Registration',
+    declaration: 'export type Registration = z.infer<typeof registrationSchema>;',
+  },
+  {
     name: 'RemoteError',
     declaration: 'export class RemoteError<Code extends RemoteErrorCode = RemoteErrorCode> extends Error {\n    readonly isDSHRemoteError: true;\n    constructor(readonly code: Code, message: string, readonly details: RemoteErrorDetailsMap[Code], options?: ErrorOptions);\n}',
   },
@@ -5126,6 +5409,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RequestImageAttachment',
     declaration: 'export interface RequestImageAttachment {\n    variantId: ImageVariantId;\n    attachment: ImageAttachmentRef;\n    data: Uint8Array;\n    mediaType: ImageMediaType;\n    bytes: number;\n    width: number;\n    height: number;\n    depth: \'uchar\';\n    space: \'srgb\';\n    hasAlpha: boolean;\n}',
+  },
+  {
+    name: 'RequestReceipt',
+    declaration: 'export type RequestReceipt = z.infer<typeof receiptSchema>;',
   },
   {
     name: 'RequestRunOutcome',
@@ -5238,6 +5525,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SearchResultView',
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
+  },
+  {
+    name: 'SendPeerRequest',
+    declaration: 'export type SendPeerRequest = z.infer<typeof sendPeerRequestSchema>;',
   },
   {
     name: 'SendTeamMessageRequest',

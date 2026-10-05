@@ -23,11 +23,13 @@ const repoRoot = resolve(import.meta.dirname, '..')
 const corpusRoot = join(repoRoot, 'snapshots')
 const profiles = ['acp', 'sdk', 'session', 'web'] as const
 const snapshotAdapters = [
+  'apps/web/tests/fixture-generation.snapshot.ts',
   'apps/web/tests/message-feedback-protocol.snapshot.ts',
   'apps/web/tests/minimal-preset.snapshot.ts',
   'apps/web/tests/preset-migration.snapshot.ts',
   'snapshots/acp/acp.snapshot.ts',
   'snapshots/sdk/sdk.snapshot.ts',
+  'snapshots/session/collaboration.snapshot.ts',
   'snapshots/session/headless.snapshot.ts',
 ] as const
 
@@ -54,7 +56,9 @@ async function scenarios(): Promise<Scenario[]> {
       expect(existsSync(path), `${profile}/${entry.name}/snapshot.yml`).toBe(true)
       const manifest = parseSnapshotManifest(await readFile(path, 'utf8'), path)
       expect(manifest.scenario, `${profile}/${entry.name}: scenario`).toBe(entry.name)
-      expect(manifest.profile, `${profile}/${entry.name}: profile`).toBe(profile === 'session' ? 'headless' : profile)
+      expect(manifest.profile, `${profile}/${entry.name}: profile`).toBe(profile === 'session'
+        ? entry.name === 'collaboration-discussion' ? 'web' : 'headless'
+        : profile)
       expect(manifest.composition, `${profile}/${entry.name}: composition`).toBeTypeOf('string')
       expect(manifest.recording, `${profile}/${entry.name}: recording`).toMatch(/^(live|authored)$/)
       expect(manifest.header, `${profile}/${entry.name}: header`).toBeDefined()
@@ -202,7 +206,7 @@ it('keeps a current-writer majority plus bounded declared historical migration c
   })))
 
   expect(assertSnapshotCorpusPolicy(inventory)).toMatchObject({
-    retainedRoles: 9,
-    retainedScenarios: 7,
+    retainedRoles: 10,
+    retainedScenarios: 8,
   })
 })

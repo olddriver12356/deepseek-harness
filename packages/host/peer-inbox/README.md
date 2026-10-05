@@ -68,6 +68,8 @@ node node_modules/typescript/bin/tsc -b packages/host/peer-inbox --pretty false
 
 `tests/relay-integration.spec.ts` additionally runs the real external relay adapter when `DSH_RELAY_SOURCE` points to its canonical `dsh-peer.mjs`; without that explicit path the test skips. It uses only a fake LLM and local HTTP, never Slack or a live model. The Loader test records the model-visible input and terminal response as a package-local expected transcript.
 
+No invariant companion is published because this HTTP adapter validates requests before dispatch, and its bounded ledger transitions are covered by package tests.
+
 ## Model Experience
 
 ### Admitted relay input

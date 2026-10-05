@@ -94,3 +94,5 @@ None.
 </details>
 
 **Runtime invariant:** No companion is published. Conversation and Slot registration enforce Chat target consistency.
+
+Custom attributed input renderers contribute reversible source-kind ownership through `ctx.chatInputs.excludeSource(kind)`. The generic input Definition rebuilds when this roster changes, so a custom node appears once. Unloading the contribution restores generic context rendering using the durable recorded source; ordinary human messages retain their existing presentation. Registry rebuilds run outside the departing contributor's effect and stop when Chat unloads.

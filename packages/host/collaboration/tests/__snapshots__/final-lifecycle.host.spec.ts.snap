@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`publishes permanent cold resolution failure to the human view and model status with a stable receipt and zero charge > cold recipient resolution failure 1`] = `
+{
+  "connectionId": "final-pair",
+  "deliveryReason": "recipient-missing",
+  "id": Any<String>,
+  "recipient": "final-peer",
+  "sender": "collaboration-harness",
+  "state": "failed",
+  "text": "first",
+}
+`;

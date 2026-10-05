@@ -15,12 +15,13 @@
   - img
   - img
   - text: System prompt
-- text: "Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
+- text: "You Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy":
   - img
 - button "2 tool calls":
   - text: 2 tool calls
   - img
+- text: Agent
 - paragraph: DONE
 - button "Copy":
   - img
@@ -34,11 +35,7 @@
   - img
   - text: Ran for {{duration}}
 - text: {{clock}}
-- button "compact Compacted 5 history items (~{{tokens}} tokens)"
-- button "Context injection AGENTS.md":
-  - img
-  - img
-  - text: Context injection AGENTS.md
+- button "▤ compact Compacted 5 history items (~{{tokens}} tokens)"
 - textbox "Message or run a task, / commands, @ files or sessions"
 - button "Add files or run commands":
   - img

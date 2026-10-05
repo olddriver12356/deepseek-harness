@@ -22,6 +22,12 @@ kind: "package-reference"
 
 -----
 
+必要来源准入与待处理输入唤醒、重排语义由 [Agent API](../agent/README.zh.md) 拥有。循环在异步请求准备之后拒绝缺失策略，并为当前回合保留原始要求。该拒绝进入现有待处理输入排空流程；普通 pre-step 拒绝仍保留停止行为。
+
+Agent 作用域内的 executor guard 检查整个回合保留的必要策略，包括在途响应比策略插件存活更久时的 native 和 alternate execution。作用域拥有清理；回合结束释放保留输入，让后续人工回合正常运行。如果原始已领取输入在首次持久用户准入前明确变为延后，内部 inbox 通过现有 splice 恢复其精确身份、内容、列表及原位置，不发布插入或取消通知。就绪人工输入继续保持 FIFO，后续所有者唤醒仅恢复一次延后工作。
+
+对于带有原始 required policy 的每个已准入 input，持久化 `user/message` 按精确 message ID 保留最早捕获的 source，同时保留 pre-step 转换后的 content。后续 source rewrite 不能在实际重建请求或截断的浏览器历史页中把 Peer 数据变成人类输入。没有原始 required policy 的 input 保留原有行为，本次不增加 Session 字段或 format migration。
+
 <a id="use-this-package"></a>
 ## 使用本包
 

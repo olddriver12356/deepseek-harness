@@ -12,6 +12,7 @@ import {
   scrubSystemPrompts,
   scrubToolSchemas,
   tokenizeSessionFixtureCwd,
+  materializeSessionFixtureCwd,
 } from '../src/normalize.ts'
 
 /**
@@ -23,6 +24,58 @@ const ctx: NormalizeContext = {
   sessionIds: ['11111111-2222-3333-4444-555555555555'],
   cwd: '/tmp/acp-snap-cwd-abc123',
 }
+
+describe('materializeSessionFixtureCwd', () => {
+  it('keeps Windows separators and quoted path data valid in hydrated JSONL', () => {
+    const cwd = 'C:\\Users\\Snapshot\\quoted"data'
+    const fixture = '{"type":"session","cwd":"{{cwd}}"}\n{"text":"read {{cwd}}/file.txt"}\n'
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line) as unknown)
+    expect(rows).toEqual([{ type: 'session', cwd }, { text: `read ${cwd}/file.txt` }])
+  })
+
+  it('hydrates serialized tool arguments and recorded fragments at their JSON string depth', () => {
+    const cwd = 'C:\\Users\\Snapshot\\quoted"data'
+    const args = '{ "path": "{{cwd}}/note.txt", "text": "keep \\n and spacing" }'
+    const fragments = ['{ "path": "{{cw', 'd}}/note.txt", ', '"text": "keep \\n and spacing" }']
+    const partial = '{"path":"{{cwd}}/unfinished'
+    const fixture = [
+      { type: 'tool/call', data: { arguments: args } },
+      {
+        type: 'assistant/message', data: {
+          message: { content: [{ type: 'tool-call', arguments: args }, { type: 'text', text: args }] },
+          stream: [
+            { type: 'tool-call-chunks', index: 0, args: fragments, dt: [1, 2] },
+            { type: 'chunk', chunk: { type: 'block-end', block: { type: 'tool-call', arguments: args } } },
+            { type: 'chunk', chunk: { type: 'tool-call-delta', index: 1, argumentsDelta: partial } },
+          ],
+        },
+      },
+    ].map(row => JSON.stringify(row)).join('\n') + '\n'
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n')
+      .map(line => JSON.parse(line) as unknown)
+    const expectedArgs = args.replace('{{cwd}}', JSON.stringify(cwd).slice(1, -1))
+    const call = rows[0] as { data: { arguments: string } }
+    const assistant = rows[1] as {
+      data: {
+        message: { content: { type: string; arguments?: string; text?: string }[] }
+        stream: [
+          { args: string[]; dt: number[] },
+          { chunk: { block: { arguments: string } } },
+          { chunk: { argumentsDelta: string } },
+        ]
+      }
+    }
+    expect(call.data.arguments).toBe(expectedArgs)
+    expect(JSON.parse(call.data.arguments)).toEqual({ path: `${cwd}/note.txt`, text: 'keep \n and spacing' })
+    expect(assistant.data.message.content[0]!.arguments).toBe(expectedArgs)
+    expect(assistant.data.message.content[1]!.text).toBe(args.replace('{{cwd}}', cwd))
+    expect(assistant.data.stream[0].args.join('')).toBe(expectedArgs)
+    expect(assistant.data.stream[0].args).toHaveLength(fragments.length)
+    expect(assistant.data.stream[0].dt).toEqual([1, 2])
+    expect(assistant.data.stream[1].chunk.block.arguments).toBe(expectedArgs)
+    expect(assistant.data.stream[2].chunk.argumentsDelta).toBe(partial.replace('{{cwd}}', JSON.stringify(cwd).slice(1, -1)))
+  })
+})
 
 describe('normalizeStdout', () => {
   it('rewrites JSON-RPC ids to a stable first-seen sequence', () => {
@@ -153,6 +206,33 @@ describe('normalizeStdout', () => {
       regex: String.raw`\d+\w+`,
       command: String.raw`printf "\\n"`,
     })
+  })
+
+  it('normalizes declared JSON-escaped cwd inside SDK policy text without erasing other paths', () => {
+    const cwd = String.raw`C:\Users\Snapshot\Temp\sdk-snapshot-text-turn-owned`
+    const escapedCwd = JSON.stringify(cwd).slice(1, -1)
+    const text = `{"cwd":"${escapedCwd}"}; unrelated C:\\Users\\Snapshot\\private`
+    const event = {
+      type: 'user/message', seq: 9,
+      data: {
+        content: [{ type: 'text', text }],
+        source: { kind: 'plugin', plugin: '@deepseek-ai/dsh-system-prompt', sections: [{ name: 'sandbox:policy', text }] },
+      },
+    }
+    const frame = { method: 'session.event', params: { event } }
+    const normalized = normalizeStdout(JSON.stringify(frame), { sessionIds: [], cwd, cwdAliases: [escapedCwd] })
+    const expectedText = '{"cwd":"{{cwd}}"}; unrelated C:\\Users\\Snapshot\\private'
+    expect(JSON.parse(normalized)).toEqual({
+      ...frame,
+      params: { event: { ...event, data: {
+        content: [{ type: 'text', text: expectedText }],
+        source: { ...event.data.source, sections: [{ name: 'sandbox:policy', text: expectedText }] },
+      } } },
+    })
+    expect(normalizeStdout(normalized, { sessionIds: [], cwd, cwdAliases: [escapedCwd] })).toBe(normalized)
+    const fixture = JSON.stringify({ type: 'session', cwd: '{{cwd}}' }) + '\n' + JSON.stringify(event) + '\n'
+    expect(tokenizeSessionFixtureCwd(fixture, [escapedCwd])).toContain('\\"{{cwd}}\\"')
+    expect(tokenizeSessionFixtureCwd(fixture, [escapedCwd])).not.toContain(JSON.stringify(escapedCwd).slice(1, -1))
   })
 
   it('canonicalizes generated relative path fields and text markers without rewriting other text', () => {

@@ -13,7 +13,7 @@ it('opens the exact child, stops it, and does not present admission as completio
     useSessions: (select: (state: unknown) => unknown) => select({ byId: {}, subagentsByParent: {} }),
     block: { kind: 'tool-result', isError: false, content: [], call: { argsRaw: JSON.stringify({ expert: 'Reviewer', task: 'Inspect login' }) },
       meta: { expertDelegation: { expert: 'Reviewer', childId: 'child', parentSessionId: 'parent', access: 'read-only', contextMode: 'fresh' } } },
-  } as never} />)
+  } as Parameters<typeof ExpertTaskCard>[0]} />)
   expect(screen.getByText('Delegated; report requires acceptance')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'View progress / send follow-up' }))
   expect(openTask).toHaveBeenCalledWith({ childSessionId: 'child', parentSessionId: 'parent', mode: 'continuable' })

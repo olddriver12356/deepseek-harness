@@ -8,9 +8,36 @@ import time
 from pathlib import Path
 
 import pytest
+import deepseek_harness.client as client_module
 
 from deepseek_harness import DeepSeekHarness, HarnessClient, HarnessConfig, Notification, RunResult, SdkProtocolError
 from deepseek_harness.errors import JsonRpcError
+
+
+@pytest.mark.parametrize("filename", ["dsh.exe", "bin.js"])
+def test_explicit_runtime_keeps_profile_and_ordered_patches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str,
+) -> None:
+    monkeypatch.setattr(client_module.shutil, "which", lambda name: "/system/node" if name == "node" else None)
+    runtime = tmp_path / filename
+    patches = (tmp_path / "first patch.yml", tmp_path / "second.yml")
+    harness = HarnessClient(HarnessConfig(
+        dsh_bin=str(runtime), dsh_home=str(tmp_path / "home"), profile="sdk",
+        patches=tuple(map(str, patches)),
+    ))
+    env: dict[str, str] = {}
+    base = (str(runtime.resolve()),) if filename == "dsh.exe" else ("/system/node", str(runtime.resolve()))
+    assert harness._default_launch_args(env) == (
+        *base, "--profile", "sdk", "--patch", str(patches[0].resolve()), "--patch", str(patches[1].resolve()),
+    )
+    assert env["DSH_HOME"] == str((tmp_path / "home").resolve())
+
+
+def test_explicit_javascript_runtime_requires_system_node(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(client_module.shutil, "which", lambda _name: None)
+    harness = HarnessClient(HarnessConfig(dsh_bin=str(tmp_path / "bin.js"), dsh_home=str(tmp_path / "home")))
+    with pytest.raises(FileNotFoundError, match="needs a system `node`"):
+        harness._default_launch_args({})
 
 
 def test_high_level_sdk_runs_turn_and_preserves_auto_review_errors(tmp_path: Path) -> None:

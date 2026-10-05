@@ -1,4 +1,4 @@
-- text: {{cwd}}/a.txt
+- text: {{cwd}}\a.txt
 - button "Line wrap" [pressed]:
   - img
 - button "Read the file again":

@@ -26,9 +26,10 @@ function snapshotMode(value: string | undefined): SnapshotSuiteOptions['mode'] {
 const controllerCases: readonly {
   readonly name: string
   readonly hasModelTurn: boolean
+  readonly comparesLog?: boolean
   readonly configPath?: string
 }[] = [
-  { name: 'handshake', hasModelTurn: false },
+  { name: 'handshake', hasModelTurn: false, comparesLog: true },
   { name: 'reject-extra-dirs', hasModelTurn: false },
   { name: 'cancel', hasModelTurn: true },
   { name: 'cancel-tool-calls', hasModelTurn: true },

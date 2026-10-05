@@ -13,7 +13,7 @@ function unsupportedInbox(): Agent['inbox'] {
   }
   return {
     nextTurn: [], nextStep: [], clear: rejectMutation, append: rejectMutation,
-    prepend: rejectMutation, replace: rejectMutation, remove: rejectMutation, splice: rejectMutation,
+    move: rejectMutation, prepend: rejectMutation, replace: rejectMutation, remove: rejectMutation, splice: rejectMutation,
   }
 }
 
@@ -29,7 +29,7 @@ function stubAgent(rawId: string, overrides: Partial<Agent> = {}): Agent {
     status: 'idle',
     ctx,
     send: () => {},
-    followup: () => {},
+    wake: () => {}, followup: () => {},
     steer: () => {},
     inject: () => {},
     cancel() {},
@@ -76,6 +76,52 @@ async function reconstructPersistedInbox(
 }
 
 describe('ReactLoopInbox', () => {
+  it('restores unstarted identities in their original lists and order without insertion or cancellation notifications', async () => {
+    const { ctx, session, inbox } = await inboxAgent('restore-inbox')
+    try {
+      const message = (text: string) => createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'plugin', plugin: 'fixture' } })
+      const [earlier, claimed, later, step] = ['earlier deferred', 'claimed', 'later', 'step'].map(message)
+      inbox.append('next-turn', earlier!)
+      inbox.append('next-turn', claimed!)
+      inbox.append('next-turn', later!)
+      inbox.append('next-step', step!)
+      inbox.claim('next-turn', 1, input => input.id !== earlier!.id)
+      const notifications: string[] = []
+      ctx.on('agent/inbox/inserted', () => { notifications.push('inserted') })
+      ctx.on('agent/inbox/discarded', () => { notifications.push('discarded') })
+      inbox.restore([{ target: 'next-turn', index: 1, message: claimed! }, { target: 'next-step', index: 0, message: step! }])
+      expect(inbox.nextTurn).toEqual([earlier, claimed, later])
+      expect(inbox.nextStep).toEqual([step])
+      expect(notifications).toEqual([])
+      const replay = new ReactLoopInbox(ctx.sessionProjections, session, agentEvents(ctx, stubAgent('restore-inbox', { ctx, session })))
+      expect(replay.nextTurn).toEqual(inbox.nextTurn)
+      expect(replay.nextStep).toEqual(inbox.nextStep)
+    } finally { await ctx.fiber.dispose() }
+  })
+  it('moves existing identities durably without insertion or discard notifications', async () => {
+    const { ctx, session, inbox } = await inboxAgent('move-inbox')
+    try {
+      const messages = ['peer-a', 'context', 'human-a', 'peer-b', 'human-b'].map(text => createUserMessage({
+        content: [{ type: 'text', text }], source: { kind: 'user' },
+      }))
+      for (const message of messages) inbox.append('next-turn', message)
+      const notifications: string[] = []
+      ctx.on('agent/inbox/inserted', () => { notifications.push('inserted') })
+      ctx.on('agent/inbox/discarded', () => { notifications.push('discarded') })
+      const events: unknown[] = []
+      ctx.on('session/event', (subject, event) => { if (subject === session) events.push(event) })
+      const desired = [messages[2]!, messages[1]!, messages[4]!, messages[0]!, messages[3]!]
+      for (const [index, message] of desired.entries()) expect(inbox.move(message.id, index)).toBe(true)
+      expect(inbox.nextTurn).toEqual(desired)
+      expect(inbox.nextTurn[0]).toStrictEqual(messages[2])
+      expect(notifications).toEqual([])
+      expect(events.length).toBeGreaterThan(0)
+      expect(events.every(event => (event as { data: { outcome?: string } }).data.outcome === undefined)).toBe(true)
+      const replay = new ReactLoopInbox(ctx.sessionProjections, session, agentEvents(ctx, stubAgent('move-inbox', { ctx, session })))
+      expect(replay.nextTurn).toEqual(desired)
+      expect(inbox.move(createUserMessage({ content: [], source: { kind: 'user' } }).id, 0)).toBe(false)
+    } finally { await ctx.fiber.dispose() }
+  })
   it('registers the durable projection in its constructor', async () => {
     const ctx = new Context()
     await ctx.plugin(SessionStore)

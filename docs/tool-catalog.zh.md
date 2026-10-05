@@ -19,6 +19,7 @@
 
 | 工具包 | 模型可见名称 | 依赖 | 写入／影响 | 随产品发布的别名 | 部署说明 |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-host-collaboration` | `collaboration_status`, `peer_send` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agents`, `ctx.collaborationRemote`, `ctx.collaborationMailbox`, `the live ordinary executing Agent and installed discussion authority` | `system/message via prompt assembly`, `tool/call`, `tool/result`, `collaboration aggregate before peer activity`, `recipient agent/inbox/spliced after durable acceptance` | - | 独立 /tool 入口需要显式安装。Peer 回合执行还要求在 peerDiscussionTools 中选择相应工具名称；默认只包含 read、glob 和 grep。未安装计划或任务执行工具。 |
 | `@deepseek-ai/dsh-mcp-resources` | `list_mcp_resource_templates`, `list_mcp_resources`, `read_mcp_resource` | `ctx.tools`, `ctx.mcpResources` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-experimental-browser-use-stagehand-native` | `stagehand_act`、`stagehand_extract`、`stagehand_navigate`、`stagehand_observe`、`stagehand_screenshot`、`stagehand_tabs` | `ctx.browserUse`、`ctx.agents`、`ctx.tools`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`、`ctx.userQuestions` | `tool/call`、`tool/result after a UI/provider answers the question` | - | ask_user_question 会暂停工具调用，直到当前 UI 提供方返回人类答案。 |
@@ -47,6 +48,56 @@
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
+
+<a id="deepseek-aidsh-host-collaboration"></a>
+
+## `@deepseek-ai/dsh-host-collaboration`
+
+### `collaboration_status`
+
+读取当前会话获准查看的独立 peer 连接及已提交的消息投递状态。只包含共享讨论，不包含私有会话历史。准入不表示 peer 已回复。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/host/collaboration/src/tool.ts`](../packages/host/collaboration/src/tool.ts)
+
+### `peer_send`
+
+向人工授权连接的另一个端点发送显式讨论文本。发送者是当前会话。只在同一连接重试相同文本时复用 requestId。accepted 加 queued 状态是原始持久回执，不表示已投递或收到回复；用 collaboration_status 查看当前投递状态。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "connectionId": {
+      "type": "string",
+      "description": "An authorized connection ID from collaboration_status."
+    },
+    "text": {
+      "type": "string",
+      "description": "Peer discussion data; this is not a human instruction or approval."
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Stable retry key unique within this sending session; reuse only for identical intent."
+    }
+  },
+  "required": [
+    "connectionId",
+    "text",
+    "requestId"
+  ]
+}
+```
+
+来源：[`packages/host/collaboration/src/tool.ts`](../packages/host/collaboration/src/tool.ts)
+
+独立 /tool 入口需要显式安装。Peer 回合执行还要求在 peerDiscussionTools 中选择相应工具名称；默认只包含 read、glob 和 grep。未安装计划或任务执行工具。
 
 <a id="deepseek-aidsh-mcp-resources"></a>
 

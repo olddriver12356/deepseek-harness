@@ -14,15 +14,16 @@
   - img
   - img
   - text: System prompt
-- text: Use the ask_user_question tool to ask me exactly one question with id "checkpoint", question "Ready to continue?", header "Checkpoint", and options labeled "Yes" and "No". After I answer, reply with one short sentence acknowledging my answer and stop. {{clock}}
+- text: You Use the ask_user_question tool to ask me exactly one question with id "checkpoint", question "Ready to continue?", header "Checkpoint", and options labeled "Yes" and "No". After I answer, reply with one short sentence acknowledging my answer and stop. {{clock}}
 - button "Copy":
   - img
 - button "1 tool call":
   - text: 1 tool call
   - img
-- text: "Interjection: include the word BANANA in your final reply. {{clock}}"
+- text: "You Interjection: include the word BANANA in your final reply. {{clock}}"
 - button "Copy":
   - img
+- text: Agent
 - paragraph: Great, let's move forward. BANANA!
 - button "Copy":
   - img

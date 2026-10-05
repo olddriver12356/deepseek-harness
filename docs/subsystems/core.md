@@ -121,6 +121,12 @@ interface Agent {
   followup(message: UserMessage): void
 
   /**
+   * Wake existing pending input without inserting another message; maintenance retains the wake until it settles.
+   * Empty or disposed activity does not start a turn.
+   */
+  wake(): void
+
+  /**
    * Submit steering for the nearest step. An idle driver starts a turn;
    * a running driver consumes it at its next step boundary.
    * A rejected step leaves steering parked in the inbox until the next
@@ -213,6 +219,13 @@ The inbox is the delivery vocabulary — two ordered pending-message lists the a
 ```ts type-equiv
 /** Agent-owned access to pending work; concrete storage belongs to the driver. */
 interface Inbox {
+  /**
+   * Move an existing message within its pending list with one durable splice and no insertion/discard notifications.
+   * @param messageId - identity already pending in either list.
+   * @param index - destination index in that same list, clamped to its bounds.
+   * @returns whether the identity exists, including a no-op move.
+   */
+  move(messageId: MessageId, index: number): boolean
   /** Prompts awaiting individual turns. */
   readonly nextTurn: readonly UserMessage[]
   /** Input awaiting the next step boundary. */
@@ -734,6 +747,30 @@ Initiator methods provide same-process causal attribution only. Ambient presence
 
 ```ts cordis-catalog
 /**
+ * Register an input policy required by durable message attribution. Missing policies deny admission.
+ * @param name - exact source requirement identifier.
+ * @param accepts - synchronous check; defer preserves pending input until a later wake, true admits, false refuses.
+ * @returns reversible registration owned by the caller's fiber.
+ */
+registerInputPolicy(name: string, accepts: (agent: Agent, message: UserMessage) => boolean | 'defer'): () => void
+
+/**
+ * Check every original and rewritten input immediately before admitting a request.
+ * @param agent - actual recipient.
+ * @param messages - original claimed inputs and downstream admitted inputs.
+ * @returns false if a required policy is absent, disposed, or refuses any input.
+ */
+acceptsInput(agent: Agent, messages: readonly UserMessage[]): boolean
+
+/**
+ * Check whether pending input must remain unclaimed until a later owner wake.
+ * @param agent - actual recipient.
+ * @param message - pending input, before any durable removal.
+ * @returns true only when its installed policy explicitly defers; missing policies remain a refusal.
+ */
+defersInput(agent: Agent, message: UserMessage): boolean
+
+/**
  * Read the Agent that initiated the inherited asynchronous driver chain.
  * Use this optional form for logging, tracing, metrics, or host attribution
  * that also supports agentless calls. When a parent creates a child, setup
@@ -898,6 +935,8 @@ list(): Agent[]
  */
 roots(): Agent[]
 ```
+
+Types: [UserMessage](session.md)
 
 Source: [`packages/core/agent/src/index.ts`](../../packages/core/agent/src/index.ts)
 

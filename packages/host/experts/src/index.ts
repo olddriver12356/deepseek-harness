@@ -19,8 +19,11 @@ export type * from './types.ts'
 export interface Config {
   /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
   readonly vaultRoot: string
+  /** Maximum concurrent expert delegations for one parent Agent. */
   readonly maxConcurrent?: number
+  /** Tool names that an expert may execute without write authorization. */
   readonly readOnlyTools?: string[]
+  /** Tool names that require the expert's write authorization. */
   readonly writeTools?: string[]
 }
 export const Config: z<Config> = z.object({
@@ -34,6 +37,7 @@ declare module '@deepseek-ai/cordis' {
   interface Context { experts: ExpertService }
 }
 
+/** Vault-backed Expert definitions and bounded parent-owned delegation admission. */
 export class ExpertService extends TypertRemoteService {
   static inject = ['agents', 'tools', 'sessionProjections']
   private readonly store: ExpertStore
@@ -49,7 +53,13 @@ export class ExpertService extends TypertRemoteService {
     installExpertPolicy(ctx, this.pending)
   }
 
-  /** Reserve one child before publication; returned cleanup releases startup admission only. */
+  /**
+   * Reserve one child before publication; only a root Agent may delegate within its configured concurrency limit.
+   * @param parent - live root Agent whose tools bound the expert's available tools.
+   * @param childId - child identity reserved before Agent creation.
+   * @param expert - stored Expert definition supplying access policy.
+   * @returns cleanup releasing startup admission only.
+   */
   reserveDelegation(parent: Agent, childId: SessionId, expert: ExpertRecord): () => void {
     if (parent.session.header.parentSession !== undefined) throw new Error('experts: only a top-level agent may delegate experts')
     const active = new Set([...this.pendingParents].filter(([, id]) => id === parent.id).map(([id]) => id))
@@ -68,15 +78,34 @@ export class ExpertService extends TypertRemoteService {
     return () => { this.pending.delete(childId); this.pendingParents.delete(childId) }
   }
 
+  /**
+   * Read stored Expert definitions without creating or resolving an Agent.
+   * @returns current definitions from the configured Vault.
+   */
   @Remote('list')
   list(): Promise<readonly ExpertRecord[]> { return this.store.list() }
 
+  /**
+   * Persist a new Expert definition through the serialized mutation queue.
+   * @param request - validated new definition.
+   * @returns the stored definition.
+   */
   @Remote('create')
   create(request: ExpertCreateRequest): Promise<ExpertRecord> { return this.mutate(() => this.store.create(request.expert)) }
 
+  /**
+   * Replace one stored Expert definition through the serialized mutation queue.
+   * @param request - existing identity and replacement definition.
+   * @returns the stored definition.
+   */
   @Remote('update')
   update(request: ExpertUpdateRequest): Promise<ExpertRecord> { return this.mutate(() => this.store.update(request.id, request.expert)) }
 
+  /**
+   * Remove one stored Expert definition through the serialized mutation queue.
+   * @param request - identity to remove.
+   * @returns successful deletion acknowledgement after storage completes.
+   */
   @Remote('delete')
   async delete(request: ExpertDeleteRequest): Promise<ExpertDeleteValue> {
     await this.mutate(() => this.store.remove(request.id))

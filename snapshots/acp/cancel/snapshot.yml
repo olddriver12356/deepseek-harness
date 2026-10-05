@@ -4,6 +4,7 @@ profile: acp
 composition: acp-default
 recording: authored
 header:
-  class: acp-default
+  class: acp-read-only
+  pin: true
 replay:
   override: true

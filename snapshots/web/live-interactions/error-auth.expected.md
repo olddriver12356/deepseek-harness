@@ -14,7 +14,7 @@
   - img
   - img
   - text: System prompt
-- text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
+- text: You Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
@@ -22,7 +22,7 @@
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
 - status:
-  - text: This turn failedAPI key is invalid
+  - text: ✕ This turn failedAPI key is invalid
   - code: AUTH
 - textbox "Message or run a task, / commands, @ files or sessions"
 - button "Add files or run commands":
