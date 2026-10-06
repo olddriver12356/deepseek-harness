@@ -10,10 +10,12 @@
             name: DeepSeek
             models:
               - id: discussion-alpha
+                contextWindow: 1000000
                 reasoningEfforts: [off]
                 defaultReasoningEffort: off
                 defaultMaxTokens: 256000
               - id: discussion-beta
+                contextWindow: 1000000
                 reasoningEfforts: [off]
                 defaultReasoningEffort: off
                 defaultMaxTokens: 256000

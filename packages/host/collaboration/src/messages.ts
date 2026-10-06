@@ -8,6 +8,7 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 
 
 import { peerSourceSchema } from './message-schema.ts'
+import { classifyMessages } from './authority.ts'
 export { peerSourceSchema, sendPeerRequestSchema } from './message-schema.ts'
 
 const receiptProjectionSchema = z.object({
@@ -27,7 +28,7 @@ declare module '@deepseek-ai/dsh-session-projection/types' {
 
 /** Own non-inherited durable inbox receipts and recorded turn origin; compaction never deletes original receipts. */
 export const collaborationReceiptProjection: ProjectionDefinition<'collaborationReceipts'> = {
-  key: 'collaborationReceipts', stateSchema: receiptProjectionSchema, stateVersion: 3,
+  key: 'collaborationReceipts', stateSchema: receiptProjectionSchema, stateVersion: 4,
   init: (header, inheritedEventCount) => ({ sessionId: header.id, inheritedEventCount, receipts: [], turn: 0,
     turnOpen: false, pendingTurns: [], pendingSteps: [] }),
   apply(state, event) {
@@ -74,9 +75,9 @@ export const collaborationReceiptProjection: ProjectionDefinition<'collaboration
     }
     let turnClass = state.turnClass
     if (event.type === 'user/message') {
-      const kind = event.data.source.kind
-      if (kind !== 'tool' && kind !== 'plugin') {
-        turnClass = kind === 'user' && turnClass !== 'peer-discussion'
+      const claimed = classifyMessages([event.data])
+      if (claimed !== undefined) {
+        turnClass = claimed === 'human' && turnClass !== 'peer-discussion'
           && !receipts.some(receipt => receipt.phase === 'started' && receipt.turn === state.turn) ? 'human' : 'peer-discussion'
       }
     }

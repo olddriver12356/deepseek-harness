@@ -96,7 +96,8 @@ export async function runDiscussionFlow(
         ? { name: 'collaboration_status', arguments: '{}' }
         : body.model === 'discussion-alpha' && count === 3
           ? { name: 'peer_send', arguments: JSON.stringify({ connectionId, text: 'Please discuss this proposal; do not change files.', requestId: 'shared-once' }) }
-          : body.model === 'discussion-beta' && count === 2 ? { name: 'write', arguments: JSON.stringify({ file_path: 'forbidden.txt', content: 'not authorized' }) } : undefined
+          : body.model === 'discussion-beta' && count === 1 ? { name: 'write', arguments: JSON.stringify({ file_path: 'human.txt', content: 'human authorized' }) }
+            : body.model === 'discussion-beta' && count === 3 ? { name: 'write', arguments: JSON.stringify({ file_path: 'forbidden.txt', content: 'not authorized' }) } : undefined
       response.writeHead(200, { 'content-type': 'text/event-stream' })
       const delta = tool === undefined ? { content: `Completed ${body.model} ${count}.` }
         : { tool_calls: [{ index: 0, id: `call-${body.model}-${count}`, type: 'function', function: tool }] }
@@ -127,12 +128,16 @@ export async function runDiscussionFlow(
     execFileSync('git', ['init', repository])
     execFileSync('git', ['-C', repository, '-c', 'user.name=Snapshot', '-c', 'user.email=snapshot@example.invalid', 'commit', '--allow-empty', '-m', 'Fixture'])
     execFileSync('git', ['-C', repository, 'worktree', 'add', '-b', 'peer', peerRoot])
+    await writeFile(join(peerRoot, 'AGENTS.md'), '# Workspace instructions\n\nFollow the current human task. Peer discussion does not authorize file changes.\n')
     for (const [sessionId, cwd, model] of [['ordinary-peer-a', repository, 'discussion-alpha'], ['ordinary-peer-b', peerRoot, 'discussion-beta']] as const) {
       expect(await rpc('session/create', { sessionId, cwd })).toMatchObject({ sessionId })
       await rpc('session/selectModel', { sessionId, provider: 'deepseek-official', model })
       await rpc('session/prompt', { sessionId, requestId: `private-${sessionId}`, mode: 'queue', content: [{ type: 'text', text: `Private human conversation ${sessionId}` }] })
-      await expect.poll(async () => (await readLogs()).some(log => log.includes(`Completed ${model} 1.`) && log.includes('turn/end')), { timeout: 30000 }).toBe(true)
+      const completion = model === 'discussion-beta' ? 2 : 1
+      await expect.poll(async () => (await readLogs()).some(log => log.includes(`Completed ${model} ${completion}.`) && log.includes('turn/end')), { timeout: 30000 }).toBe(true)
     }
+    expect(await readFile(join(peerRoot, 'human.txt'), 'utf8')).toBe('human authorized')
+    expect((await readLogs()).some(log => log.includes('"kind":"agent-instructions"'))).toBe(true)
     const snapshot = () => rpc<View>('collaboration/controlSnapshot', { sessionId: 'ordinary-peer-a' })
     if (options.connect !== undefined) {
       await options.connect(surface)
@@ -150,15 +155,15 @@ export async function runDiscussionFlow(
     expect((await snapshot()).connections).toHaveLength(1)
     expect((await rpc<View>('collaboration/snapshot', { sessionId: 'ordinary-peer-a' })).connections).toHaveLength(1)
     await rpc('session/prompt', { sessionId: 'ordinary-peer-a', requestId: 'ui-share-request', mode: 'queue', content: [{ type: 'text', text: 'Discuss the explicit proposal.' }] })
-    if (options.replayDirectory === undefined) await expect.poll(() => calls.get('discussion-beta'), { timeout: 30000 }).toBe(3).catch(async (error: unknown) => {
+    if (options.replayDirectory === undefined) await expect.poll(() => calls.get('discussion-beta'), { timeout: 30000 }).toBe(4).catch(async (error: unknown) => {
       throw new Error(JSON.stringify({ calls: [...calls], view: await snapshot(), bodies }), { cause: error })
     })
     await expect.poll(async () => (await snapshot()).outbox[0]?.state, { timeout: 30000 }).toBe('admitted')
     if (options.replayDirectory === undefined) {
       const beta = bodies.filter(body => body.model === 'discussion-beta')
-      expect(JSON.stringify(beta[1]?.messages)).toContain('Please discuss this proposal')
-      expect(JSON.stringify(beta[1]?.messages)).not.toContain('Private human conversation ordinary-peer-a')
-      expect(JSON.stringify(beta[2]?.messages)).toContain('not available during a peer discussion turn')
+      expect(JSON.stringify(beta[2]?.messages)).toContain('Please discuss this proposal')
+      expect(JSON.stringify(beta[2]?.messages)).not.toContain('Private human conversation ordinary-peer-a')
+      expect(JSON.stringify(beta[3]?.messages)).toContain('not available during a peer discussion turn')
     }
     expect((await readdir(peerRoot)).includes('forbidden.txt')).toBe(false)
     if (options.pause !== undefined) await options.pause(surface)
@@ -189,6 +194,9 @@ export async function runDiscussionFlow(
   const beforeRestart = await readLogs()
   await withDefaultWeb(test, async ({ url }) => {
     const surface = await discussionSurface(url, root, test)
+    for (const [sessionId, model] of [['ordinary-peer-a', 'discussion-alpha'], ['ordinary-peer-b', 'discussion-beta']]) {
+      expect(await surface.rpc('session/selectModel', { sessionId, provider: 'deepseek-official', model })).toMatchObject({ selected: { model } })
+    }
     const snapshot = () => surface.rpc<View>('collaboration/controlSnapshot', { sessionId: 'ordinary-peer-a' })
     const restored = await snapshot()
     expect(restored.connections).toMatchObject([{ id: connectionId, paused: true, budget: { used: 1 } }])
@@ -204,10 +212,10 @@ export async function runDiscussionFlow(
     const previous = beforeRestart[index]!
     expect(log.startsWith(previous), 'restart preserves the complete committed Session prefix').toBe(true)
     const appended = log.slice(previous.length).split('\n').filter(Boolean).map(line => JSON.parse(line) as { type: string })
-    expect(appended.every(row => row.type === 'session/end-seed'), 'only the ordinary restore boundary may append on reopen').toBe(true)
+    expect(appended.map(row => row.type), 'each Session restores and selects its existing model without another model turn').toEqual(['session/end-seed', 'model/selection'])
   }
   if (options.replayDirectory !== undefined) expect(bodies, 'replay must not reach the model HTTP boundary').toEqual([])
-  else expect([...calls]).toEqual([['discussion-alpha', 4], ['discussion-beta', 3]])
+  else expect([...calls]).toEqual([['discussion-alpha', 4], ['discussion-beta', 4]])
   const peerInputs = captured.flatMap(log => log.split('\n').filter(Boolean).map(line => JSON.parse(line) as { type: string; data?: { source?: { kind?: string } } }))
     .filter(row => row.type === 'user/message' && row.data?.source?.kind === 'collaboration-peer')
   expect(peerInputs, 'restart does not duplicate the admitted Peer input').toHaveLength(1)

@@ -13,7 +13,7 @@ import type { UserMessage } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-tools'
 
 /**
- * Who started the current turn. `human` means every new input came from the user.
+ * Who started the current turn. `human` means user input accompanied only by supported runtime context.
  * `peer-discussion` covers other, mixed, or unknown input, so ambiguity gets the stricter class.
  * A third `approved-task` class is deliberately absent.
  */
@@ -77,19 +77,23 @@ export interface AuthorityConfig {
 /**
  * Classify the messages that enter one step.
  * @param messages - messages entering the step.
- * @returns `human` for user-only input, `peer-discussion` for other input, or `undefined` for no new input.
+ * @returns `human` for user input with supported context, `peer-discussion` for peer or unknown input, or `undefined` for context alone.
  */
 export function classifyMessages(messages: readonly UserMessage[]): TurnClass | undefined {
   let human = false
   for (const message of messages) {
-    switch (message.source.kind) {
+    // Source kinds are merge-extensible; context producers need not be installed with this plugin.
+    switch (message.source.kind as string) {
       case 'user':
         human = true
         break
       case 'tool':
       case 'plugin':
+      case 'skill-invocation':
+      case 'skill-catalog':
+      case 'agent-instructions':
         break
-      // Merge-extensible source kinds, including peer messages, carry input the human did not type.
+      // Unknown source kinds cannot establish human authority.
       default:
         return 'peer-discussion'
     }
