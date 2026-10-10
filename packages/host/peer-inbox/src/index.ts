@@ -52,6 +52,11 @@ interface Pending {
   foreign: boolean
 }
 declare module '@deepseek-ai/cordis' { interface Context { peerInbox: PeerInbox } }
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'peer-inbox': { kind: 'peer-inbox' }
+  }
+}
 class HttpError extends Error { constructor(readonly status: number, readonly code: string) { super(code) } }
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/
 
@@ -162,7 +167,7 @@ export class PeerInbox extends Service {
   private reconcile(agent: Agent): void {
     for (const entry of this.ledger.all()) {
       if (entry.sessionId !== agent.id || entry.result.status === 'queued' || entry.result.status === 'running') continue
-      const message = [...agent.inbox.nextTurn, ...agent.inbox.nextStep].find(item => item.id === entry.messageId && item.source.kind === 'plugin' && item.source.plugin === 'peer-inbox')
+      const message = [...agent.inbox.nextTurn, ...agent.inbox.nextStep].find(item => item.id === entry.messageId && item.source.kind === 'peer-inbox')
       if (message !== undefined) agent.inbox.remove(message.id)
     }
   }
@@ -243,7 +248,7 @@ export class PeerInbox extends Service {
       if (this.ledger.size >= this.config.maxLedgerEntries) throw new HttpError(503, 'ledger_full')
       const agent = this.ctx.agents.get(SessionId(sessionId))
       if (agent === undefined || !this.ctx.agents.roots().includes(agent)) throw new HttpError(409, 'session_not_live_root')
-      const message = createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'plugin', plugin: 'peer-inbox' } })
+      const message = createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'peer-inbox' } })
       const entry: Entry = { fingerprint, sessionId, messageId: message.id, result: { requestId, status: 'queued' } }
       // A durable tombstone is committed before the first possible execution.
       this.ledger.put(entry)

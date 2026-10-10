@@ -83,7 +83,7 @@ describe('ReactLoopInbox', () => {
   it('restores unstarted identities in their original lists and order without insertion or cancellation notifications', async () => {
     const { ctx, session, inbox } = await inboxAgent('restore-inbox')
     try {
-      const message = (text: string) => createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'plugin', plugin: 'fixture' } })
+      const message = (text: string) => createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'runtime-context' } })
       const [earlier, claimed, later, step] = ['earlier deferred', 'claimed', 'later', 'step'].map(message)
       inbox.append('next-turn', earlier!)
       inbox.append('next-turn', claimed!)

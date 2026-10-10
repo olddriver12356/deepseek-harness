@@ -479,12 +479,12 @@
 
 .artifactTop b {
   color: var(--paper-muted);
-  font: 700 12px/1.4 var(--dsw-specific-knowledge-display-font);
+  font: 700 14px/1.4 var(--dsw-specific-knowledge-display-font);
 }
 
 .artifactTop small {
   color: var(--paper-muted);
-  font: 500 11px/1.4 var(--dsw-specific-knowledge-display-font);
+  font: 500 14px/1.4 var(--dsw-specific-knowledge-display-font);
   text-align: right;
 }
 
@@ -501,7 +501,7 @@
   justify-content: flex-end;
   overflow-wrap: anywhere;
   color: var(--paper-muted);
-  font: 500 11px/1.5 var(--dsw-specific-knowledge-display-font);
+  font: 500 14px/1.5 var(--dsw-specific-knowledge-display-font);
 }
 
 .artifact:hover,

@@ -152,6 +152,6 @@
 .catalogWorkbench .skill { width: 100%; }
 .catalogFacts { display: grid; gap: 12px; margin-top: 24px; }
 .catalogFacts div { padding: 12px 14px; border: 1px solid var(--skill-line); border-radius: 8px; background: rgb(25 31 34 / 80%); }
-.catalogFacts dt { color: var(--skill-muted); font-size: 12px; }
+.catalogFacts dt { color: var(--skill-muted); font-size: 14px; }
 .catalogFacts dd { margin: 3px 0 0; overflow-wrap: anywhere; }
 @container (max-width: 700px) { .catalogWorkbench { grid-template-columns: minmax(0, 1fr); } .catalogWorkbench .index { max-height: 240px; border-right: 0; border-bottom: 1px solid var(--skill-line); } }

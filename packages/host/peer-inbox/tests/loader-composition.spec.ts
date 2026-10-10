@@ -55,7 +55,7 @@ it('boots the opt-in service through Loader and records plugin input and termina
   await agent.whenIdle()
   const result: unknown = await (await fetch(base + '/v1/requests/loader-1', { headers })).json()
   expect(result).toEqual({ requestId: 'loader-1', status: 'completed', turn: 1, text: 'Loader reply' })
-  const transcript = agent.session.snapshotEvents().flatMap<{ role: string; source: import('@deepseek-ai/dsh-llm').MessageSource | undefined; content: import('@deepseek-ai/dsh-llm').ContentBlock[] }>((event) => {
+  const transcript = agent.session.snapshotEvents().flatMap<{ role: string; source: import('@deepseek-ai/dsh-llm').MessageSource | undefined; content: readonly import('@deepseek-ai/dsh-llm').ContentBlock[] }>((event) => {
     if (event.type === 'user/message') return [{ role: 'user', source: event.data.source, content: event.data.content }]
     if (event.type === 'assistant/message') return [{ role: 'assistant', source: undefined, content: event.data.message.content }]
     return []
@@ -71,8 +71,7 @@ it('boots the opt-in service through Loader and records plugin input and termina
         ],
         "role": "user",
         "source": {
-          "kind": "plugin",
-          "plugin": "peer-inbox",
+          "kind": "peer-inbox",
         },
       },
       {

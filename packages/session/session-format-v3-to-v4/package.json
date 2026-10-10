@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-session-format-v3-to-v4",
-  "description": "Identity-preserving V3 to V4 migration and durable input admission validation",
-  "version": "0.1.6-alpha.1",
+  "description": "Streaming tool-role migration and delivery validation from Session V3 to V4",
+  "version": "0.1.7-alpha.1",
   "publishConfig": {
     "access": "public"
   },
@@ -33,9 +33,9 @@
       "export": ".",
       "migration": "sessionFormatV3ToV4",
       "sourceCodec": "releasedV3SessionFormatCodec",
-      "targetCodec": "v4SessionFormatCodec",
-      "targetHeaderValidator": "assertV4Header",
-      "targetRestorer": "restoreV4Artifact"
+      "targetCodec": "releasedV4SessionFormatCodec",
+      "targetHeaderValidator": "assertReleasedV4Header",
+      "targetRestorer": "restoreReleasedV4Artifact"
     }
   },
   "dependencies": {

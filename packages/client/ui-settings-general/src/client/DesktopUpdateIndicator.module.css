@@ -15,7 +15,7 @@
   color: var(--dsw-alias-brand-primary-new-colorprimary-new-color);
   background: color-mix(in srgb, var(--dsw-alias-brand-primary-new-colorprimary-new-color) 8%, transparent);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   white-space: nowrap;
   cursor: pointer;

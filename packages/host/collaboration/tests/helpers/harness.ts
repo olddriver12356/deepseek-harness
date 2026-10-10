@@ -242,7 +242,7 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
       deliverPeerDiscussion: text => send([peer(text)]),
       deliverMixedTurn: (humanText, peerText) => send([peer(peerText), human(humanText)]),
       deliverHumanWithContext: text => send([
-        createUserMessage({ content: [{ type: 'text', text: 'trusted context' }], source: { kind: 'plugin', plugin: 'fixture' } }), human(text),
+        createUserMessage({ content: [{ type: 'text', text: 'trusted context' }], source: { kind: 'runtime-context' } }), human(text),
       ]),
       scriptModelToolCall: (name, args) => { adapter.steps.push({ kind: 'tool', name, args }, { kind: 'text' }) },
       holdModelToolCall(name, args) {

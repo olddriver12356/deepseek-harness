@@ -151,7 +151,7 @@ it('enforces the same allowlist for native model calls and alternate executor ca
   h.scriptModelToolCall('peer_send', request)
   await h.deliverPeerDiscussion('Please send this')
   const events = await h.storedEvents()
-  expect(events.filter(event => event.type === 'tool/result').at(-1)?.data).toMatchObject({ message: { content: [{ isError: true }] } })
+  expect(events.filter(event => event.type === 'tool/result').at(-1)?.data).toMatchObject({ message: { role: 'tool', isError: true } })
   expect(h.ctx.collaborationStore.read().outbox).toEqual([])
 })
 
@@ -165,7 +165,7 @@ it('logs actual model instructions, tool call and exact rendered result in the o
   expect(JSON.stringify(system?.data)).toContain('current attempt')
   expect(events.find(event => event.type === 'tool/call')?.data).toMatchObject({ name: 'peer_send', arguments: JSON.stringify(request) })
   const result = events.find(event => event.type === 'tool/result')
-  expect(result?.data).toMatchObject({ message: { content: [{ isError: false }] } })
+  expect(result?.data).toMatchObject({ message: { role: 'tool', isError: false } })
   expect(h.requests.at(-1)?.messages.some(message =>
     JSON.stringify(message) === JSON.stringify(result?.data.message))).toBe(true)
   const prompt = h.requests[0]!.messages.find(message => message.role === 'system')

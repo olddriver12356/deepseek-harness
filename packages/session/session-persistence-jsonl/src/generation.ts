@@ -28,6 +28,7 @@ import { constants, createZstdCompress } from 'node:zlib'
 import { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { BlockAssembler, expandAssistantStream } from '@deepseek-ai/dsh-llm'
+import { SessionFormatError } from '@deepseek-ai/dsh-session-format'
 import type {
   SessionFormatArtifact,
   SessionFormatJsonValue,
@@ -58,6 +59,8 @@ export interface JsonlGenerationFormatAdapter {
   readonly currentVersion: number
   /** Create the single-pass codec and migration state for a historical header. */
   createRestore(header: Record<string, unknown>): SessionFormatRestore
+  /** Refuse owned syntax before a recoverable malformed row can suppress later records. */
+  validateSourceRow?(row: unknown): void
   /** Encode one current header record without materializing body rows. */
   encodeHeader(header: SessionFormatArtifact['header'], inheritedEventCount: number): SessionFormatJsonValue
   /** Encode one current event record. */
@@ -68,6 +71,8 @@ export interface JsonlGenerationFormatAdapter {
 
 /** Inputs for preparing one historical generation and publishing its current successor later. */
 export interface PrepareJsonlMigrationOptions {
+  /** Revalidate related source facts before preparation returns and immediately before publication. */
+  readonly validateRelatedSources?: () => Promise<void>
   /** Immutable generation selected by the backend resolver. */
   readonly sourcePath: string
   /** Version selected from the source filename and independently checked against its header. */
@@ -305,7 +310,7 @@ class MigratingJsonlRows {
   private rowIndex = 0
   private issue: Error | undefined
 
-  constructor(private readonly restore: SessionFormatRestore) {}
+  constructor(private readonly restore: SessionFormatRestore, private readonly validateSourceRow?: (row: unknown) => void) {}
 
   /** Consume plaintext bytes following the independently decoded header. */
   write(chunk: Buffer): void {
@@ -356,6 +361,7 @@ class MigratingJsonlRows {
       this.issue ??= asError(error)
       return
     }
+    this.validateSourceRow?.(row)
     if (this.issue !== undefined) {
       if (typeof row === 'object' && row !== null
         && (row as { type?: unknown }).type === 'turn/end') throw this.issue
@@ -372,7 +378,7 @@ interface StartedMigrationStream {
 async function startMigrationStream(
   headerRecord: Buffer,
   sourceVersion: number,
-  format: JsonlGenerationFormatAdapter,
+  format: Pick<JsonlGenerationFormatAdapter, 'createRestore' | 'validateSourceRow'>,
   validateHistoricalHeader?: PrepareJsonlMigrationOptions['validateHistoricalHeader'],
 ): Promise<StartedMigrationStream> {
   const value = parseJson(headerRecord.subarray(0, -1).toString('utf8'), 'header line')
@@ -384,7 +390,7 @@ async function startMigrationStream(
   const validation = validateHistoricalHeader?.(header)
   if (validation !== undefined) await validation
   const stream = format.createRestore(header)
-  return { parser: new MigratingJsonlRows(stream) }
+  return { parser: new MigratingJsonlRows(stream, format.validateSourceRow) }
 }
 
 async function consumeMigrationBytes(
@@ -409,7 +415,7 @@ async function decodeStreamingMigration(
   bytes: Buffer,
   compression: JsonlCompression,
   sourceVersion: number,
-  format: JsonlGenerationFormatAdapter,
+  format: Pick<JsonlGenerationFormatAdapter, 'createRestore' | 'validateSourceRow'>,
   validateHistoricalHeader: PrepareJsonlMigrationOptions['validateHistoricalHeader'],
   signal?: AbortSignal,
 ): Promise<SessionFormatArtifact> {
@@ -900,6 +906,7 @@ async function publishPreparedMigration(
       throw new Error('staged session generation changed during verification')
     }
     await internals.barrier('before-source-check', 1)
+    await options.validateRelatedSources?.()
     const beforePublish = await internals.fs.stat(sourcePath)
     if (identity(beforePublish) !== identity(sourceIdentity)) {
       throw new JsonlGenerationSourceChangedError(sourcePath)
@@ -974,6 +981,7 @@ async function prepareMigration(
   if (artifact.header.version !== format.currentVersion) {
     throw new Error(`format migration returned v${artifact.header.version}, expected v${format.currentVersion}`)
   }
+  await options.validateRelatedSources?.()
   const sourceIdentity = source.identity
   let publication: Promise<JsonlPhysicalIdentity> | undefined
   return {
@@ -1024,3 +1032,31 @@ export function createJsonlGenerationRuntime(
 }
 
 const defaultGenerationRuntime = createJsonlGenerationRuntime()
+
+/**
+ * Read one stable source through the shared streaming parser without publishing a generation.
+ * @param path - selected source generation path.
+ * @param version - physical source version identified by its filename.
+ * @param compression - source encoding.
+ * @param format - codec/restore factory, independent of current-generation publication.
+ * @param signal - cancellation observed during source reads and decode yields.
+ * @returns decoded artifact and physical source identity for later revalidation.
+ * @throws SessionFormatError for physical decoding failures; storage, cancellation, and unsupported migration errors retain their category.
+ */
+export async function readDecodedJsonlSource(
+  path: string,
+  version: number,
+  compression: JsonlCompression,
+  format: Pick<JsonlGenerationFormatAdapter, 'createRestore' | 'validateSourceRow'>,
+  signal?: AbortSignal,
+): Promise<{ artifact: SessionFormatArtifact; identity: JsonlPhysicalIdentity }> {
+  const source = await readStableJsonlFile(path, signal)
+  let artifact: SessionFormatArtifact
+  try {
+    artifact = await decodeStreamingMigration(source.bytes, compression, version, format, undefined, signal)
+  } catch (error: unknown) {
+    if (signal?.aborted || error instanceof SessionFormatError) throw error
+    throw new SessionFormatError(String(error), { cause: error })
+  }
+  return { artifact, identity: source.identity }
+}

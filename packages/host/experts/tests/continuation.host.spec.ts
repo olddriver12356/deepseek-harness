@@ -82,7 +82,7 @@ describe('expert continuation through Loader', () => {
       await vi.waitFor(() => { expect(ctx.agents.get(result.childId)).toBeUndefined() })
       const first = await loadStoredSession(ctx.sessionPersistence, result.childId)
       expect(first.events.filter(event => event.type === 'experts/delegation')).toHaveLength(1)
-      expect(first.events.filter(event => event.type === 'tool/result').map(event => event.data.message.content[0].isError === true)).toEqual([access === 'read-only'])
+      expect(first.events.filter(event => event.type === 'tool/result').map(event => event.data.message.isError === true)).toEqual([access === 'read-only'])
       expect(writes).toBe(access === 'read-only' ? 0 : 1)
       await parent.whenIdle()
       await queueHostSubagentPrompt(ctx.subagents, parent, result.childId,
@@ -91,7 +91,7 @@ describe('expert continuation through Loader', () => {
       expect(writes).toBe(access === 'read-only' ? 0 : 2)
       const resumed = await loadStoredSession(ctx.sessionPersistence, result.childId)
       expect(resumed.events.filter(event => event.type === 'experts/delegation')).toHaveLength(1)
-      expect(resumed.events.filter(event => event.type === 'tool/result').map(event => event.data.message.content[0].isError === true)).toEqual([access === 'read-only', access === 'read-only'])
+      expect(resumed.events.filter(event => event.type === 'tool/result').map(event => event.data.message.isError === true)).toEqual([access === 'read-only', access === 'read-only'])
       expect({ ...result, access: '<access>', childId: '<child>', parentSessionId: '<parent>' }).toMatchInlineSnapshot(`
         {
           "access": "<access>",

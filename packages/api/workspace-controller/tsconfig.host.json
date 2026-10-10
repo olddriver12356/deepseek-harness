@@ -11,11 +11,15 @@
     "src/commands.ts",
     "src/directory-picker.ts",
     "src/feed.ts",
+    "src/default-directory.ts",
     "src/skill-files.ts"
   ],
   "references": [
     {
       "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/schemastery"
     },
     {
       "path": "../../core/session"
@@ -31,6 +35,9 @@
     },
     {
       "path": "../../util/deque"
+    },
+    {
+      "path": "../../util/native-command"
     },
     {
       "path": "../../workspace/workspace"

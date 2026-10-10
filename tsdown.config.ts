@@ -1,4 +1,6 @@
 import { defineConfig } from 'tsdown'
+import { globSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { typertPlugin } from './packages/typert/generator/lib/types/tsdown-plugin.js'
 
 function isBuildFaceClient(value: unknown): boolean {
@@ -16,9 +18,10 @@ function isBuildFaceClient(value: unknown): boolean {
 export default defineConfig(({ env }) => {
   const client = isBuildFaceClient(env?.DSH_BUILD_FACE)
   return {
-    workspace: client
+    workspace: globSync((client
       ? ['vendor/*', 'packages/*/*', 'apps/cli']
-      : ['vendor/*', 'packages/*/*', 'apps/cli', 'apps/desktop', 'apps/desktop-host'],
+      : ['vendor/*', 'packages/*/*', 'apps/cli', 'apps/desktop', 'apps/desktop-host'])
+      .map(directory => `${directory}/package.json`)).map(path => dirname(path).replaceAll('\\', '/')),
     entry: client ? '' : ['lib/types/{index,invariant,startup}.js'],
     outDir: 'lib',
     format: ['esm'],

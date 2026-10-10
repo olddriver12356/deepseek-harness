@@ -15,6 +15,7 @@ import type {} from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
 import { SESSION_FORMAT_VERSION, SessionLogOffset, type SessionEvent } from '@deepseek-ai/dsh-session'
 import type { SessionLogOffset as SessionLogOffsetType } from '@deepseek-ai/dsh-session'
 import {
+  createSessionFormatCatalogWithChildren,
   SessionFormatUnsupportedMigrationError,
   sessionFormatCatalog,
 } from '@deepseek-ai/dsh-session-format-catalog'
@@ -200,14 +201,15 @@ export interface SessionScript {
  * dense sequences and zero timestamps. The build-static format catalog then
  * decodes and migrates the complete artifact before this function returns.
  * @param text - the raw `.jsonl` file contents.
+ * @param localV4 - explicit identification of a pre-integration local V4 fixture.
  * @returns every migrated current event, in log order.
  */
-export function parseSessionLog(text: string): SessionEvent[] {
-  return parseSessionFixture(text).events
+export function parseSessionLog(text: string, localV4 = false): SessionEvent[] {
+  return parseSessionFixture(text, undefined, localV4).events
 }
 
 /** Parse, complete, decode, and migrate one projected snapshot artifact without writing its source. */
-function parseSessionFixture(text: string, physicalRows?: Record<string, unknown>[]): ParsedSessionFixture {
+function parseSessionFixture(text: string, physicalRows?: Record<string, unknown>[], localV4 = false): ParsedSessionFixture {
   let headerLineNumber: number | undefined
   let sourceHeader: Record<string, unknown> | undefined
   let restore: ReturnType<typeof sessionFormatCatalog.createRestore> | undefined
@@ -233,7 +235,7 @@ function parseSessionFixture(text: string, physicalRows?: Record<string, unknown
       sourceHeader = recordValue
       physicalRows?.push(normalizeProjectedHeader(recordValue))
       try {
-        restore = sessionFormatCatalog.createRestore(normalizeProjectedHeader(recordValue), {
+        restore = createSessionFormatCatalogWithChildren([], localV4).createRestore(normalizeProjectedHeader(recordValue), {
           recovery: 'strict',
           validation: 'current',
         })
@@ -302,10 +304,11 @@ function parsedSessionFixture(
  * Convert one persisted or projected snapshot fixture to the current physical format in memory for expected-output comparison.
  * Projected cwd and request-tool tokens remain tokens for comparison with a fresh run.
  * @param text - one complete Session fixture.
+ * @param localV4 - explicit identification of a pre-integration local V4 fixture.
  * @returns current-format JSONL with complete event envelopes; the input string and source file remain unchanged.
  */
-export function prepareSessionSnapshotFixtureForComparison(text: string): string {
-  const parsed = parseSessionFixture(text)
+export function prepareSessionSnapshotFixtureForComparison(text: string, localV4 = false): string {
+  const parsed = parseSessionFixture(text, undefined, localV4)
   return encodeCurrentSessionSnapshotFixture(text, parsed)
 }
 

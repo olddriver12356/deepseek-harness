@@ -343,7 +343,14 @@ async function executeCommand(
   upstream: AbortSignal,
 ): Promise<string> {
   using commandDeadline = deadline(upstream, config.timeoutMs, TIMEOUT_CODE)
-  const id = await shells.get(owner, commandDeadline.signal)
+  let id: TerminalSessionId
+  try {
+    id = await shells.get(owner, commandDeadline.signal)
+  } catch (error: unknown) {
+    // Initialization owns rollback; only this caller's cancellation becomes ABORTED.
+    if (upstream.aborted && error === upstream.reason) return ''
+    throw error
+  }
   const marker = markers()
   const wrapped = wrapCommand(command, marker)
   let first = true
@@ -396,7 +403,8 @@ async function executeCommand(
     }
     if (commandDeadline.signal.aborted) {
       await shells.reset(owner, 'persistent pwsh command aborted')
-      commandDeadline.signal.throwIfAborted()
+      // ToolRuntime publishes ABORTED after this cancelled invocation settles.
+      return ''
     }
     if (latest.text.includes(marker.end)) {
       const complete = commandOutput(retainedScrollback(ctx, owner, id, latest), marker, wrapped)
@@ -458,7 +466,7 @@ function registerPersistentPwsh(ctx: Context, config: ResolvedConfig): void {
       const owner = exec.agent
       if (owner === undefined) throw new Error('pwsh requires an owning agent session')
       return serialized(owner, async () => {
-        exec.signal.throwIfAborted()
+        if (exec.signal.aborted) return '' // ToolRuntime publishes ABORTED after settlement.
         return executeCommand(ctx, shells, owner, args.command, config, exec.signal)
       })
     },

@@ -12,8 +12,8 @@ it('holds deferred initiating input and neutral context without a turn until an 
   let ready = false
   const dispose = h.ctx.agents.registerInputPolicy('deferred-fixture', () => ready ? true : 'defer')
   const deferred = createUserMessage({ content: [{ type: 'text', text: 'pending' }],
-    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'deferred-fixture' } })
-  const context = createUserMessage({ content: [{ type: 'text', text: 'context' }], source: { kind: 'plugin', plugin: 'fixture' } })
+    source: { kind: 'runtime-context', requiredAdmissionPolicy: 'deferred-fixture' } })
+  const context = createUserMessage({ content: [{ type: 'text', text: 'context' }], source: { kind: 'runtime-context' } })
   try {
     h.agent.inbox.append('next-step', context)
     h.agent.followup(deferred)
@@ -38,7 +38,7 @@ it('lets humans bypass deferred input in FIFO order and refuses it once its poli
   opened.push(h)
   const dispose = h.ctx.agents.registerInputPolicy('deferred-fixture', () => 'defer')
   const deferred = createUserMessage({ content: [{ type: 'text', text: 'pending' }],
-    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'deferred-fixture' } })
+    source: { kind: 'runtime-context', requiredAdmissionPolicy: 'deferred-fixture' } })
   const human = (text: string) => createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } })
   try {
     await h.agent.runMaintenance(async () => {
@@ -95,7 +95,7 @@ it('keeps a removed source requirement on original claimed input and drains the 
     return decision.kind === 'reject' ? decision : { ...decision, messages: decision.messages.map(message => ({ ...message, source: { kind: 'user' as const } })) }
   })
   const peer = createUserMessage({ content: [{ type: 'text', text: 'unapproved input' }],
-    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'absent' } })
+    source: { kind: 'runtime-context', requiredAdmissionPolicy: 'absent' } })
   await h.agent.runMaintenance(async () => {
     h.agent.followup(peer)
     h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human' }], source: { kind: 'user' } }))
@@ -116,7 +116,7 @@ it('retains the original requirement when a listener mutates the claimed array i
     return next()
   })
   h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'restricted' }],
-    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'absent' } }))
+    source: { kind: 'runtime-context', requiredAdmissionPolicy: 'absent' } }))
   await h.agent.whenIdle()
   expect(h.requests).toHaveLength(0)
 })
@@ -126,7 +126,7 @@ it('removes required-policy acceptance when its owning registration is disposed'
   opened.push(h)
   const release = h.ctx.agents.registerInputPolicy('fixture-policy', () => true)
   const message = () => createUserMessage({ content: [{ type: 'text', text: 'peer data' }],
-    source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'fixture-policy' } })
+    source: { kind: 'runtime-context', requiredAdmissionPolicy: 'fixture-policy' } })
   h.agent.followup(message())
   await h.agent.whenIdle()
   expect(h.requests).toHaveLength(1)
@@ -182,7 +182,7 @@ it('rechecks policy after asynchronous request preparation and drains a later hu
   })
   try {
     h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'peer' }],
-      source: { kind: 'plugin', plugin: 'fixture', requiredAdmissionPolicy: 'prepared-policy' } }))
+      source: { kind: 'runtime-context', requiredAdmissionPolicy: 'prepared-policy' } }))
     await entered.promise
     releasePolicy()
     h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human' }], source: { kind: 'user' } }))

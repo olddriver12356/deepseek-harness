@@ -36,15 +36,9 @@ const CODEX_ARGS = ['exec', '-s', 'read-only', '--ignore-user-config', '--skip-g
  * @param options - the assembled request; only text-bearing blocks are read.
  * @returns the stdin prompt.
  */
-/**
- * Extract the readable text of one block. `tool-result` recurses into its
- * nested content so a PRIOR turn's tool output (e.g. from a DeepSeek-routed
- * turn earlier in the same session) survives into this route's prompt
- * instead of silently vanishing, the block just isn't a live tool call here.
- */
+/** Read text from any role, including the native tool-role message content. */
 function blockText(block: ContentBlock): string {
   if (block.type === 'text') return block.text
-  if (block.type === 'tool-result') return block.content.map(blockText).filter(Boolean).join('\n')
   return ''
 }
 

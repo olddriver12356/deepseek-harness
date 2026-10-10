@@ -83,6 +83,10 @@ Two failure modes are not reconstructable from a durable Assistant settlement al
 - **An unrecorded session makes a call** — replay fails loud and tells you to re-record the scenario.
 - **A scripted placeholder matches nothing** — `{{fromRequest:<regex>}}` resolution validates the pattern and the request corpus and fails loud on no match, an invalid pattern, or an unterminated placeholder.
 
+Isolated transcript extraction supplies an explicit empty child-fact set to V3→V4. It retains recorded catalog entries but does not discover related files. Complete historical parent catalog migration belongs to JSONL persistence.
+
+The optional `localV4` argument to `parseSessionLog` and comparison preparation explicitly selects the pre-integration local V4 dialect. The corpus test binds that argument to [exact retained fixture paths](tests/local-v4-fixtures.json); ordinary replay selects their V5 successors. Source fixtures remain immutable, and native upstream V4 is never guessed from payloads.
+
 -----
 
 <a id="understand-the-implementation"></a>

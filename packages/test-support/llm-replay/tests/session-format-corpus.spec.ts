@@ -8,6 +8,7 @@ import { parseSessionLog } from '../src/index.ts'
 
 const repoRoot = resolve(import.meta.dirname, '../../../..')
 const excludedDirectories = new Set(['dist', 'lib', 'node_modules'])
+const localV4Fixtures = new Set(JSON.parse(readFileSync(new URL('./local-v4-fixtures.json', import.meta.url), 'utf8')) as string[])
 
 function committedSessionFixtures(directory: string): string[] {
   const files: string[] = []
@@ -29,7 +30,7 @@ function committedSessionFixtures(directory: string): string[] {
 function declaresFormat(text: string): boolean {
   const firstLine = text.split(/\r?\n/).find(line => line.trim().length > 0)
   if (firstLine === undefined) return false
-  const header = JSON.parse(firstLine) as unknown
+  const header: unknown = JSON.parse(firstLine)
   return header !== null && typeof header === 'object' && !Array.isArray(header)
     && Object.hasOwn(header, 'version')
 }
@@ -75,6 +76,7 @@ describe('committed Session format corpus', () => {
     for (const key of [...Object.keys(expectedUnsupported), ...unversionedProtocolFixtures]) {
       expect(keys.has(key), key).toBe(true)
     }
+    for (const key of localV4Fixtures) expect(keys.has(key), key).toBe(true)
   })
 
   it.each(fixtures)('$key', ({ file, key }) => {
@@ -92,7 +94,7 @@ describe('committed Session format corpus', () => {
         version: number
       }
       expect(header.version, key + ': filename/header Session generation').toBe(filenameFormatVersion(file))
-      assertRestoration(key, header.version, () => parseSessionLog(source), expectedUnsupported[key])
+      assertRestoration(key, header.version, () => parseSessionLog(source, localV4Fixtures.has(key)), expectedUnsupported[key])
     } finally {
       expect(readFileSync(file), key + ': source bytes remain unchanged').toEqual(bytes)
     }

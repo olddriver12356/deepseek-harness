@@ -25,7 +25,7 @@
       "path": "../ui-renderer"
     },
     {
-      "path": "../ui-conversation"
+      "path": "../ui-conversation/tsconfig.client.json"
     },
     {
       "path": "../../api/session-controller/tsconfig.client.json"

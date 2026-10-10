@@ -27,6 +27,12 @@
   color: var(--dsw-specific-agent-pink);
 }
 
+.statusWithDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .failure button {
   border: 1px solid var(--dsw-specific-agent-line);
   border-radius: 0;
@@ -170,6 +176,16 @@
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
+}
+
+/* The Loader entry id keeps one size in the card subtitle and the row it expands into;
+   the collapsed subtitle stays on the quieter label tier, while the expanded row carries
+   the card's primary value. */
+.cardIdentity,
+.entryValue {
+  font-family: var(--ds-font-family-code);
+  font-size: 14px;
+  line-height: 18px;
 }
 
 .cardIdentity {

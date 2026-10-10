@@ -27,10 +27,7 @@ export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions }: Pr
     ? { childSessionId: receipt.childId as SessionId, parentSessionId: receipt.parentSessionId as SessionId, mode: 'continuable' } : undefined
   const active = useSessions((state) => {
     if (address === undefined) return undefined
-    const summary = state.byId[address.childSessionId]
-    if (summary !== undefined) return summary.running
-    const entry = state.subagentsByParent[address.parentSessionId]?.entries.find(entry => entry.id === address.childSessionId)
-    return entry?.kind === 'child' ? entry.activity === 'running' : undefined
+    return state.byId[address.childSessionId]?.running
   })
   const summary = useSessions(state => address === undefined ? undefined : state.byId[address.childSessionId])
   const model = summary?.projectionValues?.modelSelection?.lastUsed

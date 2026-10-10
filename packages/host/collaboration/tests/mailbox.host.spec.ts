@@ -265,7 +265,7 @@ it('retains exact own attribution through surface compaction and durable replay'
   if (original === undefined) throw new Error('missing peer input')
   const off = h.ctx.on('agent/pre-step', async ({ agent }, next) => {
     if (agent === peer.agent) agent.session.append('user/message', createUserMessage({
-      content: [{ type: 'text', text: 'compacted discussion' }], source: { kind: 'plugin', plugin: 'compaction-fixture' },
+      content: [{ type: 'text', text: 'compacted discussion' }], source: { kind: 'compaction-fixture' },
     }), { surfaceOp: { op: 'replace', startSeq: original.seq, endSeq: original.seq }, sourceEventSeqs: [original.seq] })
     return next()
   })
@@ -390,7 +390,7 @@ it.each(['human', 'later-policy'] as const)('preserves original required-policy 
   h.ctx.on('agent/pre-step', async ({ messages }, next) => {
     for (const [index, message] of messages.entries()) messages[index] = {
       ...message, content: [{ type: 'text', text: 'transformed body' }],
-      source: rewrite === 'human' ? { kind: 'user' } : { kind: 'plugin', plugin: 'later', requiredAdmissionPolicy: 'later' },
+      source: rewrite === 'human' ? { kind: 'user' } : { kind: 'later', requiredAdmissionPolicy: 'later' },
     }
     return next()
   })
@@ -544,3 +544,10 @@ it('refuses continuation of a running peer when its required policy is disposed'
     finally { await stored.close() }
   } finally { gate.release() }
 })
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'compaction-fixture': { kind: 'compaction-fixture' }
+    'later': { kind: 'later' }
+  }
+}

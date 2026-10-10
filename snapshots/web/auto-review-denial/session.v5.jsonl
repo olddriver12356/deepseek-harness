@@ -1,0 +1,20 @@
+{"type":"session","version":5,"id":"{{session:1}}","createdAt":0,"cwd":"{{cwd}}","isSeeded":false,"delegationDepth":0,"agentPreset":"standard"}
+{"type":"permission/preset","data":{"preset":"auto"},"seq":0,"time":0}
+{"type":"sandbox/mode","data":{"mode":"danger-full-access"},"seq":1,"time":0}
+{"type":"approval/policy","data":{"policy":"never"},"seq":2,"time":0}
+{"type":"turn/start","data":{"turn":1},"seq":3,"time":0}
+{"type":"step/start","data":{"turn":1,"step":1},"seq":4,"time":0}
+{"type":"system/message","data":{"turn":1,"step":1,"message":{"role":"system","content":[],"source":{"kind":"system-prompt"},"id":"{{session:1}}"}},"surfaceOp":"append","seq":5,"time":0}
+{"type":"user/message","data":{"content":[{"type":"text","text":"Inspect the protected operation, but do not run it unless authorized."}],"source":{"kind":"user"},"role":"user","id":"{{session:1}}"},"surfaceOp":"append","seq":6,"time":0}
+{"type":"assistant/message","data":{"turn":1,"step":1,"message":{"role":"assistant","content":[{"type":"tool-call","id":"auto-review-denied-call","name":"mystery","arguments":"{\"secret\":\"hidden-input\"}"}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{session:1}}"},"stream":[]},"surfaceOp":"append","seq":7,"time":0}
+{"type":"tool/call","data":{"turn":1,"step":1,"callId":"auto-review-denied-call","name":"mystery","arguments":"{\"secret\":\"hidden-input\"}"},"seq":8,"time":0}
+{"type":"tool/result","data":{"turn":1,"step":1,"message":{"role":"tool","source":{"kind":"tool","callId":"auto-review-denied-call"},"toolCallId":"auto-review-denied-call","content":[{"type":"text","text":"Error: Auto review rejected tool \"mystery\"; its body was not executed"}],"isError":true,"id":"{{session:1}}"},"error":{"name":"AutoReviewDeniedError","code":"AUTO_REVIEW_DENIED","reason":"raw\r\nreason"}},"sourceEventSeqs":[8],"surfaceOp":"append","seq":9,"time":0}
+{"type":"step/end","data":{"turn":1,"step":1},"seq":10,"time":0}
+{"type":"step/start","data":{"turn":1,"step":2},"seq":11,"time":0}
+{"type":"assistant/message","data":{"turn":1,"step":2,"message":{"role":"assistant","content":[{"type":"tool-call","id":"auto-review-denied-run","name":"run_code","arguments":"{\"code\":\"try { await tools.bash({command: \\\"echo hidden-input-ptc\\\"}) } catch (error) { return \\\"denial caught\\\" }\",\"description\":\"Catch an Auto-denied inner call\"}"}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{session:1}}"},"stream":[]},"surfaceOp":"append","seq":12,"time":0}
+{"type":"tool/call","data":{"turn":1,"step":2,"callId":"auto-review-denied-run","name":"run_code","arguments":"{\"code\":\"try { await tools.bash({command: \\\"echo hidden-input-ptc\\\"}) } catch (error) { return \\\"denial caught\\\" }\",\"description\":\"Catch an Auto-denied inner call\"}"},"seq":13,"time":0}
+{"type":"tool/ptc-dispatch-start","data":{"rootCallId":"auto-review-denied-run","parentCallId":"auto-review-denied-run","subCallId":"auto-review-denied-run:ptc:1","name":"bash","arguments":{"command":"echo hidden-input-ptc"}},"seq":14,"time":0}
+{"type":"tool/ptc-dispatch","data":{"rootCallId":"auto-review-denied-run","parentCallId":"auto-review-denied-run","subCallId":"auto-review-denied-run:ptc:1","name":"bash","arguments":{"command":"echo hidden-input-ptc"},"content":[{"type":"text","text":"Error: Auto review rejected tool \"bash\"; its body was not executed"}],"isError":true,"error":{"name":"AutoReviewDeniedError","code":"AUTO_REVIEW_DENIED","reason":" ptc raw\nreason "}},"seq":15,"time":0}
+{"type":"tool/result","data":{"turn":1,"step":2,"message":{"role":"tool","source":{"kind":"tool","callId":"auto-review-denied-run"},"toolCallId":"auto-review-denied-run","content":[{"type":"text","text":"denial caught"}],"isError":false,"id":"{{session:1}}"}},"sourceEventSeqs":[13],"surfaceOp":"append","seq":16,"time":0}
+{"type":"step/end","data":{"turn":1,"step":2},"seq":17,"time":0}
+{"type":"turn/end","data":{"turn":1,"reason":{"kind":"completed"}},"seq":18,"time":0}

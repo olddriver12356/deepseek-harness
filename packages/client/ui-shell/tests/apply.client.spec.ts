@@ -7,7 +7,7 @@
 // coverage gate still requires exercised.
 
 import { Context } from '@deepseek-ai/cordis'
-import { stubSettingsScope } from '@deepseek-ai/dsh-client-test-runtime'
+import { stubConfigForm } from '@deepseek-ai/dsh-client-test-runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
@@ -31,7 +31,7 @@ async function bench() {
   // remote face: the activity card's goal verbs address the generated Goal Remote through it.
   ctx.provide('remote', { $on: () => () => {} } as never)
   ctx.provide('remote.goals', { edit: vi.fn(), pause: vi.fn(), resume: vi.fn(), clear: vi.fn() } as never)
-  ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
+  ctx.provide('configForms', { get: () => stubConfigForm().scope } as never)
   // The activity card reads the goal CAS ref through the sessions service.
   ctx.provide('sessions', { binding: () => undefined } as never)
   ctx.provide('uiSession', {} as never)

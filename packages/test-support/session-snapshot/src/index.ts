@@ -99,6 +99,7 @@ export {
   parseSystemPromptSnapshot,
   parseToolSchemasSnapshot,
   refreshFixtureReplacements,
+  reconcileCatalogCreationTimes,
   restorePinnedToolSchemas,
   stabilizeFixtureMessageIds,
   stabilizeRefreshLog,

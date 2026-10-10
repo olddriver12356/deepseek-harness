@@ -83,6 +83,10 @@ parent agent 委托给进程内 subagent 的场景会为每个 Session 记录一
 - **未记录的会话发起调用**——回放会明确报错，并提示你重新录制场景。
 - **脚本占位符匹配不到内容**——`{{fromRequest:<regex>}}` 解析会校验模式与请求语料，匹配不到、模式非法或占位符未闭合都会明确报错。
 
+独立转录提取向 V3→V4 显式提供空的子 Session 事实集合；保留已有目录记录，但不发现关联文件。完整的历史父目录迁移由 JSONL 持久化负责。
+
+The optional `localV4` argument to `parseSessionLog` and comparison preparation explicitly selects the pre-integration local V4 dialect. The corpus test binds that argument to [exact retained fixture paths](tests/local-v4-fixtures.json); ordinary replay selects their V5 successors. Source fixtures remain immutable, and native upstream V4 is never guessed from payloads.
+
 -----
 
 <a id="understand-the-implementation"></a>

@@ -81,7 +81,7 @@ it('observes live human turns through Loader, preserves privacy, logs requests, 
     function turn(target: Session, n: number, text = source, human = true) {
       target.append('turn/start', { turn: n })
       target.append('request/header', { reason: 'initial', header: { config: { provider: 'fixture', model: 'memory' } } })
-      target.append('user/message', createUserMessage({ content: [{ type: 'text', text }], source: human ? { kind: 'user' } : { kind: 'plugin', plugin: 'fixture' } }), { surfaceOp: 'append' })
+      target.append('user/message', createUserMessage({ content: [{ type: 'text', text }], source: human ? { kind: 'user' } : { kind: 'runtime-context' } }), { surfaceOp: 'append' })
       return target.append('turn/end', { turn: n, reason: { kind: 'completed' } })
     }
     const end = turn(session, 1)

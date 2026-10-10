@@ -1,6 +1,5 @@
 - id: llm-deepseek
   config:
-    protocol: chat-completions
     baseURL: !!js process.env.DSH_COLLABORATION_TEST_MODEL_URL
     thinking: disabled
     models:

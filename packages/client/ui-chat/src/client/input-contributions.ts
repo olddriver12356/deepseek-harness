@@ -19,7 +19,7 @@ declare module '@deepseek-ai/cordis' {
 
 /** Owns source-kind contributions; registrations use the caller's Cordis effect lifetime. */
 export class ChatInputs extends Service implements IChatInputs {
-  private readonly sources = new Map<MessageSource['kind'], number>()
+  private readonly sources = new Map<string, number>()
   private readonly listeners = new Set<() => void>()
   /** @param ctx - owning Chat context. */
   constructor(ctx: Context) { super(ctx, 'chatInputs') }
@@ -42,7 +42,7 @@ export class ChatInputs extends Service implements IChatInputs {
    * @param source - recorded source kind.
    * @returns whether a custom renderer owns it.
    */
-  excludes(source: MessageSource['kind']): boolean { return this.sources.has(source) }
+  excludes(source: string): boolean { return this.sources.has(source) }
   /**
    * Observe renderer ownership changes.
    * @param listener - definition-rebuild listener.

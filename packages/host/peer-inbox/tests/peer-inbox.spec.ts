@@ -76,7 +76,7 @@ it('settles exact claimed turn, persists duplicates and rejects changed payloads
   expect((await h.call('/v1/requests', h.input())).code).toBe(200)
   expect((await h.call('/v1/requests', { ...h.input(), text: 'changed' })).code).toBe(409)
   expect(h.model.calls).toBe(1)
-  expect(h.agent.session.snapshotEvents().find(e => e.type === 'user/message')?.data).toMatchObject({ source: { kind: 'plugin', plugin: 'peer-inbox' } })
+  expect(h.agent.session.snapshotEvents().find(e => e.type === 'user/message')?.data).toMatchObject({ source: { kind: 'peer-inbox' } })
 })
 it('rejects stale runtime, unknown sessions, oversized and extra fields', async () => {
   const h = await harness()
@@ -120,14 +120,14 @@ it('suppresses a foreign plugin steering input in the same turn', async () => {
   h.model.gate = gate.promise
   cleanups.push(async () => { gate.resolve(undefined) })
   await h.call('/v1/requests', h.input())
-  h.agent.steer(createUserMessage({ content: [{ type: 'text', text: 'foreign private data' }], source: { kind: 'plugin', plugin: 'other-plugin' } }))
+  h.agent.steer(createUserMessage({ content: [{ type: 'text', text: 'foreign private data' }], source: { kind: 'other-plugin' } }))
   gate.resolve(undefined)
   await h.agent.whenIdle()
   expect((await h.call('/v1/requests/request-1')).data).toMatchObject({ status: 'unknown', failureCode: 'foreign_input' })
 })
 it('suppresses preexisting next-step plugin input claimed before its own message', async () => {
   const h = await harness()
-  h.agent.inject(createUserMessage({ content: [{ type: 'text', text: 'private parked context' }], source: { kind: 'plugin', plugin: 'other' } }))
+  h.agent.inject(createUserMessage({ content: [{ type: 'text', text: 'private parked context' }], source: { kind: 'other' } }))
   await h.call('/v1/requests', h.input())
   await h.agent.whenIdle()
   expect((await h.call('/v1/requests/request-1')).data).toMatchObject({ status: 'unknown', failureCode: 'foreign_input' })
@@ -187,7 +187,7 @@ it('withdraws a retained ambiguous queue item when the plugin reopens', async ()
   h.model.gate = gate.promise
   cleanups.push(async () => { gate.resolve(undefined) })
   h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'owner' }], source: { kind: 'user' } }))
-  const old = createUserMessage({ content: [{ type: 'text', text: 'ambiguous' }], source: { kind: 'plugin', plugin: 'peer-inbox' } })
+  const old = createUserMessage({ content: [{ type: 'text', text: 'ambiguous' }], source: { kind: 'peer-inbox' } })
   h.agent.followup(old)
   const ledger = new Ledger(h.config.ledgerDir, 10, 4096)
   ledger.put({ fingerprint: 'a'.repeat(64), sessionId: 'owner', messageId: old.id, result: { requestId: 'old-request', status: 'queued' } })
@@ -201,7 +201,7 @@ it('withdraws a retained ambiguous queue item when the plugin reopens', async ()
 it('releases the writer lock if startup reconciliation throws', async () => {
   const h = await harness()
   await h.fiber.dispose()
-  const old = createUserMessage({ content: [{ type: 'text', text: 'ambiguous' }], source: { kind: 'plugin', plugin: 'peer-inbox' } })
+  const old = createUserMessage({ content: [{ type: 'text', text: 'ambiguous' }], source: { kind: 'peer-inbox' } })
   h.agent.inject(old)
   const ledger = new Ledger(h.config.ledgerDir, 10, 4096)
   ledger.put({ fingerprint: 'a'.repeat(64), sessionId: 'owner', messageId: old.id, result: { requestId: 'old-request', status: 'queued' } })
@@ -222,3 +222,10 @@ it('retains idempotence across clean plugin reload', async () => {
   expect(response.status).toBe(200)
   expect(h.model.calls).toBe(1)
 })
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'other': { kind: 'other' } & import('@deepseek-ai/dsh-llm').ContextFormed
+    'other-plugin': { kind: 'other-plugin' }
+  }
+}

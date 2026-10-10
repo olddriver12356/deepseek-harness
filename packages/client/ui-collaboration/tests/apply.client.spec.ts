@@ -15,6 +15,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { registerInboxConversationNodes } from '../../ui-chat/src/client/conversation-nodes/inbox.ts'
 import { registerMessageConversationNode } from '../../ui-chat/src/client/conversation-nodes/message.ts'
 import { registerChatConversationView } from '../../ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
+import { useDisclosure } from '../../ui-chat/src/client/chat/use-disclosure.ts'
 import * as CollaborationUi from '../src/client/index.ts'
 import { sid, peer, snapshot } from './fixtures.client.ts'
 import { original, truncatedWindow } from './events.client.ts'
@@ -51,7 +52,7 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   await runtime.declare({
     'shell.activity.selectors': { kind: 'list', scope: 'session' },
     'shell.app-overlay': { kind: 'list', scope: 'session-maybe' },
-    'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: { hooks: { turnData: () => () => undefined } } },
+    'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: { hooks: { turnData: () => () => undefined, disclosure: () => useDisclosure } } },
   })
   const owner = { inject: ['sessions'], apply(ctx: Context) {
     new UiConversation(ctx, ctx.sessions)

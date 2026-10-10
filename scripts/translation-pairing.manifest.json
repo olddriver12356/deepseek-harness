@@ -69,6 +69,7 @@
     "packages/host/knowledge/README.md",
     "packages/host/peer-inbox/README.md",
     "packages/host/styles/README.md",
-    "packages/session/session-format-v3-to-v4/README.md"
+    "packages/session/session-format-v4-to-v5/README.md",
+    ".agents/notes/implemented/architecture/2026-10-09-preserve-local-and-upstream-session-formats.md"
   ]
 }

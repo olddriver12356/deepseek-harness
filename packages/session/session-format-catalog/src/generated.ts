@@ -5,35 +5,47 @@
 
 import { KNOWN_SESSION_EVENT_TYPES } from '@deepseek-ai/dsh-session'
 import { createSessionFormatCatalog } from '@deepseek-ai/dsh-session-format'
+import type { SessionFormatCatalogOptions } from '@deepseek-ai/dsh-session-format'
 import { validateInstalledCurrentSessionArtifact, validateInstalledCurrentSessionHeader } from './current.ts'
 import { releasedV0SessionFormatCodec, releasedV1SessionFormatCodec, sessionFormatV0ToV1 } from '@deepseek-ai/dsh-session-format-v0-to-v1'
 import { releasedV2SessionFormatCodec, sessionFormatV1ToV2 } from '@deepseek-ai/dsh-session-format-v1-to-v2'
 import { releasedV3SessionFormatCodec, sessionFormatV2ToV3 } from '@deepseek-ai/dsh-session-format-v2-to-v3'
-import { assertV4Header, restoreV4Artifact, sessionFormatV3ToV4, v4SessionFormatCodec } from '@deepseek-ai/dsh-session-format-v3-to-v4'
+import { releasedV4SessionFormatCodec, sessionFormatV3ToV4 } from '@deepseek-ai/dsh-session-format-v3-to-v4'
+import { assertV5Header, restoreV5Artifact, sessionFormatV4ToV5, v5SessionFormatCodec } from '@deepseek-ai/dsh-session-format-v4-to-v5'
 
-/** Physical codec dispatch and complete adjacent chain, independent of mounted plugins. */
-export const sessionFormatCatalog = createSessionFormatCatalog({
-  currentVersion: 4,
+/** Static assembly shared by current reads and parent-specific historical restoration. */
+export const sessionFormatCatalogOptions: SessionFormatCatalogOptions = {
+  currentVersion: 5,
   codecs: [
     releasedV0SessionFormatCodec,
     releasedV1SessionFormatCodec,
     releasedV2SessionFormatCodec,
     releasedV3SessionFormatCodec,
-    v4SessionFormatCodec,
+    releasedV4SessionFormatCodec,
+    v5SessionFormatCodec,
   ],
-  currentEncoder: v4SessionFormatCodec,
-  migrations: [sessionFormatV0ToV1, sessionFormatV1ToV2, sessionFormatV2ToV3, sessionFormatV3ToV4],
+  currentEncoder: v5SessionFormatCodec,
+  migrations: [
+    sessionFormatV0ToV1,
+    sessionFormatV1ToV2,
+    sessionFormatV2ToV3,
+    sessionFormatV3ToV4,
+    sessionFormatV4ToV5,
+  ],
   restoreCurrent(artifact) {
-    const restored = restoreV4Artifact(artifact, KNOWN_SESSION_EVENT_TYPES)
+    const restored = restoreV5Artifact(artifact, KNOWN_SESSION_EVENT_TYPES)
     validateInstalledCurrentSessionArtifact(restored)
     return restored
   },
   restoreTransformedCurrent(artifact) {
-    return restoreV4Artifact(artifact, KNOWN_SESSION_EVENT_TYPES)
+    return restoreV5Artifact(artifact, KNOWN_SESSION_EVENT_TYPES)
   },
   restoreCurrentHeader(header) {
-    assertV4Header(header)
+    assertV5Header(header)
     validateInstalledCurrentSessionHeader(header)
     return header
   },
-})
+}
+
+/** Physical codec dispatch and complete adjacent chain, independent of mounted plugins. */
+export const sessionFormatCatalog = createSessionFormatCatalog(sessionFormatCatalogOptions)

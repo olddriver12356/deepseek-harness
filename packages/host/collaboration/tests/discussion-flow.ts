@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, type TestContext } from 'vitest'
+import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
 import { materializeSessionFixtureCwd, sessionFixtureNames } from '@deepseek-ai/dsh-session-snapshot'
 import { withDefaultWeb, webGet } from '../../../../apps/cli/tests/profiles/web/tests/default-web-process.ts'
 
@@ -99,11 +100,14 @@ export async function runDiscussionFlow(
           : body.model === 'discussion-beta' && count === 1 ? { name: 'write', arguments: JSON.stringify({ file_path: 'human.txt', content: 'human authorized' }) }
             : body.model === 'discussion-beta' && count === 3 ? { name: 'write', arguments: JSON.stringify({ file_path: 'forbidden.txt', content: 'not authorized' }) } : undefined
       response.writeHead(200, { 'content-type': 'text/event-stream' })
-      const delta = tool === undefined ? { content: `Completed ${body.model} ${count}.` }
-        : { tool_calls: [{ index: 0, id: `call-${body.model}-${count}`, type: 'function', function: tool }] }
-      response.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: null }] })}\n\n`)
-      response.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: tool === undefined ? 'stop' : 'tool_calls' }] })}\n\n`)
-      response.end('data: [DONE]\n\n')
+      const emit = (event: object): void => { response.write(`data: ${JSON.stringify(event)}\n\n`) }
+      emit({ type: 'message_start', message: { id: `message-${body.model}-${count}`, type: 'message', role: 'assistant', model: body.model, content: [], usage: { input_tokens: 1, output_tokens: 0 } } })
+      emit({ type: 'content_block_start', index: 0, content_block: tool === undefined ? { type: 'text', text: '' } : { type: 'tool_use', id: `call-${body.model}-${count}`, name: tool.name, input: {} } })
+      emit({ type: 'content_block_delta', index: 0, delta: tool === undefined ? { type: 'text_delta', text: `Completed ${body.model} ${count}.` } : { type: 'input_json_delta', partial_json: tool.arguments } })
+      emit({ type: 'content_block_stop', index: 0 })
+      emit({ type: 'message_delta', delta: { stop_reason: tool === undefined ? 'end_turn' : 'tool_use', stop_sequence: null }, usage: { output_tokens: 1 } })
+      emit({ type: 'message_stop' })
+      response.end()
     })().catch((error: unknown) => { failures.push(error); response.destroy() })
   })
   await new Promise<void>((resolve, reject) => {
@@ -116,7 +120,7 @@ export async function runDiscussionFlow(
   const readLogs = async (): Promise<string[]> => {
     const directory = join(root, '.dsh', 'sessions')
     const entries = await readdir(directory, { recursive: true })
-    return Promise.all(entries.filter(name => name.endsWith('session.v4.jsonl')).map(name => readFile(join(directory, name), 'utf8')))
+    return Promise.all(entries.filter(name => name.endsWith(`session.v${SESSION_FORMAT_VERSION}.jsonl`)).map(name => readFile(join(directory, name), 'utf8')))
   }
   await withDefaultWeb(test, async ({ url, root }) => {
     webOrigin = new URL(url).origin
@@ -177,7 +181,7 @@ export async function runDiscussionFlow(
       for (const entry of await readdir(directory, { withFileTypes: true })) {
         const path = join(directory, entry.name)
         if (entry.isDirectory()) await collect(path)
-        else if (entry.name === 'session.v4.jsonl') logs.push(await readFile(path, 'utf8'))
+        else if (entry.name === `session.v${SESSION_FORMAT_VERSION}.jsonl`) logs.push(await readFile(path, 'utf8'))
       }
     }
     await expect.poll(async () => {

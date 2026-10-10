@@ -115,25 +115,6 @@
   height: 16px;
 }
 
-.glyphCompleted {
-  color: var(--dsw-specific-agent-cyan);
-}
-
-.glyphPending {
-  color: var(--dsw-specific-agent-muted);
-}
-
-.glyphProgress {
-  color: var(--dsw-specific-agent-acid);
-  animation: todo-progress-spin 1s linear infinite;
-}
-
-@keyframes todo-progress-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Figma strip is single-line; long items ellipsize with no inline expand. */
 .content {
   min-width: 0;

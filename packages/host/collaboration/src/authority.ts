@@ -88,7 +88,22 @@ export function classifyMessages(messages: readonly UserMessage[]): TurnClass | 
         human = true
         break
       case 'tool':
-      case 'plugin':
+      case 'runtime-context':
+      case 'model-selection':
+      case 'tool-registry':
+      case 'ptc-mode':
+      case 'user-approval':
+      case 'plan-mode':
+      case 'time-context':
+      case 'tmux-context':
+      case 'session-reference':
+      case 'compact-checkpoint':
+      case 'repeat-tool-reminder':
+      case 'tool-jobs':
+      case 'tool-goal':
+      case 'goal':
+      case 'hooks-claude-code':
+      case 'hooks-codex':
       case 'skill-invocation':
       case 'skill-catalog':
       case 'agent-instructions':

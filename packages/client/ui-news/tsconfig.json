@@ -4,7 +4,7 @@
   "include": ["src"],
   "references": [
     { "path": "../ui-primitives" },
-    { "path": "../locale" },
+    { "path": "../locale/tsconfig.client.json" },
     { "path": "../../../vendor/cordis" },
     { "path": "../ui-shell" },
     { "path": "../ui-renderer" },

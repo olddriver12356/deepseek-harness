@@ -20,6 +20,8 @@ Manage registered local web app processes and their loopback readiness.
 
 AppsRuntime validates the registered package script and local URL, probes candidate ports, and launches through the managed subprocess service. Long, short and environment strategies pass the selected port; fixed strategy preserves it. A readiness timeout terminates the managed process and reports failure. Stop requests wait for process exit.
 
+Explicit registrations are stored in the owning profile entry's volatile `apps` configuration through Settings. Updates preserve the live launcher and managed processes, survive a profile restart, and never rewrite a registered project's files. The legacy `local-apps` Settings section imports into the standard `apps` profile entry.
+
 <a id="model-experience"></a>
 ## Model Experience
 

@@ -2,5 +2,5 @@
   "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types", "jsx": "react-jsx" },
   "include": ["src"],
-  "references": [{ "path": "../../../vendor/cordis" }, { "path": "../../api/remotes/tsconfig.client.json" }, { "path": "../locale" }, { "path": "../ui-renderer" }, { "path": "../ui-shell" }, { "path": "../../host/apps" }]
+  "references": [{ "path": "../../../vendor/cordis" }, { "path": "../../api/remotes/tsconfig.client.json" }, { "path": "../locale/tsconfig.client.json" }, { "path": "../ui-renderer" }, { "path": "../ui-shell" }, { "path": "../../host/apps" }]
 }

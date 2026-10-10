@@ -54,6 +54,9 @@ describe('human control admission', () => {
 
 describe('turn authority', () => {
   const contexts = [
+    { kind: 'runtime-context' },
+    { kind: 'model-selection' },
+    { kind: 'tool-registry' },
     { kind: 'skill-invocation', name: 'note', form: 'instructions' },
     { kind: 'skill-catalog', form: 'catalog', entries: [] },
     { kind: 'agent-instructions', form: 'instructions', changes: [] },
@@ -237,7 +240,7 @@ describe('turn authority', () => {
     const agents = h.ctx.agents
     let stopped = false
     void request.stopped.then(() => { stopped = true })
-    h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'discussion' }], source: { kind: 'plugin', plugin: 'fixture' } }))
+    h.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'discussion' }], source: { kind: 'runtime-context' } }))
     await request.started
     await h.dispose()
     expect(stopped).toBe(true)
