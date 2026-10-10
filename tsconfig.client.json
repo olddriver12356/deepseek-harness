@@ -242,7 +242,7 @@
       "path": "./packages/client/ui-settings-models"
     },
     {
-      "path": "./packages/client/ui-plugin-manager"
+      "path": "./packages/client/ui-plugin-manager/tsconfig.client.json"
     },
     {
       "path": "./packages/client/ui-settings-plugin-inventory"
