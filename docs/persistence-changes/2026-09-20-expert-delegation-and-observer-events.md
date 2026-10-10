@@ -5,8 +5,6 @@ kind: persistence-change
 
 # 2026-09-20-expert-delegation-and-observer-events
 
-English | [中文](2026-09-20-expert-delegation-and-observer-events.zh.md)
-
 ## Summary
 
 Adds the required experts/delegation event for durable expert tool authority and acknowledges the existing Personal observer request/result events.

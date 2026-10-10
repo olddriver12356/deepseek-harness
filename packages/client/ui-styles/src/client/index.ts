@@ -52,7 +52,7 @@ export function apply(ctx: ClientContext): void {
           update: async (id: string, style: StyleDraft) => remoteValue(await ctx.remote.styles.update({ id, style })),
           remove: async (id: string) => { remoteValue(await ctx.remote.styles.delete({ id })) },
           dispatch: async (style: StyleRecord, task: string) => {
-            const current = ctx.sessions.list.getSnapshot().current
+            const current = Object.values(ctx.sessions.list.getSnapshot().byId).find(session => (session.retainedBy.mainView ?? 0) > 0)?.id
             if (current === undefined) throw new Error(t('noSession'))
             const session = ctx.sessions.binding(current)?.session
             if (session === undefined) throw new Error(t('sessionNotReady'))

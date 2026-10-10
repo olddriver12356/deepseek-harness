@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-knowledge
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 Knowledge lists real Agent Layer artifacts in Intake, Processed, and Knowledge · To learn. The persistent overlay retains its search and filter state when hidden. The Live Signal distillation action opens a new session in the source workspace with an unsent draft referencing the source session log. It neither calls a model nor writes knowledge artifacts. The draft requests candidate knowledge for owner review before any approved content is created.

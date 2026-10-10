@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-01-personal-understanding-compaction.zh.md)
-
 ## Problem
 
 The owner wanted every stored understanding in About Me to be Chinese, wanted similar claims merged into one atomic claim, and found the claim graph clipped when it held many nodes. The original Bok page has no merge operation, and agents read claims one by one through `bok_person_context`, so near-duplicates and English statements reach every consumer.

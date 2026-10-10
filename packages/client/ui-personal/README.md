@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-personal
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 Personal embeds Bok's original About me interface and Personal Core engine in DSH. The page provides profile, graph, review, evidence/results and cleanup views. The Host authenticates browser access, manages one Python process, and registers four personal-memory tools. Personal Markdown stays outside the project Vault and Git. Existing conversations and profile notes are not automatically imported.

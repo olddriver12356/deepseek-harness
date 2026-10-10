@@ -2,8 +2,6 @@
 
 Status: proposed
 
-English | [中文](2026-10-01-independent-session-collaboration.zh.md)
-
 ## Problem
 
 Independently created sessions need a persistent discussion connection without changing their workspaces or treating a peer message as a human instruction. The existing authenticated UI transport cannot establish human-only action authorization against a model-owned process running as the same operating-system user. Dynamic Host code also retains access to Host-realm functions. Discussion and action authorization therefore require different guarantees.

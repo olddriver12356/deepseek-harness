@@ -1,6 +1,0 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-20-vault-memory-view.md
-2026-09-20-vault-memory-view.md: be0abec494b55f1dca85a7e8609d119dfe152317
-2026-09-20-vault-memory-view.zh.md: 43d8796481fe19210f77b14e65ae545af5ff473e

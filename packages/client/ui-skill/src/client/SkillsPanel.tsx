@@ -62,8 +62,9 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const sessionSubscribe = useCallback((listener: () => void) => sessions.list.subscribe(listener), [sessions])
   const workspaceState = useSyncExternalStore(workspaceSubscribe, () => workspaces.list.getSnapshot())
   const sessionState = useSyncExternalStore(sessionSubscribe, () => sessions.list.getSnapshot())
+  const currentSessionId = Object.values(sessionState.byId).find(session => (session.retainedBy.mainView ?? 0) > 0)?.id
   const currentWorkspace = workspaceState.items.find(item =>
-    sessionState.current !== undefined && item.sessionIds.includes(sessionState.current))?.workspaceId
+    currentSessionId !== undefined && item.sessionIds.includes(currentSessionId))?.workspaceId
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId | undefined>(currentWorkspace)
   const [section, setSection] = useState<Section>('skills')
   const [catalog, setCatalog] = useState<CatalogInventory>(EMPTY_CATALOG)
@@ -111,7 +112,7 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const searchTerm = query.trim().replace(/^\//, '').toLowerCase()
   const visible = inventory.skills.filter(skill => (searchDescription ? `${skill.name} ${skill.description}` : skill.name).toLowerCase().includes(searchTerm) && (scope === 'all' || skill.scope === scope) && (invocation === 'all' || invocationOf(skill.userInvocable, skill.modelInvocable) === invocation) && (category === 'all' || skill.category === category) && (origin === 'all' || skill.origin === origin)).sort((a, b) => a.name.localeCompare(b.name))
   const groups = grouped ? [...new Set(visible.map(skill => skill.category))].sort((a, b) => a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)) : ['']
-  const sessionId = currentWorkspace === workspaceId ? sessionState.current : undefined
+  const sessionId = currentWorkspace === workspaceId ? currentSessionId : undefined
   const presetValue = sessionId === undefined ? undefined : sessionState.byId[sessionId]?.projectionValues?.agentPreset
   const presetId = typeof presetValue === 'string' ? presetValue : undefined
   const catalogItems = section === 'skills' ? [] : catalog[section].filter(item => `${item.name} ${item.description} ${item.source}`.toLowerCase().includes(catalogQuery.trim().toLowerCase()))

@@ -33,8 +33,9 @@ function mount(options: MountOptions = {}) {
   const props = {
     sessionId: 's-test' as never,
     useProjection: ((key: string) => projections[key]) as never,
-    useSessionPendingInteraction: ((select: (map: Map<string, Pick<SessionPendingInteraction, 'key' | 'kind' | 'sessionId'>>) => unknown) =>
-      select(new Map(options.pending === undefined ? [] : [['s-test', options.pending]]))) as never,
+    useSessionStatus: ((select: (map: Map<string, { pendingInteraction: MountOptions['pending'] }>) => unknown) =>
+      select(new Map([['s-test', { pendingInteraction: options.pending }]]))) as never,
+    useSessionRetainInfo: undefined as never,
     useSessions: ((select: (snapshot: { byId: Record<string, unknown> }) => unknown) => select({ byId: { 's-test': { displayTitle: '测试会话', running: options.running ?? false } } })) as never,
     renderSlot: (() => null) as never,
     usePanelInfo: undefined as never,

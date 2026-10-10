@@ -130,7 +130,8 @@ export function AppFrame({
   SessionProvider,
 }: AppFrameProps) {
   const [activityOpen, setActivityOpen] = useState(true)
-  const detailsSession = useSessions(s => s.current !== undefined && s.byId[s.current]?.blank === false ? s.current : undefined)
+  const detailsSession = useSessions(s => Object.values(s.byId)
+    .find(session => (session.retainedBy.mainView ?? 0) > 0 && !session.blank)?.id)
   const layoutInfo = useStore(state => state.layoutInfo)
   const frameRef = useRef<HTMLDivElement | null>(null)
   const viewport = Math.max(0, layoutInfo.viewportWidth - RAIL_WIDTH)

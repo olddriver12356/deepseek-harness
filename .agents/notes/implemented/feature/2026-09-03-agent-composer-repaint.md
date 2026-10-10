@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-03-agent-composer-repaint.zh.md)
-
 ## Problem
 
 The Agent composer already routed draft, image, permission, plan, model, send, stop, queue, and steer behavior through native session and projection faces, but its neutral capsule presentation did not match the approved Boujoy direction. Several native capabilities were also hard to discover: image intake depended on paste, drag, or command surfaces, running-state queue versus steer behavior was visible only through keyboard semantics, and attachment context rendered inside the input card instead of above it.

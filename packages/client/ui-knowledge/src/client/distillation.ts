@@ -2,6 +2,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 
 /**
@@ -18,8 +19,14 @@ export async function openDistillationDraft(ctx: Context, sourceId: SessionId, i
     ?? workspaces.find(item => item.path === source.cwd)
   if (workspace === undefined) throw new Error('Register the source workspace before distilling this session')
   const id = await ctx.sessions.create({ workspaceId: workspace.workspaceId })
-  const scope = ctx.sessions.scope(id)
-  if (scope === undefined) throw new Error('Distillation session is not ready')
-  ctx.conversation.input.for(scope).setDraft(instruction)
-  ctx.sessions.open(id)
+  const reference = ctx.sessions.retain(id, { source: 'controllerOperation' })
+  try {
+    await reference.ready
+    const scope = ctx.sessions.scope(id)
+    if (scope === undefined) throw new Error('Distillation session is not ready')
+    ctx.conversation.input.for(scope).setDraft(instruction)
+    ctx.uiWorkspace.openSession(id)
+  } finally {
+    reference.release()
+  }
 }

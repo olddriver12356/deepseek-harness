@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
@@ -12,7 +13,7 @@ import { panelEn, panelZh, type PanelKey } from './panel-locales.ts'
 import { createDraftHandoff, draftingPrompt, toolDraftingPrompt, type AgentToolDraft, type AgentToolKind, type SkillDraft } from './creation.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' { interface LocaleNamespaceMap { skillsPanel: PanelKey } }
-export const inject = ['sessions', 'slots', 'locale', 'remote', 'remote.skillFiles', 'remote.commands', 'remote.pluginInventory', 'appPanels', 'workspaces']
+export const inject = ['uiWorkspace', 'sessions', 'slots', 'locale', 'remote', 'remote.skillFiles', 'remote.commands', 'remote.pluginInventory', 'appPanels', 'workspaces']
 
 const commandGuideKeys = {
   '@deepseek-ai/dsh-command-compact': ['compactWhen', 'compactExample'],
@@ -64,9 +65,9 @@ export function apply(ctx: Context): void {
     write: async (request: SkillFileWriteRequest) => unwrap(await ctx.remote.skillFiles.write(request)),
     remove: async (request: SkillDeleteRequest) => unwrap(await ctx.remote.skillFiles.deleteSkill(request)),
     handoff: (workspaceId: WorkspaceId, draft: SkillDraft, destination: string) =>
-      createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination)),
+      createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination), id => ctx.uiWorkspace.openSession(id)),
     handoffTool: (workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft) =>
-      createDraftHandoff(ctx.sessions, workspaceId, toolDraftingPrompt(kind, draft)),
+      createDraftHandoff(ctx.sessions, workspaceId, toolDraftingPrompt(kind, draft), id => ctx.uiWorkspace.openSession(id)),
   }
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({
     name: 'shell.app-overlay', id: 'skills-panel', locale: 'skillsPanel',

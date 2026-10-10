@@ -1,6 +1,22 @@
+---
+description: "Switch between Agent, Knowledge, Skills, Experts, Styles, Monitor, Apps, Personal, and News from the persistent application rail."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-client-ui-app-rail
 
-English | [中文](README.zh.md)
+## Summary
+
+Switch between Agent, Knowledge, Skills, Experts, Styles, Monitor, Apps, Personal, and News from the persistent application rail. The selected panel stays mounted, preserving its state while hidden. Panel content belongs to the individual application plugins; the rail only selects the active panel.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 App rail plugin: persistent application navigation occupant for the `app.rail` slot, driving active panel selection through `ctx.appPanels` without managing panel content or lifecycle. AppRail reads the active panel ID via `useSyncExternalStore`, renders the agent, knowledge, skills, experts, styles, monitor, apps, personal and news entries in order, marks the active entry with `aria-selected`, and calls `ctx.appPanels.setActive(id)` on click. The component owns visibility only; panel registration and occupancy remain separate concerns managed by `ctx.slots`.
 
@@ -22,3 +38,7 @@ None; package neither assembles nor sends provider request.
 - **No aria-controls**: tab-like `aria-selected` markup describes active state only. `aria-controls` links to panel content IDs deferred until panel registration stabilizes.
 - **Minimal tab semantics**: tab role declares navigation intent, but full tab panel coupling remains future work.
 - **Selection never remounts panel**: panel state persists across visibility changes because selection affects `ctx.appPanels` snapshot only, not slot occupancy or component lifecycle.
+
+### Dev Note
+
+None.

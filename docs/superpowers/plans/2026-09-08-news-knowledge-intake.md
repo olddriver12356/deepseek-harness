@@ -1,7 +1,5 @@
 # News to Knowledge implementation record
 
-English | [中文](2026-09-08-news-knowledge-intake.zh.md)
-
 The News panel captures a selected article into Agent Layer Intake through the existing Knowledge service and vault bridge. Source-kind metadata distinguishes article evidence from conversation logs. The evidence retains its canonical URL, publisher and retrieval time; repeated capture uses stable source identity. Distillation treats evidence as untrusted data and cannot execute tools. Review and publication remain owner-controlled.
 
 ## Historical implementation material

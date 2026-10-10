@@ -1,6 +1,22 @@
+---
+description: "Use an authenticated local Claude Code CLI to generate text through the harness LLM service without an API key."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-llm-claude-code-subscription
 
-English | [中文](README.zh.md)
+## Summary
+
+Use an authenticated local Claude Code CLI to generate text through the harness LLM service without an API key. Each completion runs a fresh process with user settings disabled and translates streamed content into harness chunks. Plain-text serialization omits images, reasoning, and live tool calls. The fixed tool-denial list cannot block unknown MCP tools or future built-ins.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 This package registers the `claude-code-subscription` provider route and uses the locally authenticated Claude Code CLI as a completion backend for the harness LLM service. Each request runs `claude -p` through the harness subprocess service, writes a plain-text transcript to stdin, and translates Claude Code's `stream-json` output into `StreamChunk` values.
 
@@ -56,3 +72,7 @@ Retained response text appends to the next flattened transcript; omitted event m
 - The tool denial list covers known built-in Claude Code tools but not machine-specific MCP tools or future built-ins. A bootstrap discovery call must replace the fixed list before this route can guarantee that no CLI tool is reachable.
 - Message serialization is plain text rather than a lossless block protocol. Images, reasoning blocks, and live tool calls do not survive route changes.
 - Every completion starts a new Claude Code process, so startup latency is paid per request.
+
+### Dev Note
+
+None.

@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 /**
  * Knowledge plugin, browser half: one persistent overlay reads the active
  * application panel and real upstream Agent Layer artifacts.
@@ -20,7 +21,7 @@ export { KNOWLEDGE_FIXTURE } from './fixture.ts'
 export { KnowledgePanel } from './KnowledgePanel.tsx'
 
 /** Required services: slot composition and active application-panel state. */
-export const inject = ['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces']
+export const inject = ['uiWorkspace', 'slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces']
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap { knowledge: KnowledgeLocaleKey }

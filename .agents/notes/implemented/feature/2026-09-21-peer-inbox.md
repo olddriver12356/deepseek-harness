@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-21-peer-inbox.zh.md)
-
 ## Problem
 
 A trusted owner relay needs bounded access to an already live root Session without gaining Session creation, permission mutation, browser exposure or remote approval capabilities. A follow-up does not have a per-message completion promise, and retries after lost responses can duplicate owner work.

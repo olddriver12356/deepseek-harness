@@ -1,6 +1,22 @@
+---
+description: "Collect public RSS news on startup and every six hours, archive deduplicated entries, and serve the newest ten per column to the News panel."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-host-news
 
-English | [中文](README.zh.md)
+## Summary
+
+Collect public RSS news on startup and every six hours, archive deduplicated entries, and serve the newest ten per column to the News panel. The service keeps the last successful feed when retrieval fails. Exact cached article and image URL pairs authorize bounded thumbnail downloads. Run only one writer per Vault archive.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 The Host News service fetches the public RSS sources used by the News panel, keeps a local six-hour cache, archives every deduplicated entry observed within the sources' three-day window, and publishes the newest ten entries per column through the generated `news/list` Remote. It also enriches visible entries without an RSS image from the article's declared cover image.
 
@@ -25,3 +41,7 @@ None; the cache belongs to the browser News surface and never enters a model req
 - **Public feeds only**: source availability, rate limits, and publisher markup can change independently of the harness.
 - **Host-lifetime collection**: periodic fetches run only while the Host process is running; this is not an always-on external scheduler.
 - **Linear archive scan**: each archive append scans the JSONL file to find existing URLs. Add an index only if measured archive size makes the six-hour scan material.
+
+### Dev Note
+
+None.

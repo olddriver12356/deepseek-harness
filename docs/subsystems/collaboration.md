@@ -1,7 +1,5 @@
 # Independent Session Collaboration
 
-English | [中文](collaboration.zh.md)
-
 The opt-in [Host package](../../packages/host/collaboration/README.md) owns V1a free discussion between independently owned ordinary Sessions on one Host. The [bundle](../../packages/bundle/collaboration/README.md) mounts the Host, peer-message tool, and sidebar Client together. Installation alone creates no registrations or grants.
 
 ## Human controls and views

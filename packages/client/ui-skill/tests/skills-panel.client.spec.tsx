@@ -32,7 +32,7 @@ function setup(extraSkills: Partial<SkillArtifact>[] = []) {
   HTMLDialogElement.prototype.showModal = function () { this.open = true }
   const workspaceId = 'workspace' as WorkspaceId
   const workspaceState = { items: [{ workspaceId, title: 'Example', path: '/project', sessionIds: ['session'] }] }
-  const sessionState = { current: 'session', byId: {} }
+  const sessionState = { byId: { session: { id: 'session', retainedBy: { mainView: 1 } } } }
   const workspaces = { list: { getSnapshot: () => workspaceState, subscribe: () => () => {} } } as unknown as IWorkspaces
   const sessions = { list: { getSnapshot: () => sessionState, subscribe: () => () => {} } } as unknown as ISessions
   const appPanels = new AppPanelsController()

@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-host-collaboration
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This package is the Host plugin for discussion between independently owned sessions. It stores display registrations, human-granted pairs, activation budgets, an outbox, ordered journal entries, and original request receipts in one durable aggregate. It classifies every Agent turn as `human` or `peer-discussion` and installs an Executor-side tool guard that denies every tool outside a configured allowlist while the turn is `peer-discussion`.

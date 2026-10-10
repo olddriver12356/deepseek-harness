@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-03-required-input-admission.zh.md)
-
 ## Problem
 
 Persisted peer inbox work can outlive its optional collaboration plugin. Source declarations validate data but do not require a runtime authority owner. A resumed agent with no collaboration listener otherwise sends that work to the model when the next human prompt wakes it. Ordinary waterfall rejection also stops the driver with the later human prompt still queued. Delivery recovery needs to wake an existing durable message, and human input can arrive during the final recipient flush or acknowledgement await.

@@ -31,7 +31,7 @@ export interface KnowledgeSaveRequest { readonly sessionId: SessionId; readonly 
 /** Save caller-supplied text as Intake evidence; sourceUrl is the stable capture identity. */
 export interface KnowledgeSaveTextRequest {
   readonly sourceUrl: string
-  /** Feed or site that published the article; the provenance gate requires an author or publisher. */
+  /** Feed or site that published the article; the source-validation gate requires an author or publisher. */
   readonly publisher: string
   /** ISO 8601 time the feed was fetched, not the time the owner clicked capture. */
   readonly retrievedAt: string
@@ -39,7 +39,7 @@ export interface KnowledgeSaveTextRequest {
   readonly content: string
 }
 
-/** External-source provenance the bridge needs to satisfy the provenance_valid gate. */
+/** External source metadata required by the Vault bridge source-validation gate. */
 export interface KnowledgeNewsSource {
   readonly kind: 'news'
   readonly canonicalUrl: string

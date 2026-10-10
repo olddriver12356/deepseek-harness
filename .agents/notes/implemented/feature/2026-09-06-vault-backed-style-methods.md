@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-06-vault-backed-style-methods.zh.md)
-
 ## Problem
 
 Boujoy's Styles page (`04 风格`) never migrated: no host or client package existed, and the app rail's `styles` entry was an inert label. A Style in Boujoy is a plain-file record (name, description, instructions, enabled) used two ways: dispatched standalone into the Agent, or layered on top of an Expert dispatch as an output-voice overlay. `packages/client/ui-experts`'s dispatch dialog already carried a placeholder for the overlay concept, a `<select>` with two hardcoded options and no way to manage them.

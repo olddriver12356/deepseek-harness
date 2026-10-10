@@ -5,8 +5,6 @@ kind: "package-bundle"
 
 # @deepseek-ai/dsh-collaboration
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This reference defines the optional discussion bundle installed after `dsh-base` and `dsh-web-app`. It adds the [Host discussion service](../../host/collaboration/README.md), its discussion tools and the [browser connection controls](../../client/ui-collaboration/README.md). Default profiles contain no collaboration rows.

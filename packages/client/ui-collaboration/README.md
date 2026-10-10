@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-collaboration
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This optional browser plugin adds Peer connections to the existing Live Signal sidebar and opens a discussion details dialog through the existing shell overlay. It preserves the shell's background, layout and design tokens. The dialog controls human-owned connections, disclosure, separate pair record grants, pause, disconnect and an explicit activation budget. It adds a visibly attributed Peer chat node. This V1a surface has no plans, tasks, invitations, enrollment or execution controls.

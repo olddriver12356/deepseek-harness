@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-01-ui-shell-package-ownership.zh.md)
-
 ## Problem
 
 The Web frame and its grid tracks need one package boundary that owns the persistent app rail, session panels, and later shell state. Package substitution and the visible rail behavior also need separate verification so regressions can be attributed to the correct change. Copying `@deepseek-ai/dsh-client-ui-layout` while leaving both packages visible to compile time catalog scanning creates duplicate slot declarations and ambiguous owner prop types even when the old bundle row is disabled.

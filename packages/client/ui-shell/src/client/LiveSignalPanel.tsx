@@ -137,14 +137,14 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
 }
 
 export function LiveSignalPanel({
-  sessionId, useProjection, useSessions, useSessionPendingInteraction, renderSlot,
+  sessionId, useProjection, useSessions, useSessionStatus, renderSlot,
   onEditGoal, onPauseGoal, onResumeGoal, onClearGoal,
 }: LiveSignalProps) {
   const goal = useProjection('goal') as GoalProjectionLike | null | undefined
   const pressure = useProjection('contextPressure')
   const breakdown = useProjection('contextBreakdown')
   const usage = useProjection('tokenUsage')
-  const pending = useSessionPendingInteraction(map => map.get(sessionId))
+  const pending = useSessionStatus(map => map.get(sessionId)?.pendingInteraction)
   const session = useSessions(snapshot => snapshot.byId[sessionId])
   const context = contextOccupancy(pressure)
   const contextPercent = context?.percent

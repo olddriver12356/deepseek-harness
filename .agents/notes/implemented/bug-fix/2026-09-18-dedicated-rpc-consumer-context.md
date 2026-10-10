@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-18-dedicated-rpc-consumer-context.zh.md)
-
 ## Problem
 
 Dedicated RPC registration used `owner.webServer` in the calling plugin's Context. A plugin injecting only `connection` could not access that undeclared service, even when a sibling Web server was running. The subscription plugin's registration failed with `cannot get property "webServer" without inject`; its POST requests then reached the static fallback and returned 405. Root-provided test doubles hid the dependency error.

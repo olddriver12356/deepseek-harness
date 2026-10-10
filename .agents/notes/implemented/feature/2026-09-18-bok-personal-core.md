@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-18-bok-personal-core.zh.md)
-
 ## Problem
 
 The owner requested Bok's complete About me feature in DSH, including the original visual design and personal-memory operations rather than a second implementation of its state machine.

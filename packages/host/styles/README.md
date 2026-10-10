@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-host-styles
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This package exposes `styles/list`, `styles/create`, `styles/update`, and `styles/delete` for Method packages under `<vaultRoot>/Agents/5 Methods/Styles/`. Mutations run the Vault sync guard, replace Markdown atomically, and rebuild Agent Layer derived state. A Style record is a strict subset of an Expert record (name, description, instructions, status), mirroring `@deepseek-ai/dsh-host-experts`.

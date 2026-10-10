@@ -19,7 +19,7 @@ async function bench() {
   } as never, () => null)
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
-  const sessions = { list: { getSnapshot: () => ({ current: undefined }) }, binding: () => undefined }
+  const sessions = { list: { getSnapshot: () => ({ byId: {} }) }, binding: () => undefined }
   ctx.provide('sessions', sessions as never)
   class RemoteService extends Service {
     constructor(serviceCtx: Context) {

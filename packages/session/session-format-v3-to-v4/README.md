@@ -5,11 +5,16 @@ kind: "package-library"
 
 # @deepseek-ai/dsh-session-format-v3-to-v4
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This reference defines the adjacent V3-to-V4 Session migration. Persistence consumes the package through the static format catalog. It performs no file I/O; the JSONL owner publishes immutable generation successors.
+
+## Table of Contents
+
+- [Conversion and validation](#conversion-and-validation)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 ## Conversion and validation
 
@@ -30,3 +35,7 @@ Identity migration preserves existing model records and reusable request prefixe
 - The library does not supply a runtime policy or downgrade support. The [format status authority](../../../docs/session-format-status.md) distinguishes the checkout writer from released formats. A current writer requires version-named snapshot successors while every committed predecessor remains unchanged.
 
 **Runtime invariant:** No companion is published. Each stage validates its owned artifact directly and maintains no independent runtime observation.
+
+### Dev Note
+
+None.

@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-styles
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This package renders the Styles application panel, manages Style Method records through the Host Styles Remote, and dispatches an approved Style into the current Session. Style definitions remain Markdown packages under the configured Vault Agent Layer, mirroring `@deepseek-ai/dsh-client-ui-experts`. `@deepseek-ai/dsh-client-ui-experts`'s own dispatch dialog also reads the approved Styles this package's Remote exposes, so a Style authored here can layer as an output-voice overlay on an Expert dispatch. A second, standing entry point lives in the Live Signal card's `shell.activity.selectors` seat: a single-select of approved Styles that stays active across ordinary sends until cleared or replaced, rather than a one-time dispatch.

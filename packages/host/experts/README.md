@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-host-experts
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This package exposes `experts/list`, `experts/create`, `experts/update`, and `experts/delete` for Method packages under `<vaultRoot>/Agents/5 Methods/Experts/`. Mutations run the Vault sync guard, replace Markdown atomically, and rebuild Agent Layer derived state.

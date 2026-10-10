@@ -1,7 +1,5 @@
 # Agent Note: News page Host and Client boundary
 
-English | [中文](2026-09-04-news-page-host-client-boundary.zh.md)
-
 Status: implemented
 
 ## Problem

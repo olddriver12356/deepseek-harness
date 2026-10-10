@@ -17,8 +17,9 @@ describe('distillation draft', () => {
       workspaces: { list: { getSnapshot: () => ({ items: [{ workspaceId: 'workspace', path: '/vault', sessionIds: [sourceId] }] }) } },
       sessions: {
         list: { getSnapshot: () => ({ byId: { [sourceId]: { cwd: '/vault' } } }) },
-        create, scope: vi.fn(() => scope), open,
+        create, scope: vi.fn(() => scope), retain: vi.fn(() => ({ ready: Promise.resolve(), release: vi.fn() })),
       },
+      uiWorkspace: { openSession: open },
       conversation: { input: { for: inputFor } },
     } as unknown as Context
     await openDistillationDraft(ctx, sourceId, 'Review source')

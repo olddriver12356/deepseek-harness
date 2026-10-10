@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-20-continuable-vault-experts.zh.md)
-
 ## Problem
 
 Delegated Experts waited for a one-shot result, offered no direct panel action, and had no enforced read-only setting. The generic subagent runtime already supported durable children, follow-ups and authorized interruption.

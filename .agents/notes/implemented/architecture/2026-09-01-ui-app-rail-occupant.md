@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-01-ui-app-rail-occupant.zh.md)
-
 ## Problem
 
 Navigation rail occupies a fixed leftmost screen track independent of sidebar or panel geometry. Six entries (agent, knowledge, experts, styles, monitor, news) select active panel by ID, but rail itself does not manage panel content, lifecycle, or ownership of the `ctx.appPanels` service. Package boundaries must keep rail selection separate from panel registration so regressions remain traceable and later panel packages can depend on shared active-panel state without circular dependency on rail.

@@ -23,7 +23,8 @@ export interface DocumentTitleProps {
 export function DocumentTitle({ useSessions, usePanelInfo, productTitle }: DocumentTitleProps): null {
   const showSessionTitle = usePanelInfo(info => info.activePanelId === null)
   const title = useSessions((state) => {
-    const current = state.current
+    const current = Object.values(state.byId)
+      .find(session => (session.retainedBy.mainView ?? 0) > 0)?.id
     return !showSessionTitle || current === undefined ? undefined : state.byId[current]?.title
   })
   useEffect(() => {

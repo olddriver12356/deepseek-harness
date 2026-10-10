@@ -5,8 +5,6 @@ kind: package-reference
 
 # @deepseek-ai/dsh-client-ui-monitor
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 Inspect native token, context, effort and trajectory projections in the Monitor page.

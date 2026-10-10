@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-17-command-static-copy.zh.md)
-
 ## Problem
 
 The installed subscriptions plugin registers `/fast` with a string description. The command menu invoked every description as a callback, throwing before returning any host command or client contribution. Independent trigger sources such as context and skills continued to appear, concealing the partial failure.

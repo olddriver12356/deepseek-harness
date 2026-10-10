@@ -16,6 +16,7 @@ async function bench() {
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
   ctx.provide('sessions', {})
+  ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
   ctx.provide('workspaces', {})
   ctx.provide('conversation', {})
   ctx.provide('remote', { knowledge: {} })
@@ -26,7 +27,7 @@ async function bench() {
 
 describe('Knowledge plugin apply', () => {
   it('declares the slot and app-panel dependencies', () => {
-    expect(inject).toEqual(['slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces'])
+    expect(inject).toEqual(['uiWorkspace', 'slots', 'appPanels', 'remote', 'remote.knowledge', 'locale', 'sessions', 'conversation', 'workspaces'])
   })
 
   it('registers the persistent overlay with the real Remote adapter', async () => {

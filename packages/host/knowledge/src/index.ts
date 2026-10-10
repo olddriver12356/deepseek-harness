@@ -76,7 +76,7 @@ export class KnowledgeService extends TypertRemoteService {
   }
 
   /**
-   * @param request - caller-supplied source text and its external-source provenance.
+   * @param request - caller-supplied source text and its external-source metadata.
    * @returns saved evidence in Intake, without AI or promotion.
    */
   @Remote('saveText')

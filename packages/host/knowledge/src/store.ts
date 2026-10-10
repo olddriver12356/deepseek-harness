@@ -146,7 +146,7 @@ export class KnowledgeStore {
    * @param sessionId - stable capture identity; a Session id, or a hashed source URL for other kinds.
    * @param title - display title, sanitized by the package writer.
    * @param content - complete source evidence; passed to a model only through an explicit distillation.
-   * @param source - external-source provenance; omitted means a captured conversation.
+   * @param source - external-source metadata; omitted means a captured conversation.
    * @returns the saved Intake artifact, reusing an identical source snapshot.
    */
   async save(

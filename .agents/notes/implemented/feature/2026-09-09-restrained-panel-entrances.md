@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-09-restrained-panel-entrances.zh.md)
-
 ## Problem
 
 Application navigation benefits from a brief visual indication that the selected content has changed. Replaying that indication during feed refreshes, telemetry updates, or typing distracts from reading. Motion also needs to respect reduced-motion preferences and native dialog behavior.

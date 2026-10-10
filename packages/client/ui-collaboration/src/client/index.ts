@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 /** Optional connection portal, discussion dialog and attributed Peer node registrations. */
 import type { Context } from '@deepseek-ai/cordis'
 import { randomUUID } from '@deepseek-ai/dsh-util-crypto'
@@ -35,7 +36,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 /** The feature uses generated Remote actions and existing UI extension points only. */
-export const inject = ['slots', 'sessions', 'remote', 'remote.collaboration', 'uiConversation', 'chatInputs', 'locale']
+export const inject = ['uiWorkspace', 'slots', 'sessions', 'remote', 'remote.collaboration', 'uiConversation', 'chatInputs', 'locale']
 
 /** @param ctx - Client plugin scope providing transport, sessions and renderer registries. */
 export function apply(ctx: Context): void {
@@ -75,7 +76,7 @@ export function apply(ctx: Context): void {
         await finish(await ctx.remote.collaboration.budget({ ...mutation(), connectionId, limit }))
       },
       refresh: async () => { await source?.refresh() },
-      openSession: (id) => { ctx.sessions.open(id) },
+      openSession: (id) => { ctx.uiWorkspace.openSession(id) },
     }
   }
   ctx.slots.inject('shell.activity.selectors', () => ctx.slots.register({

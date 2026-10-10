@@ -33,7 +33,7 @@ export function draftingPrompt(draft: SkillDraft, destination: string): string {
 }
 
 /** One form submission retains identity across creation and uncertain prompt retries. */
-export function createDraftHandoff(sessions: ISessions, workspaceId: WorkspaceId, text: string) {
+export function createDraftHandoff(sessions: ISessions, workspaceId: WorkspaceId, text: string, openSession: (id: SessionId) => void) {
   const sessionId = randomUUID() as SessionId
   let created = false
   let requestId: ReturnType<NonNullable<ReturnType<ISessions['binding']>>['session']['beginSubmission']>['requestId'] | undefined
@@ -43,14 +43,19 @@ export function createDraftHandoff(sessions: ISessions, workspaceId: WorkspaceId
     if (inflight !== undefined) return inflight
     inflight = (async () => {
       if (!created) { await sessions.create({ workspaceId, sessionId }); created = true }
-      sessions.open(sessionId)
-      if (completed) return
-      const session = sessions.binding(sessionId)?.session
-      if (session === undefined) throw new Error('Session binding is not ready; retry the same handoff')
-      requestId ??= session.beginSubmission({ mode: 'queue', text, attachments: [] }).requestId
-      const result = await session.prompt([{ type: 'text', text }], 'queue', undefined, requestId)
-      if (!result.ok) throw new Error(`${result.error.code}: ${result.error.message}`)
-      completed = true
+      const reference = sessions.retain(sessionId, { source: 'controllerOperation' })
+      try {
+        await reference.ready
+        openSession(sessionId)
+        if (completed) return
+        const session = reference.binding.session
+        requestId ??= session.beginSubmission({ mode: 'queue', text, attachments: [] }).requestId
+        const result = await session.prompt([{ type: 'text', text }], 'queue', undefined, requestId)
+        if (!result.ok) throw new Error(`${result.error.code}: ${result.error.message}`)
+        completed = true
+      } finally {
+        reference.release()
+      }
     })().finally(() => { inflight = undefined })
     return inflight
   }

@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
@@ -26,7 +27,7 @@ export type { ExpertApi, ExpertsPanelProps, ExpertTranslate } from './ExpertsPan
 export type { ExpertLocaleKey } from './locales.ts'
 export type { ExpertDraft, ExpertRecord, ExpertStatus } from './types.ts'
 
-export const inject = ['slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale', 'conversation']
+export const inject = ['uiWorkspace', 'slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale', 'conversation']
 
 const NS = 'experts'
 
@@ -50,7 +51,7 @@ export function apply(ctx: ClientContext): void {
   ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
     name: 'tool.call.toolview', key: 'dispatch_expert', locale: NS,
     inject: (): ExpertTaskActions => ({
-      openTask: (address) => { ctx.sessions.openSubagent(address) },
+      openTask: (address) => { ctx.uiWorkspace.openSession(address) },
       stopTask: async (address) => { remoteValue(await ctx.remote.subagents.interruptByParent(address.childSessionId, address.parentSessionId, 'continuable')) },
     }),
   }, ExpertTaskCard))
@@ -74,7 +75,7 @@ export function apply(ctx: ClientContext): void {
             // injection path below would paste its instructions in as a user
             // message — the hollow "Expert as prompt text" this design removed —
             // so refuse loudly instead of degrading silently.
-            const current = ctx.sessions.list.getSnapshot().current
+            const current = Object.values(ctx.sessions.list.getSnapshot().byId).find(session => (session.retainedBy.mainView ?? 0) > 0)?.id
             if (current === undefined) throw new Error(t('noSession'))
             const session = ctx.sessions.binding(current)?.session
             if (session === undefined) throw new Error(t('sessionNotReady'))

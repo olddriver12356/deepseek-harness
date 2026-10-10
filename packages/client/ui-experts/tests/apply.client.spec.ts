@@ -19,8 +19,9 @@ async function bench() {
   } as never, () => null)
   const appPanels = new AppPanelsController()
   ctx.provide('appPanels', appPanels)
-  const sessions = { list: { getSnapshot: () => ({ current: undefined }) }, binding: () => undefined }
+  const sessions = { list: { getSnapshot: () => ({ byId: {} }) }, binding: () => undefined }
   ctx.provide('sessions', sessions as never)
+  ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
   class RemoteService extends Service {
     constructor(serviceCtx: Context) {
       super(serviceCtx, 'remote')
@@ -48,7 +49,7 @@ async function bench() {
 describe('Experts plugin apply', () => {
   it('declares the slot, app-panel, session, remote, and locale dependencies', () => {
     expect(inject).toEqual([
-      'slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale', 'conversation',
+      'uiWorkspace', 'slots', 'appPanels', 'sessions', 'remote', 'remote.experts', 'remote.styles', 'locale', 'conversation',
     ])
   })
 
@@ -106,7 +107,7 @@ describe('Experts plugin apply', () => {
   it('never injects a delegated Expert into the Session, because the Agent dispatches it as a tool', async () => {
     const { ctx, slots, sessions } = await bench()
     const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
-    sessions.list.getSnapshot = () => ({ current: 'session-1' as never })
+    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } } as never)
     sessions.binding = (() => ({
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never
@@ -133,7 +134,7 @@ describe('Experts plugin apply', () => {
   it('keeps injecting a conversational Expert into the current Session', async () => {
     const { ctx, slots, sessions } = await bench()
     const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
-    sessions.list.getSnapshot = () => ({ current: 'session-1' as never })
+    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } } as never)
     sessions.binding = (() => ({
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never

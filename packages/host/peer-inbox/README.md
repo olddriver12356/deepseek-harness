@@ -5,11 +5,19 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-peer-inbox
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This opt-in Host plugin accepts owner-authorized relay input through a separate `node:http` listener bound only to `127.0.0.1`. It does not use the Web server, expose browser APIs, create or resume Sessions, change permissions, or provide remote approval. It calls `followup(createUserMessage(...))` with plugin source `peer-inbox`; it never steers or cancels owner work.
+
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Protocol v1](#protocol-v1)
+- [Understand the implementation](#understand-the-implementation)
+- [Verification](#verification)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 ## Use this package
 
@@ -93,3 +101,7 @@ Input appends to existing history without rewriting prior messages. Provider cac
 - A crash or timeout can leave work executing with unknown output; there is no remote cancel, approval or replay endpoint.
 - Windows owner-private ACL provisioning is an operator prerequisite; file mode bits are insufficient.
 - The MVP does not provide a dedicated top-level recorded-session transport adapter; its keyless Loader test pins the assembled transcript locally.
+
+### Dev Note
+
+None.

@@ -5,8 +5,6 @@ kind: persistence-change
 
 # 2026-10-03-collaboration-input-policy
 
-English | [中文](2026-10-03-collaboration-input-policy.zh.md)
-
 ## Summary
 
 Adds requiredAdmissionPolicy to message source metadata and the strictly attributed collaboration-peer source alternative. Advances the checkout Session writer from V3 to V4.

@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-02-agent-tool-catalog.zh.md)
-
 ## Problem
 
 The Skills panel exposed skill files but gave no single place to inspect the other agent tools already available through the client. Users had to look elsewhere to find session commands and configured integrations.

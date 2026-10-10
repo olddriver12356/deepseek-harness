@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-06-vault-backed-expert-methods.zh.md)
-
 ## Problem
 
 The Experts page rendered a static fixture and discarded every create, edit, delete, and dispatch action. It described local Markdown persistence without owning a Host capability, and an Expert could not participate in a real Session.

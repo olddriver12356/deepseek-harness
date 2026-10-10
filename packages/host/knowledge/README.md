@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-host-knowledge
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 The Knowledge Remote saves complete committed Session JSONL in Agent Intake without AI. Explicit distillation creates a separate derived artifact through the default model. Owner review accepts knowledge into Agent Layer 3; a separate content-bound approval publishes a new main Vault note. Identical Session evidence reuses its existing artifact.

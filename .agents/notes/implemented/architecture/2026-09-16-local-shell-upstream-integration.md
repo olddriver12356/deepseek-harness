@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-16-local-shell-upstream-integration.zh.md)
-
 ## Problem
 
 The local application rail and Live Signal used the previous layout contract. Upstream now owns global main panels, a docked right sidebar, and root-scoped overlays. Combining the branches without adapting these contracts prevents the browser from starting or hides local pages.

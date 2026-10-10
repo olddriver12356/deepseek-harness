@@ -5,8 +5,6 @@ kind: package-reference
 
 # @deepseek-ai/dsh-ponytail
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 Apply the shared Ponytail rules and retain the selected mode across turns.

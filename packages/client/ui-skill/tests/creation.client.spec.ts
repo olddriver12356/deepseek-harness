@@ -7,10 +7,17 @@ it('retries uncertain sends with the same fresh session and submission identity'
   const create = vi.fn().mockResolvedValue('created')
   const prompt = vi.fn().mockRejectedValueOnce(new Error('connection lost')).mockResolvedValue({ ok: true, value: { accepted: true } })
   const beginSubmission = vi.fn().mockReturnValue({ requestId: 'request-1' })
-  const sessions = { create, open: vi.fn(), binding: () => ({ session: { prompt, beginSubmission } }) } as unknown as ISessions
-  const handoff = createDraftHandoff(sessions, 'workspace-1' as WorkspaceId, 'draft this')
+  const release = vi.fn()
+  const openSession = vi.fn()
+  const sessions = {
+    create,
+    retain: vi.fn(() => ({ ready: Promise.resolve(), binding: { session: { prompt, beginSubmission } }, release })),
+  } as unknown as ISessions
+  const handoff = createDraftHandoff(sessions, 'workspace-1' as WorkspaceId, 'draft this', openSession)
   await expect(handoff()).rejects.toThrow('connection lost')
   await Promise.all([handoff(), handoff()])
+  expect(release).toHaveBeenCalledTimes(2)
+  expect(openSession).toHaveBeenCalledTimes(2)
   expect(create).toHaveBeenCalledTimes(1)
   expect(create.mock.calls[0]?.[0]).toMatchObject({ workspaceId: 'workspace-1', sessionId: expect.any(String) })
   expect(beginSubmission).toHaveBeenCalledTimes(1)

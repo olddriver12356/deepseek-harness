@@ -5,8 +5,6 @@ kind: package-reference
 
 # @deepseek-ai/dsh-host-apps
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 Manage registered local web app processes and their loopback readiness.

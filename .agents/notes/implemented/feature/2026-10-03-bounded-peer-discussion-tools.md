@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-03-bounded-peer-discussion-tools.zh.md)
-
 ## Problem
 
 Human-authorized connections need explicit model discussion without sharing private conversations or granting peer execution authority. Durable acceptance and later recipient admission are different facts; reporting a send as a reply would hide queued, cancelled, or failed work.

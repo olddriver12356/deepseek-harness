@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-06-neutral-skill-turn-context.zh.md)
-
 ## Problem
 
 Ordinary human turns with Skill invocation, catalog or workspace-instruction context are classified as Peer discussion and lose action tools. The durable receipt projection repeats this error on restoration.

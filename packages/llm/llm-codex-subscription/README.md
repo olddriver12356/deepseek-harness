@@ -1,6 +1,22 @@
+---
+description: "Use an authenticated local Codex CLI to generate text through the harness LLM service without an API key."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-llm-codex-subscription
 
-English | [中文](README.zh.md)
+## Summary
+
+Use an authenticated local Codex CLI to generate text through the harness LLM service without an API key. Each completion runs a fresh read-only CLI process and translates its JSONL messages into harness text blocks. Plain-text serialization omits images, reasoning, and live tool calls; the adapter cannot guarantee that the CLI performs no agent actions.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 This package registers the `codex-subscription` provider route and uses the locally authenticated Codex CLI as a completion backend for the harness LLM service. Each request runs `codex exec` through the harness subprocess service, writes a plain-text transcript to stdin, and translates Codex JSONL events into `StreamChunk` values.
 
@@ -56,3 +72,7 @@ Retained response text appends to the next flattened transcript; omitted event m
 - The read-only sandbox prevents workspace writes but does not prevent the Codex agent from attempting tools or reading accessible files. A completion-only Codex transport is required before this route can guarantee that the CLI performs no agent actions.
 - Message serialization is plain text rather than a lossless block protocol. Images, reasoning blocks, and live tool calls do not survive route changes.
 - Codex emits completed messages rather than token-level deltas, and every completion starts a new CLI process.
+
+### Dev Note
+
+None.

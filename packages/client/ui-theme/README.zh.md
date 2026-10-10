@@ -9,11 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-应用文字最小为 14px，与 usage-stats 插件的工作区筛选器一致。更小的固定 CSS 字号和共享字体变量显示为 14px；对话文字和次级文字也限制在该下限，包括已保存的 12px 偏好。更大的文字保持不变。在仓库根目录运行 `node scripts/verify-min-font-size.mjs` 检查源 CSS；浏览器检查覆盖计算字号和布局。设置范围仍兼容已保存的偏好。局部主题覆盖处理已安装的 usage-stats 和附加控件，不修改第三方包。
-
-`dsh-client-ui-theme` 让 Web GUI 用户在设置中选择 `light`、`dark` 或 `system`，并把会话正文字号设为 12 至 17 px。回环客户端把两个值存入 `ui-theme` 设置命名空间，本地提供方默认将其持久化到 `$DSH_HOME/settings.yaml`。插件通过 `prefers-color-scheme` 解析 `system` 并发布不可变的 `ThemeSnapshot`；ui-layout 把每份快照应用到 document。本包还提供 `--dsw-*` token 样式表，并注入同步引导，使所选调色板与字号在外壳加载前生效。第三方主题可通过 `ctx.theme` 注册别名 token 覆盖。
-
-App Rail 和 News 保留紧凑字号，并明确排除在固定字号检查之外。
+在设置中选择浅色、深色或系统配色，并调整会话正文字号。本地客户端将选择持久化到 `ui-theme` 设置命名空间。配色在外壳加载前应用；插件可通过 `ctx.theme` 注册 token 覆盖。Local typography keeps application and conversation text at a 14px minimum, including saved smaller preferences; App Rail and News retain their compact typography.
 
 ## 目录
 
@@ -47,6 +43,12 @@ App Rail 和 News 保留紧凑字号，并明确排除在固定字号检查之�
 
 <a id="understand-the-implementation"></a>
 ## 理解实现
+
+应用文字最小为 14px，与 usage-stats 插件的工作区筛选器一致。更小的固定 CSS 字号和共享字体变量显示为 14px；对话文字和次级文字也限制在该下限，包括已保存的 12px 偏好。更大的文字保持不变。在仓库根目录运行 `node scripts/verify-min-font-size.mjs` 检查源 CSS；浏览器检查覆盖计算字号和布局。设置范围仍兼容已保存的偏好。局部主题覆盖处理已安装的 usage-stats 和附加控件，不修改第三方包。
+
+`dsh-client-ui-theme` 让 Web GUI 用户在设置中选择 `light`、`dark` 或 `system`，并把会话正文字号设为 12 至 17 px。回环客户端把两个值存入 `ui-theme` 设置命名空间，本地提供方默认将其持久化到 `$DSH_HOME/settings.yaml`。插件通过 `prefers-color-scheme` 解析 `system` 并发布不可变的 `ThemeSnapshot`；ui-layout 把每份快照应用到 document。本包还提供 `--dsw-*` token 样式表，并注入同步引导，使所选调色板与字号在外壳加载前生效。第三方主题可通过 `ctx.theme` 注册别名 token 覆盖。
+
+App Rail 和 News 保留紧凑字号，并明确排除在固定字号检查之外。
 
 <details>
 <summary>实现细节——点击展开</summary>

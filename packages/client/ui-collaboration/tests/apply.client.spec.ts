@@ -8,7 +8,7 @@ import Include from '@deepseek-ai/cordis-plugin-include'
 import { afterEach, expect, it, vi } from 'vitest'
 import { fireEvent } from '@testing-library/react'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
-import { SlotTestRuntime, TestRemote, usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
+import { SlotTestRuntime, usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import { UiConversation } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { RemoteStream } from '@deepseek-ai/dsh-api-gateway/client'
 import type { Context } from '@deepseek-ai/cordis'
@@ -31,6 +31,7 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   cleanups.push(() => rm(root, { recursive: true, force: true }))
   cleanups.push(() => runtime.ctx.fiber.dispose())
   cleanups.push(() => runtime.dispose())
+  runtime.ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
   const locale = new LocaleRuntime(runtime.ctx)
   runtime.ctx.provide('locale', locale); runtime.slots.installLocale(locale)
   let active = 0
@@ -42,7 +43,8 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
         await new Promise<void>((resolve) => { signal.addEventListener('abort', () => { resolve() }, { once: true }); if (signal.aborted) resolve() })
       } finally { active-- }
     } }
-  const remote = new TestRemote(runtime.ctx, { collaboration: api })
+  const remote = runtime.remote
+  remote.provideNamespaces({ collaboration: api })
   Object.assign(remote, { $stream: (options: ConstructorParameters<typeof RemoteStream>[1]) => new RemoteStream({
     generation: { getSnapshot: () => 1, subscribe: () => () => {} },
   } as never, options) })
@@ -74,8 +76,12 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   await vi.waitFor(() => { expect(runtime.slots.entries('shell.activity.selectors')).toHaveLength(1) })
   const overlay = runtime.renderSlot('shell.app-overlay', {})
   expect(overlay.view.queryByRole('dialog')).toBeNull()
-  await runtime.sessions.add({ id: sid, summary: { displayTitle: 'Author', cwd: 'C:/author' } }, { current: true })
-  await runtime.sessions.add({ id: peer, summary: { displayTitle: 'Reviewer', cwd: 'C:/review' } }, { current: false })
+  await runtime.sessions.add({ id: sid, summary: { displayTitle: 'Author', cwd: 'C:/author' } })
+  await runtime.sessions.add({ id: peer, summary: { displayTitle: 'Reviewer', cwd: 'C:/review' } })
+  const reference = runtime.ctx.sessions.retain(sid, { source: 'mainView' })
+  cleanups.unshift(async () => { reference.release() })
+  await reference.ready
+  overlay.update({}, { session: reference })
   await runtime.sessions.replaceEvents(sid, truncatedWindow, true)
   const binding = runtime.ctx.uiConversation.binding(sid)
   binding.activate('chat')
@@ -84,11 +90,11 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   expect(nodes().filter(node => node.kind === 'user')).toHaveLength(1)
   expect(nodes().filter(node => node.kind === 'context')).toHaveLength(0)
   const message = nodes().find(node => node.kind === 'collaboration-peer')!
-  const rendered = runtime.renderSlot('conversation.chat.node', { node: message } as never, { entryKey: 'collaboration-peer', hookContext: {} })
+  const rendered = runtime.renderSlot('conversation.chat.node', { node: message } as never, { entryKey: 'collaboration-peer', hookContext: {}, session: reference })
   expect(rendered.view.getByText('<script>Peer body</script>')).toBeDefined()
   expect(rendered.container.querySelector('script')).toBeNull()
   expect(rendered.view.getByText(original.messageId)).toBeDefined()
-  const portal = runtime.renderSlot('shell.activity.selectors', {})
+  const portal = runtime.renderSlot('shell.activity.selectors', {}, { session: reference })
   await vi.waitFor(() => { expect(portal.view.getByRole('button', { name: /Reviewer/ })).toBeDefined() })
   expect(portal.view.getByText('Unread messages: 1')).toBeDefined()
   const opener = portal.view.getByRole('button', { name: /Reviewer/ })

@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-18-knowledge-layout-refinement.zh.md)
-
 ## Problem
 
 Knowledge's separated filter rows and generous spacing delayed useful content. The owner also selected Bok's compact paper cards for the artifact library while retaining the rest of the page's styling.

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-skill",
   "description": "Web skill references and the dedicated skill tool row",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },
@@ -36,7 +36,8 @@
         "@deepseek-ai/dsh-api-remotes",
         "@deepseek-ai/dsh-client-ui-sidebar-right",
         "@deepseek-ai/dsh-api-workspace-controller",
-        "@deepseek-ai/dsh-client-ui-shell"
+        "@deepseek-ai/dsh-client-ui-shell",
+        "@deepseek-ai/dsh-client-ui-workspace"
       ],
       "platform": "web"
     }
@@ -71,7 +72,8 @@
     "@deepseek-ai/dsh-api-workspace-controller": "workspace:^",
     "@deepseek-ai/dsh-client-ui-shell": "workspace:^",
     "@deepseek-ai/dsh-client-ui-sidebar-right": "workspace:^",
-    "@deepseek-ai/dsh-util-workspace-path": "workspace:^"
+    "@deepseek-ai/dsh-util-workspace-path": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-workspace": "workspace:^"
   },
   "files": [
     "lib/index.js",

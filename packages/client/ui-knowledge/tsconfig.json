@@ -8,6 +8,7 @@
     "src"
   ],
   "references": [
+    { "path": "../ui-workspace" },
     { "path": "../../api/workspace-controller/tsconfig.client.json" },
     { "path": "../ui-conversation" },
     { "path": "../ui-primitives" },

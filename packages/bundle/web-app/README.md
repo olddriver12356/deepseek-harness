@@ -9,10 +9,8 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Run `dsh --profile web` and the interface opens in your default browser, ready for interactive chat with the agent. You get the conversation view, model and settings management, and session history, backed by the same model access, tools, and safety defaults as every other surface. The command prints a tokenized startup URL; the browser exchanges that token for a signed session cookie and redirects to the clean root URL. You can change the port, suppress the browser handoff, and allow extra hosts from the command line; binding all network interfaces is intentionally not supported. Choose it for interactive work in the browser; `dsh-headless` is the one-shot command-line sibling. The bundle also mounts the Host News cache and the `ui-news` browser panel; the UI reads the newest ten entries per column through the shared `api-remotes` assembly, while a startup and six-hour Host timer archives every observed entry to `<DSH_VAULT_ROOT>/Resources/AI News/news.jsonl` without a model turn. `DSH_VAULT_ROOT` falls back to the launch directory.
+Run `dsh --profile web` for browser chat, model and settings management, and session history with the harness tools and safety defaults. Startup prints a tokenized URL that exchanges its token for a signed browser cookie. Change the port, suppress automatic opening, or allow additional hosts through CLI options. The bundle also mounts the News service and panel, archiving observed feed entries to `<DSH_VAULT_ROOT>/Agents/.generated/news/news.jsonl`. The Vault root defaults to the launch directory.
 
-## Model retry defaults
-Run `dsh --profile web` to open an interactive browser GUI with chat, model and settings management, and session history. It uses the same model access, tools, and safety defaults as other dsh surfaces. Startup prints an authenticated URL and normally opens it in the default browser; SSH sessions and `--no-open` leave the URL for manual opening. You can change the port and allow extra hosts, but cannot bind all network interfaces. Choose this package for interactive browser work; use `dsh-headless` for one-shot command-line tasks.
 
 ## Table of Contents
 
@@ -76,7 +74,7 @@ Each browser session composes its own agent from the shipped presets (the `stand
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The bundle is one patch plus one runtime glue plugin. The storage stack and projection cache come from `dsh-base`; the web overlay's workspace and message-feedback rows consume that shared `storageDomain` service. The patch restates the surface-specific values the base deliberately omits, inserts the web-only host rows and browser roster, then moves the agent plane behind presets. The glue plugin owns dist serving, trust sampling, prompt sections, the bash variable, and the readiness announcements.
+The bundle is one patch plus one runtime glue plugin. The storage stack and projection cache come from `dsh-base`; the web overlay's workspace and message-feedback rows consume that shared `storageDomain` service. The patch restates the surface-specific values the base deliberately omits, inserts the web-only host rows and browser roster, then moves the agent plane behind presets. The glue plugin owns dist serving, trust sampling, prompt sections, the bash variable, and the readiness announcements. The `office-to-pdf` row mounts one lazy [Office conversion provider](../../document/office-to-pdf/README.md) for Host consumers, including Desktop compositions using this bundle. The conversion service's Remote methods authorize preview reads, while Document Preview owns the Office viewer and Client cache.
 
 ### Patch semantics
 

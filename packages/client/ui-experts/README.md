@@ -5,8 +5,6 @@ kind: "package-reference"
 
 # @deepseek-ai/dsh-client-ui-experts
 
-English | [中文](README.zh.md)
-
 ## Summary
 
 This package renders the Experts application panel, manages Expert Method records through the Host Experts Remote, and dispatches an approved Expert into the current Session. Expert definitions remain Markdown packages under the configured Vault Agent Layer. A second, standing entry point lives in the Live Signal card's `shell.activity.selectors` seat: a multi-select of approved Experts that stays active across ordinary sends until cleared, rather than a one-time dispatch.

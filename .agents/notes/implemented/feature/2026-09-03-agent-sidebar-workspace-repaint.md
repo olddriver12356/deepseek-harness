@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-03-agent-sidebar-workspace-repaint.zh.md)
-
 ## Problem
 
 The Agent sidebar and Workspace browser exposed the native multi-workspace Session model, but their presentation did not establish the product hierarchy shown by the approved Boujoy direction. The surface lacked the `PROJECT TAPE` and Session-tape treatments, a total Session count, paired primary actions, a current Workspace indicator, and a main-list loading state. At phone widths, expanding the sidebar still consumed a grid track instead of overlaying the center surface.

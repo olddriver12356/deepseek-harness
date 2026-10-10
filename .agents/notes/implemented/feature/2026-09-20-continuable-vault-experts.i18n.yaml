@@ -1,6 +1,0 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-20-continuable-vault-experts.md
-2026-09-20-continuable-vault-experts.md: 69c92a0fb101c6f61294bd010adbd9a489d85344
-2026-09-20-continuable-vault-experts.zh.md: 79d12cb21e2576474c3b08124b47e3bd121ab388

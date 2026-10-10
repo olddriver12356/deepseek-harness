@@ -263,7 +263,7 @@ export function validateSlotContracts(
     }
   }
   for (const registration of registrations) {
-    if (!byKey.has(registration.key)) {
+    if (registration.factory !== true && !byKey.has(registration.key)) {
       problems.push(`registration into '${registration.key}' (${registration.source}) targets a slot no SlotMap merge declares; either the scan has a blind spot or the registration is dead.`)
     }
     for (const child of registration.children) {
@@ -322,7 +322,8 @@ function entryOf(
   types: ReadonlyMap<string, TypeDeclaration>,
   kits: ReadonlyMap<string, readonly string[]>,
 ): SlotEntry {
-  const occupants = registrations.filter(registration => registration.key === declaration.key)
+  const occupants = registrations.filter(registration =>
+    registration.factory !== true && registration.key === declaration.key)
   const cellOccupied = occupants.some(occupant =>
     declaration.kind === 'single' || occupant.entryKey !== undefined)
   const doc = docProse(declaration.jsDoc)
@@ -342,7 +343,9 @@ function entryOf(
     slotInject: declaration.injectType ?? '',
     declaredBy: declaredBy === undefined
       ? 'the runtime itself (built in; always present)'
-      : `an entry in '${declaredBy.key}' (${shortPackage(declaredBy.package)}), so it exists while that entry is mounted`,
+      : declaredBy.factory === true
+        ? `factory '${declaredBy.key}' (${shortPackage(declaredBy.package)}), so it exists while that definition is registered`
+        : `an entry in '${declaredBy.key}' (${shortPackage(declaredBy.package)}), so it exists while that entry is mounted`,
     occupants: occupants.map(occupant => [
       shortPackage(occupant.package),
       occupant.component,

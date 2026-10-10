@@ -7,6 +7,13 @@ import { findConcreteTermViolations, readTrackedSource } from './verify-concrete
 const blockedTerm = 'prove' + 'nance'
 
 describe('concrete terminology policy', () => {
+  it('preserves exact external Vault schema names while rejecting surrounding prose', () => {
+    const file = 'packages/host/experts/src/store.ts'
+    const section = `${blockedTerm[0]?.toUpperCase()}${blockedTerm.slice(1)} record`
+    expect(findConcreteTermViolations(file, `'${blockedTerm}', ${blockedTerm}: { body_section: '${section}' }`)).toEqual([])
+    expect(findConcreteTermViolations(file, `// ${blockedTerm}`)).toEqual([{ file, line: 1 }])
+    expect(findConcreteTermViolations('packages/example/src/store.ts', `'${blockedTerm}'`)).toEqual([{ file: 'packages/example/src/store.ts', line: 1 }])
+  })
   it('rejects case variants in paths, prose, and identifiers', () => {
     expect(findConcreteTermViolations(`docs/${blockedTerm}-notes.md`, [
       'origin metadata',

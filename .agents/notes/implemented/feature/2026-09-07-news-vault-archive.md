@@ -1,7 +1,5 @@
 # Agent Note: News Vault archive
 
-English | [中文](2026-09-07-news-vault-archive.zh.md)
-
 Status: implemented
 
 ## Problem

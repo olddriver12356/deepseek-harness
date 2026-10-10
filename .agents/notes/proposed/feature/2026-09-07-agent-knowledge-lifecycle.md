@@ -2,8 +2,6 @@
 
 Status: proposed
 
-English | [中文](2026-09-07-agent-knowledge-lifecycle.zh.md)
-
 ## Problem
 
 DSH conversations contain useful evidence, but saving a conversation is not equivalent to verified knowledge or permission to publish it into the owner's Vault.

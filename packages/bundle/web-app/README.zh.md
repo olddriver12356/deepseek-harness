@@ -9,10 +9,8 @@ kind: "package-bundle"
 
 ## 概述
 
-运行 `dsh --profile web`，界面会在你的默认浏览器中打开，即可与 agent（智能体）交互式聊天。你会获得会话视图、模型与设置管理以及会话历史，背后与其他表层相同的模型访问、工具与安全默认值。该命令会打印带 token 的启动 URL；浏览器用该 token 换取签名会话 cookie，再重定向到干净的根 URL。你可以从命令行更改端口、关闭浏览器交接并允许额外主机；有意不支持绑定所有网络接口。需要浏览器中的交互式工作时选择它；`dsh-headless` 是一次性的命令行兄弟表层。Web bundle 同时挂载 Host News cache 和 `ui-news` 浏览器面板；UI 通过共享的 `api-remotes` assembly 读取每栏最新十条，而 Host 会在启动时及之后每六小时将观察到的全部条目归档到 `<DSH_VAULT_ROOT>/Resources/AI News/news.jsonl`，不产生 model turn。`DSH_VAULT_ROOT` 未设置时回退到启动目录。
+运行 `dsh --profile web`，在浏览器中使用聊天、模型与设置管理和会话历史，并沿用 Harness 的工具与安全默认值。启动 URL 中的 token 会换取签名浏览器 cookie。CLI 可调整端口、关闭自动打开或允许额外主机。The bundle also mounts the News service and panel, archiving observed feed entries to `<DSH_VAULT_ROOT>/Agents/.generated/news/news.jsonl`. The Vault root defaults to the launch directory.
 
-## 模型重试默认值
-运行 `dsh --profile web`，打开提供聊天、模型与设置管理以及会话历史的交互式浏览器 GUI。它使用与其他 dsh 表层相同的模型访问、工具与安全默认值。启动时会打印带认证信息的 URL，通常还会在默认浏览器中打开；SSH 会话和 `--no-open` 会保留该 URL，供你手动打开。你可以更改端口并允许额外主机，但不能绑定所有网络接口。需要在浏览器中交互式工作时选择本包；一次性的命令行任务应使用 `dsh-headless`。
 
 ## 目录
 
@@ -76,7 +74,7 @@ dsh --profile web --no-open --port 8080
 <details>
 <summary>实现细节——点击展开</summary>
 
-本组合包是一份 patch 加一个运行时粘合插件。存储栈与投影缓存来自 `dsh-base`；Web 叠加层的 workspace 与 message-feedback 行使用共享的 `storageDomain` 服务。patch 重述 base 刻意省略的表层专属值，插入仅 Web 使用的宿主行与浏览器名录，然后把 agent 层改由 preset 承载；粘合插件负责 dist 服务、信任采样、提示词段落、bash 变量与就绪宣告。
+此 bundle 由一个补丁和一个运行时胶水插件组成。存储栈与投影缓存来自 `dsh-base`；Web 叠加层的工作区和消息反馈条目消费共享的 `storageDomain` 服务。补丁重述 base 有意省略的界面专用值，插入 Web 专用宿主条目和浏览器插件列表，再将 Agent 层移到预设后面。胶水插件负责 dist 服务、信任采样、提示词段落、bash 变量和就绪通知。`office-to-pdf` 条目为宿主消费者挂载一个延迟创建引擎的 [Office 转换提供方](../../document/office-to-pdf/README.zh.md)，使用此 bundle 的 Desktop 组合也共享该提供方。 转换服务的 Remote 方法负责预览读取授权，Document Preview 负责 Office 查看器和客户端缓存。
 
 ### patch 语义
 

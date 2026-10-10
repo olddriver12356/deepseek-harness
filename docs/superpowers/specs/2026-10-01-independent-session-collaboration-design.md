@@ -1,7 +1,5 @@
 # Independent session collaboration design
 
-English | [中文](2026-10-01-independent-session-collaboration-design.zh.md)
-
 ## Summary
 
 This proposed feature connects existing DSH sessions through persistent peer messaging and a shared task board. Participants keep their own context, role, model, capabilities, fixed workspace, and direct conversation with the human. The human approves a plan; implementation, independent review, and integration then advance within that approval while monitoring and activity logging continue throughout. This document specifies proposed behavior, not shipped functionality.

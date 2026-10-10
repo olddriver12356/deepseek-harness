@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-09-02-knowledge-panel-ui.zh.md)
-
 ## Problem
 
 The application rail identifies six product areas, but navigation alone does not define who owns each panel, how panel-local state survives selection changes, or how a visually distinct panel ships its static assets. Putting business panels inside the rail package would couple navigation to unrelated presentation and data decisions. Building a common panel framework before two real panels exist would turn one design into a premature abstraction.

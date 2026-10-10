@@ -1,6 +1,22 @@
+---
+description: "Browse recent AI news, tools, and model releases in two columns."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-client-ui-news
 
-English | [中文](README.zh.md)
+## Summary
+
+Browse recent AI news, tools, and model releases in two columns. Refresh the feed, open publisher links, or capture a card into Knowledge Intake without a model call. Explicit distillation uses the Knowledge Host and leaves its output awaiting owner review; it never publishes a card automatically.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 News application panel for the web surface. It registers a persistent `shell.app-overlay` occupant, follows `ctx.appPanels`, and reads the Host News Remote through the shared `api-remotes` assembly. The approved two-column editorial layout shows recent AI news plus tools and model releases, with loading, empty, error, refresh, and image fallback states.
 
@@ -18,3 +34,7 @@ None; feed and thumbnail caches are owned by the Host News package and never ent
 
 - **Public feed variability**: publisher availability and markup can change independently of the harness; the Host keeps the last successful snapshot when a refresh fails.
 - **Read-only links**: article cards open the publisher URL in a new tab; bookmarking and in-app article reading are not part of this migration.
+
+### Dev Note
+
+None.

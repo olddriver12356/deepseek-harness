@@ -1,6 +1,22 @@
+---
+description: "Keep application navigation, conversation, and details visible in a resizable browser frame."
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-client-ui-shell
 
-English | [中文](README.zh.md)
+## Summary
+
+Keep application navigation, conversation, and details visible in a resizable browser frame. Switch application panels without discarding their state, and collapse Live Signal to reclaim conversation space. Session changes close details, while page reload restores the default layout. Feature plugins own panel content and session actions.
+
+## Table of Contents
+
+- [Behavior](#behavior)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Behavior
 
 Shell plugin: four-track AppFrame (`app.rail` | sidebar | center | details, with drag handles and a concession chain) plus the `ctx.layout` panel-geometry service and `ctx.appPanels` active-panel service; it registers into the runtime-owned `root` slot and declares `app.rail`, `sidebar`, `conversation`, `details`, and `shell.overlay`. The root-scoped `app.rail` renders in a fixed 72px leftmost track with an empty owner share, so app navigation remains present while the independent sidebar collapses to its 56px compact controls. The sidebar resize boundary is an invisible hit strip, while the details boundary retains its floating pill; only details shrinks during concession and then auto-closes to zero width. The package also seats the theme presenter: it consumes resolved `ctx.theme` snapshots and projects them onto the document (`html { color-scheme }` for native UA chrome, `body[data-ds-dark-theme]` from the active color scheme, the theme's alias tokens as inline variables on body, and one owned `<meta name="theme-color">` whose content follows the computed body background). Measuring after palette and token application keeps the rendered background as the single color authority; disposing the presenter removes its metadata node with its other global writes.
 
@@ -27,3 +43,7 @@ None; this package neither assembles nor sends a provider request.
 - **Shell viewing state is transient** — reload restores `ctx.appPanels` to `agent`, the sidebar default, and details closed; switching between distinct Session ids also closes details and forgets its dragged width, while unselected surfaces render details at zero width without modifying geometry.
 - **Concession-chain auto-close derives a zero width without touching the preferred width** — the panel restores itself when the window widens; consumers must not read the stored details width as the rendered truth.
 - **No scroll anchoring during squeeze reflow** — layout changes may move the reader's viewport.
+
+### Dev Note
+
+None.

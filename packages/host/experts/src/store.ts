@@ -146,8 +146,8 @@ function artifactText(id: string, draft: ExpertDraft, created: string): string {
     derived_from: [],
   }
   const event = JSON.stringify({ event_id: `expert-${randomUUID()}`, event_type: 'expert_saved', at: now })
-  const provenance = JSON.stringify({ source_kind: 'owner_input', original_statement: 'Created in DSH Experts UI', captured_at: now, origin_run: 'dsh-experts-ui' })
-  return `${frontmatter(data)}\n# ${draft.name}\n\n${draft.description}\n\n## Instructions\n\n${draft.instructions}\n\n## Provenance record\n\n\`\`\`json\n${provenance}\n\`\`\`\n\n## Evidence pointers\n\n\`\`\`json\n[]\n\`\`\`\n\n## Gate receipts\n\n\`\`\`jsonl\n\`\`\`\n\n## Processing history\n\n\`\`\`jsonl\n${event}\n\`\`\`\n`
+  const sourceRecord = JSON.stringify({ source_kind: 'owner_input', original_statement: 'Created in DSH Experts UI', captured_at: now, origin_run: 'dsh-experts-ui' })
+  return `${frontmatter(data)}\n# ${draft.name}\n\n${draft.description}\n\n## Instructions\n\n${draft.instructions}\n\n## Provenance record\n\n\`\`\`json\n${sourceRecord}\n\`\`\`\n\n## Evidence pointers\n\n\`\`\`json\n[]\n\`\`\`\n\n## Gate receipts\n\n\`\`\`jsonl\n\`\`\`\n\n## Processing history\n\n\`\`\`jsonl\n${event}\n\`\`\`\n`
 }
 
 function isWithin(base: string, candidate: string): boolean {

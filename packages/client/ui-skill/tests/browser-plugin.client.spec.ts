@@ -109,6 +109,7 @@ const req = (query: string, signal?: AbortSignal) =>
 describe('apply', () => {
   it('removes the management panel contribution when its plugin is disposed', async () => {
     const ctx = new Context()
+    ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
     const presentation = providePresentation(ctx)
     ctx.provide('sessions', {})
     ctx.provide('workspaces', {})
@@ -501,6 +502,7 @@ describe('reference preview', () => {
 })
 it('projects command and plugin remotes into the four read-only sections', async () => {
   const ctx = new Context()
+  ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
   const presentation = providePresentation(ctx)
   ctx.provide('sessions', {})
   ctx.provide('workspaces', {})

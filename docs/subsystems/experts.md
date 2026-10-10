@@ -1,7 +1,5 @@
 # Expert Methods
 
-English | [中文](experts.zh.md)
-
 The [Host package](../../packages/host/experts/README.md) owns Vault-backed Expert Method CRUD and bounded delegated Expert admission. The [wire declarations](../../packages/host/experts/src/types.ts) own exact field types.
 
 ## Public records and requests

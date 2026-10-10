@@ -183,7 +183,8 @@ export async function runDiscussionFlow(
     await expect.poll(async () => {
       logs.length = 0
       await collect(join(root, '.dsh', 'sessions'))
-      return logs.some(log => log.includes('not available during a peer discussion turn') && log.includes('turn/end'))
+      return logs.some(log => log.includes('not available during a peer discussion turn'))
+        && logs.every(log => log.lastIndexOf('"type":"turn/end"') > log.lastIndexOf('"type":"turn/start"'))
     }, { timeout: 30000 }).toBe(true)
     captured = logs
     expect(logs).toHaveLength(2)

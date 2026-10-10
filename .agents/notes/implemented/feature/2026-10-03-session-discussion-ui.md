@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-10-03-session-discussion-ui.zh.md)
-
 ## Problem
 
 V1a needs human management of ordinary Session discussion pairs within the existing UI. Peer record grants cannot define the human control list: a pair whose snapshot and follow grants are both false still needs pause, budget and disconnect controls. Adding a custom Peer Conversation Definition alone also produces a second generic context node, because the assembler dispatches every matching Definition. Finally, a downstream pre-step listener could rewrite a required-policy input source to `user`; the ordinary opening history page may omit its original Inbox event, so presentation cannot reconstruct truthful attribution from the loaded window.
