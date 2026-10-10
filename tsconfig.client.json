@@ -32,6 +32,9 @@
   ],
   "references": [
     {
+      "path": "./tsconfig.desktop-keyboard-tests.json"
+    },
+    {
       "path": "./apps/desktop/tsconfig.client.json"
     },
     {
@@ -108,6 +111,12 @@
     },
     {
       "path": "./packages/test-support/remote-mock"
+    },
+    {
+      "path": "./packages/client/shortcuts/tsconfig.client.json"
+    },
+    {
+      "path": "./packages/client/ui-shortcuts"
     },
     {
       "path": "./packages/client/ui-layout"

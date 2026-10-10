@@ -84,7 +84,7 @@
   min-height: 48px;
   padding: 2px;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--dsw-radius-lg);
 }
 
 .frame[data-variant='thumbnail'] img {
@@ -107,6 +107,6 @@
 
 .frame:focus-visible,
 .error:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }

@@ -249,7 +249,7 @@
 }
 
 .groupToggle:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
@@ -292,7 +292,7 @@
   height: 36px;
   white-space: nowrap;
   border: none;
-  border-radius: 18px;
+  border-radius: var(--dsw-radius-md);
   padding: 0 14px;
   background: var(--dsw-alias-bg-module-platform);
   color: var(--dsw-alias-label-primary);
@@ -307,7 +307,7 @@
 }
 
 .switcher:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
@@ -331,7 +331,7 @@
 
 .brokenNote {
   margin: 0;
-  border-radius: 8px;
+  border-radius: var(--dsw-radius-lg);
   padding: 8px 10px;
   background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 8%, transparent);
   color: var(--dsw-alias-state-error-primary);

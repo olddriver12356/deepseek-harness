@@ -1,5 +1,4 @@
-/* User bubble: right-aligned column (bubble + IconActions). Figma
-   User_Bubble/message_container 659:38813 — r22 fill, actions gap 6 below. */
+/* User messages align their bubble and action row to the right. */
 
 .userRow {
   display: flex;
@@ -77,7 +76,7 @@
    scroll container's top while the row is open (the body is a sibling rendered
    only when expanded); the base background masks the prose scrolling under it.
    The square corners apply for as long as the row is open, pinned or not: the
-   fill is what masks the prose, and a 6px radius would leave that prose visible
+   fill is what masks the prose, and rounded corners would leave that prose visible
    in the corners. z-index outranks the markdown code block's own sticky banner
    (z-index 6 in CodeBlock.module.css); that banner itself stops below this
    toggle (rule below), so a summary's fenced code block never puts a control
@@ -224,7 +223,7 @@
 }
 
 .retrySummary:focus-visible {
-  outline: 1.5px solid var(--dsw-alias-button-info-fill);
+  outline: 1.5px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
@@ -358,7 +357,7 @@
   min-height: 64px;
   padding: 8px 12px;
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.12));
-  border-radius: 16px;
+  border-radius: var(--dsw-radius-xl);
   background: var(--dsw-specific-input-major, transparent);
   box-sizing: border-box;
 }
