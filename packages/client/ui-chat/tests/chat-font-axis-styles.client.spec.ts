@@ -48,13 +48,12 @@ describe('chat flow font-size axis', () => {
 
   it('the message clock and action glyphs scale with the text they serve', () => {
     const actions = read('MessageIconActions.module.css')
-    // The user clock reads the secondary tier. The assistant tail is one
-    // further pixel down, matching its usage trigger and supporting metadata.
+    // Both clock labels use the secondary tier, whose local theme floor is 14px.
     expect(declarationsFrom(actions, '.timeStart')).toEqual(expect.arrayContaining([
       'font-size: var(--dsh-content-font-size-secondary, 13px)',
     ]))
     expect(declarationsFrom(actions, '.timeEnd')).toEqual(expect.arrayContaining([
-      'font-size: calc(var(--dsh-content-font-size-secondary, 13px) - 1px)',
+      'font-size: var(--dsh-content-font-size-secondary, 13px)',
     ]))
     expect(declarationsFrom(actions, '.action svg')).toEqual(expect.arrayContaining([
       'width: calc(15px + var(--dsh-content-font-delta, 0px))',
@@ -165,10 +164,9 @@ describe('chat flow font-size axis', () => {
   })
 
   it('the interrupted-turn tag stays fixed like the dense token variants', () => {
-    // 11px would fall to an illegible 9px at the 12px floor; the tag is
-    // exempt from the axis the same way small/code tokens are.
+    // The fixed tag retains the local 14px floor independently of the body axis.
     expect(declarationsFrom(read('AssistantMarkdown.module.css'), '.stopped')).toEqual(expect.arrayContaining([
-      'font-size: 11px',
+      'font-size: 14px',
       'line-height: 18px',
     ]))
   })

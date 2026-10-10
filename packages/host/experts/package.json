@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-host-experts",
   "description": "Vault-backed Agent Layer Expert Method Remote",
-  "version": "0.1.7-alpha.2",
+  "version": "0.1.7-rc.1",
   "publishConfig": {
     "access": "public"
   },

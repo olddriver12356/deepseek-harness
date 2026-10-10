@@ -16,7 +16,8 @@ function record(value: unknown): Record<string, unknown> | undefined {
 }
 
 /** Card reads the durable admission receipt; it never treats tool completion as expert completion. */
-export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions }: Props) {
+export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions, useToolCallArgumentsPartial }: Props) {
+  const partialArgs = useToolCallArgumentsPartial()
   const [error, setError] = useState('')
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
@@ -40,7 +41,8 @@ export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions }: Pr
     return () => { clearInterval(timer) }
   }, [active])
   let args: Record<string, unknown> | undefined
-  try { args = record(JSON.parse((settled ? block.call?.argsRaw : block.argsRaw) ?? '{}')) }
+  const rawArgs = settled ? block.call?.argsRaw : block.phase === 'start' ? block.argsRaw : partialArgs
+  try { args = record(JSON.parse(rawArgs ?? '{}')) }
   catch { /* Partial streamed arguments are displayed once complete. */ }
   const title = typeof receipt?.expert === 'string' ? receipt.expert : typeof args?.expert === 'string' ? args.expert : t('title')
   const output = settled ? block.content.filter(part => part.type === 'text').map(part => part.text).join('\n') : ''
