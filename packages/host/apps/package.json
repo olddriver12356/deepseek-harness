@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-host-apps",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.0-rc.1",
   "description": "Registered local Web application launcher",
   "type": "module",
   "main": "lib/index.js",

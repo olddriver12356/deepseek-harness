@@ -7,6 +7,10 @@ kind: "package-bundle"
 
 [English](README.md) | 中文
 
+桌面埋点遵循[产品采集策略](../../client/product-analytics/README.zh.md)及其动态应用配置，不包含 Web 使用情况。
+
+桌面埋点每 30 秒调度未满批次，exporter 超时为 15 秒，processor 超时为 20 秒。退出时允许 2 秒排空，随后取消待完成的请求和重试等待，避免埋点阻止 Host 退出。尚未发送完成的事件可能丢失。
+
 ## 概述
 
 运行 `dsh --profile web`，在浏览器中使用聊天、模型与设置管理和会话历史，并沿用 Harness 的工具与安全默认值。启动 URL 中的 token 会换取签名浏览器 cookie。CLI 可调整端口、关闭自动打开或允许额外主机。The bundle also mounts the News service and panel, archiving observed feed entries to `<DSH_VAULT_ROOT>/Agents/.generated/news/news.jsonl`. The Vault root defaults to the launch directory.
@@ -52,7 +56,7 @@ dsh --profile web --no-open --port 8080
 | `surfaceContext` | `true` | 给 agent 提供 GUI 定位上下文，并把 `DSH_WEB_URL` 暴露给其 shell 命令 |
 | `trustedHosts` | `[]` | 允许从网络访问 GUI 的额外主机 |
 
-生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web-app)是每个受支持字段及其 JSDoc 的穷尽式真源。 随发行版交付的组合默认禁用 `schedule`、`ui-schedule` 和 `time-context`。
+生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web-app)是每个受支持字段及其 JSDoc 的穷尽式真源。 随发行版交付的组合不含 `time-context`、`schedule` 和 `ui-schedule` 行，可选实验性 bundle `@deepseek-ai/dsh-experimental-schedule-bundle` 可在插件管理页插入这三行。
 
 ### LAN 访问与可信主机
 
