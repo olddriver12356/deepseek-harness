@@ -8,7 +8,9 @@
     "src"
   ],
   "references": [
-    { "path": "../ui-primitives" },
+    {
+      "path": "../ui-primitives"
+    },
     {
       "path": "../../../vendor/cordis"
     },
@@ -32,9 +34,6 @@
     },
     {
       "path": "../../llm/token-meter"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
     }
   ]
 }

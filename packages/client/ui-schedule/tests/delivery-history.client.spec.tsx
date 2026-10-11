@@ -151,7 +151,7 @@ describe.each([en, zh])('saved delivery records', (dictionary) => {
     // The mock's `.delivery-record .history-caption`: the saved instruction.
     const instructionRule = ruleBlock(stylesheet, 'savedPrompt')
     expect(instructionRule).toMatch(/margin:\s*6px 0 0;/)
-    expect(instructionRule).toMatch(/font-size:\s*13px;/)
+    expect(instructionRule).toMatch(/font-size:\s*14px;/)
     expect(instructionRule).toMatch(/line-height:\s*22px;/)
     expect(instructionRule).toMatch(/color:\s*var\(--dsw-alias-label-tertiary\);/)
     expect(instructionRule).toMatch(/white-space:\s*pre-wrap;/)
@@ -329,11 +329,11 @@ it('keeps the Rules and the Delivery records views on one type scale', () => {
   expect(declared('ruleLabel', 'font-size')).toBe('14px')
   expect(declared('deliveryTime', 'font-size')).toBe('14px')
   expect(declared('delivery', 'font-size')).toBe('14px')
-  // The secondary step: 13px in the rules view's leading and hint and the
+  // The local minimum keeps the secondary text at 14px in the leading, hint and
   // records view's saved instruction.
-  expect(declared('ruleCard h3', 'font-size')).toBe('13px')
-  expect(declared('ruleHint', 'font-size')).toBe('13px')
-  expect(declared('savedPrompt', 'font-size')).toBe('13px')
+  expect(declared('ruleCard h3', 'font-size')).toBe('14px')
+  expect(declared('ruleHint', 'font-size')).toBe('14px')
+  expect(declared('savedPrompt', 'font-size')).toBe('14px')
   // The rules view reads its row labels and values in one primary ink and its
   // leading and hint in tertiary; the records view keeps the same hierarchy.
   expect(declared('ruleValue', 'color')).toBe(declared('deliveryTime', 'color'))

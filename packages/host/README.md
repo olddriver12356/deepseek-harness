@@ -48,7 +48,7 @@ Start with the subsystem references for the transport and the workspace records,
 - [HTTP server subsystem](../../docs/subsystems/web-server.md) — the webserver's routes, matching order, and config.
 - [Workspace subsystem](../../docs/subsystems/workspace.md) — the workspace records the directory picker feeds.
 - [Independent Session collaboration](../../docs/subsystems/collaboration.md) records the discussion requests, grants, durable outbox, and recovery contract.
-- [Web config-tree boot and transport layering](../../.agents/notes/implemented/architecture/2026-07-24-web-config-tree-boot-and-transport-layering.md) — ownership of the Web transport layers.
+- [Web config-tree boot and transport layering](../boot/app-boot/README.md) — ownership of the Web transport layers.
 - [Product telemetry](../../docs/subsystems/product-telemetry.md) — explicit analytics event submission.
 
 <a id="dev-note"></a>

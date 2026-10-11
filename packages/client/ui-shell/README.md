@@ -47,3 +47,5 @@ None; this package neither assembles nor sends a provider request.
 ### Dev Note
 
 None.
+
+The root-scoped `shell.bottom` outlet spans the frame below the local rail, sidebar, conversation, details, and activity surfaces. Empty content reserves no height. Column overlays and resize handles stop above it; application overlays still cover both rows. This preserves upstream Inspector composition alongside local shell functionality.

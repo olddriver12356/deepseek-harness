@@ -7,6 +7,7 @@ import type {
   ISessions,
   SessionCreateError,
   SessionListState,
+  SessionBinding,
   SessionReference,
   SessionTarget,
 } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -17,6 +18,7 @@ import type {
 } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type { DraftInitializationOptions } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { RowToast } from './contract/slots.ts'
 import { pinOrderAccounts, pinOrderSource } from './pin-order.ts'
 import type { WorkspaceViewStoreActions } from './stores.ts'
@@ -25,6 +27,9 @@ interface MainSelection {
   readonly sessionId?: SessionId
   readonly subagentAddress?: SubagentAddress
 }
+
+/** Optional content preparation for the resolved target Session. */
+export type StartSessionOptions = DraftInitializationOptions
 
 /** Workspace archive and directory operations consumed by Client UI domains. */
 export interface UiWorkspace {
@@ -57,10 +62,13 @@ export interface UiWorkspace {
    */
   connectWorkspace(workspaceId: WorkspaceId): Promise<SessionId>
   /**
-   * Start a New Session flow and navigate to its Session.
-   * @param workspaceId - explicit target; absent opens Workspace selection without creating a Session.
+   * Start a New Session flow and navigate to its Session; a creation the Host
+   * refuses is shown through the Workspace notice and leaves the selection as it was.
+   * @param workspaceId - explicit target; absent opens Workspace selection,
+   * unless initial content targets the current or most recent Workspace.
+   * @param options - initial content; existing text or attachments are preserved unless clearPreviousDraft is true.
    */
-  startSession(workspaceId?: WorkspaceId): void
+  startSession(workspaceId?: WorkspaceId, options?: StartSessionOptions): void
   /**
    * Archive a Session and clear it when it is the current selection.
    * @param sessionId - Session to archive.
@@ -220,14 +228,51 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     return this.sessions.fork({ sessionId, increaseTitle: true, ...onCreated === undefined ? {} : { onCreated } })
   }
 
-  startSession(workspaceId?: WorkspaceId): void {
-    if (workspaceId === undefined) {
+  startSession(workspaceId?: WorkspaceId, options?: StartSessionOptions): void {
+    const draftOptions = options === undefined ? undefined : { ...options }
+    const initializeDraft = draftOptions !== undefined
+      && (draftOptions.prompt !== undefined || draftOptions.clearPreviousDraft === true)
+    if (workspaceId === undefined && !initializeDraft) {
       this.clearMain()
       return
     }
-    void this.openWorkspace(workspaceId).catch(
+    const workspace = this.workspaces.list.getSnapshot()
+    const sessions = this.sessions.list.getSnapshot()
+    const current = this.mainReference?.sessionId
+    const currentWorkspaceId = current === undefined
+      ? undefined
+      : workspace.items.find(item => item.sessionIds.includes(current))?.workspaceId
+    const recent = workspace.phase === 'ready' && sessions.phase === 'ready'
+      ? recentWorkspace(workspace.items, sessions.byId)
+      : undefined
+    const target = workspaceId ?? currentWorkspaceId ?? recent
+    if (target === undefined) {
+      if (initializeDraft) {
+        this.notify({ kind: 'createFailed', message: this.ctx.locale.bind('workspace')('draft.workspaceRequired') })
+        return
+      }
+      this.clearMain()
+      return
+    }
+    void this.openWorkspace(target, initializeDraft ? (id) => {
+      const binding = this.sessions.binding(id)
+      if (binding === undefined) this.draftPreparationFailed()
+      this.prepareDraft(binding, draftOptions)
+    } : undefined).catch(
       (reason: unknown) => { console.warn('new session failed:', reason) },
     )
+  }
+
+  private prepareDraft(binding: SessionBinding, options: DraftInitializationOptions): void {
+    const conversation = this.ctx.get('conversation')
+    if (conversation === undefined) this.draftPreparationFailed()
+    if (conversation.input.requestDraftInitialization(binding, options) === 'blocked') this.draftPreparationFailed()
+  }
+
+  private draftPreparationFailed(): never {
+    const message = this.ctx.locale.bind('workspace')('draft.initializationFailed')
+    this.notify({ kind: 'createFailed', message })
+    throw new Error(message)
   }
 
   async archiveSession(sessionId: SessionId, options: { readonly stopActivity?: boolean } = {}): Promise<void> {

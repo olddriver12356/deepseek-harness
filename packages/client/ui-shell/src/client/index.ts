@@ -24,6 +24,7 @@ import { LiveSignalPanel } from './LiveSignalPanel.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
 import { ThemePresenter } from './theme-presenter.ts'
+import type { ShortcutCommandId } from '@deepseek-ai/dsh-client-shortcuts/client'
 import { en, zh } from './locales.ts'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 
@@ -118,7 +119,7 @@ export interface ActivityInjected {
 }
 
 /** Required services (cordis fiber inject — the loader passes all module exports as an object plugin). */
-export const inject = ['slots', 'theme', 'sessions', 'uiSession', 'remote', 'remote.goals', 'locale']
+export const inject = ['slots', 'theme', 'sessions', 'uiSession', 'remote', 'remote.goals', 'locale', 'shortcuts']
 
 /**
  * Client plugin body: provide the shell services, then one register() call — AppFrame
@@ -155,14 +156,29 @@ export function apply(ctx: ClientContext): void {
         'sidebar': { kind: 'single', scope: 'root' },
         'main': { kind: 'keyed', scope: 'root' },
         'rightbar': { kind: 'single', scope: 'root' },
+        'shell.bottom': { kind: 'single', scope: 'root' },
+        'shell.leading': { kind: 'single', scope: 'root' },
         'shell.overlay': { kind: 'list', scope: 'root' },
       },
       store,
     }, AppFrame)
+    const disposeShortcut = ctx.shortcuts.register({
+      id: 'sidebar.left.toggle' as ShortcutCommandId, label: () => ctx.locale.bind('shell')('toggleSidebar'), aliases: ['sidebar', 'toggle left sidebar'],
+      defaults: {
+        'desktop:macos': { code: 'KeyB', modifiers: ['primary'] },
+        'desktop:windows': { code: 'KeyB', modifiers: ['primary'] },
+        'desktop:linux': { code: 'KeyB', modifiers: ['primary'] },
+        'web:macos': { code: 'KeyB', modifiers: ['primary', 'alt'] },
+        'web:windows': { code: 'KeyB', modifiers: ['primary', 'alt'] },
+      },
+      regions: ['page', 'editable'], modals: [],
+      resolve: () => ({ status: 'handled', run: () => { layout.toggleSidebar() } }),
+    })
     const disposePanels = ctx.slots.subscribe('main', retainMainPanels)
     retainMainPanels()
     return () => {
       void disposeAppPanels()
+      disposeShortcut()
       layout.dispose()
       disposePanels()
       disposeRegistration()

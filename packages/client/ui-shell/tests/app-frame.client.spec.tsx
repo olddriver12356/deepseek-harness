@@ -115,9 +115,9 @@ function mountFrame(windowWidth = frameWidth) {
 }
 
 function tracks(frame: HTMLElement): number[] {
-  const match = /^72px ([\d.]+)px minmax\(0, 1fr\) ([\d.]+)px$/.exec(frame.style.gridTemplateColumns)
+  const match = /^72px ([\d.]+)px minmax\((0|400)px, 1fr\) minmax\(0px, ([\d.]+)px\)$/.exec(frame.style.gridTemplateColumns)
   if (match === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
-  return [Number(match[1]), Number(match[2])]
+  return [Number(match[1]), Number(match[3])]
 }
 
 function handleFor(frame: HTMLElement, side: 'sidebar' | 'rightbar'): HTMLElement {
@@ -227,4 +227,40 @@ describe('custom shell on the upstream layout contract', () => {
     mountFrame()
     expect(document.title).toContain('Integration')
   })
+})
+
+it('keeps the root bottom outlet available without a Session', () => {
+  selectedSession = undefined
+  const { getByTestId } = mountFrame()
+  expect(getByTestId('shell.bottom-content')).toBeTruthy()
+  expect(getByTestId('main-content').getAttribute('data-entry-key')).toBe('conversation')
+})
+
+it('keeps macOS reopen controls available when the sidebar is hidden beside the app rail', () => {
+  document.documentElement.dataset.platform = 'darwin'
+  try {
+    const b = mountFrame()
+    expect(b.queryByTestId('shell.leading-content')).toBeNull()
+    act(() => { b.instance.actions.toggleSidebar() })
+    expect(tracks(b.frame)[0]).toBe(0)
+    expect(b.getByTestId('shell.leading-content')).toBeTruthy()
+    expect(b.getByTestId('app.rail-content')).toBeTruthy()
+  } finally {
+    delete document.documentElement.dataset.platform
+  }
+})
+
+it('publishes Windows fullscreen clearance including the persistent app rail', () => {
+  document.documentElement.setAttribute('data-windows-titlebar', '')
+  try {
+    const b = mountFrame()
+    expect(b.frame.style.getPropertyValue('--dsh-windows-sidebar-width')).toBe('352px')
+    act(() => { b.instance.actions.toggleSidebar() })
+    expect(tracks(b.frame)[0]).toBe(0)
+    expect(b.frame.style.getPropertyValue('--dsh-windows-sidebar-width')).toBe('72px')
+    expect(b.getByTestId('app.rail-content')).toBeTruthy()
+    expect(b.queryByTestId('shell.leading-content')).toBeNull()
+  } finally {
+    document.documentElement.removeAttribute('data-windows-titlebar')
+  }
 })

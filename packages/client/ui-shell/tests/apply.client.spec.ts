@@ -3,9 +3,10 @@
 // ONE register() call declares the five child slots + seats the store factory
 // + wires the panel actions through the inject hook; teardown cascades
 // (services unprovided + declarations gone + registration cleared). Node half
-// and the invariant companion ride along — one line exposes the aggregate
+// ride along — one line exposes the aggregate
 // coverage gate still requires exercised.
 
+import ShortcutsService from '../../shortcuts/src/client/index.ts'
 import { Context } from '@deepseek-ai/cordis'
 import { stubConfigForm } from '@deepseek-ai/dsh-client-test-runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,7 +15,6 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { apply as themeApply, inject as themeInject, ThemeRuntime } from '@deepseek-ai/dsh-client-ui-theme/client'
 import { AppPanelsController, apply, inject, LayoutController } from '@deepseek-ai/dsh-client-ui-shell/client'
 import { apply as nodeApply } from '@deepseek-ai/dsh-client-ui-shell'
-import * as invariant from '@deepseek-ai/dsh-client-ui-shell/invariant'
 
 beforeEach(() => {
   document.head.querySelectorAll('meta[name="theme-color"]').forEach((node) => { node.remove() })
@@ -26,6 +26,7 @@ async function bench() {
   // Theme registers its Appearance settings row and requires the connection
   // seam for persistence; model this bench as a remote, memory-only browser.
   ctx.provide('locale', new LocaleRuntime(ctx))
+  await ctx.plugin(ShortcutsService).await()
   ctx.provide('connection', { api: { settings: {} }, isLoopback: false } as never)
   // ui-theme's Appearance row binds a durable scope through these two. `goals` rides the same
   // remote face: the activity card's goal verbs address the generated Goal Remote through it.
@@ -42,7 +43,7 @@ async function bench() {
 
 describe('ui-shell client apply', () => {
   it('declares its service dependencies', () => {
-    expect(inject).toEqual(['slots', 'theme', 'sessions', 'uiSession', 'remote', 'remote.goals', 'locale'])
+    expect(inject).toEqual(['slots', 'theme', 'sessions', 'uiSession', 'remote', 'remote.goals', 'locale', 'shortcuts'])
   })
 
   it('ships shell-owned effect labels', () => {
@@ -62,6 +63,8 @@ describe('ui-shell client apply', () => {
     expect(slots.entries('root')).toHaveLength(1)
     // …and declared the five children in the ledger.
     expect(slots.spec('app.rail')).toEqual({ kind: 'single', scope: 'root' })
+    expect(slots.spec('shell.bottom')).toEqual({ kind: 'single', scope: 'root' })
+    expect(slots.spec('shell.leading')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('sidebar')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('main')).toEqual({ kind: 'keyed', scope: 'root' })
     expect(slots.spec('shell.app-overlay')).toEqual({ kind: 'list', scope: 'session-maybe' })
@@ -112,28 +115,17 @@ describe('ui-shell client apply', () => {
     expect(ctx.get('appPanels')).toBeUndefined()
     expect(ctx.get('layout')).toBeUndefined()
     expect(slots.entries('root')).toHaveLength(0)
+    expect(slots.spec('shell.bottom')).toBeUndefined()
     expect(slots.spec('app.rail')).toBeUndefined()
     expect(slots.spec('sidebar')).toBeUndefined()
     // The built-in root declaration survives entry teardown (runtime-owned).
     expect(slots.spec('root')).toEqual({ kind: 'single', scope: 'root' })
   })
 })
-describe('node half + invariant companion', () => {
+describe('node half', () => {
   it('node apply is an intentional no-op (loader-managed lifecycle only)', () => {
     nodeApply()
     expect(true).toBe(true) // reaching here without throw is the contract
   })
 
-  it('invariant companion registers under the package name', async () => {
-    expect(invariant.name).toBe('client-ui-shell-invariant')
-    const register = vi.fn().mockReturnValue(() => {})
-    const ctx = { invariants: { register } } as never
-    // The /invariant subpath types live in lib/types (build product); assert
-    // the API so the call stays typed where lint runs without a build.
-    const dispose = await (invariant as { apply: (ctx: never) => Promise<() => void> }).apply(ctx)
-    expect(register).toHaveBeenCalledWith('@deepseek-ai/dsh-client-ui-shell', expect.any(Function))
-    // The installer is the declared no-op — calling it must not throw.
-    expect(() => { (register.mock.calls[0]![1] as (c: never) => void)(undefined as never) }).not.toThrow()
-    expect(dispose).toBeTypeOf('function')
-  })
 })

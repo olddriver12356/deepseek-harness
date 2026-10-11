@@ -20,7 +20,7 @@ export type {
   ChatSnapshot, ChatTurnNavigationIndex, ChatTurnProcessPresentation,
   CommandNode, CompactionSummaryNode, ContextMessageNode, ConversationNode,
   LegacyConversationSlice, ModelRetryNode, PartialAssistant, PreparingToolCall, RunningToolCall, StartedToolCall,
-  SteeringMessageNode, ToolCallBlock, ToolResultNode, TurnErrorNode, TurnMaxTokensNode,
+  SteeringMessageNode, ToolArgs, ToolCallBlock, ToolResultNode, TurnErrorNode, TurnMaxTokensNode,
   TurnNavigationItem, UnknownSurfaceNode, UserMessageNode,
 } from './contract/snapshot.ts'
 export type {

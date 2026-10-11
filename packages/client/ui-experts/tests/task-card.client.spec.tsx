@@ -2,6 +2,7 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ExpertTaskCard } from '../src/client/ExpertTaskCard.tsx'
+import { PartialArguments } from '@deepseek-ai/dsh-util-values'
 import { en } from '../src/client/locales.ts'
 
 afterEach(cleanup)
@@ -9,9 +10,9 @@ it('opens the exact child, stops it, and does not present admission as completio
   const openTask = vi.fn()
   const stopTask = vi.fn(async () => {})
   render(<ExpertTaskCard {...{
-    t: (key: keyof typeof en) => en[key], openTask, stopTask, useToolCallArgumentsPartial: () => '',
+    t: (key: keyof typeof en) => en[key], openTask, stopTask,
     useSessions: (select: (state: unknown) => unknown) => select({ byId: {}, subagentsByParent: {} }),
-    block: { kind: 'tool-result', isError: false, content: [], call: { argsRaw: JSON.stringify({ expert: 'Reviewer', task: 'Inspect login' }) },
+    block: { kind: 'tool-result', isError: false, content: [], args: PartialArguments.fromText(JSON.stringify({ expert: 'Reviewer', task: 'Inspect login' })),
       meta: { expertDelegation: { expert: 'Reviewer', childId: 'child', parentSessionId: 'parent', access: 'read-only', contextMode: 'fresh' } } },
   } as Parameters<typeof ExpertTaskCard>[0]} />)
   expect(screen.getByText('Delegated; report requires acceptance')).toBeTruthy()
@@ -22,18 +23,16 @@ it('opens the exact child, stops it, and does not present admission as completio
   expect(stopTask).toHaveBeenCalledWith({ childSessionId: 'child', parentSessionId: 'parent', mode: 'continuable' })
 })
 
-it('reads preparing arguments through the call-local subscription before dispatch', () => {
-  let argumentsText = '{'
+it('reads incomplete preparing arguments through the shared lazy reader before dispatch', () => {
   const props = {
+    phase: 'preparing',
     t: (key: keyof typeof en) => en[key], openTask: vi.fn(), stopTask: vi.fn(),
     useSessions: (select: (state: unknown) => unknown) => select({ byId: {} }),
-    useToolCallArgumentsPartial: () => argumentsText,
-    block: { phase: 'preparing', callId: 'expert-call', name: 'dispatch_expert' },
-  } as Parameters<typeof ExpertTaskCard>[0]
+    block: { phase: 'preparing', callId: 'expert-call', name: 'dispatch_expert', args: PartialArguments.EMPTY },
+  } as Extract<Parameters<typeof ExpertTaskCard>[0], { readonly phase: 'preparing' }>
   const view = render(<ExpertTaskCard {...props} />)
   expect(screen.queryByText('Inspect login')).toBeNull()
-  argumentsText = JSON.stringify({ expert: 'Reviewer', task: 'Inspect login' })
-  view.rerender(<ExpertTaskCard {...props} />)
+  view.rerender(<ExpertTaskCard {...props} block={{ ...props.block, args: PartialArguments.fromText('{"expert":"Reviewer","task":"Inspect login') }} />)
   expect(screen.getByRole('region', { name: 'Reviewer' })).toBeTruthy()
   expect(screen.getByText('Inspect login')).toBeTruthy()
 })

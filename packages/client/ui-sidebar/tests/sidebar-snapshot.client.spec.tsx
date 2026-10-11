@@ -80,6 +80,7 @@ describe('sidebar shell snapshots', () => {
     // The wide content unmounts at the 150ms settle and the rail toggle appears.
     await waitFor(() => {
       expect(slot.view.getByRole('button', { name: 'Open sidebar' })).toBeTruthy()
+      expect(slot.view.queryByText('DSH Local Build')).toBeNull()
     })
     expect(slot.container).toMatchSnapshot()
     // Same tree position: the owner flip re-rendered the shell in place.

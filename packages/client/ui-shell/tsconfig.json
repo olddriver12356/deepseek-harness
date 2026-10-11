@@ -60,10 +60,10 @@
       "path": "../../llm/token-meter"
     },
     {
-      "path": "../../runtime-diagnostics/invariants"
+      "path": "../ui-layout-core"
     },
     {
-      "path": "../ui-layout-core"
+      "path": "../shortcuts/tsconfig.client.json"
     }
   ]
 }

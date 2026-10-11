@@ -46,7 +46,7 @@ describe('assembled shortcut command owners', () => {
     expect(fixedIds()).not.toContain('fixed.move')
     await client.unload('@deepseek-ai/dsh-client-ui-conversation')
     for (const id of conversationIds) expect(fixedIds()).not.toContain(id)
-    for (const owner of ['ui-settings-general', 'ui-layout']) await client.unload(`@deepseek-ai/dsh-client-${owner}`)
+    for (const owner of ['ui-settings-general', 'ui-shell']) await client.unload(`@deepseek-ai/dsh-client-${owner}`)
     expect(ownedRows()).toEqual([])
     expect(shortcuts.fixedCatalog.getSnapshot().some(row => row.id.startsWith('fixed.'))).toBe(false)
   }, 60_000)

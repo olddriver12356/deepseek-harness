@@ -1,15 +1,33 @@
 {
   "extends": "../../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
-  "include": ["src"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
   "references": [
-    { "path": "../knowledge" },
-    { "path": "../../web/web-fetch-http" },
-    { "path": "../../../vendor/cordis" },
-    { "path": "../../../vendor/timer" },
-    { "path": "../../../vendor/schemastery" },
-    { "path": "../../runtime-diagnostics/invariants" },
-    { "path": "../webserver" },
-    { "path": "../../typert/protocol" }
+    {
+      "path": "../knowledge"
+    },
+    {
+      "path": "../../web/web-fetch-http"
+    },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/timer"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    },
+    {
+      "path": "../webserver"
+    },
+    {
+      "path": "../../typert/protocol"
+    }
   ]
 }

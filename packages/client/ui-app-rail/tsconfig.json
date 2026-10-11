@@ -8,7 +8,9 @@
     "src"
   ],
   "references": [
-    { "path": "../ui-primitives" },
+    {
+      "path": "../ui-primitives"
+    },
     {
       "path": "../../../vendor/cordis"
     },
@@ -20,9 +22,6 @@
     },
     {
       "path": "../ui-renderer"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
     },
     {
       "path": "../locale/tsconfig.client.json"

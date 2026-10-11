@@ -16,8 +16,7 @@ function record(value: unknown): Record<string, unknown> | undefined {
 }
 
 /** Card reads the durable admission receipt; it never treats tool completion as expert completion. */
-export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions, useToolCallArgumentsPartial }: Props) {
-  const partialArgs = useToolCallArgumentsPartial()
+export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions }: Props) {
   const [error, setError] = useState('')
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
@@ -40,11 +39,9 @@ export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions, useT
     const timer = setInterval(() => { setNow(Date.now()) }, 1000)
     return () => { clearInterval(timer) }
   }, [active])
-  let args: Record<string, unknown> | undefined
-  const rawArgs = settled ? block.call?.argsRaw : block.phase === 'start' ? block.argsRaw : partialArgs
-  try { args = record(JSON.parse(rawArgs ?? '{}')) }
-  catch { /* Partial streamed arguments are displayed once complete. */ }
-  const title = typeof receipt?.expert === 'string' ? receipt.expert : typeof args?.expert === 'string' ? args.expert : t('title')
+  const expert = block.args.text('expert')
+  const task = block.args.text('task')
+  const title = typeof receipt?.expert === 'string' ? receipt.expert : expert ?? t('title')
   const output = settled ? block.content.filter(part => part.type === 'text').map(part => part.text).join('\n') : ''
   async function stop() {
     if (address === undefined) return
@@ -56,7 +53,7 @@ export function ExpertTaskCard({ block, openTask, stopTask, t, useSessions, useT
   }
   return <section className={css.card} aria-label={title}>
     <header><strong>{title}</strong><span>{!settled ? t('taskStarting') : block.isError ? t('taskFailed') : active ? t('taskRunning') : t('taskStarted')}</span></header>
-    {typeof args?.task === 'string' && <p>{args.task}</p>}
+    {task !== undefined && <p>{task}</p>}
     {receipt !== undefined && <p>{t(receipt.access === 'write' ? 'writeAccess' : 'readOnly')} · {t(receipt.contextMode === 'fork' ? 'forkContext' : 'freshContext')}</p>}
     {model != null && <p>{t('model')}: {model.provider} / {model.model}</p>}
     {elapsed !== undefined && <p>{t('taskDuration', { seconds: Math.floor(elapsed / 1000) })}</p>}

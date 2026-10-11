@@ -25,7 +25,7 @@ function declarations(selector: string): string[] {
 describe('WorkflowRunPanel.module.css font-size axis', () => {
   it('member labels ride the axis at the body size with matching row geometry', () => {
     expect(declarations('.memberLabel')).toEqual(expect.arrayContaining([
-      'font-size: var(--dsh-content-font-size, 14px)',
+      'font-size: max(14px, var(--dsh-content-font-size, 14px))',
       'line-height: calc(24px + var(--dsh-content-font-delta, 0px))',
     ]))
     expect(declarations('.memberLabelWrap')).toEqual(expect.arrayContaining([
