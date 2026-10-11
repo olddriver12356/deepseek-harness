@@ -11,7 +11,11 @@ function plain(value: string): string {
     .replace(/([\\`*_[\]{}!|])/g, '\\$1')
 }
 
-/** Create missing article notes and replace only the marked index region. Existing articles are never overwritten. */
+/**
+ * Create missing article notes and replace only the marked index region.
+ * @param directory - Existing article-note directory.
+ * @param records - Archived feed evidence to project without overwriting existing articles.
+ */
 export async function syncNewsNotes(directory: string, records: readonly ArchivedNewsItem[]): Promise<void> {
   const existing = new Map<string, string>()
   // ponytail: scan note frontmatter per refresh; add an index only when archive size makes this measurable.

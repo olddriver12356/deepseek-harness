@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-ponytail",
   "description": "Local adapter for ponytail's lazy-senior-dev ruleset, registered through DeepSeek Harness's own system-prompt seam",
-  "version": "0.2.1-alpha.1",
+  "version": "0.2.1-alpha.2",
   "private": true,
   "type": "module",
   "main": "lib/index.js",

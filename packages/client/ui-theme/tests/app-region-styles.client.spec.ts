@@ -27,6 +27,7 @@ const SHELL_DRAG_SELECTOR = "html[data-platform='darwin'] [data-window-drag]"
 
 /** The frame's Windows caption row, relative to packages/; the other platform's chrome. */
 const WINDOWS_CAPTION = 'client/ui-layout/src/client/AppFrame.module.css'
+const LOCAL_WINDOWS_CAPTION = 'client/ui-shell/src/client/AppFrame.module.css'
 
 /** That caption row's selector, as authored. */
 const WINDOWS_CAPTION_SELECTOR = ':global([data-windows-titlebar]) .frame::before'
@@ -105,6 +106,11 @@ const CHROME_ROWS: readonly ChromeRow[] = [
   {
     file: PLUGIN_MANAGER,
     selector: '.detailTop',
+    markup: 'client/ui-plugin-manager/src/client/PluginManagerPage.tsx',
+  },
+  {
+    file: PLUGIN_MANAGER,
+    selector: '.moreHead',
     markup: 'client/ui-plugin-manager/src/client/PluginManagerPage.tsx',
   },
   {
@@ -233,13 +239,14 @@ describe('window drag-region ownership', () => {
     expect(dragSelectors('.a { app-region: no-drag !important; }')).toEqual([])
   })
 
-  it('declares the window drag surface in exactly two places', () => {
+  it('declares the shared macOS drag surface and each layout implementation Windows caption', () => {
     // Rows mark themselves instead of each sheet declaring its own drag, so the
     // tree holds one darwin rule — the mark rule in the shell sheet — plus the
-    // Windows caption row, which is that platform's own chrome. A third
-    // declaration, a per-sheet row rule, or a darwin band on the frame fails here.
+    // Windows caption row in each alternative layout implementation. Additional
+    // declarations, per-sheet rows, or a darwin band on either frame fail here.
     expect(dragOwners()).toEqual([
       { file: WINDOWS_CAPTION, selectors: [WINDOWS_CAPTION_SELECTOR] },
+      { file: LOCAL_WINDOWS_CAPTION, selectors: [WINDOWS_CAPTION_SELECTOR] },
       { file: SHELL_SHEET, selectors: [SHELL_DRAG_SELECTOR] },
     ])
   })

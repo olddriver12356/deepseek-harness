@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-peer-inbox",
   "description": "Opt-in authenticated loopback inbox for trusted owner relay requests to live root Sessions",
-  "version": "0.2.1-alpha.1",
+  "version": "0.2.1-alpha.2",
   "publishConfig": {
     "access": "public"
   },

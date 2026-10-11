@@ -19,6 +19,6 @@ it('registers wire schemas with required input and output fields', () => {
       },
     },
     experts: { reserveDelegation: () => () => {} },
-    subagents: { startContinuable: async () => { throw new Error('Schema validation must not dispatch') } },
+    subagents: { startActivation: async () => { throw new Error('Schema validation must not dispatch') } },
   }, { list: async () => [] }, [])
 })

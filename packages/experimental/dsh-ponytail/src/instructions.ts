@@ -7,11 +7,25 @@
 
 import { readFileSync } from 'node:fs'
 
+/**
+ * Accepted persistent Ponytail modes, including explicit deactivation.
+ */
 export const RUNTIME_MODES = ['off', 'lite', 'full', 'ultra'] as const
+/**
+ * One accepted Ponytail mode.
+ */
 export type PonytailMode = typeof RUNTIME_MODES[number]
 
+/**
+ * Intensity selected when an activation command omits a valid level.
+ */
 export const DEFAULT_MODE: PonytailMode = 'full'
 
+/**
+ * Normalize a stored or requested mode without accepting unknown levels.
+ * @param value - Optional mode text.
+ * @returns Recognized mode, or undefined for an absent or invalid value.
+ */
 export function normalizeMode(value: string | undefined): PonytailMode | undefined {
   if (value === undefined) return undefined
   const normalized = value.trim().toLowerCase()
@@ -21,6 +35,11 @@ export function normalizeMode(value: string | undefined): PonytailMode | undefin
 // "stop ponytail" / "normal mode" turn ponytail off, but only as the whole
 // message — matching the phrase anywhere would turn it off mid-task for an
 // ordinary request like "add a normal mode toggle".
+/**
+ * Recognize a whole-message deactivation command, ignoring case and trailing punctuation.
+ * @param text - Complete user message.
+ * @returns Whether the message requests deactivation.
+ */
 export function isDeactivationCommand(text: string): boolean {
   const normalized = text.trim().toLowerCase().replace(/[.!?\s]+$/, '')
   return normalized === 'stop ponytail' || normalized === 'normal mode'
@@ -28,7 +47,11 @@ export function isDeactivationCommand(text: string): boolean {
 
 const COMMAND = /^[/@$]ponytail\b/i
 
-/** Parse a `/ponytail [level]` user message into the mode it requests, or undefined for no command. */
+/**
+ * Parse a Ponytail activation message and its optional level.
+ * @param text - Complete user message.
+ * @returns Requested mode, or undefined when the message is not an activation command.
+ */
 export function parsePonytailCommand(text: string): PonytailMode | undefined {
   const trimmed = text.trim().toLowerCase()
   if (!COMMAND.test(trimmed)) return undefined
@@ -58,9 +81,10 @@ function filterSkillBodyForMode(body: string, mode: PonytailMode): string {
 }
 
 /**
- * Render the ponytail ruleset for one mode.
- * @param skillPath - absolute path to ponytail's `skills/ponytail/SKILL.md`.
- * @param mode - active level; 'off' returns ''.
+ * Render the active ruleset with a bounded fallback when the shared skill is unavailable.
+ * @param skillPath - Absolute path to the shared Ponytail skill.
+ * @param mode - Requested mode; off produces empty text.
+ * @returns Mode-specific instructions or the fallback ruleset.
  */
 export function getPonytailInstructions(skillPath: string, mode: PonytailMode): string {
   if (mode === 'off') return ''

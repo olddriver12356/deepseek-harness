@@ -6,7 +6,12 @@ import { join, resolve } from 'node:path'
 
 const execute = promisify(execFile)
 
-/** Save owner-entered text once, only in Ideas/Draft, after the Vault write guard. */
+/**
+ * Save owner-entered text once in Ideas/Draft after the Vault write guard.
+ * @param vault - Owner Vault root.
+ * @param input - Untrusted note identity and text; conflicting reuse of an identity fails.
+ * @returns Vault-relative path of the saved note.
+ */
 export async function saveQuickNote(vault: string, input: unknown): Promise<{ path: string }> {
   if (!input || typeof input !== 'object') throw new Error('Invalid quick note')
   const { id, text } = input as { id?: unknown; text?: unknown }

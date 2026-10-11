@@ -77,12 +77,18 @@ export class ConversationObserver {
     })
   }
 
-  /** Current switch and bounded queue state; never includes conversation text. */
-  status() {
+  /**
+   * Read the observer switch and bounded queue state without conversation text.
+   * @returns Switch, pending count, last settlement, and optional failure code.
+   */
+  status(): { enabled: boolean; pending: number; status: string; observations: number; failureCode: string | undefined } {
     return { enabled: this.enabled, pending: this.queue.length + (this.running ? 1 : 0), ...this.last, failureCode: this.failureCode }
   }
 
-  /** Persist the owner switch and drain cancellation before acknowledging a disable. */
+  /**
+   * Persist the owner switch and drain cancellation before acknowledging a disable.
+   * @param enabled - Whether new eligible human turns may enter the observation queue.
+   */
   async setEnabled(enabled: boolean): Promise<void> {
     if (this.changing || this.closed) throw new Error('Observer switch is busy')
     this.changing = true

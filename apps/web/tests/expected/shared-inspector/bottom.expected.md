@@ -1,5 +1,5 @@
 - shortcut: Ctrl/Cmd+Shift+.
-- header: 12px, X collapse button
+- header: 14px, X collapse button
 - opened: main 495px, bottom 405px
 - resized up/down: main 540px, bottom 360px
 - collapsed: main 900px, iframe retained

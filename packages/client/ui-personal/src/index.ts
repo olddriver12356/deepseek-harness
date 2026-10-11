@@ -15,6 +15,9 @@ import { UnderstandingCompaction, type CompactionConfig } from './compaction.ts'
 
 export const name = 'ui-personal'
 export const inject = ['webServer', 'connection', 'tools']
+/**
+ * Private worker roots, request limits, and optional observation and compaction settings.
+ */
 export interface Config {
   /** Local Bok runtime Vault, separate from the user's knowledge Vault. */
   vaultRoot: string

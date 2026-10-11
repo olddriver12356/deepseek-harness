@@ -7,7 +7,8 @@
 .panel button,.panel input,.panel select,.panel summary,.panel a { font:inherit; }
 .panel button { cursor:pointer; clip-path:none!important; }
 .panel button:disabled { opacity:.5; cursor:default; }
-.panel :focus-visible { outline:2px solid #eee5cd; outline-offset:4px; }
+.panel :focus-visible { --dsw-focus-ring-color: #eee5cd;
+  outline:2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)); outline-offset:4px; }
 .header { display:flex; align-items:center; min-height:72px; padding:12px 38px; background:#101416d4; border-bottom:1px solid #e0d7ef24; }
 .header strong { font-size:19px; letter-spacing:.02em; }
 .content { width:min(100%,1380px); margin:auto; padding:36px clamp(28px,4vw,60px) 60px; }

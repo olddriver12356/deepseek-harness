@@ -8,13 +8,22 @@ const catalogEn = {
   catalogHost: 'Host', catalogPreset: 'Agent preset', catalogSession: 'Current session', catalogAvailable: 'Available', catalogActive: 'Plugin active', catalogDisabled: 'Disabled', catalogConditional: 'Conditional', catalogFailed: 'Plugin failed', catalogConfigured: 'Configured',
 } as const
 
+/**
+ * English copy for skill editing and agent-tool creation.
+ */
 export const panelEn = {
   ...catalogEn,
   searchFields: 'Search in', nameOnly: 'Name only', nameAndDescription: 'Name and description', searchName: 'Search skill names',
   delete: 'Delete', deleting: 'Deleting…', deleteNamed: 'Delete {name}', deleteBody: 'Move this skill source to local recovery storage? A linked source removes only its link; shared originals and other sources stay in place.', deleted: 'Skill removed. Recovery location:', documentView: 'Document view', copyCode: 'Copy code', copiedCode: 'Copied', footnotes: 'Footnotes',
   heroLineOne: 'Keep the methods that work.', heroLineTwo: 'Make them ready to use.', heroBody: 'Browse, edit, and organize your skills. Turn a working method into a skill in a new session.', title: 'Tools', subtitle: 'Your working library', create: 'Create skill', refresh: 'Refresh', workspace: 'Workspace', chooseWorkspace: 'Choose a workspace', search: 'Search names and descriptions', all: 'All', project: 'Project', personal: 'Personal (global)', other: 'Custom / bundled', scope: 'Scope', invocation: 'Invocation', both: 'User + agent', user: 'User only', agent: 'Agent only', neither: 'Neither', category: 'Category', uncategorized: 'Uncategorized', origin: 'Origin', unmanaged: 'Unmanaged / local', grouped: 'Group by category', flat: 'Flat list', files: 'Files', name: 'Name', description: 'Description', instructions: 'Instructions', source: 'Source', structured: 'Fields', save: 'Save', saving: 'Saving…', saved: 'Saved', unsaved: 'Unsaved', discard: 'Discard', stay: 'Stay', leave: 'You have unsaved changes', leaveBody: 'Save or discard this buffer before switching files or workspaces.', close: 'Close', empty: 'No matching skills', select: 'Choose a skill to open its files', loading: 'Loading…', readonly: 'Read-only', shadowed: 'Shadowed', effective: 'First valid copy in these roots', binary: 'Binary, non-UTF-8 or larger than 2 MiB. Source editing unavailable.', addFile: 'Add text file', filePath: 'Relative file path', add: 'Add', references: 'What it needs / References', draft: 'What it does / Instruction draft', optionalName: 'Skill name (optional)', destination: 'Destination', draftSession: 'Draft in new session', sending: 'Opening session…', createBody: 'Describe the procedure. An agent will write the skill in a fresh session under this workspace.', sourceProblem: 'Structured editing unavailable. Repair the YAML in Source.', noSession: 'Session is not ready. Retry to use the same session.', blocked: 'Linked directory is not browsable', preview: 'Preview', inventoryNotice: 'Physical host roots. Session presets may add or override skill sources.', count: '{count} skills · {groups} groups', newFileHint: 'For example: references/notes.md', retry: 'Retry handoff', creationPending: 'The handoff is pending. Retry uses the same session and request.', back: 'Back',
 } satisfies Record<string, string>
+/**
+ * Message keys shared by the skill-panel dictionaries.
+ */
 export type PanelKey = keyof typeof panelEn
+/**
+ * Typed translator for skill-panel messages and substitutions.
+ */
 export type PanelTranslate = (key: PanelKey, params?: Record<string, unknown>) => string
 const catalogZh = {
   skills: '技能', commands: '命令', mcp: 'MCP', hooks: 'Hooks', plugins: '插件', toolTypes: '工具类型',
@@ -26,6 +35,9 @@ const catalogZh = {
   catalogHost: '主程序', catalogPreset: 'Agent 预设', catalogSession: '当前会话', catalogAvailable: '可用', catalogActive: '插件运行中', catalogDisabled: '已禁用', catalogConditional: '条件启用', catalogFailed: '插件失败', catalogConfigured: '已配置',
 } as const
 
+/**
+ * Chinese copy for skill editing and agent-tool creation.
+ */
 export const panelZh: Record<PanelKey, string> = {
   ...catalogZh,
   searchFields: '搜索范围', nameOnly: '仅名称', nameAndDescription: '名称与描述', searchName: '搜索技能名称',

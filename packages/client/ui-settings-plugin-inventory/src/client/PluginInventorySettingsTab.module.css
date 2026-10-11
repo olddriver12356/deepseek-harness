@@ -83,7 +83,8 @@
 
 .search input:focus-visible {
   border-color: var(--dsw-specific-agent-blue);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-specific-agent-blue) 18%, transparent);
+  --dsw-focus-ring-color: var(--dsw-specific-agent-blue);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)) 18%, transparent);
 }
 
 .cards {
@@ -147,7 +148,8 @@
 }
 
 .cardContent:focus-visible {
-  outline: 2px solid var(--dsw-specific-agent-blue);
+  --dsw-focus-ring-color: var(--dsw-specific-agent-blue);
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: -2px;
 }
 

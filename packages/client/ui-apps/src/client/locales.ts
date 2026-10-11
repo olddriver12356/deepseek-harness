@@ -1,3 +1,6 @@
+/**
+ * Chinese copy for this client surface.
+ */
 export const zh = {
   collection: 'YOUR LOCAL COLLECTION / 07', collectionSummary: 'REGISTERED APPS · LOCAL MACHINE',
   headingLead: '选择工具，', headingAccent: '立即开工', runningFilter: '运行中',
@@ -12,7 +15,13 @@ export const zh = {
   confirmExternal: '确认此地址是该应用', all: '全部', more: '更多操作', close: '关闭', removePrompt: '仅移除注册记录，项目文件会保留。继续？',
   loading: '正在读取…', failedRequest: '操作失败', addAnother: '注册另一个本地应用', allScripts: '显示全部脚本',
 } as const
+/**
+ * Message keys shared by both client locale dictionaries.
+ */
 export type AppsKey = keyof typeof zh
+/**
+ * English copy for this client surface.
+ */
 export const en: Record<AppsKey, string> = {
   collection: 'YOUR LOCAL COLLECTION / 07', collectionSummary: 'REGISTERED APPS · LOCAL MACHINE',
   headingLead: 'Your tools,', headingAccent: 'ready to go', runningFilter: 'Running',

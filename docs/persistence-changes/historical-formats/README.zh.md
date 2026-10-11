@@ -33,7 +33,7 @@ description: "查找从 V0 到工作区写入器版本的每个 Session 格式�
 | 2 | `dsh-v0.1.3-alpha.2` | [V2](v2.zh.md) | [JSON](v2.schema.json) | 56 / 435 |
 | 3 | `dsh-v0.1.5-alpha.1` | [V3](v3.zh.md) | [JSON](v3.schema.json) | 57 / 443 |
 | 4 | `dsh-v0.1.7-alpha.1` | [V4](v4.zh.md) | [JSON](v4.schema.json) | 62 / 586 |
-| 5 | 当前工作树 | [当前目录](../../persistence-catalog.zh.md) | [JSON](../../persistence-schema.json) | 65 / 619 |
+| 5 | 当前工作树 | [当前目录](../../persistence-catalog.zh.md) | [JSON](../../persistence-schema.json) | 66 / 626 |
 
 <!-- persistence-format-index:end -->
 

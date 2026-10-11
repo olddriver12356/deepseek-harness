@@ -13,7 +13,10 @@ export const LOCAL_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'experts/delegation', 'personal/observation-request', 'personal/observation-result',
 ])
 
-/** Validate the current header without changing the released V4 contract. @param header - V5 header. */
+/**
+ * Validate the current header while preserving the released V4 header contract.
+ * @param header - Current V5 header to validate.
+ */
 export function assertV5Header(header: SessionFormatHeader): void {
   if (header.version !== 5) throw new SessionFormatError('expected format v5 header')
   assertReleasedV4Header({ ...header, version: 4 })

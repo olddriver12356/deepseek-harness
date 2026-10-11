@@ -12,14 +12,13 @@
 import { access, lstat, readdir, readFile, realpath, stat } from 'node:fs/promises'
 import { unwatchFile, watchFile, type Stats } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { homedir } from 'node:os'
 import type { Context } from '@deepseek-ai/cordis'
 import chokidar from 'chokidar'
 import z from '@deepseek-ai/schemastery'
 import type Schema from '@deepseek-ai/schemastery'
 import { parse as parseYaml } from 'yaml'
 import type { FileSystem, FsDirEntry, FsTarget } from '@deepseek-ai/dsh-fs'
-import { canonicalizeWatchPath, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { canonicalizeWatchPath, resolveAgentsHome, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import {
   BUNDLED_SKILL_RANK,
   isSkillName,
@@ -88,6 +87,9 @@ export const Config: Schema<Config> = z.object({
   bundledSkillDir: z.string(),
 })
 
+/**
+ * Resolved skill-discovery root with source precedence and project trust metadata.
+ */
 export interface SkillRoot {
   path: string
   source: SkillSource
@@ -165,7 +167,7 @@ export class FileSystemSkillProvider implements SkillProvider {
     this.name = config.providerName ?? 'filesystem'
     this.includeDefaultRoots = config.includeDefaultRoots ?? true
     this.dshHome = resolveDshHome(config.dshHome)
-    this.agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), '.agents'))
+    this.agentsHome = resolveAgentsHome(config.agentsHome)
     this.customSkillDirs = (config.customSkillDirs ?? []).map(root => resolve(root))
     this.watchManager = new SkillWatchManager(ctx, control.invalidate, resolveWatchConfig(config))
     control.signal.addEventListener('abort', () => { void this.dispose() }, { once: true })
@@ -262,7 +264,7 @@ export class FileSystemSkillProvider implements SkillProvider {
 export async function resolveSkillRoots(cwd: string | undefined, config: Config = {}, fs?: FileSystem): Promise<SkillRoot[]> {
   const includeDefaultRoots = config.includeDefaultRoots ?? true
   const dshHome = resolveDshHome(config.dshHome)
-  const agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), '.agents'))
+  const agentsHome = resolveAgentsHome(config.agentsHome)
   const bundledSkillDir = config.bundledSkillDir ?? (includeDefaultRoots ? process.env.DSH_BUNDLED_SKILL_DIR : undefined)
   const roots: SkillRoot[] = []
   if (includeDefaultRoots && cwd !== undefined) {
@@ -524,19 +526,9 @@ class SkillWatchManager {
       usePolling: this.config.usePolling,
       interval: this.config.pollIntervalMs,
     })
-    const handle: WatchHandle = {
-      mode,
-      close: () => watcher.close(),
-    }
     let ready = false
     const readiness = Promise.withResolvers<undefined>()
     const signal = this.lifecycle.signal
-    if (signal.aborted) {
-      await this.closeWatcher(handle)
-      signal.throwIfAborted()
-    }
-    const onAbort = (): void => { readiness.reject(signal.reason) }
-    signal.addEventListener('abort', onAbort, { once: true })
     const onError = (error: unknown): void => {
       if (!ready) {
         readiness.reject(error)
@@ -544,6 +536,24 @@ class SkillWatchManager {
       }
       this.handleWatcherError(state, error)
     }
+    const handle: WatchHandle = {
+      mode,
+      close: () => {
+        // `close()` drops every listener but leaves a scheduled write-settle
+        // poll; its straggler stats a file this teardown is deleting, which
+        // Windows reports as EPERM, and an 'error' emission with no listener
+        // is rethrown as an uncaught exception. Re-attach across the close.
+        const closing = watcher.close()
+        watcher.on('error', onError)
+        return closing
+      },
+    }
+    if (signal.aborted) {
+      await this.closeWatcher(handle)
+      signal.throwIfAborted()
+    }
+    const onAbort = (): void => { readiness.reject(signal.reason) }
+    signal.addEventListener('abort', onAbort, { once: true })
     watcher.on('error', onError)
     watcher.once('ready', () => {
       ready = true
@@ -1035,7 +1045,12 @@ function rejectLegacyInvocationKey(data: Record<string, unknown>, legacy: string
   }
 }
 
-/** Parse the invocation flag grammar shared by discovery and physical inventory. */
+/**
+ * Parse the invocation-flag grammar shared by discovery and physical inventory.
+ * @param data - Parsed skill frontmatter.
+ * @param key - Boolean invocation field to inspect.
+ * @returns Parsed flag, or undefined for an absent field; unsupported values throw.
+ */
 export function frontmatterBoolean(data: Record<string, unknown>, key: string): boolean | undefined {
   if (!Object.hasOwn(data, key)) return undefined
   const value = data[key]

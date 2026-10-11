@@ -12,6 +12,9 @@ const policySchema = z.object({
   access: z.enum(['read-only', 'write']),
   allowedTools: z.array(z.string()),
 })
+/**
+ * Durable child-specific tool grant restored before Expert execution.
+ */
 export type ExpertPolicy = z.infer<typeof policySchema>
 
 declare module '@deepseek-ai/dsh-session/types' {
@@ -27,7 +30,11 @@ declare module '@deepseek-ai/dsh-session-projection/types' {
   }
 }
 
-/** Install projection and creation guards; caller owns the pending admission map. */
+/**
+ * Install the Expert projection and tool guards for fresh and restored children.
+ * @param ctx - Context providing Session projections and Agent lifecycle events.
+ * @param pending - Caller-owned child policies awaiting durable admission.
+ */
 export function installExpertPolicy(ctx: Context, pending: ReadonlyMap<SessionId, ExpertPolicy>): void {
   ctx.sessionProjections.register({
     key: 'expertDelegation', stateVersion: 1, stateSchema: policySchema.nullable(),
@@ -51,7 +58,12 @@ export function installExpertPolicy(ctx: Context, pending: ReadonlyMap<SessionId
   })
 }
 
-/** Read the policy belonging to this exact child, including after restoration. */
+/**
+ * Read the grant belonging to this exact child instead of an inherited parent grant.
+ * @param ctx - Context providing Session projections.
+ * @param agent - Child Agent to inspect.
+ * @returns Matching delegation grant, or undefined for an ordinary Agent.
+ */
 export function expertPolicyOf(ctx: Context, agent: Agent): ExpertPolicy | undefined {
   const policy = ctx.sessionProjections.stateOf(agent.session, 'expertDelegation')
   return policy?.childId === agent.id ? policy : undefined

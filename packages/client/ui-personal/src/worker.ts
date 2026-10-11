@@ -12,6 +12,9 @@ export class PersonalWorker {
   }>()
   private nextId = 0
   private failure: Error | undefined
+  /**
+   * Startup result containing the worker tool catalog; rejects if startup fails or times out.
+   */
   readonly ready: Promise<{ tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }> }>
 
   constructor(root: string, python: string, vault: string, personal: string, private readonly timeoutMs: number, profileVault?: string) {
@@ -48,7 +51,11 @@ export class PersonalWorker {
     })
   }
 
-  /** @param message - bounded adapter operation. @returns the original Bok response. */
+  /**
+   * Send one bounded operation to the single Personal Core writer.
+   * @param message - Adapter operation serialized as one JSON line.
+   * @returns Worker response; timeout terminates the writer and leaves mutation outcomes uncertain.
+   */
   async request<T>(message: Record<string, unknown>): Promise<T> {
     await this.ready
     if (this.failure) throw this.failure

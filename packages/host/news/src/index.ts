@@ -204,7 +204,11 @@ export class NewsService extends TypertRemoteService {
     void this.backgroundRefresh()
   }
 
-  /** Read the six-hour cache or crawl both feed columns. */
+  /**
+   * Read the existing feed cache or refresh its two public columns.
+   * @param request - Whether the owner explicitly requests a refresh.
+   * @returns Public feed snapshot; a failed refresh may retain an existing cache.
+   */
   @Remote('list')
   async list(request: NewsListRequest): Promise<NewsSnapshot> {
     const cache = await readCache(this.cachePath)

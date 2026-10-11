@@ -3,11 +3,17 @@ import { syncNewsNotes } from './notes.ts'
 import { dirname, resolve } from 'node:path'
 import type { CachedNewsItem } from './feed.ts'
 
+/**
+ * Collected news and tools entries submitted to the shared archive.
+ */
 export interface NewsArchiveBatch {
   readonly news: readonly CachedNewsItem[]
   readonly tools: readonly CachedNewsItem[]
 }
 
+/**
+ * Versioned feed evidence retained with source and retrieval metadata.
+ */
 export interface ArchivedNewsItem {
   readonly schema: 1
   readonly kind: 'news' | 'tools'
@@ -77,6 +83,14 @@ function archivedItem(kind: ArchivedNewsItem['kind'], item: CachedNewsItem, fetc
 /** Append newly observed feed entries to one deduplicated Vault JSONL archive. */
 const pending = new Map<string, Promise<number>>()
 
+/**
+ * Serialize deduplicated archive appends for one target path and optionally project article notes.
+ * @param path - JSONL archive file.
+ * @param batch - News and tools entries to retain.
+ * @param fetchedAt - ISO retrieval time for newly retained entries.
+ * @param projectNotes - Whether to create article notes and update their marked index.
+ * @returns Number of newly appended entries; malformed retained history fails before appending.
+ */
 export async function appendNewsArchive(path: string, batch: NewsArchiveBatch, fetchedAt: string, projectNotes = true): Promise<number> {
   const target = resolve(path)
   const previous = pending.get(target)

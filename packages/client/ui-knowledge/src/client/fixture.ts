@@ -1,5 +1,8 @@
 import type { KnowledgeSnapshot } from './types.ts'
 
+/**
+ * Static overview content for the Knowledge presentation fixture.
+ */
 export const KNOWLEDGE_FIXTURE: KnowledgeSnapshot = Object.freeze({
   layers: Object.freeze([
     Object.freeze({ id: 'intake', ordinal: 1, label: 'Intake' }),

@@ -15,6 +15,10 @@ function sources(event: SessionFormatEvent): readonly SessionFormatJsonObject[] 
   return messages.flatMap(message => isSessionFormatJsonObject(message) && isSessionFormatJsonObject(message['source']) ? [message['source']] : [])
 }
 
+/**
+ * Validate local admission requirements and exact peer-message identities before replay.
+ * @param event - Decoded event whose message sources require validation.
+ */
 export function validatePolicySource(event: SessionFormatEvent): void {
   for (const source of sources(event)) {
     const policy = source['requiredAdmissionPolicy']
@@ -29,7 +33,10 @@ export function validatePolicySource(event: SessionFormatEvent): void {
   }
 }
 
-/** Reject authority requirements that did not exist in released V3. @param event - historical event. */
+/**
+ * Reject admission authority metadata that did not exist in released V3.
+ * @param event - Historical event to validate.
+ */
 export function assertNoHistoricalAdmissionPolicy(event: SessionFormatEvent): void {
   for (const source of sources(event)) {
     if (source['kind'] === 'collaboration-peer' || source['requiredAdmissionPolicy'] !== undefined) {

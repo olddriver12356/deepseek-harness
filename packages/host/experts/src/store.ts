@@ -180,6 +180,10 @@ export class ExpertStore {
     this.expertsRoot = join(this.vaultRoot, 'Agents', '5 Methods', 'Experts')
   }
 
+  /**
+   * Read and validate Expert packages from the configured Vault.
+   * @returns Records sorted by name; malformed or escaped packages fail the listing.
+   */
   async list(): Promise<readonly ExpertRecord[]> {
     await this.assertVault()
     await mkdir(this.expertsRoot, { recursive: true })
@@ -199,6 +203,11 @@ export class ExpertStore {
     return records.sort((left, right) => left.name.localeCompare(right.name))
   }
 
+  /**
+   * Create a guarded Expert artifact without overwriting an existing package.
+   * @param input - Validated owner draft.
+   * @returns Saved Expert with its new stable identity.
+   */
   async create(input: ExpertDraft): Promise<ExpertRecord> {
     const draft = validateDraft(input)
     await this.beforeMutation()
@@ -210,6 +219,12 @@ export class ExpertStore {
     return recordOf(directory, await readFile(join(directory, ARTIFACT), 'utf8'))
   }
 
+  /**
+   * Replace Expert content while preserving identity and creation date.
+   * @param id - Existing Expert identity.
+   * @param input - Validated replacement draft.
+   * @returns Updated record after the Vault index rebuild.
+   */
   async update(id: string, input: ExpertDraft): Promise<ExpertRecord> {
     const draft = validateDraft(input)
     await this.beforeMutation()
@@ -231,6 +246,10 @@ export class ExpertStore {
     return recordOf(directory, await readFile(join(directory, ARTIFACT), 'utf8'))
   }
 
+  /**
+   * Remove only a guarded Expert package containing no unmanaged files.
+   * @param id - Existing Expert identity.
+   */
   async remove(id: string): Promise<void> {
     await this.beforeMutation()
     const artifact = await this.find(id)

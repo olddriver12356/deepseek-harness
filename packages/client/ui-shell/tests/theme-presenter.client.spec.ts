@@ -14,7 +14,8 @@ const DARK_THEME_COLOR = 'rgb(21, 21, 23)'
 function snapshot(colorScheme: 'light' | 'dark', tokens: Record<string, string> = {}): ThemeSnapshot {
   // The presenter must key off colorScheme, not the id — keep them distinct.
   const active = { id: `${colorScheme}-test`, colorScheme, tokens }
-  return { preference: colorScheme, active, themes: [active], revision: 1, fontSize: 14 }
+  return { preference: colorScheme, active, themes: [active], revision: 1,
+    fontSizes: { text: 14, code: 11, terminal: 13 }, fontFamilies: { text: '', code: '', terminal: '' } }
 }
 
 function clearThemePresentation(): void {
@@ -42,6 +43,28 @@ beforeEach(() => {
 afterEach(clearThemePresentation)
 
 describe('ThemePresenter', () => {
+  it('publishes each font role and family, retains the local minimum, and retracts them on unload', () => {
+    const presenter = new ThemePresenter()
+    presenter.apply({
+      ...snapshot('light'),
+      fontSizes: { text: 10, code: 16, terminal: 12 },
+      fontFamilies: { text: 'Arial', code: 'Consolas', terminal: 'monospace' },
+    })
+    for (const [role, size] of Object.entries({ content: 14, code: 16, terminal: 14 })) {
+      expect(document.body.style.getPropertyValue(`--dsh-${role}-font-size`)).toBe(`${size}px`)
+    }
+    for (const [role, family] of Object.entries({ text: 'Arial', code: 'Consolas', terminal: 'monospace' })) {
+      expect(document.body.style.getPropertyValue(`--dsh-font-family-${role}`)).toBe(family)
+    }
+    presenter.dispose()
+    for (const role of ['content', 'code', 'terminal']) {
+      expect(document.body.style.getPropertyValue(`--dsh-${role}-font-size`)).toBe('')
+    }
+    for (const role of ['text', 'code', 'terminal']) {
+      expect(document.body.style.getPropertyValue(`--dsh-font-family-${role}`)).toBe('')
+    }
+  })
+
   it('light scheme sets root color-scheme and leaves the dark attribute absent', () => {
     const presenter = new ThemePresenter()
     presenter.apply(snapshot('light'))

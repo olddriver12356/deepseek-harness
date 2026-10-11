@@ -24,7 +24,10 @@ export class KnowledgeStore {
   private readonly paths = new Map<string, string>()
   constructor(private readonly agentRoot: string) {}
 
-  /** @returns upstream artifacts, read from ARTIFACT.md rather than the generated index. */
+  /**
+   * List authoritative Agent Layer artifact metadata.
+   * @returns Validated artifacts without captured evidence.
+   */
   async list(): Promise<readonly KnowledgeRecord[]> {
     const records = record.array().parse(await this.command({ command: 'list' }))
     this.paths.clear()
@@ -32,7 +35,11 @@ export class KnowledgeStore {
     return records
   }
 
-  /** @param id - stable artifact identity. @returns Markdown and original captured evidence. */
+  /**
+   * Read ordinary artifact content; raw evidence requires a separate request.
+   * @param id - Stable artifact identity.
+   * @returns Current artifact content and revision.
+   */
   async read(id: KnowledgeId): Promise<KnowledgeDocument> {
     const path = this.paths.get(id)
     if (path !== undefined) {
@@ -74,14 +81,25 @@ export class KnowledgeStore {
     return result
   }
 
-  /** Original evidence is fetched only on explicit request, never with the ordinary reader. */
+  /**
+   * Read original captured evidence only on explicit request.
+   * @param id - Stable artifact identity.
+   * @returns Artifact with its original evidence.
+   */
   async raw(id: KnowledgeId): Promise<KnowledgeDocument> {
     return document.array().length(1).parse(await this.command({ command: 'raw', id }))[0] as KnowledgeDocument
   }
 
+  /**
+   * Read the Vault bridge allowlist for suggested publication destinations.
+   * @returns Existing destination folders.
+   */
   async destinations(): Promise<string[]> { return z.string().array().parse(await this.command({ command: 'destinations' })) }
 
-  /** Feed snapshots enter Intake without a model call or any main-Vault publication. */
+  /**
+   * Capture a batch of feed evidence in Intake without model calls or main-Vault publication.
+   * @param items - Source snapshots with canonical URLs and publisher metadata.
+   */
   async saveFeed(items: readonly import('./types.ts').KnowledgeSaveTextRequest[]): Promise<void> {
     const captures = items.map((item) => {
       const url = new URL(item.sourceUrl)
@@ -94,35 +112,62 @@ export class KnowledgeStore {
     await this.command({ command: 'saveBatch', items: captures })
   }
 
+  /**
+   * Set revision-bound learning state without publishing to the main Vault.
+   * @param request - Artifact revision and owner learning state.
+   * @returns Updated Agent Layer artifact.
+   */
   async learn(request: import('./types.ts').KnowledgeLearnRequest): Promise<KnowledgeDocument> {
     return document.array().length(1).parse(await this.command({ ...request, command: 'learn' }))[0] as KnowledgeDocument
   }
 
+  /**
+   * Create a directly requested concept card in Agent Knowledge without main-Vault publication.
+   * @param request - Concept content, tags, and suggested existing destination.
+   * @returns Unreviewed and unlearned concept artifact.
+   */
   async direct(request: import('./types.ts').KnowledgeDirectRequest): Promise<KnowledgeDocument> {
     if (!(await this.destinations()).includes(request.suggestedDestination)) throw new Error('knowledge: invalid suggested destination')
     return document.array().length(1).parse(await this.command({ ...request, command: 'direct' }))[0] as KnowledgeDocument
   }
 
-  /** @returns a durable processing attempt linked to intact original evidence. */
+  /**
+   * Create a durable processing attempt linked to intact original evidence.
+   * @param id - Source artifact identity.
+   * @param runId - Unique processing attempt identity.
+   * @param timeoutMs - Attempt lifetime used to detect interrupted work.
+   * @returns Durable processing attempt.
+   */
   async begin(id: KnowledgeId, runId: string, timeoutMs: number): Promise<KnowledgeDocument> {
     return document.parse((await this.command({ command: 'begin', id, runId, timeoutMs }) as unknown[])[0])
   }
 
-  /** @returns the settled attempt; failed and successful outputs remain separate from the source. */
+  /**
+   * Persist one terminal processing receipt separate from original evidence.
+   * @param id - Processing attempt artifact identity.
+   * @param runId - Attempt identity that owns settlement.
+   * @param result - Validated derived cards or the failed attempt error.
+   * @returns Settled processing artifact.
+   */
   async settle(id: KnowledgeId, runId: string, result: { cards: ProcessedCard[] } | { error: string }): Promise<KnowledgeDocument> {
     return document.parse((await this.command({ id, runId, ...'cards' in result
       ? { command: 'finish', cards: result.cards }
       : { command: 'fail', error: result.error } }) as unknown[])[0])
   }
 
-  /** @returns owner-reviewed Agent knowledge; never publishes to the main Vault. */
+  /**
+   * Record a revision-bound owner review within Agent Layer.
+   * @param request - Artifact revision, decision, and optional review details.
+   * @returns Reviewed artifact; stale revisions fail.
+   */
   async review(request: KnowledgeReviewRequest): Promise<KnowledgeDocument> {
     return document.parse((await this.command({ ...request, command: 'review' }) as unknown[])[0])
   }
 
   /**
-   * @param request - accepted artifact and new destination.
-   * @returns content-bound approval preview without writing outside Agents.
+   * Prepare exact destination content for owner approval without publishing it.
+   * @param request - Accepted artifact and intended destination.
+   * @returns Before and after content bound to an approval token.
    */
   async preview(request: KnowledgePreviewRequest): Promise<KnowledgePromotionPreview> {
     return z.object({ id: record.shape.id, destination: z.string(), before: z.string(), after: z.string(), token: z.string() })
@@ -130,24 +175,31 @@ export class KnowledgeStore {
   }
 
   /**
-   * @param request - explicit approval of the exact preview.
-   * @returns artifact with publication receipts; never overwrites a destination.
+   * Publish only the exact owner-approved preview through the guarded Vault bridge.
+   * @param request - Artifact, destination, and explicit approval token.
+   * @returns Published artifact with receipts; stale previews and existing destinations fail.
    */
   async promote(request: KnowledgePromoteRequest): Promise<KnowledgeDocument> {
     return document.array().length(1).parse(await this.command({ ...request, command: 'promote' }))[0] as KnowledgeDocument
   }
 
-  /** @param request - revision-bound source disposition. @returns updated metadata with original evidence unchanged. */
+  /**
+   * Change an artifact disposition without modifying captured evidence.
+   * @param request - Artifact revision and desired shelving state.
+   * @returns Updated artifact metadata and content.
+   */
   async shelve(request: KnowledgeShelveRequest): Promise<KnowledgeDocument> {
     return document.array().length(1).parse(await this.command({ ...request, command: 'shelve' }))[0] as KnowledgeDocument
   }
 
   /**
-   * @param sessionId - stable capture identity; a Session id, or a hashed source URL for other kinds.
-   * @param title - display title, sanitized by the package writer.
-   * @param content - complete source evidence; passed to a model only through an explicit distillation.
-   * @param source - external-source metadata; omitted means a captured conversation.
-   * @returns the saved Intake artifact, reusing an identical source snapshot.
+   * Save source evidence in Intake, reusing an identical capture snapshot.
+   * @param sessionId - Stable Session identity or source URL hash.
+   * @param title - Display title sanitized by the writer.
+   * @param content - Complete original source evidence.
+   * @param source - Optional external-source attribution.
+   * @param cleanedBody - Optional sanitized reader content; original evidence remains separate.
+   * @returns Saved Intake artifact metadata.
    */
   async save(
     sessionId: string, title: string, content: string, source?: KnowledgeNewsSource, cleanedBody?: string,

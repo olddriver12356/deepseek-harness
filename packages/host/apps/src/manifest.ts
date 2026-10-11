@@ -1,8 +1,14 @@
 import { readFile, realpath, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
+/**
+ * Package managers supported for explicit application scripts.
+ */
 export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
 
+/**
+ * Canonical project directory, available scripts, and detected package managers.
+ */
 export interface ProjectInspection {
   directory: string
   name: string
@@ -17,7 +23,11 @@ const lockfiles: Record<PackageManager, string[]> = {
   bun: ['bun.lock', 'bun.lockb'],
 }
 
-/** Inspect only the selected project, without running code or changing files. */
+/**
+ * Inspect the selected project without executing code or changing files.
+ * @param directory - Project directory containing package.json.
+ * @returns Canonical directory, validated scripts, and detected package managers.
+ */
 export async function inspectProject(directory: string): Promise<ProjectInspection> {
   const resolved = await realpath(directory)
   const raw: unknown = JSON.parse(await readFile(join(resolved, 'package.json'), 'utf8'))
@@ -57,7 +67,11 @@ export async function inspectProject(directory: string): Promise<ProjectInspecti
   }
 }
 
-/** Only local Web endpoints are valid launcher destinations. */
+/**
+ * Validate a local HTTP endpoint and reject embedded credentials.
+ * @param value - Owner-supplied application URL.
+ * @returns Normalized local URL; invalid destinations throw.
+ */
 export function validateAppUrl(value: string): string {
   const url = new URL(value)
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password

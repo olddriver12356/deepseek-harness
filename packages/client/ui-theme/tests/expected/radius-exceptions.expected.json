@@ -1,9 +1,82 @@
 {
+  "ui-app-rail/src/client/ProofPanel.module.css": [
+    ".proof: border-radius: 8px"
+  ],
+  "ui-apps/src/client/AppsPanel.module.css": [
+    ".hero: border-radius: 18px",
+    ".register: border-radius: 13px",
+    ".filters: border-radius: 12px",
+    ".filters button: border-radius: 8px",
+    ".summary: border-radius: 8px",
+    ".card: border-radius: 22px",
+    ".card::before: border-radius: 36px",
+    ".card::after: border-radius: 65px 65px 38px 38px",
+    ".icon: border-radius: 16px",
+    ".actions button, .actions a, .actions summary: border-radius: 10px",
+    ".actions button::before, .actions a::before, .actions summary::before: border-radius: 10px",
+    ".menu: border-radius: 12px",
+    ".add: border-radius: 16px",
+    ".plus: border-radius: 12px",
+    ".error: border-radius: 10px",
+    ".dialog: border-radius: 20px",
+    ".dialog input:not([type=checkbox]), .dialog select: border-radius: 9px",
+    ".dialog button: border-radius: 10px"
+  ],
   "ui-deliverables/src/client/ChangedFiles.module.css": [
     ".tile: border-radius: 10px"
   ],
   "ui-deliverables/src/client/Deliverables.module.css": [
     ".fileIcon: border-radius: 10px"
+  ],
+  "ui-experts/src/client/ExpertsPanel.module.css": [
+    ".titleMark: border-radius: 12px",
+    ".giantAdd: border-radius: 16px",
+    ".searchCut: border-radius: 12px",
+    ".filterCut: border-radius: 12px",
+    ".recordCard: border-radius: 14px",
+    ".recordAvatar: border-radius: 12px",
+    ".recordStatus: border-radius: 6px",
+    ".recordActions button: border-radius: 8px",
+    ".emptyRecords: border-radius: 14px",
+    ".formError, .formNotice: border-radius: 8px",
+    ".collectionHero: border-radius: 12px",
+    ".dialog: border-radius: 14px",
+    ".collectionHero: border-radius: 12px",
+    ".dialog: border-radius: 14px",
+    ".dialog: border-radius: 14px 14px 0 0"
+  ],
+  "ui-experts/src/client/ExpertTaskCard.module.css": [
+    ".card: border-radius: 8px"
+  ],
+  "ui-knowledge/src/client/KnowledgePanel.module.css": [
+    ".titleMark: border-radius: 12px",
+    ".metrics > span: border-radius: 16px",
+    ".search: border-radius: 16px",
+    ".emptyFocus, .emptyResults: border-radius: 22px",
+    ".layerCard: border-radius: 18px",
+    ".reader textarea, .reader input:not([type='checkbox']): border-radius: 8px",
+    ".reader: border-radius: 14px 14px 0 0"
+  ],
+  "ui-monitor/src/client/MonitorPanel.module.css": [
+    ".titleMark: border-radius: 10px",
+    ".card: border-radius: 14px",
+    ".dataPanel: border-radius: 14px",
+    ".hoverCard: border-radius: 8px"
+  ],
+  "ui-news/src/client/NewsPanel.module.css": [
+    ".mark: border-radius: 12px"
+  ],
+  "ui-personal/src/client/MemoryPanel.module.css": [
+    ".search input: border-radius: 5px",
+    ".files button: border-radius: 6px",
+    ".reader: border-radius: 7px 3px 8px 4px"
+  ],
+  "ui-personal/src/client/PersonalPanel.module.css": [
+    ".quickButton: border-radius: 8px",
+    ".quickDialog: border-radius: 10px"
+  ],
+  "ui-primitives/src/Menu.module.css": [
+    ".compactList .item: border-radius: 5px"
   ],
   "ui-schedule/src/client/ClockPicker.module.css": [
     ".option: border-radius: 10px"
@@ -56,6 +129,10 @@
     ".page .action: border-radius: 12px",
     ".indicator: border-radius: 6px"
   ],
+  "ui-shell/src/client/AppFrame.module.css": [
+    ".activityToggle: border-radius: 8px",
+    ".handle[data-side='details']::after: border-radius: 10px"
+  ],
   "ui-shortcuts/src/client/Reference.module.css": [
     ".dialog: border-radius: 24px",
     ".close: border-radius: 28px",
@@ -63,5 +140,31 @@
     ".keyBadge: border-radius: 10px",
     ".unbound: border-radius: 10px",
     ".recorder: border-radius: 10px"
+  ],
+  "ui-skill/src/client/SkillsPanel.module.css": [
+    ".panel button, .panel input, .panel select, .panel textarea: border-radius: 8px",
+    ".titleMark: border-radius: 12px",
+    ".index, .files, .editor: border-radius: 12px",
+    ".error: border-radius: 8px",
+    ".dialog: border-radius: 16px",
+    ".hero: border-radius: 12px",
+    ".modeBadge: border-radius: 20px",
+    ".prose pre: border-radius: 8px",
+    ".catalogFacts div: border-radius: 8px"
+  ],
+  "ui-styles/src/client/StylesPanel.module.css": [
+    ".titleMark: border-radius: 12px",
+    ".giantAdd: border-radius: 16px",
+    ".searchCut: border-radius: 12px",
+    ".recordCard: border-radius: 14px",
+    ".styleSwatch: border-radius: 8px",
+    ".recordStatus: border-radius: 6px",
+    ".recordActions button: border-radius: 8px",
+    ".emptyRecords: border-radius: 14px",
+    ".formError, .formNotice: border-radius: 8px",
+    ".dialog: border-radius: 14px 14px 0 0"
+  ],
+  "ui-tool/src/client/tool/ToolDetails.module.css": [
+    ".code: border-radius: 12px"
   ]
 }

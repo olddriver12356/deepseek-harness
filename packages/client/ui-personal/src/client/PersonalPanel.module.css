@@ -3,7 +3,8 @@
 .localNav { height: 44px; display: flex; gap: 12px; align-items: center; padding: 0 24px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-text-secondary); border-bottom: 0.5px solid var(--dsw-alias-border-l2); box-sizing: border-box; }
 .localNav button { border: 0; padding: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .localNav button[aria-current=page] { color: var(--dsw-alias-text-primary); font-weight: 600; }
-.localNav button:focus-visible { outline: 2px solid var(--dsw-alias-text-primary); outline-offset: 2px; }
+.localNav button:focus-visible { --dsw-focus-ring-color: var(--dsw-alias-text-primary);
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)); outline-offset: 2px; }
 .content { height: calc(100% - 44px); min-width: 0; }
 .content[hidden] { display: none; }
 .frame { display: block; width: 100%; height: 100%; border: 0; }
@@ -12,4 +13,4 @@
 .quickButton { position: fixed; right: 20px; bottom: 42px; z-index: 40; padding: 10px 14px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-text-primary); cursor: pointer; font: inherit; }
 .quickDialog { position: fixed; inset: 0; width: min(440px, calc(100vw - 24px)); height: min(520px, calc(100dvh - 32px)); max-width: none; max-height: none; margin: auto; padding: 0; border: 0; border-radius: 10px; overflow: hidden; }
 .quickDialog::backdrop { background: rgb(0 0 0 / 40%); }
-.quickClose { position: absolute; z-index: 1; top: 3px; right: 3px; width: 24px; height: 24px; border: 0; border-radius: 50%; color: #172b2d; background: #fffaf0; font-size: 20px; cursor: pointer; }
+.quickClose { position: absolute; z-index: 1; top: 3px; right: 3px; width: 24px; height: 24px; border: 0; border-radius: 50%; color: #172b2d; background: #fffaf0; font-size: 20px; cursor: pointer; corner-shape: round; }

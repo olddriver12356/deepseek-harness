@@ -51,6 +51,12 @@ export class SkillFileStore {
   private operations: Promise<void> = Promise.resolve()
   constructor(private readonly roots: (cwd: string) => Promise<SkillRoot[]> = cwd => resolveSkillRoots(cwd)) {}
 
+  /**
+   * Discover canonical skills without hiding invalid or shadowed entries.
+   * @param cwd - Registered workspace directory used to resolve skill roots.
+   * @param onlyId - Optional physical artifact identity to inspect.
+   * @returns Skill metadata and resolved creation destinations.
+   */
   async inventory(cwd: string, onlyId?: SkillArtifactId): Promise<SkillInventory> {
     const roots = await this.roots(cwd)
     const skills: SkillArtifact[] = []
@@ -125,6 +131,12 @@ export class SkillFileStore {
     return { path, item }
   }
 
+  /**
+   * List bundle entries without following nested links; reject trees beyond the entry limit.
+   * @param cwd - Registered workspace directory.
+   * @param id - Physical skill identity.
+   * @returns Sorted relative entries, including blocked links.
+   */
   async tree(cwd: string, id: SkillArtifactId): Promise<readonly SkillTreeEntry[]> {
     const { item, root, flat } = await this.artifact(cwd, id)
     if (flat) return [{ path: item.entryFile, kind: 'file' }]
@@ -142,6 +154,12 @@ export class SkillFileStore {
     return entries
   }
 
+  /**
+   * Read a contained regular skill file with bounded UTF-8 decoding.
+   * @param cwd - Registered workspace directory.
+   * @param request - Skill identity and relative file path.
+   * @returns Content, byte count, and path-bound revision.
+   */
   async read(cwd: string, request: SkillFileRequest): Promise<SkillFileContent> {
     requestSchema.parse(request)
     const { path } = await this.target(cwd, request)
@@ -162,6 +180,12 @@ export class SkillFileStore {
     } finally { await handle.close() }
   }
 
+  /**
+   * Serialize guarded text writes and reject stale revisions or escaped paths.
+   * @param cwd - Registered workspace directory.
+   * @param request - Text, file identity, and expected revision.
+   * @returns Saved content and its new revision.
+   */
   async write(cwd: string, request: SkillFileWriteRequest): Promise<SkillFileContent> {
     writeSchema.parse(request)
     if (Buffer.byteLength(request.content) > MAX_TEXT_BYTES) throw new Error('Text exceeds 2 MiB')
@@ -199,7 +223,12 @@ export class SkillFileStore {
     return operation
   }
 
-  /** @param cwd - registered workspace directory. @param request - confirmed source identity. @returns recoverable entry location. */
+  /**
+   * Move the confirmed source entry to recoverable trash without following its final link.
+   * @param cwd - Registered workspace directory.
+   * @param request - Skill identity and confirmed canonical source path.
+   * @returns Recovery path for the removed entry.
+   */
   async remove(cwd: string, request: SkillDeleteRequest): Promise<SkillDeleteResult> {
     z.object({ workspaceId: z.string().min(1), id: z.string().min(1), canonicalPath: z.string().min(1) }).parse(request)
     const operation = this.operations.then(async () => {

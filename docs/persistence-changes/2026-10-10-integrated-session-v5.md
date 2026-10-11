@@ -29,12 +29,12 @@ changes:
     after: "22c6899a78214dd841c266348ae997027ef391174ddb21127f1b71dc1b362824"
     decision: version-bump
   - root: "event:agent/inbox/spliced"
-    previous: "2026-09-21-user-question-reply"
-    after: "1b7f4834baa766e4be4e6b181c66ccb95d7821c76e904c199e7d5b65ff79ce1c"
+    previous: "2026-10-05-working-directory-attribution"
+    after: "06d1d32a7f484663cc8261dad7da629c36ecaede0369aae9aeffac429776837e"
     decision: version-bump
   - root: "event:developer/message"
-    previous: "2026-09-21-user-question-reply"
-    after: "fe550a604facb21452404d7f759a059e6ac38fa4ec5b35f08184f131a3d67de6"
+    previous: "2026-10-05-working-directory-attribution"
+    after: "32614cedcdb1e3b71994ac3badfc37ec8066be9db1855af0dd5dd0580940233a"
     decision: version-bump
   - root: "event:experts/delegation"
     previous: null
@@ -42,19 +42,19 @@ changes:
     decision: version-bump
   - root: "event:personal/observation-request"
     previous: null
-    after: "e7ead6cce73e69de2696759908d22b09da367bad777e1612126a9003578bee8d"
+    after: "ac9368a3a99cbfec05c91bc66a16ffd47277ce21063cf9ca282440120bd6a224"
     decision: version-bump
   - root: "event:personal/observation-result"
     previous: null
     after: "cb93fd3e186e31aebe7cdc6133da735b61ec1164239abe1e19cc48f3be22adea"
     decision: version-bump
   - root: "event:session/title-llm-request"
-    previous: "2026-09-21-user-question-reply"
-    after: "26c266fcae3bf58ae54d1588ee771255de94a68274ca0c730b2e6015c430c9d1"
+    previous: "2026-10-07-title-reasoning-effort"
+    after: "2cecb67d7acde1ec8efb361e2bb51b429130117eede64e1a1ed20a9768b1a29a"
     decision: version-bump
   - root: "event:user/message"
-    previous: "2026-09-21-user-question-reply"
-    after: "d8190f20cdf7e12266548c228c7c63ee16bc00a23ea0f2e1cb53575547655045"
+    previous: "2026-10-05-working-directory-attribution"
+    after: "983de0188613eb0ac7e45bd2895fe494bb03aac7fd0fd23103972765ec5e740f"
     decision: version-bump
 ```
 

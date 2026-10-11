@@ -4,6 +4,9 @@ import type { SubprocessRuntime, SubprocessHandle } from '@deepseek-ai/dsh-subpr
 import { inspectProject, validateAppUrl } from './manifest.ts'
 import type { AppRegistration, AppSnapshot, AppLogs } from './types.ts'
 
+/**
+ * Managed-process deadlines, output limits, and automatic port-allocation budget.
+ */
 export interface RuntimeConfig {
   /** Maximum time in milliseconds to wait for the app HTTP endpoint. */
   startupTimeoutMs: number
@@ -34,19 +37,44 @@ export class AppsRuntime {
   private reserved = new Set<number>()
   constructor(private subprocess: SubprocessRuntime, private config: RuntimeConfig) {}
 
+  /**
+   * Project a registration with its current process state.
+   * @param app - Saved application registration.
+   * @returns Live snapshot, or a stopped snapshot if no run is tracked.
+   */
   snapshot(app: AppRegistration): AppSnapshot {
     return this.runs.get(app.id)?.snapshot ?? { ...app, state: 'stopped', activeUrl: app.url, error: '' }
   }
+  /**
+   * Check whether a managed application is starting or running.
+   * @param id - Application identity.
+   * @returns Whether editing or relaunching must wait for a stop.
+   */
   busy(id: string): boolean {
     const state = this.runs.get(id)?.snapshot.state
     return state === 'starting' || state === 'running'
   }
+  /**
+   * Read bounded retained output without launching or attaching to a process.
+   * @param id - Application identity.
+   * @returns Retained stdout and stderr, empty when no process is tracked.
+   */
   logs(id: string): AppLogs {
     const handle = this.runs.get(id)?.handle
     return { stdout: handle?.collected.stdout?.readFrom(0).text ?? '', stderr: handle?.collected.stderr?.readFrom(0).text ?? '' }
   }
+  /**
+   * Discard a tracked run after the caller has ensured it is stopped.
+   * @param id - Application identity.
+   */
   forget(id: string): void { this.runs.delete(id) }
 
+  /**
+   * Begin a managed launch; readiness and failures update the tracked snapshot asynchronously.
+   * @param app - Validated application registration.
+   * @param selected - Optional existing package-script override.
+   * @returns Starting snapshot, or the current snapshot if already busy.
+   */
   async start(app: AppRegistration, selected?: string): Promise<AppSnapshot> {
     if (this.busy(app.id)) return this.snapshot(app)
     const run: Run = { snapshot: { ...app, state: 'starting', activeUrl: app.url, error: '' }, cancelled: false }
@@ -128,6 +156,10 @@ export class AppsRuntime {
     } finally { if (port !== undefined) this.reserved.delete(port) }
   }
 
+  /**
+   * Cancel startup and terminate the managed process tree before reporting stopped.
+   * @param id - Application identity; an absent run is a no-op.
+   */
   async stop(id: string): Promise<void> {
     const run = this.runs.get(id)
     if (!run) return
@@ -139,6 +171,10 @@ export class AppsRuntime {
     run.snapshot.state = 'stopped'; run.snapshot.error = ''
   }
 
+  /**
+   * Check an explicitly selected endpoint without taking ownership of its external process.
+   * @param app - Application registration whose endpoint must be ready.
+   */
   async confirmExternal(app: AppRegistration): Promise<void> {
     if (this.busy(app.id)) throw new Error('Stop the managed app first')
     const response = await fetch(validateAppUrl(app.url), { redirect: 'manual', signal: AbortSignal.timeout(2000) })
@@ -146,5 +182,8 @@ export class AppsRuntime {
     if (response.status < 200 || response.status >= 400) throw new Error('Application URL is not ready')
     this.runs.set(app.id, { cancelled: false, snapshot: { ...app, activeUrl: app.url, state: 'external', error: '' } })
   }
+  /**
+   * Stop all tracked managed application runs.
+   */
   async dispose(): Promise<void> { await Promise.all([...this.runs.keys()].map(id => this.stop(id))) }
 }

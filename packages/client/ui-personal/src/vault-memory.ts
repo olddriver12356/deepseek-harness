@@ -1,7 +1,13 @@
 import { lstat, readdir, realpath, open } from 'node:fs/promises'
 import { resolve, relative, isAbsolute, sep } from 'node:path'
 
+/**
+ * Allowlisted Memory tiers and the shared Flags document.
+ */
 export type MemoryTier = 'working' | 'episodic' | 'semantic' | 'handoff' | 'flags'
+/**
+ * Read-only Memory catalog entry with its source-relative path and modification time.
+ */
 export interface MemoryFile { path: string; title: string; tier: MemoryTier; modified: string }
 const folders = { Episodic: 'episodic', Semantic: 'semantic', Handoff: 'handoff' } as const
 const MAX_FILE_BYTES = 1_048_576 // Bound untrusted file reads, including files that grow while open.
@@ -28,7 +34,11 @@ async function checkedFile(root: string, path: string): Promise<string> {
   return target
 }
 
-/** List only the four memory tiers and Flags; no symlink traversal or vault-wide scan. */
+/**
+ * List allowlisted Memory documents without following links or scanning other Vault content.
+ * @param vault - Owner Vault root.
+ * @returns Memory metadata sorted by descending relative path; an absent Memory root yields an empty list.
+ */
 export async function listMemory(vault: string): Promise<MemoryFile[]> {
   let root: string
   try { root = await memoryRoot(vault) }
@@ -58,7 +68,12 @@ export async function listMemory(vault: string): Promise<MemoryFile[]> {
   return files.sort((a, b) => b.path.localeCompare(a.path))
 }
 
-/** Read one allowlisted Markdown document without modifying the source. */
+/**
+ * Read one allowlisted Markdown document without modifying its source.
+ * @param vault - Owner Vault root.
+ * @param path - Slash-separated path relative to Memory.
+ * @returns Complete bounded content and its modification time.
+ */
 export async function readMemory(vault: string, path: string): Promise<{ path: string; content: string; modified: string }> {
   const root = await memoryRoot(vault)
   const target = await checkedFile(root, path)

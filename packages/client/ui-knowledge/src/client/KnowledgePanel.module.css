@@ -105,6 +105,7 @@
   background: color-mix(in srgb, var(--dsw-specific-knowledge-surface) 88%, transparent);
   font: 700 14px/1 var(--dsw-specific-knowledge-display-font);
   letter-spacing: 0.06em;
+  corner-shape: round;
 }
 
 .viewport {
@@ -248,6 +249,7 @@
   font-weight: 650;
   white-space: nowrap;
   transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+  corner-shape: round;
 }
 
 .filters button:hover {
@@ -342,6 +344,7 @@
   background: transparent;
   font: 700 14px/1 var(--dsw-specific-knowledge-display-font);
   cursor: pointer;
+  corner-shape: round;
 }
 
 .focusCard button:disabled {
@@ -529,7 +532,8 @@
 
 .panel button:focus-visible,
 .panel input:focus-visible {
-  outline: 3px solid var(--dsw-specific-knowledge-acid);
+  --dsw-focus-ring-color: var(--dsw-specific-knowledge-acid);
+  outline: 3px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 3px;
 }
 
@@ -777,7 +781,8 @@
 
 .workflow button:not(:disabled):hover,
 .readerBody > button:not(:disabled):hover { color: var(--reader-ink); background: var(--dsw-specific-knowledge-acid); }
-.reader :is(button, input, textarea, summary, a):focus-visible { outline: 2px solid var(--reader-ink); outline-offset: 3px; }
+.reader :is(button, input, textarea, summary, a):focus-visible { --dsw-focus-ring-color: var(--reader-ink);
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)); outline-offset: 3px; }
 .reader textarea::placeholder, .reader input::placeholder { color: var(--reader-muted); }
 
 .reader fieldset,

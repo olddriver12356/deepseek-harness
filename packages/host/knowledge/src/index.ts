@@ -16,6 +16,9 @@ import type { KnowledgeDocument, KnowledgeReadRequest, KnowledgeRecord, Knowledg
 
 export type * from './types.ts'
 export { KnowledgeStore } from './store.ts'
+/**
+ * Vault bridge location and bounded distillation resource limits.
+ */
 export interface Config {
   /** Vault containing the canonical Agents/Tools/DshKnowledge.ps1 bridge. */
   readonly vaultRoot: string
@@ -47,26 +50,52 @@ export class KnowledgeService extends TypertRemoteService {
     }, 'knowledge: distillation shutdown')
   }
 
-  /** @returns real upstream Agent Layer artifacts. */
+  /**
+   * List authoritative Agent Layer artifact metadata.
+   * @returns Validated artifacts without captured evidence.
+   */
   @Remote('list')
   list(): Promise<readonly KnowledgeRecord[]> { return this.store.list() }
 
-  /** @param request - selected artifact identity. @returns evidence and Markdown. */
+  /**
+   * Read ordinary artifact content; raw evidence requires a separate request.
+   * @param request - Stable artifact identity.
+   * @returns Current artifact content and revision.
+   */
   @Remote('read')
   read(request: KnowledgeReadRequest): Promise<KnowledgeDocument> { return this.store.read(request.id) }
 
+  /**
+   * Read original captured evidence only on explicit request.
+   * @param request - Stable artifact identity.
+   * @returns Artifact with its original evidence.
+   */
   @Remote('raw')
   raw(request: KnowledgeReadRequest): Promise<KnowledgeDocument> { return this.store.raw(request.id) }
 
+  /**
+   * Set revision-bound learning state without publishing to the main Vault.
+   * @param request - Artifact revision and owner learning state.
+   * @returns Updated Agent Layer artifact.
+   */
   @Remote('learn')
   learn(request: import('./types.ts').KnowledgeLearnRequest): Promise<KnowledgeDocument> { return this.store.learn(request) }
 
+  /**
+   * Create a directly requested concept card in Agent Knowledge without main-Vault publication.
+   * @param request - Concept content, tags, and suggested existing destination.
+   * @returns Unreviewed and unlearned concept artifact.
+   */
   @Remote('direct')
   direct(request: import('./types.ts').KnowledgeDirectRequest): Promise<KnowledgeDocument> {
     return this.store.direct({ ...request, content: cleanExternalText(request.content) })
   }
 
-  /** @param request - Session to capture. @returns saved evidence in Intake, without AI or promotion. */
+  /**
+   * Capture a flushed Session log in Intake without model processing or publication.
+   * @param request - Session identity and capture title.
+   * @returns Saved source artifact metadata.
+   */
   @Remote('save')
   async save(request: KnowledgeSaveRequest): Promise<KnowledgeRecord> {
     await flushLiveSessionLog({ sessions: this.ctx.sessions }, request.sessionId)
@@ -76,8 +105,9 @@ export class KnowledgeService extends TypertRemoteService {
   }
 
   /**
-   * @param request - caller-supplied source text and its external-source metadata.
-   * @returns saved evidence in Intake, without AI or promotion.
+   * Capture attributed external text in Intake with original evidence retained.
+   * @param request - Source text, canonical URL, publisher, and retrieval time.
+   * @returns Saved source artifact metadata.
    */
   @Remote('saveText')
   async saveText(request: KnowledgeSaveTextRequest): Promise<KnowledgeRecord> {
@@ -92,26 +122,43 @@ export class KnowledgeService extends TypertRemoteService {
     }, content)
   }
 
-  /** @returns a reviewed artifact. Acceptance stays in Agent Layer; stale reviews fail. */
+  /**
+   * Record a revision-bound owner review within Agent Layer.
+   * @param request - Artifact revision, decision, and optional review details.
+   * @returns Reviewed artifact; stale revisions fail.
+   */
   @Remote('review')
   review(request: KnowledgeReviewRequest): Promise<KnowledgeDocument> { return this.store.review(request) }
 
-  /** @param request - accepted artifact and new destination. @returns the exact content requiring owner approval. */
+  /**
+   * Prepare exact destination content for owner approval without publishing it.
+   * @param request - Accepted artifact and intended destination.
+   * @returns Before and after content bound to an approval token.
+   */
   @Remote('preview')
   preview(request: KnowledgePreviewRequest): Promise<KnowledgePromotionPreview> { return this.store.preview(request) }
 
   /**
-   * @param request - explicit content-bound owner approval.
-   * @returns the published artifact; stale previews and existing destinations fail.
+   * Publish only the exact owner-approved preview through the guarded Vault bridge.
+   * @param request - Artifact, destination, and explicit approval token.
+   * @returns Published artifact with receipts; stale previews and existing destinations fail.
    */
   @Remote('promote')
   promote(request: KnowledgePromoteRequest): Promise<KnowledgeDocument> { return this.store.promote(request) }
 
-  /** @param request - revision-bound source disposition. @returns metadata with evidence unchanged. */
+  /**
+   * Change an artifact disposition without modifying captured evidence.
+   * @param request - Artifact revision and desired shelving state.
+   * @returns Updated artifact metadata and content.
+   */
   @Remote('shelve')
   shelve(request: KnowledgeShelveRequest): Promise<KnowledgeDocument> { return this.store.shelve(request) }
 
-  /** @returns the completed attempt; errors are persisted and remain retryable after restart. */
+  /**
+   * Run one bounded, tool-free distillation with durable attempt and settlement receipts.
+   * @param request - Source artifact selected for processing.
+   * @returns Settled attempt; failures remain recorded and retryable after restart.
+   */
   @Remote('distill')
   async distill(request: KnowledgeReadRequest): Promise<KnowledgeDocument> {
     this.shutdown.signal.throwIfAborted()

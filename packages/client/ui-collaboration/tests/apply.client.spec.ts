@@ -52,7 +52,7 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   await runtime.declare({
     'shell.activity.selectors': { kind: 'list', scope: 'session' },
     'shell.app-overlay': { kind: 'list', scope: 'session-maybe' },
-    'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: { hooks: { turnData: () => () => undefined, disclosure: () => useDisclosure } } },
+    'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: { hooks: { turnData: () => () => undefined, disclosure: () => useDisclosure, groupAction: (_standard, { useGroupAction }) => useGroupAction } } },
   })
   const owner = { inject: ['sessions'], apply(ctx: Context) {
     new UiConversation(ctx, ctx.sessions)

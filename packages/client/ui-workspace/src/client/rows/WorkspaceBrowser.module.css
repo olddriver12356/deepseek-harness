@@ -47,6 +47,7 @@
   font-family: var(--dsw-font-family);
   font-size: 14px;
   letter-spacing: 0;
+  corner-shape: round;
 }
 
 .primaryActions {

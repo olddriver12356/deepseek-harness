@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-apps",
-  "version": "0.2.1-alpha.1",
+  "version": "0.2.1-alpha.2",
   "type": "module",
   "license": "MIT",
   "description": "Native local application launcher panel",
@@ -35,6 +35,7 @@
     "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-api-remotes": "workspace:*",
     "@deepseek-ai/dsh-client-locale": "workspace:*",

@@ -1,12 +1,20 @@
 import { parseFragment, type DefaultTreeAdapterMap } from 'parse5'
 
-/** Display cleanup only. Returned text remains untrusted and must never authorize actions. */
+/**
+ * Remove control and directional formatting from bounded display text without granting it authority.
+ * @param text - Untrusted source text, limited to 4 MiB.
+ * @returns Cleaned display text that remains untrusted.
+ */
 export function cleanExternalText(text: string): string {
   if (Buffer.byteLength(text, 'utf8') > 4 * 1024 * 1024) throw new Error('intake: source exceeds 4 MiB')
   return text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/gu, '').trim()
 }
 
-/** Extract visible text without fetching resources or interpreting active content. */
+/**
+ * Extract visible HTML text without fetching resources or interpreting active content.
+ * @param html - Untrusted source HTML under the text-size limit.
+ * @returns Cleaned visible text with bounded traversal depth.
+ */
 export function extractHtmlText(html: string): string {
   const parts: string[] = []
   const excluded = new Set(['script', 'style', 'template', 'noscript', 'iframe', 'object', 'embed', 'form', 'svg', 'canvas', 'head'])

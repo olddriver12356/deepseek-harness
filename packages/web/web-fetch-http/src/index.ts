@@ -19,6 +19,7 @@ export {
 } from './provider.ts'
 export type { HttpFetchLimits, HttpFetchResolver } from './provider.ts'
 export { publicHttpNetwork } from './network.ts'
+export type { PinnedResponse } from './network.ts'
 export { cleanExternalText, extractHtmlText } from './content.ts'
 
 /** Default `User-Agent`: an explicit product agent, never a browser disguise. */

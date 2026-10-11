@@ -58,10 +58,24 @@ export class AppsService extends TypertRemoteService {
     if (entry === undefined) throw new Error('Application registration requires a profile entry')
     await this.ctx.settings.update(entry, { apps })
   }
+  /**
+   * Read the live states of saved registrations.
+   * @returns All registered application snapshots.
+   */
   @Remote('list')
   async list(): Promise<AppsSnapshot> { return { apps: this.config.apps.get().map(app => this.runtime.snapshot(app)) } }
+  /**
+   * Inspect an explicitly selected project without executing its scripts.
+   * @param request - Project directory to inspect.
+   * @returns Validated project metadata.
+   */
   @Remote('inspect')
   async inspect(request: AppInspectRequest): Promise<ProjectInspection> { return inspectProject(request.directory) }
+  /**
+   * Validate and persist an idle application registration; duplicate project directories fail.
+   * @param request - Registration to create or replace.
+   * @returns Saved registration with canonical directory and local endpoint.
+   */
   @Remote('save')
   async save(request: AppSaveRequest): Promise<AppRegistration> {
     return this.write(async () => {
@@ -81,6 +95,10 @@ export class AppsService extends TypertRemoteService {
       return saved
     })
   }
+  /**
+   * Remove a stopped registration without deleting project files.
+   * @param request - Application identity.
+   */
   @Remote('unregister')
   async unregister(request: AppIdRequest): Promise<void> {
     return this.write(async () => {
@@ -90,14 +108,32 @@ export class AppsService extends TypertRemoteService {
       this.runtime.forget(request.id)
     })
   }
+  /**
+   * Start an explicitly selected registered application.
+   * @param request - Application identity and optional script override.
+   * @returns Initial or existing live snapshot.
+   */
   @Remote('start')
   async start(request: AppStartRequest): Promise<AppSnapshot> {
     return this.write(() => this.runtime.start(this.find(request.id), request.script))
   }
+  /**
+   * Stop the selected managed application.
+   * @param request - Application identity.
+   */
   @Remote('stop')
   async stop(request: AppIdRequest): Promise<void> { this.find(request.id); await this.runtime.stop(request.id) }
+  /**
+   * Read retained output for the selected application.
+   * @param request - Application identity.
+   * @returns Bounded stdout and stderr.
+   */
   @Remote('logs')
   async logs(request: AppIdRequest): Promise<AppLogs> { this.find(request.id); return this.runtime.logs(request.id) }
+  /**
+   * Confirm readiness of the selected external application without managing its process.
+   * @param request - Application identity.
+   */
   @Remote('confirmExternal')
   async confirmExternal(request: AppIdRequest): Promise<void> {
     await this.write(() => this.runtime.confirmExternal(this.find(request.id)))

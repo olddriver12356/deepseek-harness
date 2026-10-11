@@ -11,6 +11,7 @@ import type { Nodes } from 'mdast'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { cleanDocSiteOutput, docSiteBuildOptions } from '../website/build.ts'
 import { docsPages, landingLink, routeLink, sectionSpec, type DocsPage } from '../website/docs.ts'
+import { isTranslationPairingManifestExcluded, parseTranslationPairingManifest } from './translation-pairing.ts'
 import {
   addProjectionFrontmatter, emitRawMarkdownPages, llmsTxt, projectedPageContent, publishableImage,
   rawMarkdownFiles, rawMarkdownPageContent, rawMarkdownRoute, resolveRepositoryRef, rewriteMarkdown,
@@ -157,9 +158,9 @@ describe('publishableImage', () => {
     const outside = mkdtempSync(join(tmpdir(), 'dsh-doc-site-outside-'))
     roots.push(outside)
     writeFileSync(join(outside, 'secret.png'), 'not really a png\n')
-    symlinkSync(join(outside, 'secret.png'), join(root, 'packages/linked.png'))
+    symlinkSync(outside, join(root, 'packages/linked'), process.platform === 'win32' ? 'junction' : 'dir')
 
-    expect(publishableImage(join(root, 'packages/linked.png'), realpathSync(root))).toBeUndefined()
+    expect(publishableImage(join(root, 'packages/linked/secret.png'), realpathSync(root))).toBeUndefined()
     expect(publishableImage(join(outside, 'secret.png'), realpathSync(root))).toBeUndefined()
   })
 
@@ -420,6 +421,7 @@ describe('docsPages locale routes', () => {
   })
 
   it('indexes every subsystem page in both sides of the folder README', () => {
+    const pairing = parseTranslationPairingManifest(readFileSync(join(repositoryRoot, 'scripts/translation-pairing.manifest.json'), 'utf8'))
     const pages = globSync(join(repositoryRoot, 'docs/subsystems/*.md'))
       .map(page => basename(page))
       .filter(page => !page.endsWith('.zh.md') && page !== 'README.md')
@@ -428,7 +430,8 @@ describe('docsPages locale routes', () => {
     for (const readme of ['README.md', 'README.zh.md']) {
       const rows = readFileSync(join(repositoryRoot, 'docs/subsystems', readme), 'utf8')
       const missing = pages.filter((page) => {
-        const target = readme.endsWith('.zh.md') ? page.replace(/\.md$/, '.zh.md') : page
+        const englishOnly = isTranslationPairingManifestExcluded(`docs/subsystems/${page}`, pairing)
+        const target = readme.endsWith('.zh.md') && !englishOnly ? page.replace(/\.md$/, '.zh.md') : page
         return !rows.includes(`| [${page}](${target}) |`)
       })
       expect(missing, `${readme} must carry one table row per subsystem page`).toEqual([])

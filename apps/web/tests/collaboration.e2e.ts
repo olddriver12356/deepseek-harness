@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import { chromium, type Page } from 'playwright'
 import { expect, it } from 'vitest'
 import { runDiscussionFlow, type DiscussionSurface } from '../../../packages/host/collaboration/tests/discussion-flow.ts'
-import { newEnglishPage } from './support.ts'
+import { expandTurnProcesses, newEnglishPage } from './support.ts'
 
 async function selectSession(page: Page, id: string): Promise<void> {
   for (const group of await page.locator('[role="treeitem"][aria-expanded="false"]').all()) await group.click()
@@ -28,7 +28,7 @@ it('registers peers, renders attributed discussion and restores human controls a
     await page.goto(url)
     await page.getByRole('tree', { name: 'Sessions' }).waitFor()
     if (firstOpen) {
-      const welcome = page.getByRole('dialog', { name: 'Internal Testing Notice' })
+      const welcome = page.getByRole('dialog', { name: 'Preview Notice' })
       await welcome.getByRole('button', { name: 'Continue', exact: true }).click()
       await welcome.waitFor({ state: 'detached' })
       firstOpen = false
@@ -58,7 +58,7 @@ it('registers peers, renders attributed discussion and restores human controls a
       },
       async pause() {
         await selectSession(page, 'ordinary-peer-b')
-        await page.getByRole('button', { name: '1 tool call', exact: true }).click()
+        await expandTurnProcesses(page)
         await page.getByText('Peer agent message', { exact: true }).waitFor()
         expect(await page.getByText('Peer agent message', { exact: true }).count()).toBe(1)
         expect(await page.getByText('Private human conversation ordinary-peer-a', { exact: true }).count()).toBe(0)

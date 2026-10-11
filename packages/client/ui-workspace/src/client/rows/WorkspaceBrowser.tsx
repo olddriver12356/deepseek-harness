@@ -1389,7 +1389,7 @@ export function WorkspaceBrowser({
           selectedId={currentWorkspace?.workspaceId}
           onPick={(workspaceId) => {
             closeAddWorkspace(); setSelectPickerOpen(false)
-            startSession(workspaceId)
+            startSession(workspaceId, { clearPreviousDraft: false })
           }}
           onClose={() => { closeAddWorkspace(); setSelectPickerOpen(false) }}
         />

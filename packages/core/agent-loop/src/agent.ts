@@ -289,14 +289,16 @@ export class ReactLoopAgent implements Agent {
     this.unstartedInputs.push(...pending.filter(input => requiredInputs.some(message => message.id === input.message.id)))
     const assembly = await this.loopCtx.systemPrompt.assemble(assembleContextFor(this, signal))
     signal.throwIfAborted()
-    const sections = renderContextSections(assembly)
-    const context = this.runtimeContext.project(joinContextSections(sections), sections)
     const decision = await this.dispatch.waterfall(
       'agent/pre-step', { messages: claimed, ...position, signal },
-      (): Promise<PreStepDecision> => Promise.resolve<PreStepDecision>({
-        kind: 'enter',
-        messages: context === undefined ? claimed : [...claimed, context],
-      }),
+      (): Promise<PreStepDecision> => {
+        const sections = renderContextSections(assembly)
+        const context = this.runtimeContext.project(joinContextSections(sections), sections)
+        return Promise.resolve<PreStepDecision>({
+          kind: 'enter',
+          messages: context === undefined ? claimed : [...claimed, context],
+        })
+      },
     )
     signal.throwIfAborted()
     if (decision.kind === 'reject') return decision
@@ -457,6 +459,10 @@ export class ReactLoopAgent implements Agent {
         this.restoreDeferredInput()
         return { kind: 'blocked' }
       }
+      const currentContext = this.loopCtx.systemPrompt.refreshContext(assembly, assembleContextFor(this, signal))
+      const sections = renderContextSections(currentContext)
+      const context = this.runtimeContext.project(joinContextSections(sections), sections)
+      signal.throwIfAborted()
       const startsRequestSeries = firstAttempt && decision.startsRequestSeries === true
       const commits = this.systemPrompt.project(renderedPrompt, {
         inHistory: preparedCall?.systemPromptUpdate === 'in-history',
@@ -467,6 +473,7 @@ export class ReactLoopAgent implements Agent {
       for (const { message, intent } of commits) {
         this.session.append('system/message', { turn, step, message }, intent)
       }
+      let contextAdmitted = false
       if (firstAttempt) {
         const originalSources = new Map<UserMessage['id'], UserMessage['source']>()
         for (const input of decision.claimed) {
@@ -475,10 +482,20 @@ export class ReactLoopAgent implements Agent {
           }
         }
         for (const message of decision.messages) {
-          const source = originalSources.get(message.id)
-          this.session.append('user/message', source === undefined ? message : { ...message, source }, { surfaceOp: 'append' })
+          if (message.source.kind === 'runtime-context') {
+            if (context !== undefined && !contextAdmitted) {
+              this.session.append('user/message', context, { surfaceOp: 'append' })
+              contextAdmitted = true
+            }
+          } else {
+            const source = originalSources.get(message.id)
+            this.session.append('user/message', source === undefined ? message : { ...message, source }, { surfaceOp: 'append' })
+          }
         }
         this.unstartedInputs = []
+      }
+      if (context !== undefined && !contextAdmitted) {
+        this.session.append('user/message', context, { surfaceOp: 'append' })
       }
       firstAttempt = false
       const request = this.buildRequest(config, preparedCall, assembly.tools, { turn, step }, startsRequestSeries, signal)

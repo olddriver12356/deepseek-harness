@@ -31,7 +31,7 @@ describe('expert continuation through Loader', () => {
       await writeFile(join(directory, 'ARTIFACT.md'), '---\nid: "reviewer"\ntitle: "Reviewer"\nartifact_type: "Method"\nmethod_kind: "Expert"\nexpert_status: "approved"\nexecution: "delegated"\ncategory: "Engineering"\ndescription: "Review code"\n---\n\n## Instructions\n\nInvestigate the assigned task.\n')
       let writes = 0
       const dependencies = { name: 'fixture-dependencies', async apply(scope: Context) {
-        await mountAgentLoopTestDependencies(scope)
+        await mountAgentLoopTestDependencies(scope, { workingDirectory: true })
         scope.tools.register({ name: 'write', description: 'Write a test file', parameters: { type: 'object', properties: {} },
           output: { schema: { type: 'string' }, render: (_args: unknown, value: string) => [{ type: 'text' as const, text: value }] },
           execute: async () => { writes++; return 'written' },

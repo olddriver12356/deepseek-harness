@@ -38,7 +38,7 @@ it('toggles bottom DevTools from the page and iframe without a selected Session'
       expect((await main.boundingBox())!.height).toBe(fullHeight - panelHeight)
       const original = await iframe.evaluateHandle(node => (node as HTMLIFrameElement).contentDocument)
       const titleSize = await panel.locator('header > span').evaluate(node => getComputedStyle(node).fontSize)
-      expect(titleSize).toBe('12px')
+      expect(titleSize).toBe('14px')
       const close = panel.getByRole('button', { name: 'Collapse', exact: true })
       expect(await close.textContent()).toBe('')
       expect(await close.locator('svg').count()).toBe(1)

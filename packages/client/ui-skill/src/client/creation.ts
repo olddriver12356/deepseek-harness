@@ -4,10 +4,25 @@ import type { WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/type
 import type { Invocation } from './skill-document.ts'
 import { randomUUID } from '@deepseek-ai/dsh-util-crypto'
 
+/**
+ * Owner-entered skill content, scope, and invocation policy for a creation prompt.
+ */
 export interface SkillDraft { name: string; references: string; instructions: string; scope: 'project' | 'personal'; category: string; invocation: Invocation }
+/**
+ * Supported agent-tool creation workflows.
+ */
 export type AgentToolKind = 'commands' | 'mcp' | 'hooks' | 'plugins'
+/**
+ * Owner-entered name and description for an agent-tool creation prompt.
+ */
 export interface AgentToolDraft { name: string; description: string }
 
+/**
+ * Frame owner task material for the selected agent-tool workflow without granting extra authority.
+ * @param kind - Tool workflow to describe.
+ * @param draft - Owner-entered task material.
+ * @returns Prompt requiring saved and verified configuration before claiming completion.
+ */
 export function toolDraftingPrompt(kind: AgentToolKind, draft: AgentToolDraft): string {
   const guidance: Record<AgentToolKind, string> = {
     commands: 'Create a real DSH slash command, not a skill alias. Inspect the command registry and an existing command implementation. If the DSH source is unavailable in this workspace, ask the user where to create it. Ask in chat for the intended behavior if the name and description do not define it. Register and verify the command in a Session.',
@@ -23,6 +38,12 @@ export function toolDraftingPrompt(kind: AgentToolKind, draft: AgentToolDraft): 
   ].join('\n\n')
 }
 
+/**
+ * Frame a minimal skill-creation request with explicit destination and invocation policy.
+ * @param draft - Owner-entered skill content and scope.
+ * @param destination - Resolved skill-bundle creation destination.
+ * @returns Prompt that treats supplied references as task material.
+ */
 export function draftingPrompt(draft: SkillDraft, destination: string): string {
   return [
     'Create a real minimal skill bundle under the destination below. Read the workspace instructions and applicable skill-creation guidance first. Do not overwrite an existing bundle; choose another name if needed. Inspect the supplied references as task material. Write necessary supporting files first and publish a valid SKILL.md last. Do not create tests, audits or empty scaffolding unless explicitly requested. Read back the saved files and report their actual path.',
@@ -32,8 +53,17 @@ export function draftingPrompt(draft: SkillDraft, destination: string): string {
   ].join('\n\n')
 }
 
-/** One form submission retains identity across creation and uncertain prompt retries. */
-export function createDraftHandoff(sessions: ISessions, workspaceId: WorkspaceId, text: string, openSession: (id: SessionId) => void) {
+/**
+ * Retain one submission identity across session creation and uncertain prompt retries.
+ * @param sessions - Session controller used for creation and submission.
+ * @param workspaceId - Workspace that owns the new Session.
+ * @param text - Creation task to queue.
+ * @param openSession - Navigation callback after the binding becomes ready.
+ * @returns Retryable submission function; concurrent calls share the pending operation.
+ */
+export function createDraftHandoff(
+  sessions: ISessions, workspaceId: WorkspaceId, text: string, openSession: (id: SessionId) => void,
+): () => Promise<void> {
   const sessionId = randomUUID() as SessionId
   let created = false
   let requestId: ReturnType<NonNullable<ReturnType<ISessions['binding']>>['session']['beginSubmission']>['requestId'] | undefined

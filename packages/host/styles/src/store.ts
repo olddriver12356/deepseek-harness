@@ -141,6 +141,10 @@ export class StyleStore {
     this.stylesRoot = join(this.vaultRoot, 'Agents', '5 Methods', 'Styles')
   }
 
+  /**
+   * Read and validate Style packages from the configured Vault.
+   * @returns Records sorted by name; malformed or escaped packages fail the listing.
+   */
   async list(): Promise<readonly StyleRecord[]> {
     await this.assertVault()
     await mkdir(this.stylesRoot, { recursive: true })
@@ -160,6 +164,11 @@ export class StyleStore {
     return records.sort((left, right) => left.name.localeCompare(right.name))
   }
 
+  /**
+   * Create a guarded Style artifact without overwriting an existing package.
+   * @param input - Validated owner draft.
+   * @returns Saved Style with its new stable identity.
+   */
   async create(input: StyleDraft): Promise<StyleRecord> {
     const draft = validateDraft(input)
     await this.beforeMutation()
@@ -171,6 +180,12 @@ export class StyleStore {
     return recordOf(directory, await readFile(join(directory, ARTIFACT), 'utf8'))
   }
 
+  /**
+   * Replace Style content while preserving identity and creation date.
+   * @param id - Existing Style identity.
+   * @param input - Validated replacement draft.
+   * @returns Updated record after the Vault index rebuild.
+   */
   async update(id: string, input: StyleDraft): Promise<StyleRecord> {
     const draft = validateDraft(input)
     await this.beforeMutation()
@@ -192,6 +207,10 @@ export class StyleStore {
     return recordOf(directory, await readFile(join(directory, ARTIFACT), 'utf8'))
   }
 
+  /**
+   * Remove only a guarded Style package containing no unmanaged files.
+   * @param id - Existing Style identity.
+   */
   async remove(id: string): Promise<void> {
     await this.beforeMutation()
     const artifact = await this.find(id)

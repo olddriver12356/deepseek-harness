@@ -16,6 +16,9 @@ import type {
 
 export type * from './types.ts'
 
+/**
+ * Vault root containing the authoritative Expert packages.
+ */
 export interface Config {
   /** Absolute or cwd-relative root of the Vault containing Agents/Artifact Schema v1.md. */
   readonly vaultRoot: string

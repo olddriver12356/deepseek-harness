@@ -1,7 +1,13 @@
-import { publicHttpNetwork } from '@deepseek-ai/dsh-web-fetch-http'
+import { publicHttpNetwork, type PinnedResponse } from '@deepseek-ai/dsh-web-fetch-http'
 
-/** Anonymous, DNS-pinned public fetch. Every redirect is independently checked. */
-export async function fetchPublic(url: string, signal: AbortSignal, accept: string) {
+/**
+ * Fetch anonymously with DNS pinning and independently validate every redirect.
+ * @param url - Public HTTP or HTTPS URL without credentials.
+ * @param signal - Caller-owned request lifetime.
+ * @param accept - Allowed response media types sent in the Accept header.
+ * @returns Response and close operation owned by the caller; private addresses and insecure redirects fail.
+ */
+export async function fetchPublic(url: string, signal: AbortSignal, accept: string): Promise<PinnedResponse> {
   let target = new URL(url)
   for (let hop = 0; hop <= 5; hop++) {
     if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) {

@@ -3,41 +3,44 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-theme/README.md
 /:
-  en: 1f98ae39f4e5a3a1
-  zh: d83f563eb12a023d
+  en: e9c14ae3732deb3a
+  zh: fee230def9844d2d
 /deepseek-ai-dsh-client-ui-theme:
   en: 06c7d7624947a72a
   zh: ac4ca82984564825
 /deepseek-ai-dsh-client-ui-theme/summary:
-  en: c98899d108fd8318
-  zh: ae2103e46d723784
+  en: caf6bc13d14dd556
+  zh: dc516b595733b697
 /deepseek-ai-dsh-client-ui-theme/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-client-ui-theme/use-this-package:
-  en: 72a99a2af5e67c5b
-  zh: 520c0952606c3c0c
+  en: 90bc73ab2e82135a
+  zh: 39fe470b67abea94
 /deepseek-ai-dsh-client-ui-theme/use-this-package/appearance-and-font-size:
-  en: ec98904b19d1b12b
-  zh: 59d5823ddb168195
+  en: 5232d0517dfff80b
+  zh: 72abb7a9c4fa3ebb
+/deepseek-ai-dsh-client-ui-theme/use-this-package/fonts:
+  en: b45d5b48ca799c3a
+  zh: af65514b3759204f
 /deepseek-ai-dsh-client-ui-theme/use-this-package/registering-a-theme:
   en: 2cd32ccaba33b3e9
   zh: 53ea78d19929ea02
 /deepseek-ai-dsh-client-ui-theme/use-this-package/pre-plugin-palette:
-  en: 54296471349d9f77
-  zh: 8ca162b7b57b822e
+  en: 203523ddd7927c34
+  zh: 31dd89da78f9ab4f
 /deepseek-ai-dsh-client-ui-theme/understand-the-implementation:
-  en: 7d60f2b42cedfcd7
-  zh: c7ac6dab2f3e7fe5
+  en: e3d1a3e3ffd9261a
+  zh: 6cae134aa16ef513
 /deepseek-ai-dsh-client-ui-theme/understand-the-implementation/stylesheets:
-  en: c8982989ce5b8c99
-  zh: 2d97bc308cd9c0c8
+  en: 7b21378dbc7c1888
+  zh: 226fbeee7c7d870f
 /deepseek-ai-dsh-client-ui-theme/understand-the-implementation/scrollbar-rebinding:
   en: bf76e7c34a331595
   zh: 5accd0260ef7c61e
 /deepseek-ai-dsh-client-ui-theme/understand-the-implementation/preference-persistence:
-  en: 818da56a938d5394
-  zh: e6fd46a9e964b0a4
+  en: 7280ae0a30d26142
+  zh: 5f2ba9a479fd4453
 /deepseek-ai-dsh-client-ui-theme/further-exploration:
   en: 10664fe91f2ca00b
   zh: 086f8dffdc223c22

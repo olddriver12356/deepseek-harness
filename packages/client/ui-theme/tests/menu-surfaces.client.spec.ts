@@ -62,12 +62,19 @@ describe('shared menu material', () => {
     expect(menuViolations('<MenuSurface><div role="listbox" /></MenuSurface>')).toEqual([])
   })
 
-  it('requires shared material outside the schedule-owned menu and clock picker', () => {
+  it('requires shared material outside the schedule controls and local opaque selectors', () => {
     expect(sourceFiles().flatMap(file => menuViolations(readFileSync(file, 'utf8'))
       .map(role => `${relative(packages, file).replaceAll('\\', '/')}: ${role}`))).toEqual([
+      'client/ui-experts/src/client/ExpertSelect.tsx: listbox',
       'client/ui-schedule/src/client/ClockPicker.tsx: listbox',
       'client/ui-schedule/src/client/TaskMenu.tsx: menu',
+      'client/ui-styles/src/client/StyleSelect.tsx: listbox',
     ])
+    for (const owner of ['ui-experts/src/client/ExpertSelect', 'ui-styles/src/client/StyleSelect']) {
+      const menu = parseRules(readFileSync(join(packages, 'client', `${owner}.module.css`), 'utf8')).find(rule => rule.selectors.includes('.menu'))!
+      expect(new Map(menu.declarations).get('background')).toBe('var(--dsw-specific-agent-canvas, #14161c)')
+      expect(new Map(menu.declarations).has('backdrop-filter')).toBe(false)
+    }
   })
 
   it('rejects local material overrides, including state rules', () => {

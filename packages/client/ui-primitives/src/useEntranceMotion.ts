@@ -1,5 +1,5 @@
 /** Short presentation-only entrances; callers own activation and content identity. */
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { animate, stagger } from 'animejs'
 
 /**
@@ -9,7 +9,7 @@ import { animate, stagger } from 'animejs'
  * @param kind - Panel translation, native-dialog scale, or bounded card opacity.
  * @returns Ref for the surface owned by the caller.
  */
-export function useEntranceMotion<T extends HTMLElement>(active: boolean, revision: string | number = 0, kind: 'panel' | 'dialog' | 'cards' = 'panel') {
+export function useEntranceMotion<T extends HTMLElement>(active: boolean, revision: string | number = 0, kind: 'panel' | 'dialog' | 'cards' = 'panel'): RefObject<T> {
   const ref = useRef<T>(null)
   useLayoutEffect(() => {
     const element = ref.current

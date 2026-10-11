@@ -11,6 +11,9 @@ import type { Branded } from '@deepseek-ai/dsh-brand'
 
 /** Opaque physical skill identity; never an invocation name. */
 export type SkillArtifactId = Branded<'SkillArtifactId'>
+/**
+ * Discovered physical skill and its canonical editing and invocation metadata.
+ */
 export interface SkillArtifact {
   readonly id: SkillArtifactId
   readonly name: string
@@ -30,21 +33,33 @@ export interface SkillArtifact {
   readonly writable: boolean
   readonly problem: string
 }
+/**
+ * Physical skills and the resolved project and personal creation destinations.
+ */
 export interface SkillInventory {
   readonly skills: readonly SkillArtifact[]
   readonly projectDestination: string
   readonly personalDestination: string
 }
+/**
+ * Workspace-scoped skill identity and relative file selection.
+ */
 export interface SkillFileRequest {
   readonly workspaceId: WorkspaceId
   readonly id: SkillArtifactId
   readonly file: string
 }
+/**
+ * Text write with the revision to replace, or null to create a new file.
+ */
 export interface SkillFileWriteRequest extends SkillFileRequest {
   readonly content: string
   /** Null means create exclusively; otherwise SHA-256 of the loaded bytes. */
   readonly revision: string | null
 }
+/**
+ * Read result and revision; null content marks a file that cannot be edited as UTF-8 text.
+ */
 export interface SkillFileContent {
   readonly file: string
   readonly content: string | null
@@ -62,6 +77,9 @@ export interface SkillDeleteRequest {
 export interface SkillDeleteResult {
   readonly recoveryPath: string
 }
+/**
+ * Relative skill-bundle entry; linked entries are marked blocked instead of traversed.
+ */
 export interface SkillTreeEntry {
   readonly path: string
   readonly kind: 'directory' | 'file' | 'blocked'

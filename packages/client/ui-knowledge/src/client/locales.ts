@@ -1,3 +1,6 @@
+/**
+ * Chinese copy for this client surface.
+ */
 export const zh = {
   panelTitle: '知识库',
   reviewed: '已审阅', unreviewed: '未审阅', learned: '已掌握', toLearn: '待掌握', markLearned: '标记已掌握',
@@ -23,7 +26,13 @@ export const zh = {
   reader: 'Artifact 原文', retry: '重试', notice: '先保存原始对话到 Agent Intake，不调用 AI。仅保存已提交记录；附件保留引用，不复制附件文件。',
   kindAll: '全部类型', kindNews: '新闻', kindOther: '非新闻',
 } as const
+/**
+ * Message keys shared by both client locale dictionaries.
+ */
 export type KnowledgeLocaleKey = keyof typeof zh
+/**
+ * English copy for this client surface.
+ */
 export const en: Record<KnowledgeLocaleKey, string> = {
   panelTitle: 'Knowledge',
   reviewed: 'Reviewed', unreviewed: 'Not reviewed', learned: 'Learned', toLearn: 'To learn', markLearned: 'Mark learned',

@@ -121,7 +121,6 @@ describe('translucent menu surfaces pair fill and filter', () => {
   it('keeps backdrop filtering on background layers when descendants use fixed positioning', () => {
     const surfaces = [
       ['packages/client/ui-primitives/src/MenuSurface.module.css', '.surface', '.material'],
-      ['packages/client/ui-goal/src/client/GoalBar.module.css', '.bar', '.bar::before'],
       ['packages/client/ui-conversation/src/client/queue/QueueDock.module.css', '.panel', '.panel::before'],
       ['packages/extensions/ui-cordis/src/client/CordisPanel.module.css', '.panel', '.panel::before'],
     ] as const
@@ -138,6 +137,11 @@ describe('translucent menu surfaces pair fill and filter', () => {
       expect(declarations(background).get('backdrop-filter'), background)
         .toBe('var(--dsw-menu-backdrop-filter)')
     }
+    // The local Goal dock uses an opaque accent panel, so it creates no backdrop root.
+    const goal = files.find(file => file.endsWith('/ui-goal/src/client/GoalBar.module.css'))!
+    const bar = new Map(parseRules(readFileSync(goal, 'utf8')).filter(rule => rule.selectors.includes('.bar')).flatMap(rule => rule.declarations))
+    expect(bar.get('background')).toBe('var(--dsw-specific-agent-surface)')
+    expect(bar.has('backdrop-filter')).toBe(false)
   })
 })
 
@@ -252,7 +256,15 @@ describe('neutral solid borders are hairlines', () => {
       return wideNeutralBorders(readFileSync(file, 'utf8'), exempt)
         .map(line => `${file} ${line}`)
     })
-    expect(wide).toEqual([])
+    // The retained Shell uses explicit 1px structural seams instead of elevated menu strokes.
+    const shell = packageStylesheets().find(file => file.endsWith('/ui-shell/src/client/AppFrame.module.css'))!
+    expect(wide).toEqual([
+      `${shell} .sidebarCol border-right: 1px solid var(--dsw-alias-border-l1)`,
+      `${shell} .detailsCol border-left: 1px solid var(--dsw-alias-border-l2)`,
+      `${shell} .activityCol border-left: 1px solid var(--dsw-alias-border-l2)`,
+      `${shell} .activityToggle border: 1px solid var(--dsw-alias-border-l2)`,
+      `${shell} .handle[data-side='details']::after border: 1px solid var(--dsw-alias-border-l2-darkmode-thin)`,
+    ])
   })
 
   it('draws every filled divider line at 0.5px under packages/', () => {

@@ -109,7 +109,7 @@ describe('runExpertTool', () => {
     const ctx = {
       tools: { register: () => () => {} },
       experts: { reserveDelegation: () => () => { released++ } },
-      subagents: { startContinuable: async (spec: Parameters<ExpertToolContext['subagents']['startContinuable']>[0]) => {
+      subagents: { startActivation: async (spec: Parameters<ExpertToolContext['subagents']['startActivation']>[0]) => {
         started.push(spec)
         if (fail) throw new Error('startup failed')
         if (spec.childId === undefined) throw new Error('dispatch must allocate a child id before startup')
@@ -122,7 +122,7 @@ describe('runExpertTool', () => {
     const { ctx, started, released } = bench()
     const result = await runExpertTool(ctx, roster, { expert: base.id, task: 'Investigate login' }, { agent, signal: new AbortController().signal })
     expect(result).toMatchObject({ expert: base.name, parentSessionId: 'parent-agent', access: 'read-only', status: 'started' })
-    expect(started[0]).toMatchObject({ provider: 'spawn', childId: result.childId, request: { maxDepth: 1, prompt: [{ type: 'text', text: 'Investigate login' }] } })
+    expect(started[0]).toMatchObject({ provider: 'spawn', childId: result.childId, delivery: 'parent', request: { maxDepth: 1, prompt: [{ type: 'text', text: 'Investigate login' }] } })
     expect(released()).toBe(1)
   })
   it('selects fork only when the approved record requests it', async () => {

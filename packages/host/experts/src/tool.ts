@@ -23,7 +23,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { randomUUID } from 'node:crypto'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
-import type { ContinuableStartSpec } from '@deepseek-ai/dsh-subagent'
+import type { SubagentActivationSpec } from '@deepseek-ai/dsh-subagent'
 import type { ExpertService } from './index.ts'
 import z from '@deepseek-ai/schemastery'
 import { buildStartRequest } from './dispatch.ts'
@@ -38,7 +38,11 @@ export interface ExpertRoster {
   list(): Promise<readonly ExpertRecord[]>
 }
 
-/** An Expert is dispatchable exactly when it is approved AND delegated. */
+/**
+ * Select approved delegated Experts for the dispatch roster.
+ * @param records - Available Expert records.
+ * @returns Experts eligible for delegated execution.
+ */
 export function dispatchable(records: readonly ExpertRecord[]): readonly ExpertRecord[] {
   return records.filter(record => record.status === 'approved' && record.execution === 'delegated')
 }
@@ -70,7 +74,11 @@ export function resolveExpert(records: readonly ExpertRecord[], name: string): E
   throw new Error(`experts: no approved delegated Expert named "${wanted}". Available: ${available}`)
 }
 
-/** Render the roster for the tool description so the model can choose without a second call. */
+/**
+ * Describe the available dispatch roster for the model-facing tool.
+ * @param records - Available Expert records.
+ * @returns Tool description containing the eligible Expert roster.
+ */
 export function rosterDescription(records: readonly ExpertRecord[]): string {
   const roster = dispatchable(records)
   if (roster.length === 0) return ' No Expert is currently approved and delegated, so this tool cannot run yet.'
@@ -83,7 +91,7 @@ export interface ExpertToolContext {
     register(definition: unknown): () => void
   }
   readonly subagents: {
-    startContinuable(spec: ContinuableStartSpec): Promise<{ readonly childId: SessionId }>
+    startActivation(spec: SubagentActivationSpec): Promise<{ readonly childId: SessionId }>
   }
   readonly experts: Pick<ExpertService, 'reserveDelegation'>
 }
@@ -122,13 +130,14 @@ export async function runExpertTool(
   const release = ctx.experts.reserveDelegation(parent, childId, expert)
   try {
     const { agentOptions, ...request } = composed
-    const started = await ctx.subagents.startContinuable({
+    const started = await ctx.subagents.startActivation({
       provider: expert.contextMode === 'fork' ? 'fork' : 'spawn',
       childId, label: expert.name, signal: exec.signal,
+      delivery: 'parent',
       request: {
         ...request, parent, maxDepth: 1,
         prompt: [{ type: 'text', text: composed.prompt }],
-        ...agentOptions === undefined ? {} : { agentOptions: agentOptions as NonNullable<ContinuableStartSpec['request']['agentOptions']> },
+        ...agentOptions === undefined ? {} : { agentOptions: agentOptions as NonNullable<SubagentActivationSpec['request']['agentOptions']> },
       },
     })
     return { expert: expert.name, expertId: expert.id, childId: started.childId,
