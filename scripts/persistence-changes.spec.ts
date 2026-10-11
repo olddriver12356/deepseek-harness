@@ -657,6 +657,21 @@ describe('persistence changes current-tree commands', () => {
     expect(() => runPersistenceChanges(['--record', '2026-09-11-empty', '--decision', 'same-version'], root, () => after)).toThrow('no persistence type changes')
   })
 
+  it('accepts exact local English-only exclusions without weakening other history checks', () => {
+    const root = fixture()
+    baseline(root)
+    mkdirSync(join(root, 'scripts'))
+    writeFileSync(join(root, 'scripts/translation-pairing.manifest.json'), JSON.stringify({
+      excluded: [`docs/persistence-changes/${BASE_ID}.md`],
+    }))
+    expect(() => loadPersistenceHistory(root)).toThrow('must not have translation artifacts')
+    rmSync(join(root, 'docs/persistence-changes', `${BASE_ID}.zh.md`))
+    rmSync(join(root, 'docs/persistence-changes', `${BASE_ID}.i18n.yaml`))
+    expect(loadPersistenceHistory(root).entries).toHaveLength(1)
+    writeFileSync(join(root, 'scripts/translation-pairing.manifest.json'), '{"excluded":[]}')
+    expect(() => loadPersistenceHistory(root)).toThrow('missing Chinese counterpart')
+  })
+
   it('rejects changed bilingual machine declarations and unreferenced snapshots', () => {
     const root = fixture()
     baseline(root)

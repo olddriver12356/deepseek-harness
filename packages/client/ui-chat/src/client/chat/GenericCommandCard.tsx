@@ -57,10 +57,9 @@ export const GenericCommandCard = memo(function GenericCommandCard({ node, t, ru
       {state === 'running' && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
       {state === 'error' && <span className={a11yCss.visuallyHidden}>{t('row.failed')}</span>}
       <DisclosureRow
-        rowClassName={`${css.row} ${chrome.notice} ${chrome.noticeCommand}`}
+        rowClassName={`${chrome.notice} ${chrome.noticeCommand}`}
         leadingClassName={css.leading}
         titleClassName={css.title}
-        chevronClassName={css.chevron}
         icon={COMMAND_ICON}
         title={title}
         running={running}

@@ -45,8 +45,8 @@
     ".agents/notes/implemented/feature/2026-10-03-session-discussion-ui.md",
     ".agents/notes/proposed/feature/2026-09-07-agent-knowledge-lifecycle.md",
     ".agents/notes/proposed/feature/2026-10-01-independent-session-collaboration.md",
-    "docs/persistence-changes/2026-09-20-expert-delegation-and-observer-events.md",
-    "docs/persistence-changes/2026-10-03-collaboration-input-policy.md",
+    "docs/persistence-changes/local-history/2026-09-20-expert-delegation-and-observer-events.md",
+    "docs/persistence-changes/local-history/2026-10-03-collaboration-input-policy.md",
     "docs/subsystems/collaboration.md",
     "docs/subsystems/experts.md",
     "docs/superpowers/plans/2026-09-08-news-knowledge-intake.md",
@@ -70,6 +70,9 @@
     "packages/host/peer-inbox/README.md",
     "packages/host/styles/README.md",
     "packages/session/session-format-v4-to-v5/README.md",
-    ".agents/notes/implemented/architecture/2026-10-09-preserve-local-and-upstream-session-formats.md"
+    ".agents/notes/implemented/architecture/2026-10-09-preserve-local-and-upstream-session-formats.md",
+    "docs/upgrade-guide/v0.2.0-rc.2/local-session-v5/guide.md",
+    "docs/persistence-changes/local-history/README.md",
+    "docs/persistence-changes/2026-10-10-integrated-session-v5.md"
   ]
 }

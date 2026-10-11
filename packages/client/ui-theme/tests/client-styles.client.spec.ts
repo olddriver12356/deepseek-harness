@@ -53,7 +53,7 @@ describe('ui-theme client styles', () => {
       '--dsw-specific-knowledge-yellow: rgb(255, 214, 41);',
       '--dsw-specific-knowledge-collage-fade-top: rgb(25 28 35 / 20%);',
       '--dsw-specific-knowledge-collage-fade-bottom: rgb(25 28 35 / 62%);',
-      "--dsw-specific-knowledge-display-font: 'DSH Knowledge Fusion Pixel', var(--dsw-font-family);",
+      '--dsw-specific-knowledge-display-font: var(--dsw-font-family);',
     ]) expect(source).toContain(declaration)
   })
 

@@ -12,6 +12,7 @@ import { persistenceCatalogArtifacts } from './gen-persistence-catalog.ts'
 import { renderPersistencePair } from './persistence-artifacts.ts'
 import { loadPersistenceFinalization } from './persistence-finalization.ts'
 import type { PersistenceArtifact } from './persistence-artifacts.ts'
+import { isTranslationPairingManifestExcluded, parseTranslationPairingManifest } from './translation-pairing.ts'
 
 const HISTORY_DIRECTORY = 'docs/persistence-changes'
 const CURRENT_SCHEMA = 'docs/persistence-schema.json'
@@ -649,6 +650,9 @@ function readPersistenceEntries(root: string, allowIncompleteId?: string): Persi
   const files = readdirSync(directory).sort()
   const documents = files.filter(file => file.endsWith('.md') && !file.endsWith('.zh.md') && file !== 'README.md' && file !== 'AGENTS.md')
   const snapshots = new Set(files.filter(file => file.endsWith('.schema.json')))
+  const manifestPath = join(root, 'scripts/translation-pairing.manifest.json')
+  const manifest = parseTranslationPairingManifest(existsSync(manifestPath)
+    ? readFileSync(manifestPath, 'utf8') : '{"excluded":[]}')
   const entries = documents.map((filename) => {
     const source = readFileSync(join(directory, filename), 'utf8').replaceAll('\r\n', '\n')
     const allowIncomplete = filename === `${allowIncompleteId}.md`
@@ -657,6 +661,12 @@ function readPersistenceEntries(root: string, allowIncompleteId?: string): Persi
     if (!snapshots.delete(snapshotName)) throw new Error(`${filename}: missing schema snapshot ${snapshotName}`)
     const snapshot = parsePersistenceSnapshot(JSON.parse(readFileSync(join(directory, snapshotName), 'utf8')))
     const translatedName = `${change.id}.zh.md`
+    if (isTranslationPairingManifestExcluded(`${HISTORY_DIRECTORY}/${filename}`, manifest)) {
+      if (files.includes(translatedName) || files.includes(`${change.id}.i18n.yaml`)) {
+        throw new Error(`${filename}: excluded local document must not have translation artifacts`)
+      }
+      return { record: change, snapshot }
+    }
     if (!files.includes(translatedName)) throw new Error(`${filename}: missing Chinese counterpart`)
     const translated = readFileSync(join(directory, translatedName), 'utf8').replaceAll('\r\n', '\n')
     const englishBlock = source.match(/^```yaml persistence-change[^\S\n]*\n([\s\S]*?)^```[^\S\n]*$/mu)?.[1]

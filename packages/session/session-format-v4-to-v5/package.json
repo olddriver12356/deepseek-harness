@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-session-format-v4-to-v5",
   "description": "V5 durable input admission and explicit conversion of local V4 Sessions",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.0-rc.2",
   "publishConfig": {
     "access": "public"
   },

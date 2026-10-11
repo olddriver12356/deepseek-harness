@@ -129,20 +129,33 @@ describe('Presented workspace file native open route', () => {
     expect(opener).not.toHaveBeenCalled()
   })
 
-  it('opens external regular files through absolute and relative paths but refuses final symlinks', async () => {
-    const { root, cwd, file, open, opener } = await fixture()
+  it('opens external regular files through absolute and relative paths', async () => {
+    const { root, file, open, opener } = await fixture()
     const outside = join(root, 'outside.txt')
     await writeFile(outside, 'outside')
-    const source = join(cwd, file.path)
-    await unlink(source)
-    await symlink(outside, source)
-    expect((await open()).status).toBe(404)
-    expect(opener).not.toHaveBeenCalled()
     for (const path of ['../outside.txt', outside]) {
       file.path = path
       expect((await open()).status).toBe(204)
       expect(opener.mock.lastCall?.[0].path).toBe(await realpath(outside))
     }
+  })
+
+  it('refuses final symlinks', async (test) => {
+    const { root, cwd, file, open, opener } = await fixture()
+    const outside = join(root, 'outside.txt')
+    await writeFile(outside, 'outside')
+    const source = join(cwd, file.path)
+    await unlink(source)
+    try {
+      await symlink(outside, source)
+    } catch (error) {
+      if (process.platform === 'win32' && error instanceof Error && 'code' in error && error.code === 'EPERM') {
+        test.skip('Windows account lacks file symlink privilege')
+      }
+      throw error
+    }
+    expect((await open()).status).toBe(404)
+    expect(opener).not.toHaveBeenCalled()
   })
 
   it('reports query and launcher failures without leaking Host paths and allows retry', async () => {

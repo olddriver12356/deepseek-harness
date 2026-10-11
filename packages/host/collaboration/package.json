@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-host-collaboration",
   "description": "Opt-in Host plugin that connects independently owned sessions through human-authorized peer discussion",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.0-rc.2",
   "publishConfig": {
     "access": "public"
   },

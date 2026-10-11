@@ -93,6 +93,9 @@
       "@deepseek-ai/dsh/profile-boot": [
         "./apps/cli/src/profile-boot.ts"
       ],
+      "@deepseek-ai/dsh/lib/bin.js": [
+        "./apps/cli/src/bin.ts"
+      ],
       "@deepseek-ai/dsh-browser-use": [
         "./packages/browser-use/browser-use/src/index.ts"
       ],
