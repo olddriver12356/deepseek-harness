@@ -64,9 +64,6 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/assets/*",
-    "lib/types/**/*.d.ts",
-    "LICENSE-OFL",
-    "LICENSE-BOUJOY"
+    "lib/types/**/*.d.ts"
   ]
 }

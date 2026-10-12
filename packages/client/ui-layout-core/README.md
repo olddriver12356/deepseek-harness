@@ -18,7 +18,7 @@ Share layout geometry and navigation between the standard shell and the local sh
 <a id="behavior"></a>
 ## Behavior
 
-The browser module exports column calculations, the layout store, LayoutController and DocumentTitle. It provides no root registration or ctx.layout service by itself. Each consuming shell owns its service lifecycle and declares the exact client external request.
+The statically linked browser library exports column calculations, the layout store factory and LayoutController. The Web boot kernel seeds its exports into the platform module table. Each consuming shell creates its own store and owns its root registration and ctx.layout service lifecycle; the library has no Cordis plugin row or feature lifecycle. Each shell owns its Session-aware document title projection, keeping generated Remote contracts outside the static boot dependencies.
 
 <a id="model-experience"></a>
 ## Model Experience

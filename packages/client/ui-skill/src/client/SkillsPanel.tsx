@@ -21,16 +21,16 @@ export interface CatalogItem {
 }
 export type CatalogInventory = Record<CatalogSection, readonly CatalogItem[]>
 export interface SkillsApi {
-  list(workspaceId: WorkspaceId): Promise<SkillInventory>
-  tree(workspaceId: WorkspaceId, id: SkillArtifactId): Promise<readonly SkillTreeEntry[]>
-  read(request: SkillFileRequest): Promise<SkillFileContent>
-  write(request: SkillFileWriteRequest): Promise<SkillFileContent>
-  remove(request: SkillDeleteRequest): Promise<SkillDeleteResult>
-  handoff(workspaceId: WorkspaceId, draft: SkillDraft, destination: string): () => Promise<void>
-  handoffTool(workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft): () => Promise<void>
-  catalog?(sessionId?: string, presetId?: string): Promise<CatalogInventory>
+  list(this: void, workspaceId: WorkspaceId): Promise<SkillInventory>
+  tree(this: void, workspaceId: WorkspaceId, id: SkillArtifactId): Promise<readonly SkillTreeEntry[]>
+  read(this: void, request: SkillFileRequest): Promise<SkillFileContent>
+  write(this: void, request: SkillFileWriteRequest): Promise<SkillFileContent>
+  remove(this: void, request: SkillDeleteRequest): Promise<SkillDeleteResult>
+  handoff(this: void, workspaceId: WorkspaceId, draft: SkillDraft, destination: string): () => Promise<void>
+  handoffTool(this: void, workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft): () => Promise<void>
+  catalog?(this: void, sessionId?: string, presetId?: string): Promise<CatalogInventory>
 }
-export interface SkillsPanelProps { appPanels: IAppPanels; workspaces: IWorkspaces; sessions: ISessions; api: SkillsApi; t: PanelTranslate }
+export interface SkillsPanelProps { appPanels: IAppPanels; workspaces: Pick<IWorkspaces, 'list'>; sessions: Pick<ISessions, 'list'>; api: SkillsApi; t: PanelTranslate }
 const modes: readonly Invocation[] = ['both', 'user', 'agent', 'neither']
 const errorText = (error: unknown): string => error instanceof Error ? error.message : String(error)
 const EMPTY: SkillInventory = { skills: [], projectDestination: '', personalDestination: '' }

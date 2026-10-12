@@ -36,7 +36,7 @@ function renderSelect(roster: readonly ExpertRecord[]) {
     listExperts: () => Promise.resolve(roster),
     setSelection,
     t,
-  } as unknown as Parameters<typeof ExpertSelect>[0]
+  }
   const view = render(<ExpertSelect {...props} />)
   return { ...view, setSelection }
 }

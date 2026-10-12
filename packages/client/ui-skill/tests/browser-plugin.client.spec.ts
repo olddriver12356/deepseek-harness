@@ -587,7 +587,7 @@ it('projects command and plugin remotes into the four read-only sections', async
   onTestFinished(async () => { await fiber.dispose(); await ctx.fiber.dispose() })
   await fiber.await()
   const entry = presentation.slots.entries('shell.app-overlay')[0]!
-  const injected = (entry.inject as unknown as () => { api: import('../src/client/SkillsPanel.tsx').SkillsApi })()
+  const injected = entry.inject!() as { api: import('../src/client/SkillsPanel.tsx').SkillsApi }
   const catalog = await injected.api.catalog?.('session', 'minimal')
   expect(catalog?.commands.map(item => item.name)).toEqual(['/compact', '/goal', '/goal'])
   expect(catalog?.commands[1]?.detail).toBe('/goal [<objective>|clear]')

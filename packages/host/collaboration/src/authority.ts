@@ -31,7 +31,7 @@ const issued = new WeakSet<object>()
  * @returns a capability accepted only by {@link requireHumanControl}.
  */
 export function createHumanControlAdmission(scope: HumanControlScope): HumanControlAdmission {
-  const admission = Object.freeze({ scope }) as unknown as HumanControlAdmission
+  const admission = Object.freeze({ scope }) as HumanControlAdmission
   issued.add(admission)
   return admission
 }

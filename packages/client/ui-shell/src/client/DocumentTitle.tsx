@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import type { SnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
 import type { UseSessions } from '@deepseek-ai/dsh-client-ui-session/client'
-import type { PanelInfo } from './service.ts'
+import type { PanelInfo } from '@deepseek-ai/dsh-client-ui-layout-core'
 
 /** Props for the browser title projection. */
 export interface DocumentTitleProps {

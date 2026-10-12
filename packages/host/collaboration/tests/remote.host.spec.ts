@@ -61,10 +61,16 @@ async function load() {
   ctx.baseUrl = pathToFileURL(root).href + '/'
   await ctx.plugin(Loader)
   ctx.loader.builtins.include = Include
-  ctx.loader.internal = { version: 'v2', async import(specifier: string) {
-    if (!modules.has(specifier)) throw new Error(`unknown test plugin ${specifier}`)
-    return modules.get(specifier)
-  } } as unknown as NonNullable<typeof ctx.loader.internal>
+  ctx.loader.internal = {
+    loadCache: new Map(),
+    register(): never { throw new Error('Unexpected test loader registration') },
+    getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+    resolveSync(): never { throw new Error('Unexpected test module resolution') },
+    load(): never { throw new Error('Unexpected test module load') },
+    version: 'v2', async import(specifier: string) {
+      if (!modules.has(specifier)) throw new Error(`unknown test plugin ${specifier}`)
+      return modules.get(specifier)
+    } }
   await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(config).href } })
   await ctx.loader.await()
   expect([...ctx.loader.entries()].filter(entry => !entry.disabled && entry.fiber === undefined)).toEqual([])

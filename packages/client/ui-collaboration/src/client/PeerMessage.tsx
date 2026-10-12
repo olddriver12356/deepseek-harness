@@ -4,7 +4,7 @@ export type { PeerMessageData } from './peer-definition.ts'
 import css from './Collaboration.module.css'
 
 /** Peer keyed renderer props with the feature's own typed locale. */
-export type PeerMessageProps = PropsRuntime<'conversation.chat.node', 'collaboration-peer'> & PropsLocale<'collaboration'>
+export type PeerMessageProps = Pick<PropsRuntime<'conversation.chat.node', 'collaboration-peer'>, 'node'> & PropsLocale<'collaboration'>
 
 /** @param props - one final attributed node; no Session or event scanning. @returns visibly attributed safe text. */
 export function PeerMessage({ node, t }: PeerMessageProps) {

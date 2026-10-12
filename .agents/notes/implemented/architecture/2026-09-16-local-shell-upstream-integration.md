@@ -8,7 +8,7 @@ The local application rail and Live Signal used the previous layout contract. Up
 
 ## Decision
 
-Keep the local shell as the Web root and share upstream geometry, navigation, store, and title behavior through `ui-layout-core`. Preserve the upstream `main`, `rightbar`, and root overlay seats. Local pages use a separate session-optional `shell.app-overlay` seat, rendered even when no session is selected. Live Signal keeps its independent icon-only collapse control.
+Keep the local shell as the Web root and share upstream geometry, navigation and store behavior through `ui-layout-core`. Preserve the upstream `main`, `rightbar`, and root overlay seats. Local pages use a separate session-optional `shell.app-overlay` seat, rendered even when no session is selected. Live Signal keeps its independent icon-only collapse control.
 
 Keep local Apps, Knowledge, News, Skills, Experts, Styles, Chinese navigation, protected assets, and distillation drafts. Mount each generated Remote contribution once. Disable session-log upload explicitly in the base profile. Verification uses disposable data and does not migrate the owner's existing sessions.
 
@@ -18,7 +18,7 @@ Replacing the local root with the upstream root would remove approved local navi
 
 ## Consequences
 
-Both layout providers depend on the shared browser module. A composition must activate that module before either provider. Existing running installations require rebuilding and restarting to use the merged source. Historical local implementation documents remain preserved in the owner's vault attachments.
+Both layout providers consume the same statically linked browser library through the platform module table. The Web boot kernel seeds it before dynamic plugins materialize; no composition row activates it. Store and service instances remain owned by the selected shell. Session-aware title projection stays inside each shell so generated Client contracts do not enter the static boot dependency graph. Existing running installations require rebuilding and restarting to use the merged source. Historical local implementation documents remain preserved in the owner's vault attachments.
 
 ## Testing
 

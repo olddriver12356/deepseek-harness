@@ -38,7 +38,7 @@ function parseFrontmatter(text: string): Record<string, unknown> {
     const raw = pair[2].trim()
     if (raw === '') data[pair[1]] = null
     else {
-      try { data[pair[1]] = JSON.parse(raw) as unknown }
+      try { const value: unknown = JSON.parse(raw); data[pair[1]] = value }
       catch { data[pair[1]] = raw.replace(/^'(.*)'$/u, '$1') }
     }
   }

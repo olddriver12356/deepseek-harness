@@ -13,7 +13,7 @@ it('opens registration from the empty state using the workspace picker', async (
   const panels = new AppPanelsController(); panels.setActive('apps')
   const mounted = render(<AppsPanel appPanels={panels} api={api} t={key => zh[key]} />)
   fireEvent.click(screen.getByRole('button', { name: /注册应用$/ }))
-  await waitFor(() => expect(screen.getByDisplayValue('Example')).toBeTruthy())
+  await waitFor(() => { expect(screen.getByDisplayValue('Example')).toBeTruthy() })
   expect(api.pick).toHaveBeenCalledOnce()
   expect(screen.getByDisplayValue('dev')).toBeTruthy()
   mounted.unmount()

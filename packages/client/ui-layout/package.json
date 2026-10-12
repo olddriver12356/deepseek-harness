@@ -34,10 +34,7 @@
         "@deepseek-ai/dsh-client-ui-theme",
         "@deepseek-ai/dsh-client-shortcuts"
       ],
-      "platform": "web",
-      "external": [
-        "@deepseek-ai/dsh-client-ui-layout-core/client"
-      ]
+      "platform": "web"
     }
   },
   "scripts": {

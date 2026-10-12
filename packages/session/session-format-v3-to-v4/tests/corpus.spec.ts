@@ -91,6 +91,8 @@ it('refuses recorded parent/child clock conflicts and migrates consistent copies
 })
 
 const EXPECTED_CONFLICTS = [
+  // The retained local predecessor has a different child clock from its parent catalog.
+  'snapshots/sdk/subagent-activation-limit/session.1.v3.jsonl',
   'snapshots/sdk/subagent-continuable-inheritance/session.1.v3.jsonl',
   'snapshots/sdk/subagent-continuable/session.1.v3.jsonl',
   'snapshots/sdk/subagent-fork-in-process/session.1.v3.jsonl',

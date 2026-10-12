@@ -44,13 +44,13 @@ function visibleArtifacts(
 }
 
 const SUMMARY_LAYERS = [
-  { id: 'intake', label: 'INTAKE LAYER', description: '待处理 artifacts' },
-  { id: 'ai-processing', label: '', description: '' },
-  { id: 'knowledge', label: 'KNOWLEDGE LAYER', description: 'active artifacts' },
+  { id: 'intake', labelKey: 'intakeSummary', descriptionKey: 'intakeDescription' },
+  { id: 'ai-processing', labelKey: 'processingSummary', descriptionKey: 'processingDescription' },
+  { id: 'knowledge', labelKey: 'knowledgeSummary', descriptionKey: 'knowledgeDescription' },
 ] as const satisfies readonly {
   readonly id: KnowledgeLayerId
-  readonly label: string
-  readonly description: string
+  readonly labelKey: KnowledgeLocaleKey
+  readonly descriptionKey: KnowledgeLocaleKey
 }[]
 
 function KnowledgeHeader({ t, children }: { readonly t: Translate; readonly children?: ReactNode }): ReactNode {
@@ -58,7 +58,7 @@ function KnowledgeHeader({ t, children }: { readonly t: Translate; readonly chil
     <header className={css.header}>
       <div className={css.titleLockup}>
         <span className={css.titleMark}>02</span>
-        <div><strong>{t('panelTitle')}</strong><small>第二大脑</small></div>
+        <div><strong>{t('panelTitle')}</strong><small>{t('panelCaption')}</small></div>
       </div>
       <div className={css.headerActions}>
         <span className={css.readOnly}>{t('workflowBoundary')}</span>
@@ -73,14 +73,14 @@ function KnowledgeHero({ snapshot, t }: { readonly snapshot: KnowledgeSnapshot; 
   return (
     <section className={css.hero}>
       <div className={css.heroCopy}>
-        <p className={css.kicker}>LOCAL AGENT LAYERS / ONE SOURCE</p>
-        <h1>你的第二大脑，<span>正在形成。</span></h1>
+        <p className={css.kicker}>{t('heroKicker')}</p>
+        <h1>{t('heroLead')}<span>{t('heroFocus')}</span></h1>
         <p>{t('boundary')}</p>
       </div>
-      <div className={css.metrics} aria-label="Knowledge metrics">
-        <span><b>{String(snapshot.artifacts.length).padStart(2, '0')}</b> ARTIFACTS</span>
-        <span><b>{String(snapshot.layers.length).padStart(2, '0')}</b> LAYERS</span>
-        <span><b>{String(activeCount).padStart(2, '0')}</b> ACTIVE</span>
+      <div className={css.metrics} aria-label={t('metrics')}>
+        <span><b>{String(snapshot.artifacts.length).padStart(2, '0')}</b> {t('artifactCount')}</span>
+        <span><b>{String(snapshot.layers.length).padStart(2, '0')}</b> {t('layerCount')}</span>
+        <span><b>{String(activeCount).padStart(2, '0')}</b> {t('activeCount')}</span>
       </div>
     </section>
   )
@@ -110,24 +110,24 @@ function KnowledgeControls({
   return (
     <div className={css.controls}>
       <label className={css.search}>
-        <span>搜索</span>
+        <span>{t('search')}</span>
         <input
           type="search"
           value={query}
           onChange={(event: ChangeEvent<HTMLInputElement>) => { onQueryChange(event.currentTarget.value) }}
-          placeholder="搜索标题、类型或摘要…"
+          placeholder={t('searchPlaceholder')}
         />
       </label>
       <div className={css.filterRow}>
-        <div className={css.filters} role="group" aria-label="Layers">
-          <button type="button" aria-pressed={activeLayer === 'all'} onClick={() => { onLayerChange('all') }}>全部</button>
+        <div className={css.filters} role="group" aria-label={t('layers')}>
+          <button type="button" aria-pressed={activeLayer === 'all'} onClick={() => { onLayerChange('all') }}>{t('allLayers')}</button>
           {snapshot.layers.map(layer => (
             <button key={layer.id} type="button" aria-pressed={activeLayer === layer.id} onClick={() => { onLayerChange(layer.id) }}>
               {layer.ordinal} {layer.label}
             </button>
           ))}
         </div>
-        <div className={css.filters} role="group" aria-label="Kind">
+        <div className={css.filters} role="group" aria-label={t('kind')}>
           {KIND_OPTIONS.map(option => (
             <button key={option.id} type="button" aria-pressed={activeKind === option.id} onClick={() => { onKindChange(option.id) }}>
               {t(option.labelKey)}
@@ -139,18 +139,19 @@ function KnowledgeControls({
   )
 }
 
-function FocusArtifact({ artifact, layer, onOpen }: {
+function FocusArtifact({ artifact, layer, onOpen, t }: {
+  readonly t: Translate
   readonly artifact: KnowledgeArtifact | undefined
   readonly layer: KnowledgeLayer | undefined
   readonly onOpen: ((id: string) => void) | undefined
 }): ReactNode {
-  if (artifact === undefined) return <p className={css.emptyFocus}>当前筛选没有可聚焦的 artifact。</p>
+  if (artifact === undefined) return <p className={css.emptyFocus}>{t('emptyFocus')}</p>
   return (
     <article className={css.focusCard}>
       <small>{layer?.ordinal} {layer?.label.toUpperCase()} / {artifact.state}</small>
       <h3>{artifact.title}</h3>
       <p>{artifact.summary}</p>
-      <button type="button" disabled={onOpen === undefined} aria-disabled={onOpen === undefined} onClick={() => { onOpen?.(artifact.id) }}>打开 ARTIFACT →</button>
+      <button type="button" disabled={onOpen === undefined} aria-disabled={onOpen === undefined} onClick={() => { onOpen?.(artifact.id) }}>{t('openArtifact')}</button>
     </article>
   )
 }
@@ -169,8 +170,8 @@ function LayerSummary({ snapshot, activeLayer, onLayerChange, t }: {
         <button key={summary.id} type="button" className={css.layerCard} aria-pressed={activeLayer === summary.id} onClick={() => { onLayerChange(summary.id) }}>
           <span>{layerById.get(summary.id)?.ordinal.toString().padStart(2, '0')}</span>
           <span>
-            <strong>{summary.id === 'ai-processing' ? t('processingSummary') : summary.label}</strong>
-            <small>{summary.id === 'ai-processing' ? t('processingDescription') : summary.description}</small>
+            <strong>{t(summary.labelKey)}</strong>
+            <small>{t(summary.descriptionKey)}</small>
           </span>
           <b>{String(countFor(summary.id)).padStart(2, '0')}</b>
         </button>
@@ -237,7 +238,7 @@ export function KnowledgePanel({
   const selected = visible.find(artifact => artifact.id === selectedArtifactId) ?? visible[0]
 
   return (
-    <section className={css.panel} data-knowledge-panel hidden={activePanel !== 'knowledge'} aria-label="知识库 / 第二大脑">
+    <section className={css.panel} data-knowledge-panel hidden={activePanel !== 'knowledge'} aria-label={t('panelAria')}>
       <KnowledgeHeader t={t}>{children}</KnowledgeHeader>
       <div className={css.viewport}>
         <main ref={entranceRef} className={css.content}>
@@ -254,22 +255,23 @@ export function KnowledgePanel({
           />
           <div className={css.topGrid}>
             <section aria-labelledby="knowledge-focus-heading">
-              <header className={css.sectionHead}><h2 id="knowledge-focus-heading">当前知识</h2><span>FOCUS ARTIFACT</span></header>
+              <header className={css.sectionHead}><h2 id="knowledge-focus-heading">{t('focusHeading')}</h2><span>{t('focusCaption')}</span></header>
               <FocusArtifact
+                t={t}
                 artifact={selected}
                 layer={selected === undefined ? undefined : layerById.get(selected.layerId)}
                 onOpen={onOpen}
               />
             </section>
             <aside aria-labelledby="knowledge-layer-heading">
-              <header className={css.sectionHead}><h2 id="knowledge-layer-heading">层级状态</h2><span>{t('layerOverview')}</span></header>
+              <header className={css.sectionHead}><h2 id="knowledge-layer-heading">{t('layerHeading')}</h2><span>{t('layerOverview')}</span></header>
               <LayerSummary snapshot={snapshot} activeLayer={activeLayer} onLayerChange={setActiveLayer} t={t} />
             </aside>
           </div>
           <section ref={cardsRef} className={css.library} aria-labelledby="knowledge-library-heading">
-            <header className={css.sectionHead}><h2 id="knowledge-library-heading">Agent artifacts</h2><span>{String(visible.length).padStart(2, '0')} RESULTS</span></header>
+            <header className={css.sectionHead}><h2 id="knowledge-library-heading">{t('artifactsHeading')}</h2><span>{String(visible.length).padStart(2, '0')} {t('results')}</span></header>
             {visible.length === 0
-              ? <p className={css.emptyResults}>这个 Layer 还没有 artifact。</p>
+              ? <p className={css.emptyResults}>{t('emptyLayer')}</p>
               : (
                 <ArtifactGrid
                   artifacts={visible}

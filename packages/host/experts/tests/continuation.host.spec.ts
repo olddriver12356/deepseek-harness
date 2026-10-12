@@ -77,7 +77,7 @@ describe('expert continuation through Loader', () => {
       const releaseSecond = ctx.experts.reserveDelegation(parent, SessionId('reserved-two'), expert!)
       expect(() => ctx.experts.reserveDelegation(parent, SessionId('reserved-three'), expert!)).toThrow('concurrent delegation limit')
       releaseFirst(); releaseSecond()
-      const result = await ExpertTool.runExpertTool(ctx as never, roster,
+      const result = await ExpertTool.runExpertTool(ctx, roster,
         { expert: 'reviewer', task: 'Inspect the failure without editing.' }, { agent: parent, signal: new AbortController().signal })
       await vi.waitFor(() => { expect(ctx.agents.get(result.childId)).toBeUndefined() })
       const first = await loadStoredSession(ctx.sessionPersistence, result.childId)

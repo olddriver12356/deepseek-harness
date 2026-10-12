@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LiveSignalPanel } from '@deepseek-ai/dsh-client-ui-shell/src/client/LiveSignalPanel.tsx'
 import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
+import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { zh } from '../src/client/locales.ts'
 
 afterEach(cleanup)
 
@@ -31,6 +33,7 @@ function mount(options: MountOptions = {}) {
     tokenUsage: options.usage,
   }
   const props = {
+    t: makeTranslate(zh),
     sessionId: 's-test' as never,
     useProjection: ((key: string) => projections[key]) as never,
     useSessionStatus: ((select: (map: Map<string, { pendingInteraction: MountOptions['pending'] }>) => unknown) =>

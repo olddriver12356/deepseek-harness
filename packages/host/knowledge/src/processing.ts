@@ -39,7 +39,7 @@ export function processingInput(source: string): string {
   const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
   for (const line of clean.split('\n')) {
     let row: unknown
-    try { row = JSON.parse(line) as unknown } catch { continue }
+    try { row = JSON.parse(line) } catch { continue }
     if (!object(row) || !object(row.data)) continue
     const user = row.type === 'user/message'
     const message = user ? row.data : row.type === 'assistant/message' ? row.data.message : undefined

@@ -194,7 +194,6 @@
     "@deepseek-ai/dsh-host-experts": "workspace:*",
     "@deepseek-ai/dsh-host-knowledge": "workspace:*",
     "@deepseek-ai/dsh-host-styles": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-layout-core": "workspace:*",
     "@deepseek-ai/dsh-client-ui-personal": "workspace:*"
   },
   "peerDependencies": {

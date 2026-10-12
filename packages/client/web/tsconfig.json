@@ -30,6 +30,9 @@
       "path": "../ui-dockkit"
     },
     {
+      "path": "../ui-layout-core"
+    },
+    {
       "path": "../ui-renderer"
     },
     {

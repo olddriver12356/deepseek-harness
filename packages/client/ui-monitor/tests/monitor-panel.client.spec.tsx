@@ -9,7 +9,10 @@ import {
   type MonitorEffortAccess,
   type MonitorPanelProps,
 } from '../src/client/MonitorPanel.tsx'
-import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import { conversationSnapshot } from '@deepseek-ai/dsh-client-test-runtime'
+import { PartialArguments } from '@deepseek-ai/dsh-util-values'
+import type { TrajectorySnapshot } from '@deepseek-ai/dsh-client-ui-trajectory/client'
+import type { ConversationSnapshot, ConversationViewSnapshotMap } from '@deepseek-ai/dsh-client-ui-conversation/client'
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
@@ -35,10 +38,9 @@ function renderMonitor(options: {
 }
 
 /** A session snapshot exposing only the canonical trajectory view target. */
-function snapshotWithTrajectory(trajectory: unknown): ConversationSnapshot {
-  return {
-    views: { get: (target: string) => target === 'trajectory' ? trajectory : undefined },
-  } as unknown as ConversationSnapshot
+function snapshotWithTrajectory(trajectory: TrajectorySnapshot): ConversationSnapshot {
+  const views: Partial<ConversationViewSnapshotMap> = { trajectory }
+  return conversationSnapshot({ views: { get: target => views[target], grouped: () => undefined } })
 }
 
 /** A stub over the shared ModelDirectory, matching the real store's contract. */
@@ -368,9 +370,10 @@ describe('MonitorPanel', () => {
   it('summarizes the canonical conversation.view trajectory target', () => {
     renderMonitor({
       snapshot: snapshotWithTrajectory({
-        eventNodes: [{ time: 1_700_000_000_000 }, { time: 1_700_000_060_000 }],
-        requests: [{ status: 'complete' }, { status: 'running' }, { status: 'error' }],
-        runningCalls: [{}],
+        eventNodes: [1_700_000_000_000, 1_700_000_060_000].map((time, seq) => ({ kind: 'user', seq, time, content: [], source: { kind: 'user' } })),
+        requests: (['complete', 'running', 'error'] as const).map((status, step) => ({ purpose: 'assistant', startSeq: step, turn: 1, step, startedAt: step, completedAt: status === 'running' ? null : step + 1, status })),
+        runningCalls: [{ phase: 'start', callId: 'call', name: 'test', turn: 1, step: 1, time: 1, subCalls: [], args: new PartialArguments(), argsRaw: '{}' }],
+        eventLocations: new Map(), callSchemas: new Map(), partial: null,
       }),
     })
 

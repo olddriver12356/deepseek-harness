@@ -5,7 +5,10 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { useEntranceMotion } from '../src/useEntranceMotion.ts'
 
 const animation = vi.hoisted(() => ({ revert: vi.fn() }))
-const animate = vi.hoisted(() => vi.fn(() => animation))
+const animate = vi.hoisted(() => vi.fn((
+  _targets: HTMLElement | HTMLElement[],
+  _options: { onComplete: (self: typeof animation) => void; delay?: unknown },
+) => animation))
 vi.mock('animejs', () => ({ animate, stagger: (delay: number) => delay }))
 let reduced = false
 const listeners = new Set<() => void>()
@@ -19,7 +22,7 @@ afterEach(() => { vi.clearAllMocks(); reduced = false })
 it('reverts completion only once, including StrictMode cleanup', () => {
   const view = render(<StrictMode><Surface active /></StrictMode>)
   expect(animate).toHaveBeenCalledTimes(2)
-  const options = (animate.mock.calls as unknown as [unknown, { onComplete: (self: typeof animation) => void }][])[1]![1]
+  const options = animate.mock.calls[1]![1]
   act(() => { options.onComplete(animation) })
   view.unmount()
   expect(animation.revert).toHaveBeenCalledTimes(2)
@@ -39,7 +42,8 @@ it('limits card entrances to eight visible marked descendants and preserves hove
     </div>
   }
   const view = render(<Cards />)
-  const [targets, options] = (animate.mock.calls as unknown as [HTMLElement[], Record<string, unknown>][])[0]!
+  const [targets, options] = animate.mock.calls[0]!
+  if (!Array.isArray(targets)) throw new Error('Expected card targets')
   expect(targets).toHaveLength(8)
   expect(targets.every(target => target.dataset.outside === undefined)).toBe(true)
   expect(options).not.toHaveProperty('translateY')

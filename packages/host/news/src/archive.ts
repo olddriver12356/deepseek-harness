@@ -53,7 +53,10 @@ function parseArchive(value: string): ArchivedNewsItem[] {
     }
     const url = new URL(record.url)
     if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('news archive: invalid article URL')
-    records.push(record as unknown as ArchivedNewsItem)
+    records.push({
+      schema: record.schema, kind: record.kind, url: record.url, title: record.title,
+      source: record.source, summary: record.summary, fetchedAt: record.fetchedAt, publishedAt: record.publishedAt,
+    })
   }
   return records
 }

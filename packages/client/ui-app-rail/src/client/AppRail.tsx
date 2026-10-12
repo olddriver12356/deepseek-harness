@@ -16,21 +16,21 @@ import { zh, type RailKey } from './locales.ts'
 interface RailEntry {
   id: PanelId
   number: string
-  label: RailKey
+  labelKey: RailKey
   caption: RailKey
 }
 
 /** Entry order, numbers, and copy are the legacy client's, which is the source of truth. */
 const ENTRIES: readonly RailEntry[] = [
-  { id: 'agent', number: '01', label: 'agent', caption: 'agentCaption' },
-  { id: 'knowledge', number: '02', label: 'knowledge', caption: 'knowledgeCaption' },
-  { id: 'skills', number: '03', label: 'skills', caption: 'skillsCaption' },
-  { id: 'experts', number: '04', label: 'experts', caption: 'expertsCaption' },
-  { id: 'styles', number: '05', label: 'styles', caption: 'stylesCaption' },
-  { id: 'monitor', number: '06', label: 'monitor', caption: 'monitorCaption' },
-  { id: 'apps', number: '07', label: 'apps', caption: 'appsCaption' },
-  { id: 'personal', number: '08', label: 'personal', caption: 'personalCaption' },
-  { id: 'news', number: '08', label: 'news', caption: 'newsCaption' },
+  { id: 'agent', number: '01', labelKey: 'agent', caption: 'agentCaption' },
+  { id: 'knowledge', number: '02', labelKey: 'knowledge', caption: 'knowledgeCaption' },
+  { id: 'skills', number: '03', labelKey: 'skills', caption: 'skillsCaption' },
+  { id: 'experts', number: '04', labelKey: 'experts', caption: 'expertsCaption' },
+  { id: 'styles', number: '05', labelKey: 'styles', caption: 'stylesCaption' },
+  { id: 'monitor', number: '06', labelKey: 'monitor', caption: 'monitorCaption' },
+  { id: 'apps', number: '07', labelKey: 'apps', caption: 'appsCaption' },
+  { id: 'personal', number: '08', labelKey: 'personal', caption: 'personalCaption' },
+  { id: 'news', number: '08', labelKey: 'news', caption: 'newsCaption' },
 ]
 
 /** News remains the final destination even when later pages are appended. */
@@ -55,7 +55,7 @@ export function AppRail({ appPanels, t = (key: RailKey) => zh[key] }: { appPanel
           onClick={() => { appPanels.setActive(entry.id) }}
         >
           <span ref={entry.id === active ? markerRef : undefined} className={css.number}>{String(index + 1).padStart(2, '0')}</span>
-          <strong>{t(entry.label)}</strong>
+          <strong>{t(entry.labelKey)}</strong>
           <small>{t(entry.caption)}</small>
         </button>
       ))}

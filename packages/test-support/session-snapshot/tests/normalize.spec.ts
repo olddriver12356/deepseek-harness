@@ -31,7 +31,7 @@ describe('materializeSessionFixtureCwd', () => {
   it('keeps Windows separators and quoted path data valid in hydrated JSONL', () => {
     const cwd = 'C:\\Users\\Snapshot\\quoted"data'
     const fixture = '{"type":"session","cwd":"{{cwd}}"}\n{"text":"read {{cwd}}/file.txt"}\n'
-    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map(line => JSON.parse(line) as unknown)
+    const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n').map((line): unknown => JSON.parse(line))
     expect(rows).toEqual([{ type: 'session', cwd }, { text: `read ${cwd}/file.txt` }])
   })
 
@@ -54,7 +54,7 @@ describe('materializeSessionFixtureCwd', () => {
       },
     ].map(row => JSON.stringify(row)).join('\n') + '\n'
     const rows = materializeSessionFixtureCwd(fixture, cwd).trim().split('\n')
-      .map(line => JSON.parse(line) as unknown)
+      .map((line): unknown => JSON.parse(line))
     const expectedArgs = args.replace('{{cwd}}', JSON.stringify(cwd).slice(1, -1))
     const call = rows[0] as { data: { arguments: string } }
     const assistant = rows[1] as {

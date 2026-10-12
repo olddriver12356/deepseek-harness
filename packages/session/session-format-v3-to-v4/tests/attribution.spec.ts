@@ -34,7 +34,7 @@ describe('uninstalled producer attribution', () => {
     // The format reader validates stored JSON; adoption validates the current Session fields.
     const session = Session.fromRestore(
       SessionId(header.id), restored.events as readonly SessionEvent[],
-      { ...restored.header, version: SESSION_FORMAT_VERSION } as unknown as SessionHeader,
+      { ...restored.header, version: SESSION_FORMAT_VERSION } as SessionHeader,
       SessionLogOffset(restored.inheritedEventCount), 'detached',
     )
     expect(session.deriveMessages()).toEqual([message])

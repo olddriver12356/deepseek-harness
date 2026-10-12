@@ -32,7 +32,7 @@ function reopen(rows: readonly Row[], inherited = 0, seeded = false) {
   }
   const artifact = restore.finish()
   expect(artifact.inheritedEventCount).toBe(inherited)
-  const session = Session.fromRestore(SessionId(artifact.header.id), artifact.events as SessionEvent[], { ...artifact.header, version: SESSION_FORMAT_VERSION } as unknown as SessionHeader, SessionLogOffset(inherited), 'detached')
+  const session = Session.fromRestore(SessionId(artifact.header.id), artifact.events as SessionEvent[], { ...artifact.header, version: SESSION_FORMAT_VERSION } as SessionHeader, SessionLogOffset(inherited), 'detached')
   return { artifact, messages: session.deriveMessages() }
 }
 

@@ -6,7 +6,6 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-tools'
-import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import { PersonalWorker } from './worker.ts'
 import { saveQuickNote } from './quick-note.ts'
 import { listMemory, readMemory } from './vault-memory.ts'
@@ -96,7 +95,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     compaction = new UnderstandingCompaction(ctx, worker, config.compaction)
   }
   const lifetime = new AbortController()
-  ctx.effect(() => () => lifetime.abort(), 'personal: understanding tidy-up')
+  ctx.effect(() => () => { lifetime.abort() }, 'personal: understanding tidy-up')
   for (const tool of tools) {
     ctx.effect(() => ctx.tools.register({
       name: tool.name,
@@ -116,7 +115,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         if (result.isError) throw new Error(result.content.map(item => item.text).join('\n'))
         return result.structuredContent
       },
-    } as ToolDefinition), `personal: ${tool.name}`)
+    }), `personal: ${tool.name}`)
   }
   ctx.effect(() => ctx.webServer.register({ kind: 'prefix', path: PREFIX, handler: async (req, res) => {
     const rejection = ctx.connection.requestRejection(req)
@@ -154,17 +153,21 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       let bytes = 0
       const chunks: Buffer[] = []
       for await (const chunk of req) {
-        bytes += chunk.length
+        const data: unknown = chunk
+        if (!Buffer.isBuffer(data)) { res.writeHead(400); res.end(); return }
+        bytes += data.length
         if (bytes > 1_048_576) { res.writeHead(413); res.end(); return }
-        chunks.push(chunk)
+        chunks.push(data)
       }
       body = Buffer.concat(chunks).toString('utf8')
       if (path === '/api/observer') {
         try {
           if (req.method === 'POST') {
-            const payload = JSON.parse(body)
-            const isValid = payload && Object.keys(payload).length === 1 && typeof payload.enabled === 'boolean'
-            if (!observer || !isValid) throw new Error('Invalid observer switch')
+            const payload: unknown = JSON.parse(body)
+            if (!observer || typeof payload !== 'object' || payload === null || Array.isArray(payload)
+              || Object.keys(payload).length !== 1 || !('enabled' in payload) || typeof payload.enabled !== 'boolean') {
+              throw new Error('Invalid observer switch')
+            }
             await observer.setEnabled(payload.enabled)
           }
           res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -178,8 +181,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           let result: unknown
           if (req.method === 'GET') result = await compaction.summary()
           else {
-            const payload = JSON.parse(body)
-            result = payload?.action === 'propose' ? await compaction.propose(lifetime.signal) : await compaction.apply(payload?.id, payload?.accepted)
+            const payload: unknown = JSON.parse(body)
+            if (typeof payload !== 'object' || payload === null || !('action' in payload)) throw new Error('Invalid compaction request')
+            if (payload.action === 'propose') result = await compaction.propose(lifetime.signal)
+            else if (payload.action === 'apply' && 'id' in payload && 'accepted' in payload) {
+              result = await compaction.apply(payload.id, payload.accepted)
+            } else throw new Error('Invalid compaction action')
           }
           res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(result))
         } catch (error) {
@@ -191,7 +198,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
       if (path === '/api/vault-profile') {
         try {
-          const payload = req.method === 'GET' ? { action: 'status' } : JSON.parse(body)
+          const payload: unknown = req.method === 'GET' ? { action: 'status' } : JSON.parse(body)
           const result = await worker.request({ kind: 'profile', payload })
           res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(result))
         } catch {

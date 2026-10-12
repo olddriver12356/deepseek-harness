@@ -79,7 +79,6 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts",
-    "lib/assets/*"
+    "lib/types/**/*.d.ts"
   ]
 }

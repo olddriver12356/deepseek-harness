@@ -63,11 +63,17 @@ it('composes real slots and Peer renderer through Loader, then restores truthful
   runtime.ctx.baseUrl = pathToFileURL(root).href + '/'
   await runtime.ctx.plugin(Loader)
   runtime.ctx.loader.builtins.include = Include
-  runtime.ctx.loader.internal = { version: 'v2', async import(name: string) {
-    if (name === 'chat-owner') return owner
-    if (name === 'discussion') return CollaborationUi
-    throw new Error(`Unexpected import ${name}`)
-  } } as unknown as NonNullable<typeof runtime.ctx.loader.internal>
+  runtime.ctx.loader.internal = {
+    loadCache: new Map(),
+    register(): never { throw new Error('Unexpected test loader registration') },
+    getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+    resolveSync(): never { throw new Error('Unexpected test module resolution') },
+    load(): never { throw new Error('Unexpected test module load') },
+    version: 'v2', async import(name: string) {
+      if (name === 'chat-owner') return owner
+      if (name === 'discussion') return CollaborationUi
+      throw new Error(`Unexpected import ${name}`)
+    } }
   await runtime.ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(config).href } })
   await runtime.ctx.loader.await()
   for (const row of runtime.ctx.loader.entries()) await row.fiber?.await()

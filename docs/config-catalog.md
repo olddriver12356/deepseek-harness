@@ -533,7 +533,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-client-ui-personal`
 
 - `inject`: `webServer` · `connection` · `tools`
-- `source`: [`packages/client/ui-personal/src/index.ts:21`](../packages/client/ui-personal/src/index.ts)
+- `source`: [`packages/client/ui-personal/src/index.ts:20`](../packages/client/ui-personal/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -4871,7 +4871,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-jobs` | — | [`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-knowledge` | — | [`packages/client/ui-knowledge/src/index.ts`](../packages/client/ui-knowledge/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-layout` | — | [`packages/client/ui-layout/src/index.ts`](../packages/client/ui-layout/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-layout-core` | — | [`packages/client/ui-layout-core/src/index.ts`](../packages/client/ui-layout-core/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-message-feedback` | — | [`packages/client/ui-message-feedback/src/index.ts`](../packages/client/ui-message-feedback/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-model-selection` | — | [`packages/client/ui-model-selection/src/index.ts`](../packages/client/ui-model-selection/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-monitor` | — | [`packages/client/ui-monitor/src/index.ts`](../packages/client/ui-monitor/src/index.ts) |
@@ -4997,6 +4996,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-client-store` | — | [`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts) |
 | `@deepseek-ai/dsh-client-test-runtime` | — | [`packages/test-support/client-runtime/src/index.ts`](../packages/test-support/client-runtime/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-dockkit` | — | [`packages/client/ui-dockkit/src/index.ts`](../packages/client/ui-dockkit/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-layout-core` | — | [`packages/client/ui-layout-core/src/index.ts`](../packages/client/ui-layout-core/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-primitives` | — | [`packages/client/ui-primitives/src/index.ts`](../packages/client/ui-primitives/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-slots` | — | [`packages/client/ui-slots/src/index.ts`](../packages/client/ui-slots/src/index.ts) |
 | `@deepseek-ai/dsh-client-web` | — | [`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts) |

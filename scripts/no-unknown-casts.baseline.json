@@ -1611,19 +1611,12 @@
   "packages/session/session-format-v3-to-v4/src/codec.ts": {
     "5a8270cf9b1e554ae0cff6eaf7086e44c22f61a08e5f91dc7e1397eccaa726a5": 2
   },
-  "packages/session/session-format-v3-to-v4/tests/attribution.spec.ts": {
-    "7705a694f19a2409a0d8bc84036a0a0144755e5f2aa8795e8ab657564927d394": 1
-  },
-  "packages/session/session-format-v3-to-v4/tests/developer-relationships.spec.ts": {
-    "b7b0048f08f63c22d5c0a9cc512a95f7ae9bd5188181f703058deff58b0edc68": 1
-  },
   "packages/session/session-format-v3-to-v4/tests/fork.spec.ts": {
     "0311422ffc9c766724a844aede6e2bcb77cb52cee8d1bee59bc18634193d354f": 1
   },
   "packages/session/session-format-v3-to-v4/tests/relationships.spec.ts": {
     "119e5d0bf0e95baeb0ce47d0c1945620ee991a81458a06b1882822aa40189b6e": 1,
-    "24e2efd9d3df1ae659dc7d9b558212f60e913e72a8cc58cc36f7d0dc9b0238b5": 1,
-    "908e86b966e23795a88c1adc8a8b0326a1dbbd40f03c48104ca7acb3f4f08157": 1
+    "24e2efd9d3df1ae659dc7d9b558212f60e913e72a8cc58cc36f7d0dc9b0238b5": 1
   },
   "packages/session/session-format-v3-to-v4/tests/sources.spec.ts": {
     "2cdaa938f46b5aab2b075c996126dd970fc27b50b9ae01b466f8c485a5e625e1": 1
@@ -1661,7 +1654,6 @@
     "2cef494036356ef5678c909bb231ce0b40b987befb3167b4fd33033a1425504b": 1,
     "3b261f9e70cd1db3a4c0ccd8946d6fd56c2581f11066ad76bd8cdd43a7c12c2f": 1,
     "b93c44ab1091311eb33a6daef3eaa986cc981b5e29bd66eadbd94fad17efc51f": 1,
-    "cdd46c8ceda6d5707bc2abfba329351ba06bcc030b314a3c799d72a4971bd5a4": 2,
     "f36c9eb275a387531e7c9c193c1fddf984cc8ff8a8fd3a95474630a737b5f728": 1
   },
   "packages/session/session-persistence-jsonl/tests/jsonl.spec.ts": {

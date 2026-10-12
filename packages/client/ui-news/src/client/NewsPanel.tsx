@@ -41,16 +41,16 @@ export interface NewsPanelProps {
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
-function formatTime(value: string | null): string {
-  if (value === null) return 'TIME UNKNOWN'
+function formatTime(value: string | null, t: (key: NewsActionKey) => string): string {
+  if (value === null) return t('timeUnknown')
   const date = new Date(value)
-  return Number.isNaN(date.valueOf()) ? 'TIME UNKNOWN' : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return Number.isNaN(date.valueOf()) ? t('timeUnknown') : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 type CaptureState = 'idle' | 'saving' | 'saved' | 'failed'
 
-const CAPTURE_LABEL: Record<CaptureState, string> = {
-  idle: '收入 Knowledge', saving: '收入中…', saved: '已收入', failed: '收入失败，重试',
+const CAPTURE_KEYS: Record<CaptureState, NewsActionKey> = {
+  idle: 'captureIdle', saving: 'captureSaving', saved: 'captureSaved', failed: 'captureFailed',
 }
 
 function NewsCard({ item, kind, retrievedAt, saveToKnowledge, distillNews, t }: {
@@ -105,7 +105,7 @@ function NewsCard({ item, kind, retrievedAt, saveToKnowledge, distillNews, t }: 
       <div className={css.copy}>
         <div className={css.meta}>
           <span className={css.source}>{item.source}</span>
-          <span className={css.time}>{formatTime(item.publishedAt)}</span>
+          <span className={css.time}>{formatTime(item.publishedAt, t)}</span>
         </div>
         <h3>{item.title}</h3>
         {item.summary !== '' && <p className={css.summary}>{item.summary}</p>}
@@ -123,12 +123,12 @@ function NewsCard({ item, kind, retrievedAt, saveToKnowledge, distillNews, t }: 
               onClick={() => { void onCapture() }}
               type="button"
             >
-              {CAPTURE_LABEL[capture]}
+              {t(CAPTURE_KEYS[capture])}
             </button>
           )}
         </div>
         {distillError !== null && <p role="alert">{distillError}</p>}
-        <a className={css.sourceLink} href={item.url} rel="noreferrer" target="_blank">阅读原文 ↗</a>
+        <a className={css.sourceLink} href={item.url} rel="noreferrer" target="_blank">{t('readArticle')}</a>
       </div>
     </article>
   )
@@ -146,9 +146,9 @@ function NewsColumn({ title, kind, items, state, retrievedAt, saveToKnowledge, d
 }): ReactNode {
   return (
     <section className={css.column}>
-      <header className={css.columnHeader}><h2>{title}</h2><b>{kind} / {items.length} ITEMS</b></header>
-      {state === 'loading' && <p className={css.state}>正在抓取最近三天的更新…</p>}
-      {state === 'ready' && items.length === 0 && <p className={css.state}>最近三天没有可展示的内容。</p>}
+      <header className={css.columnHeader}><h2>{title}</h2><b>{kind} / {items.length} {t('items')}</b></header>
+      {state === 'loading' && <p className={css.state}>{t('loadingFeed')}</p>}
+      {state === 'ready' && items.length === 0 && <p className={css.state}>{t('emptyFeed')}</p>}
       {state === 'ready' && items.length > 0 && <div className={css.cards}>{items.map(item => <NewsCard item={item} key={item.url} kind={kind} retrievedAt={retrievedAt} saveToKnowledge={saveToKnowledge} distillNews={distillNews} t={t} />)}</div>}
     </section>
   )
@@ -175,9 +175,9 @@ export function NewsPanel({ appPanels, read, saveToKnowledge, distillNews, t = k
       setState('ready')
     } catch {
       setState('error')
-      setError('新闻源暂时不可用，请稍后重试。')
+      setError(t('feedUnavailable'))
     }
-  }, [read])
+  }, [read, t])
   useEffect(() => {
     if (active === 'news' && state === 'idle') void load(false)
   }, [active, load, state])
@@ -185,23 +185,23 @@ export function NewsPanel({ appPanels, read, saveToKnowledge, distillNews, t = k
   return (
     <main ref={panelRef} className={css.panel} data-news-panel data-news-state={state}>
       <header className={css.header}>
-        <div className={css.lockup}><span className={css.mark}>06</span><div><strong>新闻</strong><small>AI 实时动态</small></div></div>
-        <span className={css.status}>LIVE FEED · LAST 3 DAYS</span>
+        <div className={css.lockup}><span className={css.mark}>06</span><div><strong>{t('panelTitle')}</strong><small>{t('panelCaption')}</small></div></div>
+        <span className={css.status}>{t('feedStatus')}</span>
       </header>
       <div className={css.viewport}>
         <div className={css.content}>
           <section className={css.hero}>
             <div>
-              <p className={css.kicker}>AI FEED / LAST 3 DAYS</p>
-              <h1>最近三天，<br /><span>AI 世界发生了什么？</span></h1>
-              <p>新闻与工具各取最多 10 条，来自公开 RSS。点击卡片直达原文；刷新只触发 native news service 的新一轮抓取。</p>
+              <p className={css.kicker}>{t('feedKicker')}</p>
+              <h1>{t('heroLead')}<br /><span>{t('heroFocus')}</span></h1>
+              <p>{t('feedDescription')}</p>
             </div>
-            <div><button className={css.refresh} disabled={state === 'loading'} onClick={() => { void load(true) }} type="button">{state === 'loading' ? '抓取中…' : '↻ 刷新抓取'}</button><p className={css.fetched}>{snapshot.fetchedAt === null ? '尚未抓取' : `更新于 ${formatTime(snapshot.fetchedAt)}`}</p></div>
+            <div><button className={css.refresh} disabled={state === 'loading'} onClick={() => { void load(true) }} type="button">{state === 'loading' ? t('fetching') : t('refreshFeed')}</button><p className={css.fetched}>{snapshot.fetchedAt === null ? t('notFetched') : t('updatedAt').replace('{time}', formatTime(snapshot.fetchedAt, t))}</p></div>
           </section>
           {error !== null && <p className={css.error} role="alert">{error}</p>}
           <div ref={cardsRef} className={css.columns}>
-            <NewsColumn items={snapshot.news} kind="NEWS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} distillNews={distillNews} t={t} state={state} title="AI 实时新闻" />
-            <NewsColumn items={snapshot.tools} kind="TOOLS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} distillNews={distillNews} t={t} state={state} title="工具与模型动态" />
+            <NewsColumn items={snapshot.news} kind="NEWS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} distillNews={distillNews} t={t} state={state} title={t('newsColumn')} />
+            <NewsColumn items={snapshot.tools} kind="TOOLS" retrievedAt={snapshot.fetchedAt} saveToKnowledge={saveToKnowledge} distillNews={distillNews} t={t} state={state} title={t('toolsColumn')} />
           </div>
         </div>
       </div>

@@ -32,7 +32,7 @@ async function bench() {
     list: vi.fn(async () => ({ ok: true, value: [] })),
     create: vi.fn(async () => ({ ok: true, value: {} })),
     update: vi.fn(async () => ({ ok: true, value: {} })),
-    delete: vi.fn(async () => ({ ok: true, value: undefined })),
+    delete: vi.fn(async (_parts: { type: string; text: string }[]) => ({ ok: true, value: undefined })),
     dispatch: vi.fn(async () => ({ ok: true, value: { text: 'child result' } })),
   }
   ctx.provide('remote.experts', experts as never)
@@ -106,8 +106,8 @@ describe('Experts plugin apply', () => {
 
   it('never injects a delegated Expert into the Session, because the Agent dispatches it as a tool', async () => {
     const { ctx, slots, sessions } = await bench()
-    const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
-    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } } as never)
+    const prompt = vi.fn(async (_parts: { type: string; text: string }[]) => ({ ok: true, value: undefined }))
+    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } })
     sessions.binding = (() => ({
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never
@@ -133,8 +133,8 @@ describe('Experts plugin apply', () => {
 
   it('keeps injecting a conversational Expert into the current Session', async () => {
     const { ctx, slots, sessions } = await bench()
-    const prompt = vi.fn(async () => ({ ok: true, value: undefined }))
-    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } } as never)
+    const prompt = vi.fn(async (_parts: { type: string; text: string }[]) => ({ ok: true, value: undefined }))
+    sessions.list.getSnapshot = () => ({ byId: { 'session-1': { id: 'session-1', retainedBy: { mainView: 1 } } } })
     sessions.binding = (() => ({
       session: { beginSubmission: () => ({ requestId: 'r1', abandon: vi.fn() }), prompt },
     })) as never
@@ -150,7 +150,7 @@ describe('Experts plugin apply', () => {
     await injected.api.dispatch(expert, 'Teach me closures.', undefined)
 
     expect(prompt).toHaveBeenCalledTimes(1)
-    const [parts] = prompt.mock.calls[0] as unknown as [{ type: string; text: string }[]]
+    const [parts] = prompt.mock.calls[0]!
     expect(parts[0]?.text).toContain('Ask, do not answer.')
     expect(parts[0]?.text).toContain('Teach me closures.')
   })

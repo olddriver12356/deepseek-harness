@@ -28,6 +28,7 @@ export function apply(ctx: ClientContext): void {
     () => ctx.slots.register(
       {
         name: 'app.rail',
+        locale: 'appRail',
         inject: () => ({ appPanels: ctx.appPanels, t: ctx.locale.bind('appRail') }),
       },
       AppRail,
@@ -38,6 +39,7 @@ export function apply(ctx: ClientContext): void {
     () => ctx.slots.register(
       {
         name: 'shell.overlay',
+        locale: 'appRail',
         id: 'ui-app-rail-proof-panel',
         inject: () => ({ appPanels: ctx.appPanels }),
       },

@@ -62,7 +62,7 @@ export async function inspectProject(directory: string): Promise<ProjectInspecti
   return {
     directory: resolved,
     name: typeof manifest.name === 'string' ? manifest.name : resolved.split(/[\\/]/).at(-1) ?? resolved,
-    scripts: Object.fromEntries(entries) as Record<string, string>,
+    scripts: Object.fromEntries(entries),
     packageManagers: packageManagers.length ? packageManagers : ['npm'],
   }
 }

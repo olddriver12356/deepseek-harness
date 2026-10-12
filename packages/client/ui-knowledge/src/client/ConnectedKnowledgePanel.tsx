@@ -183,7 +183,7 @@ function EvidenceReader({ text, t }: { text: string; t: Translate }) {
     const result: { role: string; text: string }[] = []
     for (const line of text.split('\n')) {
       let row: unknown
-      try { row = JSON.parse(line) as unknown } catch { continue /* Non-JSON evidence is rendered as Markdown below. */ }
+      try { row = JSON.parse(line) } catch { continue /* Non-JSON evidence is rendered as Markdown below. */ }
       if (!object(row) || !object(row.data)) continue
       const message = row.type === 'user/message' ? row.data
         : row.type === 'assistant/message' ? row.data.message : undefined

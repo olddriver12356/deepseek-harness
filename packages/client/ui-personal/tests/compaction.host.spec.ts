@@ -19,8 +19,8 @@ import * as Personal from '../src/index.ts'
 function request(port: number, path: string, cookie = '', body?: unknown) {
   return new Promise<{ status: number; body: string; cookie: string }>((resolve, reject) => {
     const req = httpRequest({ hostname: '127.0.0.1', port, path, method: body === undefined ? 'GET' : 'POST', headers: { cookie, 'content-type': 'application/json' } }, (res) => {
-      let text = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { text += chunk })
-      res.on('end', () => resolve({ status: res.statusCode!, body: text, cookie: res.headers['set-cookie']?.[0]?.split(';')[0] ?? '' }))
+      let text = ''; res.setEncoding('utf8'); res.on('data', (chunk: string) => { text += chunk })
+      res.on('end', () => { resolve({ status: res.statusCode!, body: text, cookie: res.headers['set-cookie']?.[0]?.split(';')[0] ?? '' }) })
     }); req.on('error', reject); req.end(body === undefined ? undefined : JSON.stringify(body))
   })
 }
@@ -63,14 +63,20 @@ it('proposes through the default model and applies only owner-accepted stored it
       credentials: Credentials, web: WebServer, connection: Connection, prompt: SystemPrompt,
       tools: Tools, sessions: Sessions, model, personal: Personal,
     }
-    ctx.loader.internal = { version: 'v2', async import(name: string) { return modules[name] } } as unknown as NonNullable<typeof ctx.loader.internal>
+    ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+      version: 'v2', async import(name: string) { return modules[name] } }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(path).href } }); await ctx.loader.await()
     const port = ctx.webServer.port
     ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/', handler: (req, res) => { if (ctx.connection.authorizeIndex(req, res)) res.end('ok') } }))
     const launch = new URL(ctx.connection.authenticatedUrl(`http://127.0.0.1:${port}/`))
     const cookie = (await request(port, launch.pathname + launch.search)).cookie
-    const api = async (body?: unknown) => { const response = await request(port, '/personal/api/compaction', cookie, body); return { status: response.status, value: JSON.parse(response.body) } }
-    const bok = async (route: string, body?: unknown) => JSON.parse((await request(port, `/personal/api/bok/v1/person/${route}`, cookie, body)).body)
+    const api = async (body?: unknown) => { const response = await request(port, '/personal/api/compaction', cookie, body); return { status: response.status, value: JSON.parse(response.body) as Record<string, unknown> } }
+    const bok = async (route: string, body?: unknown): Promise<unknown> => JSON.parse((await request(port, `/personal/api/bok/v1/person/${route}`, cookie, body)).body)
     expect((await request(port, '/personal/api/compaction')).status).toBe(401)
     const observe = ctx.tools.get('bok_observe_conversation')!
     const run = { signal: new AbortController().signal } as never
@@ -103,7 +109,7 @@ it('proposes through the default model and applies only owner-accepted stored it
     const receipts = join(root, 'private/.bok/dsh-compaction')
     const receiptNames = await readdir(receipts)
     expect(receiptNames).toEqual(expect.arrayContaining([`${proposal.id}.request.json`, `${proposal.id}.proposal.json`]))
-    expect(JSON.parse(await readFile(join(receipts, `${proposal.id}.request.json`), 'utf8')).request.system).toBe(calls.at(-1)!.system)
+    expect((JSON.parse(await readFile(join(receipts, `${proposal.id}.request.json`), 'utf8')) as { request: { system: unknown } }).request.system).toBe(calls.at(-1)!.system)
 
     expect((await api({ action: 'apply', id: proposal.id, accepted: [5] })).value).toMatchObject({ error: 'compaction_failed', message: 'Invalid accepted compaction items' })
     const result = (await api({ action: 'apply', id: proposal.id, accepted: [0] })).value as { backup_id: string; applied: { kind: string; id: string; merged: string[] }[]; error: string }

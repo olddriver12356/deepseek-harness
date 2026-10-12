@@ -1,10 +1,11 @@
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 // @vitest-environment jsdom
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { AppPanelsController } from '../../ui-shell/src/client/app-panels.ts'
-import type { IWorkspaces } from '@deepseek-ai/dsh-api-workspace-controller/client'
-import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
+import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SkillArtifact, SkillFileContent, WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
 import { SkillsPanel, type SkillsApi } from '../src/client/SkillsPanel.tsx'
 import { panelEn, type PanelTranslate } from '../src/client/panel-locales.ts'
@@ -31,16 +32,16 @@ const t: PanelTranslate = (key, params) => Object.entries(params ?? {}).reduce((
 function setup(extraSkills: Partial<SkillArtifact>[] = []) {
   HTMLDialogElement.prototype.showModal = function () { this.open = true }
   const workspaceId = 'workspace' as WorkspaceId
-  const workspaceState = { items: [{ workspaceId, title: 'Example', path: '/project', sessionIds: ['session'] }] }
-  const sessionState = { byId: { session: { id: 'session', retainedBy: { mainView: 1 } } } }
-  const workspaces = { list: { getSnapshot: () => workspaceState, subscribe: () => () => {} } } as unknown as IWorkspaces
-  const sessions = { list: { getSnapshot: () => sessionState, subscribe: () => () => {} } } as unknown as ISessions
+  const workspaceState: WorkspaceSnapshot = { archivedSessionIds: [], pinnedSessionIds: [], state: 'idle', phase: 'ready', error: null, items: [{ workspaceId, title: 'Example', path: '/project', sessionIds: ['session' as SessionId], createdAt: '2026-10-01T00:00:00Z', updatedAt: '2026-10-01T00:00:00Z' }] }
+  const sessionState: SessionListState = { ids: ['session' as SessionId], phase: 'ready', projectionsBySession: {}, byId: { ['session' as SessionId]: { id: 'session' as SessionId, displayTitle: 'Session', running: false, blank: false, updatedAt: 1, retainedBy: { mainView: 1 } } } }
+  const workspaces = { list: { getSnapshot: () => workspaceState, subscribe: () => () => {} } }
+  const sessions = { list: { getSnapshot: () => sessionState, subscribe: () => () => {} } }
   const appPanels = new AppPanelsController()
   appPanels.setActive('skills')
   const item: SkillArtifact = { id: 'capture' as SkillArtifact['id'], name: 'capture', description: 'Capture sources', category: 'writing', origin: '', scope: 'project', source: 'project-agents', path: '/project/.agents/skills/capture/SKILL.md', canonicalPath: '/project/.agents/skills/capture/SKILL.md', entryFile: 'SKILL.md', bundle: true, userInvocable: true, modelInvocable: true, shadowed: false, writable: true, problem: '' }
   const content: SkillFileContent = { file: 'SKILL.md', content: '---\nname: capture\ndescription: Capture sources\nmetadata:\n  category: writing\n---\nRead source', revision: 'revision', bytes: 100 }
   const run = vi.fn().mockResolvedValue(undefined)
-  const api: SkillsApi = { list: vi.fn().mockResolvedValue({ skills: [item, ...extraSkills.map(skill => ({ ...item, ...skill }))], projectDestination: '/project/.agents/skills', personalDestination: '/user/.agents/skills' }), tree: vi.fn().mockResolvedValue([{ path: 'SKILL.md', kind: 'file' }, { path: 'references', kind: 'directory' }, { path: 'references/note.md', kind: 'file' }]), read: vi.fn().mockImplementation(async request => ({ ...content, file: request.file })), write: vi.fn().mockImplementation(async request => ({ ...content, content: request.content })), remove: vi.fn().mockResolvedValue({ recoveryPath: '/recovery/capture' }), handoff: vi.fn().mockReturnValue(run), handoffTool: vi.fn().mockReturnValue(run) }
+  const api: SkillsApi = { list: vi.fn().mockResolvedValue({ skills: [item, ...extraSkills.map(skill => ({ ...item, ...skill }))], projectDestination: '/project/.agents/skills', personalDestination: '/user/.agents/skills' }), tree: vi.fn().mockResolvedValue([{ path: 'SKILL.md', kind: 'file' }, { path: 'references', kind: 'directory' }, { path: 'references/note.md', kind: 'file' }]), read: vi.fn<SkillsApi['read']>().mockImplementation(async request => ({ ...content, file: request.file })), write: vi.fn<SkillsApi['write']>().mockImplementation(async request => ({ ...content, content: request.content })), remove: vi.fn().mockResolvedValue({ recoveryPath: '/recovery/capture' }), handoff: vi.fn().mockReturnValue(run), handoffTool: vi.fn().mockReturnValue(run) }
   render(<SkillsPanel appPanels={appPanels} api={api} sessions={sessions} workspaces={workspaces} t={t} />)
   return { api, run }
 }
@@ -110,7 +111,7 @@ it('shows category groups and creates a personal skill in the selected workspace
   const dialog = screen.getByRole('dialog')
   fireEvent.change(dialog.querySelector('select')!, { target: { value: 'personal' } })
   fireEvent.click(screen.getByRole('button', { name: 'Draft in new session' }))
-  await waitFor(() => expect(run).toHaveBeenCalledOnce())
+  await waitFor(() => { expect(run).toHaveBeenCalledOnce() })
   expect(api.handoff).toHaveBeenCalledWith('workspace', expect.objectContaining({ name: '', instructions: 'Summarize notes', scope: 'personal' }), '/user/.agents/skills')
 })
 
@@ -135,7 +136,7 @@ it('confirms removal and reports the recovery path', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Delete capture' }))
   vi.mocked(api.list).mockResolvedValue({ skills: [], projectDestination: '', personalDestination: '' })
   fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
-  await waitFor(() => expect(api.remove).toHaveBeenCalledWith({ workspaceId: 'workspace', id: 'capture', canonicalPath: '/project/.agents/skills/capture/SKILL.md' }))
+  await waitFor(() => { expect(api.remove).toHaveBeenCalledWith({ workspaceId: 'workspace', id: 'capture', canonicalPath: '/project/.agents/skills/capture/SKILL.md' }) })
   expect(await screen.findByText('/recovery/capture')).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Delete capture' })).toBeNull()
 })
@@ -161,19 +162,19 @@ it('keeps the Skills workbench and shows read-only tool sections', async () => {
 it('hands a described command to a new session and retries the same handoff after failure', async () => {
   const { api, run } = setup()
   fireEvent.click(screen.getByRole('button', { name: 'Commands' }))
-  await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Create command' }).disabled).toBe(false))
+  await waitFor(() => { expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Create command' }).disabled).toBe(false) })
   fireEvent.click(screen.getByRole('button', { name: 'Create command' }))
   const dialog = screen.getByRole('dialog', { name: 'Create command' })
   fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: ' /review ' } })
   fireEvent.change(screen.getByRole('textbox', { name: 'Description' }), { target: { value: ' Review current changes ' } })
   run.mockRejectedValueOnce(new Error('connection lost'))
   fireEvent.click(screen.getByRole('button', { name: 'Continue in new session' }))
-  await waitFor(() => expect(dialog.querySelector('[role="alert"]')).toHaveProperty('textContent', 'connection lost'))
+  await waitFor(() => { expect(dialog.querySelector('[role="alert"]')).toHaveProperty('textContent', 'connection lost') })
   expect(dialog.isConnected).toBe(true)
   expect(api.handoffTool).toHaveBeenCalledOnce()
   expect(api.handoffTool).toHaveBeenCalledWith('workspace', 'commands', { name: '/review', description: 'Review current changes' })
   fireEvent.click(screen.getByRole('button', { name: 'Retry handoff' }))
-  await waitFor(() => expect(run).toHaveBeenCalledTimes(2))
+  await waitFor(() => { expect(run).toHaveBeenCalledTimes(2) })
   expect(api.handoffTool).toHaveBeenCalledOnce()
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Create command' })).toBeNull())
+  await waitFor(() => { expect(screen.queryByRole('dialog', { name: 'Create command' })).toBeNull() })
 })

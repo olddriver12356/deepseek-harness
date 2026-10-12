@@ -63,7 +63,13 @@ it.skipIf(process.env['DSH_VAULT_ROOT'] === undefined).each([false, true])('capt
       ['@deepseek-ai/dsh-session-projection', SessionProjections],
     ])
     // The fixture supplies only the import operation used by this Loader composition.
-    ctx.loader.internal = { version: 'v2', import: async (name: string) => modules.get(name) } as unknown as typeof ctx.loader.internal
+    ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+      version: 'v2', import: async (name: string) => modules.get(name) }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(config).href } })
     await ctx.loader.await()
     const sessionId = SessionId('knowledge-source')
@@ -202,7 +208,13 @@ it.skipIf(process.env['DSH_VAULT_ROOT'] === undefined)('saveText derives a stabl
       ['@deepseek-ai/dsh-host-knowledge', KnowledgeService],
     ])
     // The fixture supplies only the import operation used by this Loader composition.
-    ctx.loader.internal = { version: 'v2', import: async (name: string) => modules.get(name) } as unknown as typeof ctx.loader.internal
+    ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+      version: 'v2', import: async (name: string) => modules.get(name) }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(config).href } })
     await ctx.loader.await()
     const knowledge = ctx.get('knowledge') as KnowledgeService
@@ -216,7 +228,7 @@ it.skipIf(process.env['DSH_VAULT_ROOT'] === undefined)('saveText derives a stabl
     expect(different.id).not.toBe(first.id)
     await expect(knowledge.saveText({ ...request, sourceUrl: '' })).rejects.toThrow('knowledge: source URL and content are required')
     // A malformed Remote call from the browser can omit a field entirely; TypeScript cannot guard that at the wire boundary.
-    await expect(knowledge.saveText({ ...request, sourceUrl: undefined as unknown as string })).rejects.toThrow('knowledge: source URL and content are required')
+    await expect(Reflect.apply(knowledge.saveText.bind(knowledge), undefined, [{ ...request, sourceUrl: undefined }])).rejects.toThrow('knowledge: source URL and content are required')
   } finally {
     await ctx.fiber.dispose()
     await rm(root, { recursive: true, force: true })

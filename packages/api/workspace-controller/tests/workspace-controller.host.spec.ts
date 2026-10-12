@@ -72,7 +72,13 @@ async function harness(options: { loaded?: boolean; systemDocuments?: boolean } 
   let controller: WorkspaceController
   if (options.loaded) {
     await ctx.plugin(Loader)
-    ctx.loader.internal = { version: 'v2', import: async () => WorkspaceController } as unknown as typeof ctx.loader.internal
+    ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+      version: 'v2', import: async () => WorkspaceController }
     await ctx.loader.create({ name: 'fixture:workspace-controller', config: { documentsDirectory: root } })
     await ctx.loader.await()
     controller = ctx.workspaceController

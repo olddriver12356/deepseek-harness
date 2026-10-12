@@ -9,6 +9,7 @@ import type {} from '@deepseek-ai/dsh-token-meter/client'
 // Type-only: merges ui-trajectory's ConversationViewSnapshotMap row so
 // `views.get('trajectory')` reads the canonical trajectory target.
 import type {} from '@deepseek-ai/dsh-client-ui-trajectory/client'
+import { zh, type MonitorKey } from './locales.ts'
 import css from './MonitorPanel.module.css'
 
 /** One adapter-owned reasoning level, as the host's model catalog reports it. */
@@ -59,6 +60,7 @@ export interface MonitorEffortAccess {
 }
 
 export interface MonitorPanelProps {
+  readonly t?: (key: MonitorKey) => string
   readonly appPanels: IAppPanels
   readonly useConversation: MaybeSnapshotSelectorHook<ConversationSnapshot>
   readonly useProjection: UseProjection
@@ -224,7 +226,10 @@ function downloadUsageStats(state: UsageStatsSnapshot, format: 'csv' | 'json'): 
   URL.revokeObjectURL(url)
 }
 
-function TokenCard({ useProjection }: { readonly useProjection: UseProjection }): ReactNode {
+function TokenCard({ t, useProjection }: {
+  readonly t: (key: MonitorKey) => string
+  readonly useProjection: UseProjection
+}): ReactNode {
   const usage = useProjection('tokenUsage')
   const input = usage === undefined ? undefined : usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens
   const total = input === undefined || usage === undefined ? undefined : input + usage.outputTokens
@@ -232,13 +237,13 @@ function TokenCard({ useProjection }: { readonly useProjection: UseProjection })
     ? undefined
     : Math.min(100, Math.round(usage.cacheReadTokens / input * 100))
   const figures = [
-    ['输入', input],
-    ['输出', usage?.outputTokens],
-    ['缓存读取', usage?.cacheReadTokens],
-    ['总计', total],
+    [t('input'), input],
+    [t('output'), usage?.outputTokens],
+    [t('cacheRead'), usage?.cacheReadTokens],
+    [t('total'), total],
   ] as const satisfies readonly (readonly [string, number | undefined])[]
   return (
-    <StatCard title="当前会话 Tokens" label="当前会话">
+    <StatCard title={t('sessionTokens')} label={t('currentSession')}>
       <div className={css.tokenFigures}>
         {figures.map(([label, value]) => {
           const displayValue = value === undefined ? '—' : formatTokens(value)
@@ -251,7 +256,7 @@ function TokenCard({ useProjection }: { readonly useProjection: UseProjection })
         })}
       </div>
       <div className={css.cacheRow}>
-        <span>缓存命中率</span>
+        <span>{t('cacheHitRate')}</span>
         <div className={css.cacheTrack}><i style={{ width: `${cacheHit ?? 0}%` }} /></div>
         <b>{cacheHit === undefined ? '—' : `${cacheHit}%`}</b>
       </div>
@@ -272,19 +277,22 @@ function PlaceholderCard({ title, label, missing }: {
   )
 }
 
-function TokenCompositionPanel({ useProjection }: { readonly useProjection: UseProjection }): ReactNode {
+function TokenCompositionPanel({ t, useProjection }: {
+  readonly t: (key: MonitorKey) => string
+  readonly useProjection: UseProjection
+}): ReactNode {
   const usage = useProjection('tokenUsage')
   const pressure = useProjection('contextPressure')
   const percent = contextOccupancy(pressure)?.percent
   const values = [
-    ['输入', usage?.uncachedInputTokens],
-    ['输出', usage?.outputTokens],
-    ['缓存读取', usage?.cacheReadTokens],
-    ['缓存写入', usage?.cacheWriteTokens],
+    [t('input'), usage?.uncachedInputTokens],
+    [t('output'), usage?.outputTokens],
+    [t('cacheRead'), usage?.cacheReadTokens],
+    [t('cacheWrite'), usage?.cacheWriteTokens],
   ] as const satisfies readonly (readonly [string, number | undefined])[]
   return (
     <section className={css.dataPanel}>
-      <div className={css.panelHead}><h2>当前会话 Token 构成</h2><span className={css.panelNote}>NATIVE PROJECTION</span></div>
+      <div className={css.panelHead}><h2>{t('sessionComposition')}</h2><span className={css.panelNote}>{t('projectionCaption')}</span></div>
       <div className={css.compGrid}>
         {values.map(([label, value]) => {
           const displayValue = value === undefined ? '—' : formatTokens(value)
@@ -296,7 +304,7 @@ function TokenCompositionPanel({ useProjection }: { readonly useProjection: UseP
           )
         })}
       </div>
-      <p className={css.muted}>{percent === undefined ? '等待 native contextPressure projection' : `上下文占用 ${percent}%`}</p>
+      <p className={css.muted}>{percent === undefined ? t('waitingContext') : t('contextPercent').replace('{percent}', String(percent))}</p>
     </section>
   )
 }
@@ -314,7 +322,10 @@ function currentModelOf(state: MonitorDirectoryState): MonitorDirectoryState['gr
   return undefined
 }
 
-function EffortCardLive({ access }: { readonly access: MonitorEffortAccess }): ReactNode {
+function EffortCardLive({ t, access }: {
+  readonly t: (key: MonitorKey) => string
+  readonly access: MonitorEffortAccess
+}): ReactNode {
   const state = useSyncExternalStore(access.subscribe, access.getState)
   // The catalog is advisory and loaded on demand; both other entries do the
   // same on open, and the directory de-duplicates concurrent loads.
@@ -324,7 +335,7 @@ function EffortCardLive({ access }: { readonly access: MonitorEffortAccess }): R
   const effective = state.current?.reasoningEffort ?? reasoning?.defaultEffort
   if (state.error !== null) {
     return (
-      <StatCard title="推理强度" label="MODEL SESSION">
+      <StatCard title={t('reasoningEffort')} label={t('modelSessionCaption')}>
         <strong className={css.placeholderValue}>—</strong>
         <p className={css.muted}>{state.error}</p>
       </StatCard>
@@ -332,12 +343,12 @@ function EffortCardLive({ access }: { readonly access: MonitorEffortAccess }): R
   }
   if (reasoning === undefined) {
     return (
-      <StatCard title="推理强度" label="MODEL SESSION">
+      <StatCard title={t('reasoningEffort')} label={t('modelSessionCaption')}>
         <strong className={css.placeholderValue}>—</strong>
         <p className={css.muted}>
           {state.status === 'loading' || state.status === 'idle'
-            ? '正在读取模型目录'
-            : model === undefined ? '等待 native 模型选择' : `${model.name} 不支持推理强度`}
+            ? t('loadingModels')
+            : model === undefined ? t('waitingModel') : t('unsupportedEffort').replace('{model}', model.name)}
         </p>
       </StatCard>
     )
@@ -347,12 +358,12 @@ function EffortCardLive({ access }: { readonly access: MonitorEffortAccess }): R
   const choices: readonly (readonly [string, string | undefined, string])[] = [
     ...reasoning.defaultEffort === undefined
       ? []
-      : [['provider-default', undefined, '提供商默认'] as const],
+      : [['provider-default', undefined, t('providerDefault')] as const],
     ...reasoning.efforts.map(level => [`effort:${level.id}`, level.id, level.name] as const),
   ]
   return (
-    <StatCard title="推理强度" label="MODEL SESSION">
-      <div className={css.effortRow} role="radiogroup" aria-label="推理强度">
+    <StatCard title={t('reasoningEffort')} label={t('modelSessionCaption')}>
+      <div className={css.effortRow} role="radiogroup" aria-label={t('reasoningEffort')}>
         {choices.map(([key, id, label]) => (
           <button
             aria-checked={effective === id}
@@ -367,22 +378,25 @@ function EffortCardLive({ access }: { readonly access: MonitorEffortAccess }): R
           </button>
         ))}
       </div>
-      <p className={css.muted}>{model === undefined ? '当前模型' : model.name}</p>
+      <p className={css.muted}>{model === undefined ? t('currentModel') : model.name}</p>
     </StatCard>
   )
 }
 
-function EffortCard({ effort }: { readonly effort: MonitorEffortAccess | undefined }): ReactNode {
+function EffortCard({ t, effort }: {
+  readonly t: (key: MonitorKey) => string
+  readonly effort: MonitorEffortAccess | undefined
+}): ReactNode {
   if (effort === undefined) {
     return (
       <PlaceholderCard
-        title="推理强度"
-        label="MODEL SESSION"
-        missing="— 无活跃会话，或 ui-model-selection 未加载"
+        title={t('reasoningEffort')}
+        label={t('modelSessionCaption')}
+        missing={t('effortUnavailable')}
       />
     )
   }
-  return <EffortCardLive access={effort} />
+  return <EffortCardLive t={t} access={effort} />
 }
 
 /**
@@ -390,16 +404,16 @@ function EffortCard({ effort }: { readonly effort: MonitorEffortAccess | undefin
  * Agent panel's 轨迹 tab renders, not a reconstruction: `views.get('trajectory')`
  * is ui-trajectory's own registered snapshot builder output.
  */
-function TrajectoryPanel({ useConversation }: {
+function TrajectoryPanel({ t, useConversation }: { readonly t: (key: MonitorKey) => string
   readonly useConversation: MaybeSnapshotSelectorHook<ConversationSnapshot>
 }): ReactNode {
   const snapshot = useConversation(session => session.views.get('trajectory'))
   if (snapshot === undefined) {
     return (
       <PlaceholderPanel
-        title="运行轨迹"
-        label="CONVERSATION.VIEW"
-        missing="— 无活跃会话，或 trajectory view target 尚未装载"
+        title={t('trajectory')}
+        label={t('trajectoryCaption')}
+        missing={t('trajectoryUnavailable')}
       />
     )
   }
@@ -412,16 +426,16 @@ function TrajectoryPanel({ useConversation }: {
   let latest = 0
   for (const node of snapshot.eventNodes) latest = Math.max(latest, node.time)
   const figures = [
-    ['事件', snapshot.eventNodes.length],
-    ['请求', snapshot.requests.length],
-    ['进行中', running + snapshot.runningCalls.length],
-    ['失败', failed],
+    [t('events'), snapshot.eventNodes.length],
+    [t('requests'), snapshot.requests.length],
+    [t('running'), running + snapshot.runningCalls.length],
+    [t('failed'), failed],
   ] as const satisfies readonly (readonly [string, number])[]
   return (
     <section className={css.dataPanel}>
       <div className={css.panelHead}>
-        <h2>运行轨迹</h2>
-        <span className={css.panelNote}>CONVERSATION.VIEW</span>
+        <h2>{t('trajectory')}</h2>
+        <span className={css.panelNote}>{t('trajectoryCaption')}</span>
       </div>
       <div className={css.compGrid}>
         {figures.map(([label, value]) => (
@@ -433,8 +447,8 @@ function TrajectoryPanel({ useConversation }: {
       </div>
       <p className={css.muted}>
         {latest === 0
-          ? '尚无轨迹事件'
-          : `最近事件 ${new Date(latest).toLocaleTimeString()} · 完整三模式轨迹见 Agent 面板的「轨迹」标签`}
+          ? t('noEvents')
+          : t('latestEvent').replace('{time}', new Date(latest).toLocaleTimeString())}
       </p>
     </section>
   )
@@ -456,48 +470,54 @@ function PlaceholderPanel({ title, label, missing, children }: {
 }
 
 /** One of the six usage-stats stat cards, sourced from the same `totals` the real 使用统计 page reads. */
-function UsageStatsNumberCard({ title, value, note }: {
+function UsageStatsNumberCard({ t, title, value, note }: { readonly t: (key: MonitorKey) => string
   readonly title: string
   readonly value: number | undefined
   readonly note: string
 }): ReactNode {
   return (
-    <StatCard title={title} label="USAGE STATS">
+    <StatCard title={title} label={t('usageCaption')}>
       <strong className={value === undefined ? css.placeholderValue : css.metricValue}>{value === undefined ? '—' : value}</strong>
-      <p className={css.muted}>{value === undefined ? '— native usage-stats bridge unavailable' : note}</p>
+      <p className={css.muted}>{value === undefined ? t('usageUnavailable') : note}</p>
     </StatCard>
   )
 }
 
-function UsageStatsTokensCard({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+function UsageStatsTokensCard({ t, state }: {
+  readonly t: (key: MonitorKey) => string
+  readonly state: UsageStatsSnapshot | undefined
+}): ReactNode {
   return (
-    <StatCard title="Tokens 用量" label="USAGE STATS">
+    <StatCard title={t('tokenUsage')} label={t('usageCaption')}>
       <strong className={state === undefined ? css.placeholderValue : css.metricValue}>
         {state === undefined ? '—' : formatTokens(state.totals.tokens)}
       </strong>
       <p className={css.muted}>
         {state === undefined
-          ? '— native usage-stats bridge unavailable'
-          : `输入 ${formatTokens(state.totals.input)} · 输出 ${formatTokens(state.totals.output)}`}
+          ? t('usageUnavailable')
+          : t('inputOutput').replace('{input}', formatTokens(state.totals.input)).replace('{output}', formatTokens(state.totals.output))}
       </p>
     </StatCard>
   )
 }
 
-function UsageStatsMostUsedModelCard({ model }: { readonly model: UsageStatsMostUsedModel | undefined }): ReactNode {
+function UsageStatsMostUsedModelCard({ t, model }: {
+  readonly t: (key: MonitorKey) => string
+  readonly model: UsageStatsMostUsedModel | undefined
+}): ReactNode {
   return (
-    <StatCard title="最常用模型" label="USAGE STATS">
+    <StatCard title={t('mostUsedModel')} label={t('usageCaption')}>
       <strong className={model === undefined ? css.placeholderValue : `${css.metricValue} ${css.metricValueSmall}`}>
         {model === undefined ? '—' : model.model}
       </strong>
       <p className={css.muted}>
-        {model === undefined ? '— native usage-stats bridge unavailable' : `${Math.round(model.percent * 10) / 10}% · ${model.provider}`}
+        {model === undefined ? t('usageUnavailable') : `${Math.round(model.percent * 10) / 10}% · ${model.provider}`}
       </p>
     </StatCard>
   )
 }
 
-function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
+function UsageStatsFilters({ t, rangeDays, onRangeChange, state }: { readonly t: (key: MonitorKey) => string
   readonly rangeDays: UsageStatsRangeDays
   readonly onRangeChange: (days: UsageStatsRangeDays) => void
   readonly state: UsageStatsSnapshot | undefined
@@ -505,16 +525,16 @@ function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
   return (
     <>
       <div className={css.toolbar}>
-        <span className={css.toolbarLabel}>趋势范围</span>
+        <span className={css.toolbarLabel}>{t('trendRange')}</span>
         <div className={css.range}>
-          <button className={css.pill} data-active={rangeDays === 7} onClick={() => { onRangeChange(7) }} type="button">最近 7 天</button>
-          <button className={css.pill} data-active={rangeDays === 30} onClick={() => { onRangeChange(30) }} type="button">最近 30 天</button>
+          <button className={css.pill} data-active={rangeDays === 7} onClick={() => { onRangeChange(7) }} type="button">{t('lastWeek')}</button>
+          <button className={css.pill} data-active={rangeDays === 30} onClick={() => { onRangeChange(30) }} type="button">{t('lastMonth')}</button>
         </div>
       </div>
       <div className={css.filters}>
         <div className={css.filtersLeft}>
-          <button className={css.pill} disabled title="native 数据暂未按工作区拆分" type="button">全部工作区 ▾</button>
-          <button className={css.pill} disabled title="native 数据暂未按任务拆分" type="button">全部任务 ▾</button>
+          <button className={css.pill} disabled title={t('workspaceUnavailable')} type="button">{t('allWorkspaces')}</button>
+          <button className={css.pill} disabled title={t('tasksUnavailable')} type="button">{t('allTasks')}</button>
         </div>
         <div className={css.filtersRight}>
           <button
@@ -523,7 +543,7 @@ function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
             onClick={() => { if (state !== undefined) downloadUsageStats(state, 'csv') }}
             type="button"
           >
-            ↓ CSV
+            {t('exportCsv')}
           </button>
           <button
             className={`${css.pill} ${css.pillExport}`}
@@ -531,7 +551,7 @@ function UsageStatsFilters({ rangeDays, onRangeChange, state }: {
             onClick={() => { if (state !== undefined) downloadUsageStats(state, 'json') }}
             type="button"
           >
-            ↓ JSON
+            {t('exportJson')}
           </button>
         </div>
       </div>
@@ -594,10 +614,10 @@ function HoverCard({ x, y, title, rows }: {
 }
 
 /** Hover rows for one heatmap day: totals plus the day's own busiest model, so a dark cell says what drove it. */
-function heatmapHoverRows(day: UsageStatsDay): readonly HoverCardRow[] {
+function heatmapHoverRows(day: UsageStatsDay, t: (key: MonitorKey) => string): readonly HoverCardRow[] {
   const rows: HoverCardRow[] = [
-    { key: 'tokens', label: 'Token', value: formatTokens(day.tokens) },
-    { key: 'calls', label: '调用', value: String(day.calls) },
+    { key: 'tokens', label: t('tokenLabel'), value: formatTokens(day.tokens) },
+    { key: 'calls', label: t('calls'), value: String(day.calls) },
   ]
   let top: readonly [string, number] | undefined
   for (const entry of Object.entries(day.models)) if (top === undefined || entry[1] > top[1]) top = entry
@@ -611,11 +631,14 @@ function heatmapHoverRows(day: UsageStatsDay): readonly HoverCardRow[] {
  * Columns are proportional so any week count fits the panel with no
  * horizontal scroll.
  */
-function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+function UsageStatsHeatmap({ t, state }: {
+  readonly t: (key: MonitorKey) => string
+  readonly state: UsageStatsSnapshot | undefined
+}): ReactNode {
   const panelRef = useRef<HTMLElement | null>(null)
   const [hover, setHover] = useState<ChartHoverPoint | undefined>(undefined)
   if (state === undefined) {
-    return <PlaceholderPanel title="活跃热力图" label="ACTIVITY.HEATMAP" missing="— waiting for dsh-usage-stats snapshot" />
+    return <PlaceholderPanel title={t('heatmap')} label={t('heatmapCaption')} missing={t('waitingUsage')} />
   }
   const maxTokens = Math.max(1, ...state.days.map(day => day.tokens))
   const levelClasses = [css.heatCell, css.heatLevel1, css.heatLevel2, css.heatLevel3, css.heatLevel4]
@@ -630,15 +653,15 @@ function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | und
   return (
     <section className={css.dataPanel} ref={panelRef}>
       <div className={css.panelHead}>
-        <h2>活跃热力图</h2>
+        <h2>{t('heatmap')}</h2>
         <div className={css.legend}>
-          较少
+          {t('less')}
           {[0, 1, 2, 3, 4].map(level => <i className={levelClass(level)} key={level} />)}
-          较多
+          {t('more')}
         </div>
       </div>
       <div className={css.heatBody}>
-        <div className={css.heatDays}><span>一</span><span /><span>三</span><span /><span>五</span><span /><span /></div>
+        <div className={css.heatDays}><span>{t('monday')}</span><span /><span>{t('wednesday')}</span><span /><span>{t('friday')}</span><span /><span /></div>
         <div className={css.weeks}>
           {weeks.map((week, w) => (
             <div className={css.week} key={w}>
@@ -660,10 +683,10 @@ function UsageStatsHeatmap({ state }: { readonly state: UsageStatsSnapshot | und
           ))}
         </div>
       </div>
-      <p className={css.muted}>按 dsh-usage-stats days[].tokens；共 {state.days.length} 天</p>
+      <p className={css.muted}>{t('heatmapNote').replace('{days}', String(state.days.length))}</p>
       {hover !== undefined && (
         <HoverCard
-          rows={heatmapHoverRows(hover.day)}
+          rows={heatmapHoverRows(hover.day, t)}
           title={hover.day.date}
           x={hover.x}
           y={hover.y}
@@ -696,7 +719,7 @@ interface ChartSeries {
 }
 
 /** Ranks models by total tokens across `days`, capping at `capacity` distinct series and folding the rest into "其他". */
-function topModelSeries(days: readonly UsageStatsDay[], capacity: number): readonly ChartSeries[] {
+function topModelSeries(days: readonly UsageStatsDay[], capacity: number, t: (key: MonitorKey) => string): readonly ChartSeries[] {
   const totals = new Map<string, number>()
   for (const day of days) {
     for (const [key, tokens] of Object.entries(day.models)) totals.set(key, (totals.get(key) ?? 0) + tokens)
@@ -705,7 +728,7 @@ function topModelSeries(days: readonly UsageStatsDay[], capacity: number): reado
   const series = ranked.slice(0, capacity).map(([key], index) => (
     { key, label: modelLabel(key), color: MODEL_COLORS[index] ?? OTHER_COLOR }
   ))
-  if (ranked.length > capacity) series.push({ key: OTHER_KEY, label: '其他', color: OTHER_COLOR })
+  if (ranked.length > capacity) series.push({ key: OTHER_KEY, label: t('other'), color: OTHER_COLOR })
   return series
 }
 
@@ -723,14 +746,17 @@ function hoverRowsForDay(
 }
 
 /** Stacked daily Token trend, hand-rolled as an inline SVG bar chart (no charting library). */
-function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+function UsageStatsTrendChart({ t, state }: {
+  readonly t: (key: MonitorKey) => string
+  readonly state: UsageStatsSnapshot | undefined
+}): ReactNode {
   const panelRef = useRef<HTMLElement | null>(null)
   const [hover, setHover] = useState<ChartHoverPoint | undefined>(undefined)
   if (state === undefined) {
-    return <PlaceholderPanel title="按天 Token 趋势" label="USAGE.TREND" missing="— waiting for dsh-usage-stats snapshot" />
+    return <PlaceholderPanel title={t('dailyTrend')} label={t('trendCaption')} missing={t('waitingUsage')} />
   }
   const { days } = state
-  const series = topModelSeries(days, 5)
+  const series = topModelSeries(days, 5, t)
   const topKeys = new Set(series.filter(s => s.key !== OTHER_KEY).map(s => s.key))
   const valueFor = (day: UsageStatsDay, s: ChartSeries): number => {
     if (s.key !== OTHER_KEY) return day.models[s.key] ?? 0
@@ -751,7 +777,7 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
   }
   return (
     <section className={css.dataPanel} ref={panelRef}>
-      <div className={css.panelHead}><h2>按天 Token 趋势</h2><span className={css.panelNote}>USAGE.TREND</span></div>
+      <div className={css.panelHead}><h2>{t('dailyTrend')}</h2><span className={css.panelNote}>{t('trendCaption')}</span></div>
       <div className={css.chartWrap}>
         <svg className={css.chart} preserveAspectRatio="none" viewBox={`0 0 ${width} ${height}`}>
           {[0, 1, 2, 3].map((line) => {
@@ -798,11 +824,11 @@ function UsageStatsTrendChart({ state }: { readonly state: UsageStatsSnapshot | 
       <div className={css.chartLegend}>
         {series.map(s => <span key={s.key}><i style={{ background: s.color }} />{s.label}</span>)}
       </div>
-      <p className={css.muted}>按 dsh-usage-stats days[].models 的每日 token 堆叠；共 {days.length} 天</p>
+      <p className={css.muted}>{t('trendNote').replace('{days}', String(days.length))}</p>
       {hover !== undefined && (
         <HoverCard
           rows={hoverRowsForDay(hover.day, series, valueFor)}
-          title={`${hover.day.date} · 共 ${formatTokens(hover.day.tokens)}`}
+          title={t('dayTotal').replace('{date}', hover.day.date).replace('{tokens}', formatTokens(hover.day.tokens))}
           x={hover.x}
           y={hover.y}
         />
@@ -820,13 +846,16 @@ function donutArcPath(cx: number, cy: number, r: number, startAngle: number, end
   const [x0, y0] = point(startAngle)
   const [x1, y1] = point(endAngle)
   const largeArc = endAngle - startAngle > 180 ? 1 : 0
-  return `M ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1}`
+  return ['M', x0, y0, 'A', r, r, 0, largeArc, 1, x1, y1].join(' ')
 }
 
 /** Model usage: a donut of token share plus a ranked list, both from the SAME window aggregate. */
-function UsageStatsModelUsagePanel({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+function UsageStatsModelUsagePanel({ t, state }: {
+  readonly t: (key: MonitorKey) => string
+  readonly state: UsageStatsSnapshot | undefined
+}): ReactNode {
   if (state === undefined) {
-    return <PlaceholderPanel title="模型用量" label="MODEL.USAGE" missing="— waiting for dsh-usage-stats snapshot" />
+    return <PlaceholderPanel title={t('modelUsage')} label={t('modelUsageCaption')} missing={t('waitingUsage')} />
   }
   const totalsByModel = new Map<string, number>()
   for (const day of state.days) {
@@ -853,14 +882,14 @@ function UsageStatsModelUsagePanel({ state }: { readonly state: UsageStatsSnapsh
   })
   return (
     <section className={css.dataPanel}>
-      <div className={css.panelHead}><h2>模型用量</h2><span className={css.panelNote}>MODEL.USAGE</span></div>
-      {rows.length === 0 ? <p className={css.placeholder}>暂无模型调用</p> : (
+      <div className={css.panelHead}><h2>{t('modelUsage')}</h2><span className={css.panelNote}>{t('modelUsageCaption')}</span></div>
+      {rows.length === 0 ? <p className={css.placeholder}>{t('noModelCalls')}</p> : (
         <div className={css.modelBody}>
           <div className={css.donutWrap}>
             <svg height={168} viewBox="0 0 168 168" width={168}>
               {arcs.map(arc => <path d={arc.path} fill="none" key={arc.key} stroke={arc.color} strokeWidth={22} />)}
             </svg>
-            <div className={css.donutCenter}><b>{formatTokens(totalTokens)}</b><span>tokens</span></div>
+            <div className={css.donutCenter}><b>{formatTokens(totalTokens)}</b><span>{t('tokensUnit')}</span></div>
           </div>
           <div className={css.modelList}>
             {rows.map((row) => {
@@ -868,8 +897,8 @@ function UsageStatsModelUsagePanel({ state }: { readonly state: UsageStatsSnapsh
               return (
                 <div className={css.modelRow} key={row.key}>
                   <div className={css.modelInfo}>
-                    <div className={css.modelName}><i style={{ background: row.color }} />{isOther ? '其他模型' : modelLabel(row.key)}</div>
-                    {!isOther && <div className={css.modelDetail}>{row.key.slice(0, row.key.indexOf('/'))} · {formatTokens(row.tokens)} tokens</div>}
+                    <div className={css.modelName}><i style={{ background: row.color }} />{isOther ? t('otherModels') : modelLabel(row.key)}</div>
+                    {!isOther && <div className={css.modelDetail}>{row.key.slice(0, row.key.indexOf('/'))} · {formatTokens(row.tokens)} {t('tokensUnit')}</div>}
                   </div>
                   <div className={css.modelPct}>{Math.round(row.percent * 10) / 10}%</div>
                 </div>
@@ -878,25 +907,28 @@ function UsageStatsModelUsagePanel({ state }: { readonly state: UsageStatsSnapsh
           </div>
         </div>
       )}
-      <p className={css.muted}>按 days[].models 的 token 汇总占比（近 {state.days.length} 天）</p>
+      <p className={css.muted}>{t('modelUsageNote').replace('{days}', String(state.days.length))}</p>
     </section>
   )
 }
 
 /** Windowed input/output/cache-read/cache-write breakdown from `totals` — the same aggregate window the stat cards above use. */
-function UsageStatsTokenComposition({ state }: { readonly state: UsageStatsSnapshot | undefined }): ReactNode {
+function UsageStatsTokenComposition({ t, state }: {
+  readonly t: (key: MonitorKey) => string
+  readonly state: UsageStatsSnapshot | undefined
+}): ReactNode {
   if (state === undefined) {
-    return <PlaceholderPanel title="Token 构成" label="TOKEN.COMPOSITION" missing="— waiting for dsh-usage-stats snapshot" />
+    return <PlaceholderPanel title={t('composition')} label={t('compositionCaption')} missing={t('waitingUsage')} />
   }
   const values = [
-    ['输入', state.totals.input],
-    ['输出', state.totals.output],
-    ['缓存读取', state.totals.cacheRead],
-    ['缓存写入', state.totals.cacheWrite],
+    [t('input'), state.totals.input],
+    [t('output'), state.totals.output],
+    [t('cacheRead'), state.totals.cacheRead],
+    [t('cacheWrite'), state.totals.cacheWrite],
   ] as const satisfies readonly (readonly [string, number])[]
   return (
     <section className={css.dataPanel}>
-      <div className={css.panelHead}><h2>Token 构成</h2><span className={css.panelNote}>TOKEN.COMPOSITION</span></div>
+      <div className={css.panelHead}><h2>{t('composition')}</h2><span className={css.panelNote}>{t('compositionCaption')}</span></div>
       <div className={css.compGrid}>
         {values.map(([label, value]) => (
           <div className={css.compItem} key={label}>
@@ -905,7 +937,7 @@ function UsageStatsTokenComposition({ state }: { readonly state: UsageStatsSnaps
           </div>
         ))}
       </div>
-      <p className={css.muted}>按 dsh-usage-stats totals 的窗口内汇总（近 {state.days.length} 天）</p>
+      <p className={css.muted}>{t('compositionNote').replace('{days}', String(state.days.length))}</p>
     </section>
   )
 }
@@ -1052,7 +1084,7 @@ function formatCallTime(epochMs: number): string {
   return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-const EFFORT_LABEL: Readonly<Record<string, string>> = { low: '低', medium: '中', high: '高' }
+const EFFORT_KEYS: Readonly<Partial<Record<string, MonitorKey>>> = { low: 'effortLow', medium: 'effortMedium', high: 'effortHigh' }
 
 /**
  * Per-call detail table, real and paginated through `/usage-stats/v1/calls`.
@@ -1062,7 +1094,7 @@ const EFFORT_LABEL: Readonly<Record<string, string>> = { low: '低', medium: '�
  * page, which would report a wrong total and `hasMore` for anything outside
  * that one page.
  */
-function CallDetailsPanel({ rangeDays, usageStats }: {
+function CallDetailsPanel({ t, rangeDays, usageStats }: { readonly t: (key: MonitorKey) => string
   readonly rangeDays: UsageStatsRangeDays
   readonly usageStats: UsageStatsSnapshot | undefined
 }): ReactNode {
@@ -1089,62 +1121,62 @@ function CallDetailsPanel({ rangeDays, usageStats }: {
   }
   const toolbar = (
     <div className={css.tableToolbar}>
-      <select aria-label="按模型筛选" disabled={data === undefined} onChange={(event) => { setModelFilter(event.currentTarget.value) }} value={modelFilter}>
-        <option value="">全部模型</option>
+      <select aria-label={t('filterModel')} disabled={data === undefined} onChange={(event) => { setModelFilter(event.currentTarget.value) }} value={modelFilter}>
+        <option value="">{t('allModels')}</option>
         {models.map(model => <option key={model} value={model}>{model}</option>)}
       </select>
-      <select aria-label="按提供商筛选" disabled={data === undefined} onChange={(event) => { setProviderFilter(event.currentTarget.value) }} value={providerFilter}>
-        <option value="">全部提供商</option>
+      <select aria-label={t('filterProvider')} disabled={data === undefined} onChange={(event) => { setProviderFilter(event.currentTarget.value) }} value={providerFilter}>
+        <option value="">{t('allProviders')}</option>
         {providers.map(provider => <option key={provider} value={provider}>{provider}</option>)}
       </select>
       <input
-        aria-label="输入 Token 下限"
+        aria-label={t('minimumInput')}
         disabled={data === undefined}
         min={0}
         onChange={(event) => { setMinInputTokens(event.currentTarget.value) }}
-        placeholder="输入 ≥ Token"
+        placeholder={t('inputFloor')}
         type="number"
         value={minInputTokens}
       />
       <input
-        aria-label="输出 Token 下限"
+        aria-label={t('minimumOutput')}
         disabled={data === undefined}
         min={0}
         onChange={(event) => { setMinOutputTokens(event.currentTarget.value) }}
-        placeholder="输出 ≥ Token"
+        placeholder={t('outputFloor')}
         type="number"
         value={minOutputTokens}
       />
-      <button aria-label="清除筛选" className={css.clearFilters} disabled={!hasFilters} onClick={clearFilters} type="button">✕ 清除筛选</button>
+      <button aria-label={t('clearFilters')} className={css.clearFilters} disabled={!hasFilters} onClick={clearFilters} type="button">{t('clearFiltersButton')}</button>
       <span className={css.spacer} />
       <label className={css.toolbarNumber}>
-        明细上限
+        {t('maxRecords')}
         <input
-          aria-label="明细上限"
+          aria-label={t('maxRecords')}
           disabled={data === undefined}
           min={1}
           onChange={(event) => { const n = Number(event.currentTarget.value); if (n > 0) setMaxRecords(n) }}
           type="number"
           value={maxRecords}
         />
-        条
+        {t('records')}
       </label>
       <label className={css.toolbarNumber}>
         <input
-          aria-label="每页条数"
+          aria-label={t('pageSize')}
           disabled={data === undefined}
           min={1}
           onChange={(event) => { const n = Number(event.currentTarget.value); if (n > 0) setPageSize(n) }}
           type="number"
           value={pageSize}
         />
-        条/页
+        {t('recordsPerPage')}
       </label>
     </div>
   )
   if (data === undefined) {
     return (
-      <PlaceholderPanel label="CALL.DETAILS" missing="— waiting for dsh-usage-stats snapshot" title="调用明细">
+      <PlaceholderPanel label={t('callDetailsCaption')} missing={t('waitingUsage')} title={t('callDetails')}>
         {toolbar}
       </PlaceholderPanel>
     )
@@ -1152,15 +1184,16 @@ function CallDetailsPanel({ rangeDays, usageStats }: {
   const start = data.total === 0 ? 0 : (data.page - 1) * data.pageSize + 1
   const end = Math.min(data.page * data.pageSize, data.total)
   return (
-    <section aria-label="调用明细" className={css.dataPanel}>
-      <div className={css.panelHead}><h2>调用明细</h2><span className={css.panelNote}>每次模型调用 · 最新在前</span></div>
+    <section aria-label={t('callDetails')} className={css.dataPanel}>
+      <div className={css.panelHead}><h2>{t('callDetails')}</h2><span className={css.panelNote}>{t('callOrder')}</span></div>
       {toolbar}
-      {data.items.length === 0 ? <p className={css.placeholder}>没有匹配的调用</p> : (
+      {data.items.length === 0 ? <p className={css.placeholder}>{t('noMatchingCalls')}</p> : (
         <div className={css.tableWrap}>
           <table>
-            <thead><tr><th>时间</th><th>响应耗时</th><th>输入</th><th>输出</th><th>缓存率</th><th>模型</th><th>思考程度</th></tr></thead>
+            <thead><tr><th>{t('time')}</th><th>{t('duration')}</th><th>{t('input')}</th><th>{t('output')}</th><th>{t('cacheRate')}</th><th>{t('model')}</th><th>{t('effort')}</th></tr></thead>
             <tbody>
               {data.items.map((call) => {
+                const effortKey = call.effort === undefined ? 'defaultEffort' : EFFORT_KEYS[call.effort]
                 const cacheBasis = call.tokens.input + call.tokens.cacheRead
                 const cacheRate = cacheBasis > 0 ? Math.round(call.tokens.cacheRead / cacheBasis * 100) : 0
                 return (
@@ -1171,7 +1204,7 @@ function CallDetailsPanel({ rangeDays, usageStats }: {
                     <td>{formatTokens(call.tokens.output)}</td>
                     <td>{cacheRate}%</td>
                     <td>{call.model}</td>
-                    <td>{call.effort === undefined ? '默认' : EFFORT_LABEL[call.effort] ?? call.effort}</td>
+                    <td>{effortKey === undefined ? call.effort : t(effortKey)}</td>
                   </tr>
                 )
               })}
@@ -1180,9 +1213,9 @@ function CallDetailsPanel({ rangeDays, usageStats }: {
         </div>
       )}
       <div className={css.tfoot}>
-        <span>{data.total === 0 ? '0 条' : `${start}-${end} / 共 ${data.total} 条`}</span>
-        <button aria-label="上一页" disabled={data.page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)) }} type="button">‹</button>
-        <button aria-label="下一页" disabled={!data.hasMore} onClick={() => { setPage(p => p + 1) }} type="button">›</button>
+        <span>{data.total === 0 ? t('zeroRecords') : t('pageRange').replace('{start}', String(start)).replace('{end}', String(end)).replace('{total}', String(data.total))}</span>
+        <button aria-label={t('previousPage')} disabled={data.page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)) }} type="button">‹</button>
+        <button aria-label={t('nextPage')} disabled={!data.hasMore} onClick={() => { setPage(p => p + 1) }} type="button">›</button>
       </div>
     </section>
   )
@@ -1191,53 +1224,53 @@ function CallDetailsPanel({ rangeDays, usageStats }: {
 /** The activity heatmap is always a full year, so it is fetched on its own, independent of the trend-range toggle. */
 const HEATMAP_WINDOW_DAYS = 365
 
-export function MonitorPanel({ appPanels, useProjection, useConversation, effort }: MonitorPanelProps): ReactNode {
+export function MonitorPanel({ t = key => zh[key], appPanels, useProjection, useConversation, effort }: MonitorPanelProps): ReactNode {
   const activePanel = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   const entranceRef = useEntranceMotion<HTMLElement>(activePanel === 'monitor')
   const [rangeDays, setRangeDays] = useState<UsageStatsRangeDays>(30)
   const usageStats = useUsageStats(rangeDays)
   const heatmapStats = useUsageStats(HEATMAP_WINDOW_DAYS)
   return (
-    <section className={css.root} data-monitor-panel hidden={activePanel !== 'monitor'} aria-label="Monitor / 监控">
+    <section className={css.root} data-monitor-panel hidden={activePanel !== 'monitor'} aria-label={t('panelAria')}>
       <header className={css.header}>
         <div className={css.titleLockup}>
           <span className={css.titleMark}>05</span>
-          <div><strong>监控</strong><small>用量与轨迹</small></div>
+          <div><strong>{t('panelTitle')}</strong><small>{t('panelCaption')}</small></div>
         </div>
-        <span className={css.readOnly}>UI SHELL / NATIVE DATA NEXT</span>
+        <span className={css.readOnly}>{t('panelStatus')}</span>
       </header>
       <main ref={entranceRef} className={css.content}>
         <section className={css.hero}>
           <div>
-            <p className={css.kicker}>USAGE / TRAJECTORY / EFFORT</p>
-            <h1>看得见每一次<br /><span>思考的成本。</span></h1>
-            <p>Token 用量、缓存命中、运行轨迹与推理强度，统一收进一个工作台。</p>
+            <p className={css.kicker}>{t('heroKicker')}</p>
+            <h1>{t('heroLead')}<br /><span>{t('heroFocus')}</span></h1>
+            <p>{t('heroDescription')}</p>
           </div>
-          <button type="button" disabled className={css.refresh}>↻ 刷新</button>
+          <button type="button" disabled className={css.refresh}>{t('refresh')}</button>
         </section>
 
-        <UsageStatsFilters onRangeChange={setRangeDays} rangeDays={rangeDays} state={usageStats} />
+        <UsageStatsFilters t={t} onRangeChange={setRangeDays} rangeDays={rangeDays} state={usageStats} />
         <div className={css.grid}>
-          <UsageStatsTokensCard state={usageStats} />
-          <UsageStatsNumberCard note="来自 dsh-usage-stats totals.sessions" title="会话数量" value={usageStats?.totals.sessions} />
-          <UsageStatsNumberCard note="来自 dsh-usage-stats totals.messages" title="消息数量" value={usageStats?.totals.messages} />
-          <UsageStatsNumberCard note={`近 ${rangeDays} 天窗口内`} title="活跃天数" value={usageStats?.totals.activeDays} />
-          <UsageStatsNumberCard note="截至今日" title="当前连续天数" value={usageStats?.totals.currentStreak} />
-          <UsageStatsMostUsedModelCard model={usageStats?.mostUsedModel} />
+          <UsageStatsTokensCard t={t} state={usageStats} />
+          <UsageStatsNumberCard t={t} note={t('sessionCountNote')} title={t('sessions')} value={usageStats?.totals.sessions} />
+          <UsageStatsNumberCard t={t} note={t('messageCountNote')} title={t('messages')} value={usageStats?.totals.messages} />
+          <UsageStatsNumberCard t={t} note={t('windowNote').replace('{days}', String(rangeDays))} title={t('activeDays')} value={usageStats?.totals.activeDays} />
+          <UsageStatsNumberCard t={t} note={t('throughToday')} title={t('currentStreak')} value={usageStats?.totals.currentStreak} />
+          <UsageStatsMostUsedModelCard t={t} model={usageStats?.mostUsedModel} />
         </div>
-        <UsageStatsHeatmap state={heatmapStats} />
-        <UsageStatsTrendChart state={usageStats} />
-        <UsageStatsModelUsagePanel state={usageStats} />
-        <UsageStatsTokenComposition state={usageStats} />
-        <CallDetailsPanel rangeDays={rangeDays} usageStats={usageStats} />
+        <UsageStatsHeatmap t={t} state={heatmapStats} />
+        <UsageStatsTrendChart t={t} state={usageStats} />
+        <UsageStatsModelUsagePanel t={t} state={usageStats} />
+        <UsageStatsTokenComposition t={t} state={usageStats} />
+        <CallDetailsPanel t={t} rangeDays={rangeDays} usageStats={usageStats} />
 
-        <h2 className={`${css.sectionLabel} ${css.sectionLabelMuted}`}>原生扩展 · 超出 usage-stats 范围（已实现，非本轮改动）</h2>
+        <h2 className={`${css.sectionLabel} ${css.sectionLabelMuted}`}>{t('sessionSection')}</h2>
         <div className={css.grid}>
-          <TokenCard useProjection={useProjection} />
-          <EffortCard effort={effort} />
+          <TokenCard t={t} useProjection={useProjection} />
+          <EffortCard t={t} effort={effort} />
         </div>
-        <TrajectoryPanel useConversation={useConversation} />
-        <TokenCompositionPanel useProjection={useProjection} />
+        <TrajectoryPanel t={t} useConversation={useConversation} />
+        <TokenCompositionPanel t={t} useProjection={useProjection} />
       </main>
     </section>
   )

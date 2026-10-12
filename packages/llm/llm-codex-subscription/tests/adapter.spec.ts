@@ -10,5 +10,6 @@ it('passes native tool-role text to the subscription process', async () => {
     { id: MessageId('result'), role: 'tool', toolCallId: ToolCallId('call'), source: { kind: 'tool', callId: ToolCallId('call') }, content: [{ type: 'text', text: 'retained tool output' }] },
   ] })
   await expect(stream[Symbol.asyncIterator]().next()).rejects.toBe(stop)
-  expect(spawn).toHaveBeenCalledWith(expect.objectContaining({ stdio: expect.objectContaining({ stdin: { data: '[tool]\nretained tool output' } }) }))
+  const stdio: unknown = expect.objectContaining({ stdin: { data: '[tool]\nretained tool output' } })
+  expect(spawn).toHaveBeenCalledWith(expect.objectContaining({ stdio }))
 })

@@ -39,7 +39,7 @@ it('converts explicitly selected local V4 and native upstream V4 without changin
 it('converts legacy plugin identities only for explicitly selected local V4', () => {
   const event = inbox({ kind: 'plugin', plugin: 'goal' })
   const native = createSessionFormatCatalogWithChildren([]).createRestore(header, { recovery: 'strict', validation: 'transformed' })
-  expect(() => native.decodeRow(event)).toThrow()
+  expect(() => { native.decodeRow(event) }).toThrow()
   const local = createSessionFormatCatalogWithChildren([], true).createRestore(header, { recovery: 'strict', validation: 'transformed' })
   local.decodeRow(event)
   expect(local.finish().events[0]).toMatchObject({ data: { inserted: [{ source: { kind: 'goal' } }] } })
@@ -47,13 +47,13 @@ it('converts legacy plugin identities only for explicitly selected local V4', ()
 
 it.each([4, 5])('rejects malformed policy metadata before recoverable V%i tail handling', (version) => {
   const reader = createSessionFormatCatalogWithChildren([], true).createRestore({ ...header, version }, { recovery: 'recoverable', validation: 'transformed' })
-  expect(() => reader.decodeRow(inbox({ ...peer, messageId: '' }))).toThrow(/admission policy/)
+  expect(() => { reader.decodeRow(inbox({ ...peer, messageId: '' })) }).toThrow(/admission policy/)
 })
 
 it('refuses reserved policy metadata in V3, unknown required events, and invalid active delivery coordinates', () => {
   const catalog = createSessionFormatCatalogWithChildren([])
   const historical = catalog.createRestore({ ...header, version: 3 }, { recovery: 'strict', validation: 'transformed' })
-  expect(() => historical.decodeRow(inbox(peer))).toThrow(/reserved V4/)
+  expect(() => { historical.decodeRow(inbox(peer)) }).toThrow(/reserved V4/)
   const unknown = catalog.createRestore(header, { recovery: 'strict', validation: 'transformed' })
   unknown.decodeRow({ type: 'unknown/required', seq: 0, time: 1, data: {} })
   expect(() => unknown.finish()).toThrow(/unknown event/)

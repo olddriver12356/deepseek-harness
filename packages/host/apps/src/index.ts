@@ -63,7 +63,7 @@ export class AppsService extends TypertRemoteService {
    * @returns All registered application snapshots.
    */
   @Remote('list')
-  async list(): Promise<AppsSnapshot> { return { apps: this.config.apps.get().map(app => this.runtime.snapshot(app)) } }
+  list(): Promise<AppsSnapshot> { return Promise.resolve({ apps: this.config.apps.get().map(app => this.runtime.snapshot(app)) }) }
   /**
    * Inspect an explicitly selected project without executing its scripts.
    * @param request - Project directory to inspect.
@@ -129,7 +129,7 @@ export class AppsService extends TypertRemoteService {
    * @returns Bounded stdout and stderr.
    */
   @Remote('logs')
-  async logs(request: AppIdRequest): Promise<AppLogs> { this.find(request.id); return this.runtime.logs(request.id) }
+  logs(request: AppIdRequest): Promise<AppLogs> { this.find(request.id); return Promise.resolve(this.runtime.logs(request.id)) }
   /**
    * Confirm readiness of the selected external application without managing its process.
    * @param request - Application identity.

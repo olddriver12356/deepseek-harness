@@ -1,2 +1,2 @@
-/** Host entry for the shared browser layout implementation. */
-export function apply(): void {}
+/** Statically linked browser layout library shared by the shell providers. */
+export * from './client/index.ts'

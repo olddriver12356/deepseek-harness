@@ -6,6 +6,8 @@ import {
   experimentalPackageRecordNamespace,
   hasExperimentalPackageReference,
   isExperimentalPackageName,
+  isPublicExperimentalPackageDirectory,
+  PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES,
 } from './experimental-package-policy.ts'
 
 const names = Object.values(EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS)
@@ -32,7 +34,14 @@ describe('experimental package identities', () => {
     expect(hasExperimentalPackageReference('@deepseek-ai/dsh-core')).toBe(false)
   })
 
-  it.each(Object.entries(EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS))('keeps %s record names independent of the retained npm name', (directory, name) => {
+  it('keeps the local Ponytail plugin private with its existing record namespace', () => {
+    expect(isPublicExperimentalPackageDirectory('packages/experimental/dsh-ponytail')).toBe(false)
+    expect(isPublicExperimentalPackageDirectory('packages/experimental/dsh-ponytail-other')).toBe(true)
+    expect(experimentalPackageRecordNamespace('@deepseek-ai/dsh-ponytail')).toBe('ponytail')
+  })
+
+  it.each(Object.entries(EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS)
+    .filter(([directory]) => !PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES.includes(directory)))('keeps %s record names independent of the retained npm name', (directory, name) => {
     expect(experimentalPackageRecordNamespace(name)).toBe(directory.split('/').at(-1))
   })
 })

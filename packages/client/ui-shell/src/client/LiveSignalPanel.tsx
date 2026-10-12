@@ -2,7 +2,7 @@
  * the cross-surface commands (goal, trajectory, pending takeover, capture) have
  * explicit contracts. */
 import { useState } from 'react'
-import type { InjectFace, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ActivityInjected, GoalActionResult } from './index.ts'
 import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
 import { contextOccupancy } from '@deepseek-ai/dsh-token-meter/client'
@@ -14,6 +14,7 @@ type LiveSignalProps =
   & PropsRenderSlots<'shell.activity.selectors'>
   & PropsRenderSlots<'shell.activity.capture'>
   & InjectFace<ActivityInjected>
+  & PropsLocale<'shell'>
 
 /** The slice of the `goal` projection this card reads; the goal domain owns the full shape. */
 interface GoalProjectionLike {
@@ -26,19 +27,19 @@ interface GoalProjectionLike {
   roundsStarted: number
 }
 
-const GOAL_PHASE_LABEL: Readonly<Record<GoalProjectionLike['goal']['phase'], string>> = {
-  active: '进行中',
-  paused: '已暂停',
-  blocked: '受阻',
-  complete: '已完成',
-}
+const GOAL_PHASE_KEYS = {
+  active: 'goalActive',
+  paused: 'goalPaused',
+  blocked: 'goalBlocked',
+  complete: 'goalComplete',
+} as const
 
 /** Bar segments in draw order; the heuristic breakdown only proportions the
  * provider-anchored occupancy, so these are composition, never a total. */
 const COMPOSITION = [
-  { key: 'systemTokens', label: '系统', color: css.partSystem },
-  { key: 'toolsTokens', label: '工具', color: css.partTools },
-  { key: 'messageTokens', label: '对话', color: css.partMessages },
+  { key: 'systemTokens', labelKey: 'system', color: css.partSystem },
+  { key: 'toolsTokens', labelKey: 'tools', color: css.partTools },
+  { key: 'messageTokens', labelKey: 'messages', color: css.partMessages },
 ] as const
 
 function formatTokens(value: number): string {
@@ -47,11 +48,11 @@ function formatTokens(value: number): string {
   return `${Math.round(value / 100_000) / 10}M`
 }
 
-function pendingLabel(pending: SessionPendingInteraction | undefined): string {
-  if (pending === undefined) return '无待处理事项'
-  if (pending.kind === 'approval') return '1 项待审批'
-  if (pending.kind === 'question') return '1 项待回答'
-  return '1 项待处理'
+function pendingLabel(pending: SessionPendingInteraction | undefined, t: PropsLocale<'shell'>['t']): string {
+  if (pending === undefined) return t('noPending')
+  if (pending.kind === 'approval') return t('approvalPending')
+  if (pending.kind === 'question') return t('questionPending')
+  return t('interactionPending')
 }
 
 /**
@@ -59,9 +60,9 @@ function pendingLabel(pending: SessionPendingInteraction | undefined): string {
  * on purpose. The Goal Remote has no create verb, so a session with no goal points at `/goal`
  * rather than offering a control that cannot work.
  */
-function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal }: {
+function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal, t }: {
   readonly goal: GoalProjectionLike | null | undefined
-} & ActivityInjected) {
+} & ActivityInjected & PropsLocale<'shell'>) {
   const [draft, setDraft] = useState<string | undefined>(undefined)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -81,8 +82,8 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
   if (goal == null) {
     return (
       <section className={css.section} aria-labelledby="signal-goal">
-        <div className={css.sectionHeader}><span id="signal-goal">当前目标</span></div>
-        <p className={css.muted}>尚未设定目标。创建目标请在输入框使用 /goal 命令，此处只负责改动已有目标。</p>
+        <div className={css.sectionHeader}><span id="signal-goal">{t('currentGoal')}</span></div>
+        <p className={css.muted}>{t('noGoal')}</p>
       </section>
     )
   }
@@ -91,15 +92,15 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
   return (
     <section className={css.section} aria-labelledby="signal-goal">
       <div className={css.sectionHeader}>
-        <span id="signal-goal">当前目标</span>
-        <span className={css.mono}>{GOAL_PHASE_LABEL[phase]} · {goal.roundsStarted}/{maxGoalRounds} 轮</span>
+        <span id="signal-goal">{t('currentGoal')}</span>
+        <span className={css.mono}>{t(GOAL_PHASE_KEYS[phase])} · {goal.roundsStarted}/{maxGoalRounds} {t('rounds')}</span>
       </div>
       {draft === undefined
         ? <p className={css.value}>{objective}</p>
         : (
           <>
             <textarea
-              aria-label="目标内容"
+              aria-label={t('goalObjective')}
               className={css.draft}
               onChange={(event) => { setDraft(event.target.value) }}
               rows={3}
@@ -112,23 +113,23 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
                 onClick={() => { void run(async () => await onEditGoal(draft.trim()), () => { setDraft(undefined) }) }}
                 type="button"
               >
-                保存
+                {t('save')}
               </button>
-              <button className={css.action} onClick={() => { setDraft(undefined) }} type="button">取消</button>
+              <button className={css.action} onClick={() => { setDraft(undefined) }} type="button">{t('cancel')}</button>
             </div>
           </>
         )}
-      {phase === 'blocked' && blockedReason !== undefined && <p className={css.alertLine}>受阻原因：{blockedReason.message}</p>}
+      {phase === 'blocked' && blockedReason !== undefined && <p className={css.alertLine}>{t('blockedReason')}{blockedReason.message}</p>}
       {draft === undefined && (
         <div className={css.actions}>
-          <button className={css.action} disabled={pending} onClick={() => { setDraft(objective) }} type="button">编辑</button>
+          <button className={css.action} disabled={pending} onClick={() => { setDraft(objective) }} type="button">{t('edit')}</button>
           {phase === 'active' && (
-            <button className={css.action} disabled={pending} onClick={() => { void run(onPauseGoal) }} type="button">暂停</button>
+            <button className={css.action} disabled={pending} onClick={() => { void run(onPauseGoal) }} type="button">{t('pause')}</button>
           )}
           {phase === 'paused' && (
-            <button className={css.action} disabled={pending} onClick={() => { void run(onResumeGoal) }} type="button">继续</button>
+            <button className={css.action} disabled={pending} onClick={() => { void run(onResumeGoal) }} type="button">{t('resume')}</button>
           )}
-          <button className={css.action} disabled={pending} onClick={() => { void run(onClearGoal) }} type="button">清除</button>
+          <button className={css.action} disabled={pending} onClick={() => { void run(onClearGoal) }} type="button">{t('clear')}</button>
         </div>
       )}
       {error !== '' && <p className={css.alertLine} role="alert">{error}</p>}
@@ -137,7 +138,7 @@ function GoalSection({ goal, onEditGoal, onPauseGoal, onResumeGoal, onClearGoal 
 }
 
 export function LiveSignalPanel({
-  sessionId, useProjection, useSessions, useSessionStatus, renderSlot,
+  sessionId, useProjection, useSessions, useSessionStatus, renderSlot, t,
   onEditGoal, onPauseGoal, onResumeGoal, onClearGoal,
 }: LiveSignalProps) {
   const goal = useProjection('goal') as GoalProjectionLike | null | undefined
@@ -164,14 +165,15 @@ export function LiveSignalPanel({
   const cacheBase = usage === undefined ? 0 : usage.uncachedInputTokens + usage.cacheReadTokens
 
   return (
-    <aside className={css.panel} aria-label="活动信号" data-live-signal>
+    <aside className={css.panel} aria-label={t('activityAria')} data-live-signal>
       <header className={css.header}>
-        <span className={css.kicker}>LIVE SIGNAL</span>
-        <span className={css.status} data-running={session?.running || undefined}>{session?.running ? '运行中' : '已就绪'}</span>
+        <span className={css.kicker}>{t('activityHeading')}</span>
+        <span className={css.status} data-running={session?.running || undefined}>{session?.running ? t('running') : t('ready')}</span>
       </header>
       <div className={css.sessionName}>{session?.displayTitle ?? sessionId}</div>
 
       <GoalSection
+        t={t}
         goal={goal}
         onClearGoal={onClearGoal}
         onEditGoal={onEditGoal}
@@ -182,27 +184,27 @@ export function LiveSignalPanel({
       {renderSlot('shell.activity.selectors', {})}
 
       <section className={css.section} aria-labelledby="signal-pending">
-        <div className={css.sectionHeader}><span id="signal-pending">待处理</span><span className={pending === undefined ? css.mono : css.alert}>{pending === undefined ? 0 : 1}</span></div>
-        <p className={pending === undefined ? css.muted : css.value}>{pendingLabel(pending)}</p>
+        <div className={css.sectionHeader}><span id="signal-pending">{t('pending')}</span><span className={pending === undefined ? css.mono : css.alert}>{pending === undefined ? 0 : 1}</span></div>
+        <p className={pending === undefined ? css.muted : css.value}>{pendingLabel(pending, t)}</p>
       </section>
 
       <section className={css.section} aria-labelledby="signal-context">
-        <div className={css.sectionHeader}><span id="signal-context">上下文</span><span className={css.mono}>{contextPercent === undefined ? '等待数据' : `${contextPercent}%`}</span></div>
-        <div className={css.meter} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={contextPercent} aria-label="上下文使用率">
+        <div className={css.sectionHeader}><span id="signal-context">{t('context')}</span><span className={css.mono}>{contextPercent === undefined ? t('waiting') : `${contextPercent}%`}</span></div>
+        <div className={css.meter} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={contextPercent} aria-label={t('contextUsage')}>
           {parts.length === 0
             ? <span style={{ width: `${contextPercent ?? 0}%` }} />
             : parts.map(part => <span key={part.key} className={part.color} style={{ width: `${part.width}%` }} />)}
         </div>
         <div className={css.caption}>
           {context === null
-            ? '尚未收到 token 统计'
-            : `约 ${formatTokens(context.usedTokens)} / ${formatTokens(context.contextWindow)} tokens`}
+            ? t('noTokenStats')
+            : t('contextTokens', { used: formatTokens(context.usedTokens), window: formatTokens(context.contextWindow) })}
         </div>
         {breakdown !== undefined && compositionTotal > 0 && (
           <dl className={css.legend}>
             {COMPOSITION.map(part => (
               <div key={part.key} className={css.legendRow}>
-                <dt><span className={`${css.swatch} ${part.color}`} aria-hidden />{part.label}</dt>
+                <dt><span className={`${css.swatch} ${part.color}`} aria-hidden />{t(part.labelKey)}</dt>
                 <dd>{`~${formatTokens(breakdown[part.key])}`}</dd>
               </div>
             ))}
@@ -212,16 +214,16 @@ export function LiveSignalPanel({
 
       <section className={css.section} aria-labelledby="signal-usage">
         <div className={css.sectionHeader}>
-          <span id="signal-usage">累计用量</span>
-          <span className={css.mono}>{usage === undefined || cacheBase === 0 ? '—' : `缓存命中 ${Math.round(usage.cacheReadTokens * 100 / cacheBase)}%`}</span>
+          <span id="signal-usage">{t('totalUsage')}</span>
+          <span className={css.mono}>{usage === undefined || cacheBase === 0 ? '—' : t('cacheHit', { percent: Math.round(usage.cacheReadTokens * 100 / cacheBase) })}</span>
         </div>
         {usage === undefined
-          ? <p className={css.muted}>尚未收到用量统计</p>
+          ? <p className={css.muted}>{t('noUsageStats')}</p>
           : (
             <dl className={css.legend}>
-              <div className={css.legendRow}><dt>输入</dt><dd>{formatTokens(usage.uncachedInputTokens)}</dd></div>
-              <div className={css.legendRow}><dt>输出</dt><dd>{formatTokens(usage.outputTokens)}</dd></div>
-              <div className={css.legendRow}><dt>缓存读 / 写</dt><dd>{`${formatTokens(usage.cacheReadTokens)} / ${formatTokens(usage.cacheWriteTokens)}`}</dd></div>
+              <div className={css.legendRow}><dt>{t('input')}</dt><dd>{formatTokens(usage.uncachedInputTokens)}</dd></div>
+              <div className={css.legendRow}><dt>{t('output')}</dt><dd>{formatTokens(usage.outputTokens)}</dd></div>
+              <div className={css.legendRow}><dt>{t('cacheReadWrite')}</dt><dd>{`${formatTokens(usage.cacheReadTokens)} / ${formatTokens(usage.cacheWriteTokens)}`}</dd></div>
             </dl>
           )}
       </section>

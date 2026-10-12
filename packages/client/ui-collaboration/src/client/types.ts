@@ -21,9 +21,9 @@ export interface CollaborationInjected {
 }
 
 /** Session-scoped portal props derived from renderer seats. */
-export type PortalProps = PropsRuntime<'shell.activity.selectors'> & InjectFace<CollaborationInjected>
+export type PortalProps = Pick<PropsRuntime<'shell.activity.selectors'>, 'sessionId' | 'useSessions'> & InjectFace<CollaborationInjected>
   & PropsStore<ReturnType<typeof createCollaborationStore>> & PropsLocale<'collaboration'>
 
 /** Session-scoped discussion dialog props derived from renderer seats. */
-export type BoardProps = PropsRuntime<'collaboration.board'> & InjectFace<CollaborationInjected>
+export type BoardProps = Pick<PropsRuntime<'collaboration.board'>, 'sessionId' | 'useSessions'> & InjectFace<CollaborationInjected>
   & PropsStore<ReturnType<typeof createCollaborationStore>> & PropsLocale<'collaboration'>

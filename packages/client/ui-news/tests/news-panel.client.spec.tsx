@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { AppPanelsController } from '@deepseek-ai/dsh-client-ui-shell/src/client/app-panels.ts'
 import { NewsPanel, type NewsCapture } from '../src/client/NewsPanel.tsx'
 import { apply } from '../src/client/index.ts'
-import type { Context } from '@deepseek-ai/cordis'
+import { Context } from '@deepseek-ai/cordis'
 import type { NewsSnapshot } from '@deepseek-ai/dsh-host-news/types'
 import { readFileSync } from 'node:fs'
 
@@ -40,16 +40,17 @@ describe('NewsPanel', () => {
     const saveText = vi.fn(async () => ({ ok: true, value: { id: 'intake-id' } }))
     const distill = vi.fn(async () => ({ ok: true, value: { id: 'processed-id' } }))
     let injected: { distillNews: NewsCapture } | undefined
-    const ctx = {
-      effect: (effect: () => unknown) => effect(),
+    const ctx = new Context()
+    const services = {
       locale: { register: () => () => {}, bind: () => (key: string) => key },
       appPanels: new AppPanelsController(),
       remote: { get knowledge(): never { throw new Error('remote.knowledge requires optional service lookup') } },
-      get: () => ({ saveText, distill }),
+      'remote.knowledge': { saveText, distill },
       slots: { inject: (_slot: string, callback: () => void) => { callback() },
         register: (options: { inject: () => typeof injected }) => { injected = options.inject() } },
     }
-    apply(ctx as unknown as Context)
+    for (const [name, service] of Object.entries(services)) ctx.provide(name, service)
+    apply(ctx)
     const request = { sourceUrl: 'https://example.com/story', publisher: 'Test',
       retrievedAt: SNAPSHOT.fetchedAt!, title: 'Fresh story', content: 'Summary' }
     await injected!.distillNews(request)

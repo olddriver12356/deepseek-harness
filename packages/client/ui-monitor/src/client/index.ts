@@ -10,7 +10,14 @@ import type {} from '@deepseek-ai/dsh-client-ui-shell/src/client/index.ts'
 import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import { MonitorPanel, type MonitorEffortAccess } from './MonitorPanel.tsx'
 
-export const inject = ['slots', 'appPanels']
+import type {} from '@deepseek-ai/dsh-client-locale/client'
+import { en, zh, type MonitorKey } from './locales.ts'
+
+declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface LocaleNamespaceMap { monitor: MonitorKey }
+}
+
+export const inject = ['slots', 'appPanels', 'locale']
 
 /**
  * Bind the panel's effort selector to the session's shared ModelDirectory —
@@ -52,6 +59,7 @@ function effortAccessFor(ctx: ClientContext, sessionId: SessionId): MonitorEffor
 }
 
 export function apply(ctx: ClientContext): void {
+  ctx.effect(() => ctx.locale.register('monitor', { en, zh }), 'ui-monitor: dictionaries')
   // Identity must stay stable per session: the handle feeds
   // useSyncExternalStore and a mount effect, both of which would thrash if a
   // fresh object arrived on every render occurrence.
@@ -60,6 +68,7 @@ export function apply(ctx: ClientContext): void {
     {
       name: 'shell.app-overlay',
       id: 'monitor-panel',
+      locale: 'monitor',
       inject: (sessionId: SessionId | undefined) => {
         if (sessionId === undefined) return { appPanels: ctx.appPanels, effort: undefined }
         if (!accessCache.has(sessionId)) accessCache.set(sessionId, effortAccessFor(ctx, sessionId))

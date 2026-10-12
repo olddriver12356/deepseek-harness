@@ -19,8 +19,8 @@ import * as Personal from '../src/index.ts'
 function request(port: number, path: string, cookie = '', body?: unknown) {
   return new Promise<{ status: number; body: string; cookie: string }>((resolve, reject) => {
     const req = httpRequest({ hostname: '127.0.0.1', port, path, method: body === undefined ? 'GET' : 'POST', headers: { cookie, 'content-type': 'application/json' } }, (res) => {
-      let text = ''; res.setEncoding('utf8'); res.on('data', (chunk) => { text += chunk })
-      res.on('end', () => resolve({ status: res.statusCode!, body: text, cookie: res.headers['set-cookie']?.[0]?.split(';')[0] ?? '' }))
+      let text = ''; res.setEncoding('utf8'); res.on('data', (chunk: string) => { text += chunk })
+      res.on('end', () => { resolve({ status: res.statusCode!, body: text, cookie: res.headers['set-cookie']?.[0]?.split(';')[0] ?? '' }) })
     }); req.on('error', reject); req.end(body === undefined ? undefined : JSON.stringify(body))
   })
 }
@@ -41,7 +41,7 @@ it('observes live human turns through Loader, preserves privacy, logs requests, 
     async *stream(options: GenerateOptions): AsyncGenerator<StreamChunk> {
       calls.push(options)
       if (waitForAbort) {
-        await new Promise<void>(resolve => options.signal!.addEventListener('abort', () => resolve(), { once: true }))
+        await new Promise<void>((resolve) => { options.signal!.addEventListener('abort', () => { resolve() }, { once: true }) })
         options.signal!.throwIfAborted()
       }
       yield { type: 'block-start', index: 0, blockType: 'text' }
@@ -68,13 +68,19 @@ it('observes live human turns through Loader, preserves privacy, logs requests, 
       credentials: Credentials, web: WebServer, connection: Connection, prompt: SystemPrompt,
       tools: Tools, sessions: Sessions, model, personal: Personal,
     }
-    ctx.loader.internal = { version: 'v2', async import(name: string) { return modules[name] } } as unknown as NonNullable<typeof ctx.loader.internal>
+    ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+      version: 'v2', async import(name: string) { return modules[name] } }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(path).href } }); await ctx.loader.await()
     const port = ctx.webServer.port
     ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/', handler: (req, res) => { if (ctx.connection.authorizeIndex(req, res)) res.end('ok') } }))
     const launch = new URL(ctx.connection.authenticatedUrl(`http://127.0.0.1:${port}/`))
     const cookie = (await request(port, launch.pathname + launch.search)).cookie
-    const status = async () => JSON.parse((await request(port, '/personal/api/observer', cookie)).body)
+    const status = async () => JSON.parse((await request(port, '/personal/api/observer', cookie)).body) as { pending: number; status: string; enabled: boolean; observations: number }
     expect((await request(port, '/personal/api/observer')).status).toBe(401)
     expect(await status()).toMatchObject({ enabled: true, status: 'idle' })
     const session = ctx.sessions.create(SessionId('observer-human'))
@@ -89,13 +95,14 @@ it('observes live human turns through Loader, preserves privacy, logs requests, 
     await expect.poll(async () => (await status()).pending).toBe(0)
     expect(calls).toHaveLength(1)
     expect(await status()).toMatchObject({ status: 'observed', observations: 1 })
-    expect(calls[0]!.messages[0]!.content).toEqual([{ type: 'text', text: expect.stringContaining(JSON.stringify([source])) }])
+    const expectedSource: unknown = expect.stringContaining(JSON.stringify([source]))
+    expect(calls[0]!.messages[0]!.content).toEqual([{ type: 'text', text: expectedSource }])
     const logged = session.snapshotEvents().find(event => event.type === 'personal/observation-request')!
     expect(KNOWN_SESSION_EVENT_TYPES.has('personal/observation-request')).toBe(true)
     expect(KNOWN_SESSION_EVENT_TYPES.has('personal/observation-result')).toBe(true)
     expect(logged.data).toMatchObject({ turn: 1, request: { provider: 'fixture', model: 'memory' } })
     expect(calls[0]!.system).toMatchSnapshot('observer extraction instructions')
-    const dashboard = JSON.parse((await request(port, '/personal/api/bok/v1/person/dashboard', cookie)).body)
+    const dashboard: unknown = JSON.parse((await request(port, '/personal/api/bok/v1/person/dashboard', cookie)).body)
     expect(JSON.stringify(dashboard)).toContain(observation.signal.candidate_statement)
     ctx.emit('session/event', session, end)
     turn(session, 2, 'Do not remember this: I prefer very long reports.')
@@ -124,7 +131,7 @@ it('observes live human turns through Loader, preserves privacy, logs requests, 
     await expect.poll(async () => (await status()).pending).toBe(0)
     expect(await status()).toMatchObject({ status: 'no_signal', observations: 0 })
     const statePath = join(root, 'vault/.bok/state/agent-credentials.json')
-    const credentials = JSON.parse(await readFile(statePath, 'utf8'))
+    const credentials = JSON.parse(await readFile(statePath, 'utf8')) as { dsh: { status: string } }
     credentials.dsh.status = 'revoked'; await writeFile(statePath, JSON.stringify(credentials))
     const count = calls.length
     turn(session, 8)

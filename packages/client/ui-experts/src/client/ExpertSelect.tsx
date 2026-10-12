@@ -10,7 +10,7 @@
  * ordinary send without the composer importing this package.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ExpertRecord } from './types.ts'
 import css from './ExpertSelect.module.css'
 
@@ -22,8 +22,7 @@ export interface ExpertSelectInjected {
 }
 
 export type ExpertSelectProps =
-  PropsRuntime<'shell.activity.selectors'>
-  & InjectFace<ExpertSelectInjected>
+  InjectFace<ExpertSelectInjected>
   & PropsLocale<'experts'>
 
 export function ExpertSelect({ listExperts, setSelection, t }: ExpertSelectProps) {

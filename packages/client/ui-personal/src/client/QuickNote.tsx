@@ -8,11 +8,13 @@ export function QuickNote({ t }: PropsLocale<'personal'>) {
   const frame = useRef<HTMLIFrameElement>(null)
   const [visited, setVisited] = useState(false)
   useEffect(() => {
-    const close = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'dsh-quick-note-close') dialog.current?.close()
+    const close = (event: MessageEvent<unknown>) => {
+      if (event.origin === window.location.origin && event.source === frame.current?.contentWindow
+        && typeof event.data === 'object' && event.data !== null && 'type' in event.data
+        && event.data.type === 'dsh-quick-note-close') dialog.current?.close()
     }
     window.addEventListener('message', close)
-    return () => window.removeEventListener('message', close)
+    return () => { window.removeEventListener('message', close) }
   }, [])
   return <>
     <button type="button" className={css.quickButton} onClick={() => { setVisited(true); dialog.current?.showModal() }}>{t('quickNote')}</button>

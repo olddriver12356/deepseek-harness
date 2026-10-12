@@ -9,7 +9,7 @@ import { original } from './events.client.ts'
 afterEach(cleanup)
 
 it.each([en, zh])('renders attributed Peer identities and inert text in each locale', (dictionary) => {
-  const view = render(<PeerMessage {...{ node: { data: { source: original, content: [{ type: 'text', text: '<img src=x onerror=alert(1)>' }] } }, t: makeTranslate(dictionary) } as unknown as PeerMessageProps} />)
+  const view = render(<PeerMessage {...{ node: { key: 'peer', id: 'peer', kind: 'collaboration-peer', target: 'chat', anchorSeq: 1, location: { kind: 'unresolved' }, visibility: 'visible', data: { source: original, seq: 1, content: [{ type: 'text', text: '<img src=x onerror=alert(1)>' }] } }, t: makeTranslate(dictionary) } satisfies PeerMessageProps} />)
   expect(view.getByRole('article', { name: dictionary.peerMessage })).toBeDefined()
   expect(view.getByText(dictionary.peerWarning)).toBeDefined()
   expect(view.getByText(original.messageId)).toBeDefined()

@@ -26,15 +26,15 @@ describe('collaboration through the real Loader export path', () => {
   })
 
   it('rejects a malformed allowlist when the plugin loads instead of ignoring it', () => {
-    expect(() => collaboration.Config({ maxFramedMessageBytes, stateLimits,
-      peerDiscussionTools: 'read' } as unknown as collaboration.Config)).toThrow()
-    expect(() => collaboration.Config({ maxFramedMessageBytes, stateLimits,
-      peerDiscussionTools: [1] } as unknown as collaboration.Config)).toThrow()
+    expect(() => { Reflect.apply(collaboration.Config, undefined, [{ maxFramedMessageBytes, stateLimits,
+      peerDiscussionTools: 'read' }]) }).toThrow()
+    expect(() => { Reflect.apply(collaboration.Config, undefined, [{ maxFramedMessageBytes, stateLimits,
+      peerDiscussionTools: [1] }]) }).toThrow()
   })
 
   it.each(['write', 'bash', 'run_code', 'cordis_run', 'delegate', 'publish', 'unknown_tool'])('rejects %s as a peer-discussion capability', (name) => {
-    expect(() => collaboration.Config({ maxFramedMessageBytes, stateLimits,
-      peerDiscussionTools: [name] } as unknown as collaboration.Config)).toThrow()
+    expect(() => { Reflect.apply(collaboration.Config, undefined, [{ maxFramedMessageBytes, stateLimits,
+      peerDiscussionTools: [name] }]) }).toThrow()
   })
 
   it.each([undefined, 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])('refuses missing or invalid complete framing limit %s', (bound) => {

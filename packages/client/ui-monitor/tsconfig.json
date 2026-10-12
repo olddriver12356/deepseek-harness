@@ -34,6 +34,9 @@
     },
     {
       "path": "../../llm/token-meter"
+    },
+    {
+      "path": "../locale/tsconfig.client.json"
     }
   ]
 }

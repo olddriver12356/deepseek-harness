@@ -60,7 +60,8 @@ export class KnowledgeStore {
         for (const line of header[1].split(/\r?\n/u)) {
           const colon = line.indexOf(':')
           if (colon < 1) throw new Error('knowledge: invalid card field')
-          data[line.slice(0, colon)] = JSON.parse(line.slice(colon + 1)) as unknown
+          const value: unknown = JSON.parse(line.slice(colon + 1))
+          data[line.slice(0, colon)] = value
         }
         if (data['schema_version'] === 2 && data['id'] === id && data['layer'] === parts[0]) {
           let workflow = data['workflow'] ?? (parts[0] === '1 Intake' ? 'pending' : parts[0] === '3 Knowledge' ? 'accepted' : 'awaiting-review')
@@ -216,7 +217,7 @@ export class KnowledgeStore {
         { windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
         (error, stdout, stderr) => {
           if (error !== null) { reject(new Error(`knowledge: ${stderr.trim() || error.message}`)); return }
-          try { resolvePromise(JSON.parse(stdout) as unknown) } catch (parseError) { reject(new Error('knowledge: invalid bridge response', { cause: parseError })) }
+          try { const value: unknown = JSON.parse(stdout); resolvePromise(value) } catch (parseError) { reject(new Error('knowledge: invalid bridge response', { cause: parseError })) }
         })
       child.stdin?.on('error', reject)
       child.stdin?.end(JSON.stringify(request), 'utf8')

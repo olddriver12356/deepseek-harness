@@ -127,7 +127,10 @@ describe('experimental workspace constraints', () => {
   })
 
   it.each(Object.entries(EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS))('retains %s only at its declared directory', (dir, name) => {
-    expect(checkExperimentalManifest({ dir, manifest: { name, publishConfig: { access: 'public' } } })).toEqual([])
+    const publication = PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES.includes(dir)
+      ? { private: true }
+      : { publishConfig: { access: 'public' } }
+    expect(checkExperimentalManifest({ dir, manifest: { name, ...publication } })).toEqual([])
     expect(checkExperimentalManifest({ ...experimental, manifest: { ...experimental.manifest, name } }))
       .toEqual([expect.stringContaining('declared directory exception')])
   })
@@ -179,8 +182,8 @@ describe('experimental workspace constraints', () => {
     ])
   })
 
-  it('keeps the current experimental publication set unrestricted', () => {
-    expect(PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES).toEqual([])
+  it('excludes only the private local Ponytail plugin from experimental publication', () => {
+    expect(PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES).toEqual(['packages/experimental/dsh-ponytail'])
   })
 
   it('limits the public default to experimental package directories', () => {

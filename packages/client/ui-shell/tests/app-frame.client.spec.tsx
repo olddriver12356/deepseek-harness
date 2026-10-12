@@ -98,7 +98,7 @@ function mountFrame(windowWidth = frameWidth) {
       useSessions={useSessions}
       usePanelInfo={usePanelInfo}
       useSessionStatus={useSessionStatus}
-      useSessionRetainInfo={(() => undefined) as AppFrameProps['useSessionRetainInfo']}
+      useSessionRetainInfo={(() => undefined)}
       useResource={useResource}
       useWorkspaces={sel => sel(workspaceState)}
       t={key => key === 'brand.localBuild' ? 'DSH Local Build' : key}

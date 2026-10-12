@@ -27,7 +27,7 @@ async function available(port: number, host: string): Promise<boolean> {
       if (error.code === 'EADDRINUSE' || error.code === 'EACCES') resolve(false)
       else reject(error)
     })
-    server.listen(port, host, () => server.close(error => error ? reject(error) : resolve(true)))
+    server.listen(port, host, () => { server.close((error) => { if (error) reject(error); else resolve(true) }) })
   })
 }
 
@@ -75,17 +75,19 @@ export class AppsRuntime {
    * @param selected - Optional existing package-script override.
    * @returns Starting snapshot, or the current snapshot if already busy.
    */
-  async start(app: AppRegistration, selected?: string): Promise<AppSnapshot> {
-    if (this.busy(app.id)) return this.snapshot(app)
+  start(app: AppRegistration, selected?: string): Promise<AppSnapshot> {
+    if (this.busy(app.id)) return Promise.resolve(this.snapshot(app))
     const run: Run = { snapshot: { ...app, state: 'starting', activeUrl: app.url, error: '' }, cancelled: false }
     this.runs.set(app.id, run)
-    void this.launch(app, selected ?? app.script, run).catch((error) => {
+    void this.launch(app, selected ?? app.script, run).catch((error: unknown) => {
       if (!run.cancelled) { run.snapshot.state = 'failed'; run.snapshot.error = String(error instanceof Error ? error.message : error) }
     })
-    return run.snapshot
+    return Promise.resolve(run.snapshot)
   }
 
   private async launch(app: AppRegistration, script: string, run: Run, retries = 2): Promise<void> {
+    // Read shared lifecycle state afresh after every await; stop and exit callbacks may change it.
+    const isCancelled = (): boolean => run.cancelled
     let port: number | undefined
     try {
       const inspection = await inspectProject(app.directory)
@@ -107,11 +109,11 @@ export class AppsRuntime {
         }
       }
       if (port === undefined) throw new Error('Port is occupied. Confirm the external app or choose another port')
-      if (run.cancelled) return
+      if (isCancelled()) return
       url.port = String(port)
       run.snapshot.activeUrl = url.href
       const executable = await this.subprocess.resolveExecutable(app.packageManager)
-      if (run.cancelled) return
+      if (isCancelled()) return
       const forwarded = app.strategy === 'long' ? ['--port', String(port)] : app.strategy === 'short' ? ['-p', String(port)] : []
       const args = ['run', script, ...(forwarded.length && app.packageManager === 'npm' ? ['--'] : []), ...forwarded]
       let argv = [executable, ...args]
@@ -121,32 +123,34 @@ export class AppsRuntime {
         const command = `& ${[executable, ...args].map(quote).join(' ')}; exit $LASTEXITCODE`
         argv = [shell, '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(command, 'utf16le').toString('base64')]
       }
-      if (run.cancelled) return
+      if (isCancelled()) return
       const handle = this.subprocess.spawn({ argv, cwd: inspection.directory,
         env: app.strategy === 'env' ? { PORT: String(port) } : {}, graceMs: this.config.graceMs,
         stdio: { stdin: 'ignore', stdout: { maxBytes: this.config.logBytes }, stderr: { maxBytes: this.config.logBytes } } })
       run.handle = handle
       let exited = false
+      const hasExited = (): boolean => exited
       void handle.done.then((outcome) => {
         exited = true
-        if (!run.cancelled) { run.snapshot.state = 'failed'; run.snapshot.error = `Application exited (${outcome.exitCode ?? outcome.signal})` }
-      }, (error) => { exited = true; if (!run.cancelled) { run.snapshot.state = 'failed'; run.snapshot.error = String(error) } })
+        if (!isCancelled()) { run.snapshot.state = 'failed'; run.snapshot.error = `Application exited (${outcome.exitCode ?? outcome.signal})` }
+      }, (error: unknown) => { exited = true; if (!isCancelled()) { run.snapshot.state = 'failed'; run.snapshot.error = String(error) } })
       const deadline = Date.now() + this.config.startupTimeoutMs
-      while (!run.cancelled && !exited && Date.now() < deadline) {
+      while (!isCancelled() && !hasExited() && Date.now() < deadline) {
         try {
           const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(1500) })
           await response.body?.cancel()
-          if (response.status >= 200 && response.status < 400 && !exited && !run.cancelled) { run.snapshot.state = 'running'; return }
+          if (response.status >= 200 && response.status < 400 && !hasExited() && !isCancelled()) { run.snapshot.state = 'running'; return }
         } catch { /* Server is still starting; bounded by the startup deadline. */ }
         await delay(300)
       }
-      if (run.cancelled) return
-      if (exited) {
+      if (isCancelled()) return
+      if (hasExited()) {
         const output = this.logs(app.id)
         if (app.strategy !== 'fixed' && retries > 0 && port < 65535 && /EADDRINUSE|address already in use/i.test(output.stdout + output.stderr)) {
           this.reserved.delete(port)
           run.snapshot.state = 'starting'; run.snapshot.error = ''
-          return await this.launch({ ...app, port: port + 1 }, script, run, retries - 1)
+          await this.launch({ ...app, port: port + 1 }, script, run, retries - 1)
+          return
         }
         throw new Error(run.snapshot.error)
       }

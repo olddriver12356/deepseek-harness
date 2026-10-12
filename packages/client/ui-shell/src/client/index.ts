@@ -218,6 +218,7 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(
     () => ctx.slots.inject('shell.activity', () => ctx.slots.register({
       name: 'shell.activity',
+      locale: 'shell',
       children: {
         'shell.activity.selectors': { kind: 'list', scope: 'session' },
         'shell.activity.capture': { kind: 'single', scope: 'session' },

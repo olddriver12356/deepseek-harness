@@ -18,11 +18,11 @@ export function apply(ctx: Context): void {
     list: async () => value(await ctx.remote.apps.list()),
     inspect: async directory => value(await ctx.remote.apps.inspect({ directory })),
     save: async registration => value(await ctx.remote.apps.save({ registration })),
-    remove: async id => value(await ctx.remote.apps.unregister({ id })),
+    remove: async (id) => { value(await ctx.remote.apps.unregister({ id })) },
     start: async (id, script) => value(await ctx.remote.apps.start({ id, ...(script ? { script } : {}) })),
-    stop: async id => value(await ctx.remote.apps.stop({ id })),
+    stop: async (id) => { value(await ctx.remote.apps.stop({ id })) },
     logs: async id => value(await ctx.remote.apps.logs({ id })),
-    confirmExternal: async id => value(await ctx.remote.apps.confirmExternal({ id })),
+    confirmExternal: async (id) => { value(await ctx.remote.apps.confirmExternal({ id })) },
     pick: async () => value(await ctx.remote.directoryPicker.pick()),
   }
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({ name: 'shell.app-overlay', id: 'apps-panel', locale: 'apps', inject: () => ({ appPanels: ctx.appPanels, api, t: ctx.locale.bind('apps') }) }, AppsPanel))

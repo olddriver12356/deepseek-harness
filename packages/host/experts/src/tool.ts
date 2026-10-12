@@ -244,7 +244,7 @@ export const Config: z<Config> = z.object({ vaultRoot: z.string().required() })
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
   const store = new ExpertStore(config.vaultRoot)
-  const runtime = ctx as unknown as ExpertToolContext
+  const runtime: ExpertToolContext = ctx
   let records: readonly ExpertRecord[]
   try { records = await store.list() }
   catch (error) {

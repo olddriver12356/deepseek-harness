@@ -1369,7 +1369,7 @@ export function WorkspaceBrowser({
                   requestAddWorkspace()
                 }}
               >
-                <IconProjectAddOutlineRegular size={wide ? 16 : 18} />
+                <IconProjectAddOutlineRegular size={18} />
               </button>
             </Tooltip>
           )}

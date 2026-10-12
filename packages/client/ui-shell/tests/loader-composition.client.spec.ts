@@ -29,6 +29,12 @@ describe('ui-shell through a real Loader composition', () => {
     await context.plugin(Loader)
     context.loader.builtins.include = Include
     context.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+
       version: 'v2',
       async import(specifier: string) {
         if (specifier !== '@deepseek-ai/dsh-client-ui-shell') {
@@ -36,7 +42,7 @@ describe('ui-shell through a real Loader composition', () => {
         }
         return UiShell
       },
-    } as unknown as NonNullable<typeof context.loader.internal>
+    }
     await context.loader.create({
       name: 'cordis:include',
       config: { path: pathToFileURL(configPath).href },

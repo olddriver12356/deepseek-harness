@@ -167,12 +167,18 @@ describe('connection node half', () => {
         ['webserver', HttpServer], ['connection', { inject: [...inject], apply }], ['consumer', consumerPlugin],
       ])
       ctx.loader.internal = {
+        loadCache: new Map(),
+        register(): never { throw new Error('Unexpected test loader registration') },
+        getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+        resolveSync(): never { throw new Error('Unexpected test module resolution') },
+        load(): never { throw new Error('Unexpected test module load') },
+
         version: 'v2',
         async import(specifier: string) {
           if (!modules.has(specifier)) throw new Error(`unexpected Loader import: ${specifier}`)
           return modules.get(specifier)
         },
-      } as unknown as NonNullable<typeof ctx.loader.internal>
+      }
       // Settle the transport before publishing connection without granting consumers its injection.
       await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(serverPath).href } })
       await ctx.loader.await()

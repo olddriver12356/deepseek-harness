@@ -69,7 +69,7 @@ export class ConversationObserver {
     enabled: boolean, private readonly signalSchema: unknown,
   ) {
     this.enabled = enabled
-    this.removeListener = ctx.on('session/event', (session, event) => this.accept(session, event))
+    this.removeListener = ctx.on('session/event', (session, event) => { this.accept(session, event) })
     this.removeDisposal = ctx.on('session/disposed', (session) => {
       this.turns.delete(session)
       for (let i = this.queue.length - 1; i >= 0; i--) if (this.queue[i]?.session === session) this.queue.splice(i, 1)
@@ -90,7 +90,8 @@ export class ConversationObserver {
    * @param enabled - Whether new eligible human turns may enter the observation queue.
    */
   async setEnabled(enabled: boolean): Promise<void> {
-    if (this.changing || this.closed) throw new Error('Observer switch is busy')
+    const isClosed = (): boolean => this.closed
+    if (this.changing || isClosed()) throw new Error('Observer switch is busy')
     this.changing = true
     try {
       // Stop admission before I/O, including requests racing an already queued turn.
@@ -100,7 +101,7 @@ export class ConversationObserver {
       this.controller.abort()
       await this.running
       await this.worker.request({ kind: 'observer', action: 'settings', enabled })
-      if (this.closed) return
+      if (isClosed()) return
       this.controller = new AbortController()
       this.enabled = enabled
       this.last = { status: enabled ? 'idle' : 'disabled', observations: 0 }
@@ -157,7 +158,7 @@ export class ConversationObserver {
       this.failureCode = undefined
       try { await this.observe(turn, AbortSignal.any([this.controller.signal, controller.signal])) }
       catch (error) {
-        if (!this.failureCode) {
+        if (!this.status().failureCode) {
           const message = error instanceof Error ? error.message : ''
           const known = ['Observation output limit exceeded', 'Observation response incomplete', 'Invalid observation response', 'Observation evidence does not match its human message', 'Personal Core rejected automatic signal quality']
           this.failureCode = known.includes(message) ? message : message.startsWith('Expecting value:') ? 'invalid_json' : 'observation_failed'
@@ -203,7 +204,7 @@ export class ConversationObserver {
       return
     }
     const deadline = new AbortController()
-    const timer = setTimeout(() => deadline.abort(), this.config.timeoutMs)
+    const timer = setTimeout(() => { deadline.abort() }, this.config.timeoutMs)
     const signal = AbortSignal.any([lifetime, deadline.signal])
     this.last = { status: 'observing', observations: 0 }
     try {

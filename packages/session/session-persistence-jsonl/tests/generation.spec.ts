@@ -55,7 +55,7 @@ it('publishes a V5 successor while preserving the committed V3 generation bytes 
   const after = await stat(request.sourcePath)
   expect([after.ino, after.size, after.mtimeMs]).toEqual([before.ino, before.size, before.mtimeMs])
   expect((await readdir(root)).sort()).toEqual(['session.v3.jsonl', 'session.v5.jsonl'])
-  const rows = (await readFile(request.currentPath, 'utf8')).trimEnd().split('\n').map(row => JSON.parse(row) as unknown)
+  const rows = (await readFile(request.currentPath, 'utf8')).trimEnd().split('\n').map((row): unknown => JSON.parse(row))
   expect(rows).toEqual([header(5), event0, event1])
 })
 
@@ -406,7 +406,7 @@ describe('JSONL immutable generation publication', () => {
     await prepared.publish()
     expect(await readFile(request.sourcePath)).toEqual(source)
     const written = (await readFile(request.currentPath, 'utf8')).trimEnd().split('\n')
-      .map(row => JSON.parse(row) as unknown)
+      .map((row): unknown => JSON.parse(row))
     expect(written).toEqual([header(SESSION_FORMAT_VERSION), ...canonical])
     expect((await readdir(root)).sort()).toEqual(['session.v2.jsonl', `session.v${SESSION_FORMAT_VERSION}.jsonl`])
   })
@@ -448,7 +448,7 @@ describe('JSONL immutable generation publication', () => {
     await publication
     const [writtenHeader, ...writtenEvents] = (await readFile(request.currentPath, 'utf8')).trimEnd().split('\n')
     expect(JSON.parse(writtenHeader as string)).toEqual({ ...header(SESSION_FORMAT_VERSION), isSeeded: false })
-    expect(writtenEvents.map(row => JSON.parse(row) as unknown)).toEqual([boundaryEvent, largeEvent, finalEvent])
+    expect(writtenEvents.map((row): unknown => JSON.parse(row))).toEqual([boundaryEvent, largeEvent, finalEvent])
   })
 
   it('batches exact-threshold encoded rows without retaining a final partial write', async () => {

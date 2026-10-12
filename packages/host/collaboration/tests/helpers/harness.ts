@@ -51,7 +51,7 @@ class ScriptedAdapter extends LlmAdapter {
       const signal = _options.signal
       if (signal === undefined) throw new Error('loop request has no cancellation signal')
       step.started()
-      if (!signal.aborted) await new Promise<void>((resolve) =>{  signal.addEventListener('abort', () =>{  resolve() }, { once: true }) })
+      if (!signal.aborted) await new Promise<void>((resolve) => { signal.addEventListener('abort', () => { resolve() }, { once: true }) })
       step.stopped()
       yield { type: 'finish', reason: { kind: 'aborted', failure: { message: 'fixture request aborted', code: 'ABORTED' } } }
       return
@@ -170,12 +170,18 @@ export async function createCollaborationHarness(options: HarnessOptions = {}): 
     await ctx.plugin(Loader)
     ctx.loader.builtins.include = Include
     ctx.loader.internal = {
+      loadCache: new Map(),
+      register(): never { throw new Error('Unexpected test loader registration') },
+      getOrCreateModuleJob(): never { throw new Error('Unexpected test module job') },
+      resolveSync(): never { throw new Error('Unexpected test module resolution') },
+      load(): never { throw new Error('Unexpected test module load') },
+
       version: 'v2',
       async import(specifier: string) {
         if (!modules.has(specifier)) throw new Error(`unknown fixture plugin ${specifier}`)
         return modules.get(specifier)
       },
-    } as unknown as NonNullable<typeof ctx.loader.internal>
+    }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
     await ctx.loader.await()
     if (options.withCollaboration !== false && ctx.get('collaborationStore') === undefined) throw new Error('collaboration plugin did not activate')

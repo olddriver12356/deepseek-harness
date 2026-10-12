@@ -14,6 +14,7 @@ export const zh = {
   stopped: '已停止', starting: '启动中', running: 'DSH 运行中', external: '外部运行', failed: '启动失败',
   confirmExternal: '确认此地址是该应用', all: '全部', more: '更多操作', close: '关闭', removePrompt: '仅移除注册记录，项目文件会保留。继续？',
   loading: '正在读取…', failedRequest: '操作失败', addAnother: '注册另一个本地应用', allScripts: '显示全部脚本',
+
 } as const
 /**
  * Message keys shared by both client locale dictionaries.
@@ -35,4 +36,5 @@ export const en: Record<AppsKey, string> = {
   stopped: 'Stopped', starting: 'Starting', running: 'Managed', external: 'External', failed: 'Failed',
   confirmExternal: 'Confirm this URL is this app', all: 'All', more: 'More actions', close: 'Close', removePrompt: 'Remove registration only? Project files will be kept.',
   loading: 'Loading…', failedRequest: 'Operation failed', addAnother: 'Register another local app', allScripts: 'Show all scripts',
+
 }

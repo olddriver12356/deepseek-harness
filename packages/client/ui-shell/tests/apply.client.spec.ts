@@ -79,7 +79,7 @@ describe('ui-shell client apply', () => {
     const entry = slots.entries('root')[0]!
     expect(entry.inject).toBeUndefined()
     const layout = ctx.get('layout') as LayoutController
-    expect(() => layout.toggleSidebar()).not.toThrow()
+    expect(() => { layout.toggleSidebar() }).not.toThrow()
   })
 
   it('theme presenter applies the initial snapshot, follows theme/change, and unwinds on dispose', async () => {

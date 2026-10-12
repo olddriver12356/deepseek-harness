@@ -7,7 +7,7 @@ import { chromium } from 'playwright'
 import { createServer } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { SkillFileStore } from '../../../packages/api/workspace-controller/src/skill-files.ts'
-import type { SkillDeleteRequest, SkillFileRequest, SkillFileWriteRequest, SkillArtifactId } from '../../../packages/api/workspace-controller/src/types.ts'
+import type { SkillDeleteRequest, SkillFileRequest, SkillFileWriteRequest } from '../../../packages/api/workspace-controller/src/types.ts'
 
 it('edits real nested skill files in a browser and renders both panel backgrounds', async () => {
   const root = await mkdtemp(join(tmpdir(), 'dsh-skills-browser-'))
@@ -22,17 +22,21 @@ it('edits real nested skill files in a browser and renders both panel background
     configFile: false, root: fileURLToPath(new URL('./fixtures/skills-panel', import.meta.url)),
     plugins: [tsconfigPaths({ projects: [fileURLToPath(new URL('../../../tsconfig.base.client.json', import.meta.url))] }), {
       name: 'skill-files-fixture',
-      configureServer(server) { server.middlewares.use('/api', async (request, response) => {
+      configureServer(server) { server.middlewares.use('/api', (request, response) => { void (async () => {
         try {
           const chunks: Buffer[] = []
-          for await (const chunk of request) chunks.push(Buffer.from(chunk))
+          for await (const chunk of request) {
+            const data: unknown = chunk
+            if (!Buffer.isBuffer(data)) throw new TypeError('Expected a request buffer')
+            chunks.push(data)
+          }
           const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SkillFileRequest & SkillFileWriteRequest & SkillDeleteRequest
           const value = request.url === '/list' ? await store.inventory(root)
-            : request.url === '/tree' ? await store.tree(root, payload.id as SkillArtifactId)
+            : request.url === '/tree' ? await store.tree(root, payload.id)
               : request.url === '/read' ? await store.read(root, payload) : request.url === '/remove' ? await store.remove(root, payload) : await store.write(root, payload)
           response.setHeader('content-type', 'application/json'); response.end(JSON.stringify(value))
         } catch (error) { response.statusCode = 400; response.end(JSON.stringify({ error: String(error) })) }
-      }) },
+      })() }) },
     }],
     server: { host: '127.0.0.1', port: 0, fs: { allow: [fileURLToPath(new URL('../../..', import.meta.url))] } },
     logLevel: 'error',
@@ -46,7 +50,7 @@ it('edits real nested skill files in a browser and renders both panel background
     page.on('pageerror', (error) => { failures.push(error.message); console.error(error.message) })
     page.on('console', (message) => { if (message.type() === 'error') console.error(message.text()) })
     page.on('response', (response) => { if (response.status() >= 400) console.error(response.status(), response.url()) })
-    await page.goto(server.resolvedUrls!.local[0]!)
+    await page.goto(server.resolvedUrls!.local[0])
     for (const [tab, heading, create] of [['Commands', '/fixture-command', 'Create command'], ['MCP', 'mcp-fixture', 'Add MCP server'], ['Hooks', 'hook-fixture', 'Create hook'], ['Plugins', 'plugin-fixture', 'Add plugin']] as const) {
       await page.locator('[data-skills-panel] nav').getByRole('button', { name: tab }).click()
       await page.getByRole('heading', { name: heading }).waitFor()

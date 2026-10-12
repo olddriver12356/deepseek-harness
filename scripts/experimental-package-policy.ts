@@ -2,6 +2,8 @@
 
 /** Existing npm names retained by capabilities now housed under experimental/. */
 export const EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS: Readonly<Record<string, string>> = {
+  // Private local plugin; retain existing composition and persisted record identity.
+  'packages/experimental/dsh-ponytail': '@deepseek-ai/dsh-ponytail',
   'packages/experimental/tool-session-query': '@deepseek-ai/dsh-tool-session-query',
   'packages/experimental/session-title-all-prompts-llm': '@deepseek-ai/dsh-session-title-all-prompts-llm',
   'packages/experimental/tool-terminal': '@deepseek-ai/dsh-tool-terminal',
@@ -49,7 +51,7 @@ export function experimentalPackageRecordNamespace(name: string): string | undef
 }
 
 /** Experimental packages excluded from public releases and npm baselines. */
-export const PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES: readonly string[] = []
+export const PRIVATE_EXPERIMENTAL_PACKAGE_DIRECTORIES: readonly string[] = ['packages/experimental/dsh-ponytail']
 
 /**
  * Whether an experimental package publishes under the default-public policy.

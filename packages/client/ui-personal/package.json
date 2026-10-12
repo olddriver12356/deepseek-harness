@@ -65,16 +65,7 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts",
-    "runtime/*.py",
-    "vendor/bok/LICENSE",
-    "vendor/bok/NOTICE",
-    "vendor/bok/Bok/bok_core/*.py",
-    "vendor/bok/AI-Second-Brain-UI/*.html",
-    "vendor/bok/AI-Second-Brain-UI/*.js",
-    "vendor/bok/AI-Second-Brain-UI/*.css",
-    "vendor/bok/AI-Second-Brain-UI/assets/*",
-    "assets/*"
+    "lib/types/**/*.d.ts"
   ],
   "dependencies": {
     "@deepseek-ai/schemastery": "workspace:~"

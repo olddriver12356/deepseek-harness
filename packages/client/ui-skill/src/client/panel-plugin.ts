@@ -65,9 +65,9 @@ export function apply(ctx: Context): void {
     write: async (request: SkillFileWriteRequest) => unwrap(await ctx.remote.skillFiles.write(request)),
     remove: async (request: SkillDeleteRequest) => unwrap(await ctx.remote.skillFiles.deleteSkill(request)),
     handoff: (workspaceId: WorkspaceId, draft: SkillDraft, destination: string) =>
-      createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination), id => ctx.uiWorkspace.openSession(id)),
+      createDraftHandoff(ctx.sessions, workspaceId, draftingPrompt(draft, destination), (id) => { ctx.uiWorkspace.openSession(id) }),
     handoffTool: (workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft) =>
-      createDraftHandoff(ctx.sessions, workspaceId, toolDraftingPrompt(kind, draft), id => ctx.uiWorkspace.openSession(id)),
+      createDraftHandoff(ctx.sessions, workspaceId, toolDraftingPrompt(kind, draft), (id) => { ctx.uiWorkspace.openSession(id) }),
   }
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({
     name: 'shell.app-overlay', id: 'skills-panel', locale: 'skillsPanel',
