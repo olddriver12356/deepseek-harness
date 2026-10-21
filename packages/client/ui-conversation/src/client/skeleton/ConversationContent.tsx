@@ -26,6 +26,7 @@ export function ConversationContent(props: ConversationContentProps) {
     selectWorkspace, t, useFactorySlot,
   } = props
   const session = useSession(snapshot => snapshot)
+  const conversation = props.useConversation(snapshot => snapshot)
   const Views = useFactorySlot('views', ConversationSessionView)
   const WidthControls = useFactorySlot('widthControls', NoConversationWidthControls)
   const [body, setBody] = useState<HTMLDivElement | null>(null)
@@ -130,6 +131,7 @@ export function ConversationContent(props: ConversationContentProps) {
         onClose: () => { setPickerOpen(false) },
       })}
       {renderSlot('conversation.hero.agentPreset', {})}
+      {sessionId === undefined ? null : <div className={css.heroOptions}>{renderSlot('conversation.hero.options', {})}</div>}
     </div>
   )
 
@@ -195,6 +197,9 @@ export function ConversationContent(props: ConversationContentProps) {
       data-content-phase={phase}
     >
       <div className={css.scrollBody} data-conversation-scroll="">
+        {conversation?.clearBoundary != null && <button type="button" onClick={() => { props.showHistory(!conversation.auditVisible) }}>
+          {t(conversation.auditVisible ? 'clear.hideHistory' : 'clear.showHistory')}
+        </button>}
         {sessionId === undefined ? null : <Views />}
         {composerSeat}
       </div>

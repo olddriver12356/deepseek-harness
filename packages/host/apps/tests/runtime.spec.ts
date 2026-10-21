@@ -9,6 +9,21 @@ import LocalSubprocess from '@deepseek-ai/dsh-subprocess-local'
 import { AppsRuntime } from '../src/runtime.ts'
 import type { AppRegistration } from '../src/types.ts'
 
+it('manages a trusted desktop executable without probing an HTTP port', async () => {
+  const ctx = new Context()
+  const fiber = await ctx.plugin(LocalSubprocess)
+  const runtime = new AppsRuntime(ctx.subprocess, { startupTimeoutMs: 5000, graceMs: 1000, logBytes: 1024, portAttempts: 1 })
+  const app: AppRegistration = { id: 'desktop', kind: 'desktop', executable: process.execPath, name: 'Desktop', description: '', directory: process.cwd(), packageManager: 'npm', script: '', url: '', port: 3000, strategy: 'fixed' }
+  try {
+    await runtime.start(app)
+    for (let i = 0; i < 50 && runtime.snapshot(app).state === 'starting'; i++) await delay(100)
+    expect(runtime.snapshot(app).state).toBe('running')
+    await runtime.stop(app.id)
+    expect(runtime.snapshot(app).state).toBe('stopped')
+    await expect(runtime.confirmExternal(app)).rejects.toThrow('only available for web apps')
+  } finally { await runtime.dispose(); await fiber.dispose() }
+}, 15000)
+
 it('launches on the next free port, deduplicates, captures logs and stops its tree', async () => {
   const ctx = new Context()
   const fiber = await ctx.plugin(LocalSubprocess)

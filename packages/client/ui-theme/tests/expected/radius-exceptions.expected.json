@@ -28,6 +28,9 @@
   "ui-deliverables/src/client/Deliverables.module.css": [
     ".fileIcon: border-radius: 10px"
   ],
+  "ui-experts/src/client/ExpertTaskCard.module.css": [
+    ".card: border-radius: 8px"
+  ],
   "ui-experts/src/client/ExpertsPanel.module.css": [
     ".titleMark: border-radius: 12px",
     ".giantAdd: border-radius: 16px",
@@ -44,9 +47,6 @@
     ".collectionHero: border-radius: 12px",
     ".dialog: border-radius: 14px",
     ".dialog: border-radius: 14px 14px 0 0"
-  ],
-  "ui-experts/src/client/ExpertTaskCard.module.css": [
-    ".card: border-radius: 8px"
   ],
   "ui-knowledge/src/client/KnowledgePanel.module.css": [
     ".titleMark: border-radius: 12px",
@@ -75,6 +75,9 @@
     ".quickButton: border-radius: 8px",
     ".quickDialog: border-radius: 10px"
   ],
+  "ui-plan/src/client/PlanPreview.module.css": [
+    ".cardIcon: border-radius: 10px"
+  ],
   "ui-primitives/src/Menu.module.css": [
     ".compactList .item: border-radius: 5px"
   ],
@@ -96,7 +99,6 @@
     ".deleteButton: border-radius: 6px"
   ],
   "ui-schedule/src/client/ScheduleCreateCard.module.css": [
-    ".card: border-radius: 18px",
     ".leading: border-radius: 10px"
   ],
   "ui-schedule/src/client/TaskManagerPage.module.css": [

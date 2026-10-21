@@ -71,6 +71,7 @@ export function AppsPanel({ appPanels, api, t }: AppsPanelProps) {
     finally { setBusy(false) }
   }
   const edit = async (app?: AppRegistration) => act(async () => {
+    if (app?.kind === 'desktop') { setInspection(null); setForm(app); return }
     const directory = app?.directory ?? await api.pick()
     if (!directory) return
     const info = await api.inspect(directory)
@@ -82,6 +83,7 @@ export function AppsPanel({ appPanels, api, t }: AppsPanelProps) {
     })
   })
   const launch = (app: AppSnapshot) => {
+    if (app.kind === 'desktop') { void act(() => api.start(app.id)); return }
     const tab = window.open('about:blank', '_blank')
     if (tab) { tab.opener = null; pendingTabs.current.set(app.id, tab) }
     void act(async () => { try { await api.start(app.id) } catch (e) { tab?.close(); pendingTabs.current.delete(app.id); throw e } })
@@ -90,7 +92,7 @@ export function AppsPanel({ appPanels, api, t }: AppsPanelProps) {
   return <section className={css.panel} hidden={!active} aria-label={t('title')}>
     <header className={css.header}><strong>{t('title')}</strong></header>
     <div className={css.content}>
-      <div className={css.hero}><div><p className={css.kicker}>{t('collection')}</p><h1>{t('headingLead')} <span>{t('headingAccent')}</span></h1><p className={css.intro}>{t('intro')}</p></div><button className={css.register} disabled={busy} onClick={() => void edit()}><span aria-hidden>＋</span>{t('register')}</button></div>
+      <div className={css.hero}><div><p className={css.kicker}>{t('collection')}</p><h1>{t('headingLead')} <span>{t('headingAccent')}</span></h1><p className={css.intro}>{t('intro')}</p></div><div><button className={css.register} disabled={busy} onClick={() => void edit()}><span aria-hidden>＋</span>{t('register')}</button><button className={css.register} disabled={busy} onClick={() => { setInspection(null); setForm({ ...defaults, kind: 'desktop', name: '', directory: '', executable: '', script: '', url: '' }) }}>{t('registerDesktop')}</button></div></div>
       {error && <p role="alert" className={css.error}>{error}</p>}
       <div className={css.toolbar}><div className={css.filters}>{(['all', 'running', 'stopped'] as const).map(key => <button key={key} aria-pressed={filter === key} onClick={() => { setFilter(key) }}>{t(key === 'running' ? 'runningFilter' : key)} {apps.filter(app => key === 'all' || (key === 'running' ? ['running', 'external'].includes(app.state) : app.state === 'stopped')).length}</button>)}</div><span className={css.summary}>{t('collectionSummary')}</span></div>
       <div className={css.grid}>
@@ -102,16 +104,16 @@ export function AppsPanel({ appPanels, api, t }: AppsPanelProps) {
             <span className={css.letters}>{initials(app.name).map((letter, i) => <span key={i}>{letter}</span>)}</span>
           </span><span className={css.state} data-state={app.state}><span className={css.dot} />{t(app.state)}</span></div>
           <h2>{app.name}</h2><p className={css.description}>{app.description}</p>
-          <dl className={css.meta}><dt>{t('scriptLabel')}</dt><dd>{[app.packageManager, ...app.packageManager === 'npm' ? ['run'] : [], app.script].join(' ')}</dd><dt>{t(['running', 'external'].includes(app.state) ? 'urlLabel' : 'portLabel')}</dt><dd>{['running', 'external'].includes(app.state) ? app.activeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : `${app.port}${app.strategy === 'fixed' ? '' : ' → AUTO'}`}</dd></dl>
+          <dl className={css.meta}>{app.kind === 'desktop' ? <><dt>{t('executable')}</dt><dd>{app.executable}</dd></> : <><dt>{t('scriptLabel')}</dt><dd>{app.packageManager}{app.packageManager === 'npm' ? ' run ' : ' '}{app.script}</dd><dt>{t(['running', 'external'].includes(app.state) ? 'urlLabel' : 'portLabel')}</dt><dd>{['running', 'external'].includes(app.state) ? app.activeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : `${app.port}${app.strategy === 'fixed' ? '' : ' → AUTO'}`}</dd></>}</dl>
           {app.error && <p role="alert" className={css.cardError}>{app.error}</p>}
           <div className={css.actions}>
-            {['running', 'external'].includes(app.state) ? <a href={app.activeUrl} target="_blank" rel="noopener noreferrer">{t('open')} ↗</a> : <button disabled={busy || app.state === 'starting'} onClick={() => { launch(app) }}>{t(app.state === 'starting' ? 'starting' : 'start')}</button>}
+            {app.kind === 'desktop' ? (app.state !== 'running' && <button disabled={busy || app.state === 'starting'} onClick={() => { launch(app) }}>{t(app.state === 'starting' ? 'starting' : 'start')}</button>) : ['running', 'external'].includes(app.state) ? <a href={app.activeUrl} target="_blank" rel="noopener noreferrer">{t('open')} ↗</a> : <button disabled={busy || app.state === 'starting'} onClick={() => { launch(app) }}>{t(app.state === 'starting' ? 'starting' : 'start')}</button>}
             {['running', 'starting'].includes(app.state) && <button disabled={busy} onClick={() => void act(() => api.stop(app.id))}>{t('stop')}</button>}
             <details><summary aria-label={t('more')}>···</summary><div className={css.menu}>
               <button onClick={() => void act(async () => { setLogs(await api.logs(app.id)) })}>{t('logs')}</button>
               <button disabled={busy || ['running', 'starting'].includes(app.state)} onClick={() => void edit(app)}>{t('edit')}</button>
               <button disabled={busy || ['running', 'starting'].includes(app.state)} onClick={() => { if (window.confirm(t('removePrompt'))) void act(() => api.remove(app.id)) }}>{t('remove')}</button>
-              {!['running', 'starting'].includes(app.state) && <button onClick={() => { if (window.confirm(`${t('confirmExternal')}\n${app.url}`)) void act(() => api.confirmExternal(app.id)) }}>{t('confirmExternal')}</button>}
+              {app.kind !== 'desktop' && !['running', 'starting'].includes(app.state) && <button onClick={() => { if (window.confirm(`${t('confirmExternal')}\n${app.url}`)) void act(() => api.confirmExternal(app.id)) }}>{t('confirmExternal')}</button>}
             </div></details>
           </div>
         </article>)}
@@ -121,16 +123,16 @@ export function AppsPanel({ appPanels, api, t }: AppsPanelProps) {
     <dialog ref={dialog} className={css.dialog} onCancel={() => { setForm(null) }}>
       {form && <form onSubmit={(e) => { e.preventDefault(); void act(async () => { await api.save(form); setForm(null) }) }}>
         <h2>{t('register')}</h2>{error && <p role="alert">{error}</p>}
-        <label>{t('directory')}<input value={form.directory} readOnly /></label>
-        <label>{t('name')}<input required value={form.name} onChange={(e) => { patch({ name: e.target.value }) }} /></label>
-        <label>{t('description')}<input value={form.description} onChange={(e) => { patch({ description: e.target.value }) }} /></label>
-        <label>{t('script')}<select value={form.script} onChange={(e) => { patch({ script: e.target.value }) }}>{Object.keys(inspection?.scripts ?? {}).filter(s => allScripts || preferred.includes(s) || s === form.script).map(s => <option key={s}>{s}</option>)}</select></label>
-        <label><input type="checkbox" checked={allScripts} onChange={(e) => { setAllScripts(e.target.checked) }} />{t('allScripts')}</label>
-        <label>{t('manager')}<select required value={managerConfirmed ? form.packageManager : ''} onChange={(e) => { patch({ packageManager: e.target.value as AppRegistration['packageManager'] }); setManagerConfirmed(true) }}><option value="" disabled>{t('chooseManager')}</option>{['npm', 'pnpm', 'yarn', 'bun'].map(m => <option key={m}>{m}</option>)}</select></label>
-        <label>{t('url')}<input required value={form.url} onChange={(e) => { patch({ url: e.target.value }) }} /></label>
-        <label>{t('port')}<input type="number" required min="1" max="65535" value={form.port} onChange={(e) => { patch({ port: Number(e.target.value) }) }} /></label>
-        <label>{t('strategy')}<select value={form.strategy} onChange={(e) => { patch({ strategy: e.target.value as AppRegistration['strategy'] }) }}>{['fixed', 'env', 'long', 'short'].map(s => <option value={s} key={s}>{t(s as AppsKey)}</option>)}</select></label>
-        <footer><button type="button" onClick={() => { setForm(null) }}>{t('cancel')}</button><button disabled={busy}>{t('save')}</button></footer>
+        {form.kind === 'desktop' ? <label>{t('executable')}<input required value={form.executable ?? ''} onChange={e => patch({ executable: e.target.value, directory: '' })} placeholder={t('executableHint')} /></label> : <label>{t('directory')}<input value={form.directory} readOnly /></label>}
+        <label>{t('name')}<input required value={form.name} onChange={e => patch({ name: e.target.value })} /></label>
+        <label>{t('description')}<input value={form.description} onChange={e => patch({ description: e.target.value })} /></label>
+        {form.kind !== 'desktop' && <><label>{t('script')}<select value={form.script} onChange={e => patch({ script: e.target.value })}>{Object.keys(inspection?.scripts ?? {}).filter(s => allScripts || preferred.includes(s) || s === form.script).map(s => <option key={s}>{s}</option>)}</select></label>
+          <label><input type="checkbox" checked={allScripts} onChange={e => setAllScripts(e.target.checked)} />{t('allScripts')}</label>
+          <label>{t('manager')}<select required value={managerConfirmed ? form.packageManager : ''} onChange={(e) => { patch({ packageManager: e.target.value as AppRegistration['packageManager'] }); setManagerConfirmed(true) }}><option value="" disabled>{t('chooseManager')}</option>{['npm', 'pnpm', 'yarn', 'bun'].map(m => <option key={m}>{m}</option>)}</select></label>
+          <label>{t('url')}<input required value={form.url} onChange={e => patch({ url: e.target.value })} /></label>
+          <label>{t('port')}<input type="number" required min="1" max="65535" value={form.port} onChange={e => patch({ port: Number(e.target.value) })} /></label>
+          <label>{t('strategy')}<select value={form.strategy} onChange={e => patch({ strategy: e.target.value as AppRegistration['strategy'] })}>{['fixed', 'env', 'long', 'short'].map(s => <option value={s} key={s}>{t(s as AppsKey)}</option>)}</select></label></>}
+        <footer><button type="button" onClick={() => setForm(null)}>{t('cancel')}</button><button disabled={busy}>{t('save')}</button></footer>
       </form>}
     </dialog>
     <dialog ref={logDialog} className={css.dialog} onCancel={() => { setLogs(null) }}><h2>{t('logs')}</h2><pre>{logs?.stdout}{'\n'}{logs?.stderr}</pre><button onClick={() => { setLogs(null) }}>{t('close')}</button></dialog>

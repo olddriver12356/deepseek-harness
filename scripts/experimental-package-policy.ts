@@ -4,6 +4,7 @@
 export const EXPERIMENTAL_PACKAGE_NAME_EXCEPTIONS: Readonly<Record<string, string>> = {
   // Private local plugin; retain existing composition and persisted record identity.
   'packages/experimental/dsh-ponytail': '@deepseek-ai/dsh-ponytail',
+  'packages/experimental/cua': '@deepseek-ai/dsh-cua',
   'packages/experimental/tool-session-query': '@deepseek-ai/dsh-tool-session-query',
   'packages/experimental/session-title-all-prompts-llm': '@deepseek-ai/dsh-session-title-all-prompts-llm',
   'packages/experimental/tool-terminal': '@deepseek-ai/dsh-tool-terminal',

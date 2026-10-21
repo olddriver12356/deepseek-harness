@@ -24,6 +24,7 @@ import { ConversationEventRegistry } from './event-registry.ts'
 import { HistoricalImageCache } from './historical-images.ts'
 import { ConversationViewRegistry } from './view-registry.ts'
 import { ConversationGroupRegistry } from './group-registry.ts'
+import { UserTextRegistry } from './user-text-registry.ts'
 
 /** Observable faces published for one Session's Conversation assembly. */
 export interface ConversationBinding {
@@ -38,6 +39,8 @@ export interface ConversationBinding {
    * @param target - registered or subsequently registered Conversation target.
    */
   activate(target: string): void
+  /** Toggle audit transcript visibility without restoring model context. */
+  showHistory(show: boolean): void
   /**
    * Resolve one target-owned snapshot source.
    * The first subscriber activates the target unless shell selection already
@@ -58,17 +61,48 @@ class BoundConversation implements ConversationBinding {
   private revision = -1
   private frame: number | undefined
   private disposeFeed: () => void = () => {}
+  private disposeClear: () => void = () => {}
+  private throughSeq: number | null = null
+  private hasActivity = false
+  private auditVisible = false
+  private readonly clearSource: ObservableSnapshot<unknown>
+
+  showHistory(show: boolean): void {
+    this.auditVisible = show
+    this.replace(this.feed.getSnapshot())
+  }
+
+  private filtered(entries: SessionEventWindow['entries']): SessionEventWindow['entries'] {
+    const throughSeq = this.throughSeq
+    return this.auditVisible || throughSeq === null ? entries : entries.filter(entry => entry.event.seq > throughSeq)
+  }
 
   constructor(
-    feed: SessionEventSource,
+    private readonly feed: SessionEventSource,
     private readonly assembler: ConversationNodeAssembler,
+    clearSource: ObservableSnapshot<unknown>,
   ) {
+    this.clearSource = clearSource
+    const readClear = (): void => {
+      const value = this.clearSource.getSnapshot() as { throughSeq?: unknown; hasActivity?: unknown } | undefined
+      this.hasActivity = value?.hasActivity === true
+      const seq = value?.throughSeq
+      this.throughSeq = typeof seq === 'number' && Number.isSafeInteger(seq) && seq >= 0 ? seq : null
+    }
+    readClear()
     this.viewStore = assembler
     this.snapshot = createSnapshotStore(this.currentSnapshot())
     this.openTurn = createSnapshotStore(assembler.openTurn())
     this.replace(feed.getSnapshot())
     this.disposeFeed = feed.subscribe(() => {
       this.accept(feed.getSnapshot())
+    })
+    this.disposeClear = clearSource.subscribe(() => {
+      const before = this.throughSeq
+      readClear()
+      if (before === this.throughSeq) { this.snapshot.set(this.currentSnapshot()); return }
+      this.auditVisible = false
+      this.replace(feed.getSnapshot())
     })
   }
 
@@ -101,11 +135,13 @@ class BoundConversation implements ConversationBinding {
   dispose(): void {
     this.cancelFrame()
     this.disposeFeed()
+    this.disposeClear()
   }
 
   private replace(window: SessionEventWindow): void {
     this.revision = window.revision
-    this.publish(this.assembler.replaceWindow(window.entries, window.hasMore))
+    this.publish(this.assembler.replaceWindow(this.filtered(window.entries), window.hasMore))
+    this.snapshot.set(this.currentSnapshot())
   }
 
   private accept(window: SessionEventWindow): void {
@@ -117,11 +153,11 @@ class BoundConversation implements ConversationBinding {
     this.revision = window.revision
     switch (window.change.kind) {
       case 'prepend':
-        this.publish(this.assembler.prepend(window.change.entries, window.hasMore))
+        this.publish(this.assembler.prepend(this.filtered(window.change.entries), window.hasMore))
         return
       case 'append': {
         let publication: ConversationPublication = 'none'
-        for (const event of window.change.entries) {
+        for (const event of this.filtered(window.change.entries)) {
           const next = this.assembler.append(event)
           if (next === 'immediate' || publication === 'none') publication = next
         }
@@ -172,6 +208,9 @@ class BoundConversation implements ConversationBinding {
     return {
       views: this.viewStore,
       activeTargets: this.assembler.activityTargets(),
+      clearBoundary: this.throughSeq,
+      auditVisible: this.auditVisible,
+      clearedBlank: !this.auditVisible && this.throughSeq !== null && !this.hasActivity,
     }
   }
 }
@@ -190,6 +229,8 @@ export class UiConversation extends Service {
   readonly views: ConversationViewRegistry
   /** Business grouping rules over already materialized target Nodes. */
   readonly groups: ConversationGroupRegistry
+  /** Pure text rules and parser snapshots, independent of durable Session assembly. */
+  readonly userText: UserTextRegistry
   private readonly bindings = new WeakMapWithValues<SessionBinding, BindingRecord>()
   private readonly images: HistoricalImageCache
 
@@ -202,6 +243,7 @@ export class UiConversation extends Service {
     this.events = new ConversationEventRegistry(ctx)
     this.views = new ConversationViewRegistry(ctx)
     this.groups = new ConversationGroupRegistry(ctx, this.views)
+    this.userText = new UserTextRegistry(ctx)
     this.images = new HistoricalImageCache(ctx, sessions)
     const rebuild = (): void => {
       for (const record of this.bindings.values) record.binding.rebuild()
@@ -246,6 +288,7 @@ export class UiConversation extends Service {
     const binding = new BoundConversation(
       owner.eventSource,
       new ConversationNodeAssembler(this.events, this.views, this.groups),
+      owner.session.projections.faceOf('conversationClear'),
     )
     const record: BindingRecord = { source: owner, binding, disposeScope: () => {} }
     this.bindings.set(owner, record)

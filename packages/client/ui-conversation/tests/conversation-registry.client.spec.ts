@@ -40,11 +40,11 @@ function sessionSnapshot(): SessionSnapshot {
   }
 }
 
-function fakeSession(): SessionFace {
+function fakeSession(clear = createSnapshotStore<unknown>(undefined)): SessionFace {
   const snapshot = createSnapshotStore(sessionSnapshot())
   return {
     sessionId: SESSION_ID,
-    projections: { faceOf: () => createSnapshotStore<unknown>(undefined) },
+    projections: { faceOf: () => clear },
     getSnapshot: () => snapshot.getSnapshot(),
     subscribe: listener => snapshot.subscribe(listener),
     beginSubmission: () => ({ requestId: 'test-req' as never, abandon: () => {} }),
@@ -212,6 +212,26 @@ describe('Conversation registries', () => {
     expect(openTurn.getSnapshot()).toBe(8)
   })
 
+  it('restores the clear boundary outside the loaded page and toggles audit without changing history', async () => {
+    const ctx = new Context()
+    const { sessions, binding } = fakeSessions(ctx)
+    const clear = createSnapshotStore<unknown>({ throughSeq: 5 })
+    Object.assign(binding, { session: fakeSession(clear) })
+    const ui = new UiConversation(ctx, sessions)
+    const source = binding.eventSource as MutableSessionEventSource
+    source.append({ type: 'event', event: { seq: SessionSeq(1), time: 1, type: 'turn/start', data: { turn: 1 } } })
+    const conversation = ui.binding(binding)
+    expect(conversation.snapshot.getSnapshot()).toMatchObject({ clearBoundary: 5, clearedBlank: true })
+    conversation.showHistory(true)
+    expect(conversation.snapshot.getSnapshot()).toMatchObject({ auditVisible: true, clearedBlank: false })
+    conversation.showHistory(false)
+    expect(conversation.snapshot.getSnapshot().clearedBlank).toBe(true)
+    clear.set({ throughSeq: 9 })
+    expect(conversation.snapshot.getSnapshot()).toMatchObject({ clearBoundary: 9, auditVisible: false })
+    expect(source.getSnapshot().entries).toHaveLength(1)
+    await new Promise(resolve => setTimeout(resolve, 0))
+    await ctx.fiber.dispose()
+  })
   it('publishes frame-paced updates after three animation frames and lets immediate updates preempt them', async () => {
     let nextFrame = 0
     const frames = new Map<number, FrameRequestCallback>()

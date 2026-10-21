@@ -1,5 +1,7 @@
 {
   "excluded": [
+    ".agents/notes/implemented/feature/2026-10-20-global-clear-command.md",
+    "packages/session/command-clear/README.md",
     ".agents/notes/AGENTS.md",
     ".agents/notes/implemented/AGENTS.md",
     ".agents/notes/implemented/CLAUDE.md",
@@ -73,6 +75,7 @@
     ".agents/notes/implemented/architecture/2026-10-09-preserve-local-and-upstream-session-formats.md",
     "docs/upgrade-guide/v0.2.0-rc.2/local-session-v5/guide.md",
     "docs/persistence-changes/local-history/README.md",
-    "docs/persistence-changes/2026-10-10-integrated-session-v5.md"
+    "docs/persistence-changes/local-history/2026-10-10-integrated-session-v5.md",
+    "docs/persistence-changes/2026-10-20-integrated-rc2-session-v5.md"
   ]
 }

@@ -6,6 +6,10 @@ import type { ConversationViewSnapshotStore } from './conversation.ts'
 export interface ConversationSnapshot {
   readonly views: ConversationViewSnapshotStore
   readonly activeTargets: ReadonlySet<string>
+  /** Successful durable clear cursor; absent for Sessions without this capability. */
+  readonly clearBoundary?: number | null
+  readonly auditVisible?: boolean
+  readonly clearedBlank?: boolean
 }
 
 /** Empty Conversation value used before a Session binding is available. */
@@ -27,6 +31,7 @@ export function conversationPhase(
   session: SessionSnapshot,
   conversation: ConversationSnapshot,
 ): ConversationPhase {
+  if (conversation.clearedBlank && !session.running && session.pendingSubmissions.length === 0) return 'blank'
   const active = conversation.activeTargets.size > 0
     || (!session.blank && !session.awaitingFirstTurn)
     || session.running

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-collaboration",
   "description": "Opt-in independent Session discussion for the Web profile",
-  "version": "0.2.1-alpha.2",
+  "version": "0.2.1-rc.2",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",

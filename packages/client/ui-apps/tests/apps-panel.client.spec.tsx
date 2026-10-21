@@ -19,6 +19,30 @@ it('opens registration from the empty state using the workspace picker', async (
   mounted.unmount()
 })
 
+it('registers a desktop executable and starts it without opening a browser tab', async () => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') }
+  const path = 'C:\\Trusted\\Widget.exe'
+  let records: AppSnapshot[] = []
+  const api: AppsApi = { list: vi.fn(async () => ({ apps: records })), pick: vi.fn(), inspect: vi.fn(),
+    save: vi.fn(async (registration) => { records = [{ ...registration, id: 'desktop-1', directory: 'C:\\Trusted', state: 'stopped', activeUrl: '', error: '' }] }),
+    start: vi.fn(), stop: vi.fn(), logs: vi.fn(), remove: vi.fn(), confirmExternal: vi.fn() }
+  const opened = vi.spyOn(window, 'open').mockImplementation(() => null)
+  const panels = new AppPanelsController(); panels.setActive('apps')
+  const mounted = render(<AppsPanel appPanels={panels} api={api} t={key => zh[key]} />)
+  try {
+    fireEvent.click(screen.getByRole('button', { name: '注册桌面应用' }))
+    fireEvent.change(screen.getByPlaceholderText('输入可信程序的绝对路径'), { target: { value: path } })
+    fireEvent.change(screen.getByRole('textbox', { name: '名称' }), { target: { value: 'Widget' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    await waitFor(() => expect(api.save).toHaveBeenCalledWith(expect.objectContaining({ kind: 'desktop', executable: path })))
+    await screen.findByText(path)
+    fireEvent.click(screen.getByRole('button', { name: '启动并打开' }))
+    await waitFor(() => expect(api.start).toHaveBeenCalledWith('desktop-1'))
+    expect(opened).not.toHaveBeenCalled()
+  } finally { mounted.unmount(); opened.mockRestore() }
+})
+
 it('counts managed and external apps together and filters without changing card colors', async () => {
   const records: AppSnapshot[] = ['AgentSmith', 'Open Design', 'Headroom'].map((name, index) => ({
     id: String(index), name, description: '', directory: 'C:/app', packageManager: 'npm', script: 'dev',

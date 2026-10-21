@@ -1,6 +1,6 @@
 import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import LocalSubprocess from '@deepseek-ai/dsh-subprocess-local'
 import { configurationFixture } from '../../../settings/settings/tests/configuration-fixture.ts'
 import AppsService, { Config } from '../src/index.ts'
@@ -23,6 +23,11 @@ it('persists explicit registrations and removes only the registry record', async
     const registration: AppRegistration = { id: '', name: 'Test', description: '', directory, packageManager: 'npm', script: 'dev', url: 'http://localhost:3000', port: 3000, strategy: 'fixed' }
     const saved = await service.save({ registration })
     expect((await service.list()).apps[0]?.id).toBe(saved.id)
+    const desktop = await service.save({ registration: { ...registration, kind: 'desktop', executable: process.execPath, directory: '', name: 'Desktop' } })
+    expect(desktop.executable).toBe(process.execPath)
+    expect(desktop.directory).toBe(dirname(process.execPath))
+    await expect(service.save({ registration: { ...registration, kind: 'desktop', executable: process.execPath, directory: '', name: 'Duplicate' } })).rejects.toThrow('already registered')
+    await service.unregister({ id: desktop.id })
     await expect(service.save({ registration })).rejects.toThrow('already registered')
     await ctx.fiber.dispose()
     const restored = await start()

@@ -29,7 +29,7 @@ export function DefaultConversationViews({
     // The Session input owns content before this persistence writer is attached.
   }, [inputActions])
 
-  if (session.blank && conversationPhase(session, conversation) === 'blank') return null
+  if ((session.blank || conversation.clearedBlank) && conversationPhase(session, conversation) === 'blank') return null
   const viewId = view ?? active?.id
   return (
     <div className={css.viewArea}>

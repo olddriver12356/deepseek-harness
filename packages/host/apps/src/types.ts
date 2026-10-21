@@ -8,6 +8,10 @@ export type PortStrategy = 'fixed' | 'env' | 'long' | 'short'
  * Saved application identity, launch script, directory, and local endpoint.
  */
 export interface AppRegistration {
+  /** Omitted on existing records, which remain browser applications. */
+  kind?: 'web' | 'desktop'
+  /** Absolute executable path for trusted desktop applications. */
+  executable?: string
   /** Stable identity used for saved registration and lifecycle requests. */
   id: string
   /** Display name shown in the Apps surface. */

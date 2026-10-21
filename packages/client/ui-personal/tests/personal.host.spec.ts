@@ -61,6 +61,7 @@ it('mounts the real Bok page with auth, privacy, durable observations, and rever
   await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(path).href } }); await ctx.loader.await()
   expect([...ctx.loader.entries()].filter(entry => !entry.fiber && !entry.disabled)).toEqual([])
   const port = ctx.webServer.port
+  if (port === undefined) throw new Error('Web server did not start')
   const removeLogin = ctx.webServer.register({ kind: 'exact', path: '/', handler: (req, res) => { if (ctx!.connection.authorizeIndex(req, res)) res.end('ok') } })
   const launch = new URL(ctx.connection.authenticatedUrl(`http://127.0.0.1:${port}/`))
   const login = await request(port, launch.pathname + launch.search)

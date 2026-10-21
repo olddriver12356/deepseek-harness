@@ -19,6 +19,7 @@
 .hero h1 { text-shadow:none; }
 .hero h1 span::after { content:''; position:absolute; left:0; right:0; bottom:-7px; height:7px; background:repeating-linear-gradient(90deg,#ff5b8b 0 3px,transparent 3px 6px); transform:rotate(-2deg); }
 .intro { max-width:440px; margin:15px 0 0; color:#bab8bf; font-size:14px; line-height:1.8; }
+.hero > div:last-child { display:flex; gap:12px; flex-wrap:wrap; }
 .register { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px; flex:0 0 146px; height:120px; padding:12px; border:1px solid #86a9d9; border-radius:13px; background:#252d37; color:#eee5cd; box-shadow:3px 3px 0 #ce597a; font-weight:700!important; transition:transform .16s ease; }
 .register span { font-size:40px; line-height:1; }
 .panel .register { font-size:14px; }

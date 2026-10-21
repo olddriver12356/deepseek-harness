@@ -10,6 +10,7 @@ import { apply as applyConnection } from '@deepseek-ai/dsh-client-connection'
 import { LocalCredentialProvider } from '@deepseek-ai/dsh-credentials-local'
 import TypertRegistry from '@deepseek-ai/dsh-typert-registry'
 import TypertGatewayService from '@deepseek-ai/dsh-api-gateway'
+import RemoteAccess from '@deepseek-ai/dsh-api-remote-access'
 import { bindTypertRemote, Remote } from '@deepseek-ai/dsh-typert-protocol'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { createSandbox, evaluateHostCode } from '../../../extensions/cordis-host-runner/src/sandbox.ts'
@@ -45,6 +46,7 @@ it('the authenticated Gateway accepts a same-user shell cookie forged from a tes
   await ctx.plugin(LocalCredentialProvider, { dshHome: home, watch: false })
   await ctx.plugin({ inject: ['credentials'], apply: applyConnection })
   await ctx.plugin(TypertRegistry)
+  await ctx.plugin(RemoteAccess)
   await ctx.plugin(TypertGatewayService)
   await ctx.plugin(AdmissionProbe)
   const probe = ctx.get('admissionProbe') as AdmissionProbe

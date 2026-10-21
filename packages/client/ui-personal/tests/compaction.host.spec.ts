@@ -72,6 +72,7 @@ it('proposes through the default model and applies only owner-accepted stored it
       version: 'v2', async import(name: string) { return modules[name] } }
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(path).href } }); await ctx.loader.await()
     const port = ctx.webServer.port
+    if (port === undefined) throw new Error('Web server did not start')
     ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/', handler: (req, res) => { if (ctx.connection.authorizeIndex(req, res)) res.end('ok') } }))
     const launch = new URL(ctx.connection.authenticatedUrl(`http://127.0.0.1:${port}/`))
     const cookie = (await request(port, launch.pathname + launch.search)).cookie

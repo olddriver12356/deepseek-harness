@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto'
+import { realpath, stat } from 'node:fs/promises'
+import { isAbsolute, dirname } from 'node:path'
 import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-subprocess'
@@ -11,6 +13,7 @@ import type { AppRegistration, AppIdRequest, AppSaveRequest, AppStartRequest, Ap
 export type * from './types.ts'
 
 const registrationSchema: z<AppRegistration> = z.object({
+  kind: z.union(['web', 'desktop']), executable: z.string(),
   id: z.string().required(), name: z.string().required(), description: z.string().default(''), directory: z.string().required(),
   packageManager: z.union(['npm', 'pnpm', 'yarn', 'bun']).required(), script: z.string().required(), url: z.string().required(),
   port: z.number().min(1).max(65535).step(1).required(), strategy: z.union(['fixed', 'env', 'long', 'short']).required(),
@@ -82,15 +85,29 @@ export class AppsService extends TypertRemoteService {
       const app = registrationSchema(request.registration)
       if (app.id && this.runtime.busy(app.id)) throw new Error('Stop the application before editing')
       if (app.id) this.find(app.id)
-      const inspected = await inspectProject(app.directory)
-      if (!Object.hasOwn(inspected.scripts, app.script)) throw new Error('Select an existing package script')
-      const saved = { ...app, id: app.id || randomUUID(), directory: inspected.directory, url: validateAppUrl(app.url) }
-      const url = new URL(saved.url); url.port = String(saved.port); saved.url = url.href
+      let saved: AppRegistration
+      if (app.kind === 'desktop') {
+        if (!app.executable || !isAbsolute(app.executable) || (process.platform === 'win32' && !/\.exe$/i.test(app.executable))) throw new Error('Select an absolute desktop executable (.exe on Windows)')
+        const executable = await realpath(app.executable)
+        if (!(await stat(executable)).isFile()) throw new Error('Desktop executable must be a file')
+        const directory = await realpath(dirname(executable))
+        if (app.directory && (process.platform === 'win32'
+          ? (await realpath(app.directory)).toLowerCase() !== directory.toLowerCase()
+          : (await realpath(app.directory)) !== directory)) throw new Error('Desktop directory must match executable')
+        saved = { ...app, id: app.id || randomUUID(), directory, executable, script: '', url: '' }
+      } else {
+        const inspected = await inspectProject(app.directory)
+        if (!Object.hasOwn(inspected.scripts, app.script)) throw new Error('Select an existing package script')
+        saved = { ...app, id: app.id || randomUUID(), directory: inspected.directory, url: validateAppUrl(app.url) }
+        const url = new URL(saved.url); url.port = String(saved.port); saved.url = url.href
+      }
       if (!saved.name.trim()) throw new Error('Application name is required')
       const apps = this.config.apps.get()
       const key = (path: string): string => process.platform === 'win32' ? path.toLowerCase() : path
-      if (apps.some(other => other.id !== saved.id && key(other.directory) === key(saved.directory))) throw new Error('Project already registered')
-      await this.saveRegistrations(app.id ? apps.map(other => other.id === saved.id ? saved : other) : [...apps, saved])
+      if (apps.some(other => other.id !== saved.id && (saved.kind === 'desktop'
+        ? other.kind === 'desktop' && key(other.executable ?? '') === key(saved.executable ?? '')
+        : other.kind !== 'desktop' && key(other.directory) === key(saved.directory)))) throw new Error('Project already registered')
+      await this.saveRegistrations( app.id ? apps.map(other => other.id === saved.id ? saved : other) : [...apps, saved])
       this.runtime.forget(saved.id)
       return saved
     })

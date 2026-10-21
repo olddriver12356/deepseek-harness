@@ -1,4 +1,5 @@
 import { createServer } from 'node:net'
+import { isAbsolute } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { SubprocessRuntime, SubprocessHandle } from '@deepseek-ai/dsh-subprocess'
 import { inspectProject, validateAppUrl } from './manifest.ts'
@@ -79,10 +80,26 @@ export class AppsRuntime {
     if (this.busy(app.id)) return Promise.resolve(this.snapshot(app))
     const run: Run = { snapshot: { ...app, state: 'starting', activeUrl: app.url, error: '' }, cancelled: false }
     this.runs.set(app.id, run)
-    void this.launch(app, selected ?? app.script, run).catch((error: unknown) => {
+    void (app.kind === 'desktop' ? this.launchDesktop(app, run) : this.launch(app, selected ?? app.script, run)).catch((error: unknown) => {
       if (!run.cancelled) { run.snapshot.state = 'failed'; run.snapshot.error = String(error instanceof Error ? error.message : error) }
     })
     return Promise.resolve(run.snapshot)
+  }
+
+  private async launchDesktop(app: AppRegistration, run: Run): Promise<void> {
+    if (!app.executable || !isAbsolute(app.executable)) throw new Error('Desktop executable must be absolute')
+    const executable = await this.subprocess.resolveExecutable(app.executable)
+    if (run.cancelled) return
+    const handle = this.subprocess.spawn({ argv: [executable], cwd: app.directory,
+      env: {}, graceMs: this.config.graceMs,
+      stdio: { stdin: 'ignore', stdout: { maxBytes: this.config.logBytes }, stderr: { maxBytes: this.config.logBytes } } })
+    run.handle = handle
+    void handle.done.then((outcome) => {
+      if (!run.cancelled) { run.snapshot.state = outcome.exitCode === 0 ? 'stopped' : 'failed'; run.snapshot.error = outcome.exitCode === 0 ? '' : `Application exited (${outcome.exitCode ?? outcome.signal})` }
+    }, (error) => {
+      if (!run.cancelled) { run.snapshot.state = 'failed'; run.snapshot.error = String(error) }
+    })
+    if (!run.cancelled && run.snapshot.state === 'starting') run.snapshot.state = 'running'
   }
 
   private async launch(app: AppRegistration, script: string, run: Run, retries = 2): Promise<void> {
@@ -180,6 +197,7 @@ export class AppsRuntime {
    * @param app - Application registration whose endpoint must be ready.
    */
   async confirmExternal(app: AppRegistration): Promise<void> {
+    if (app.kind === 'desktop') throw new Error('External URL confirmation is only available for web apps')
     if (this.busy(app.id)) throw new Error('Stop the managed app first')
     const response = await fetch(validateAppUrl(app.url), { redirect: 'manual', signal: AbortSignal.timeout(2000) })
     await response.body?.cancel()

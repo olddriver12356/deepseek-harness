@@ -7,11 +7,12 @@ import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import Gateway from '@deepseek-ai/dsh-api-gateway'
+import RemoteAccess from '@deepseek-ai/dsh-api-remote-access'
 import * as Connection from '@deepseek-ai/dsh-client-connection'
 import Credentials from '@deepseek-ai/dsh-credentials-local'
 import WebServer from '@deepseek-ai/dsh-host-webserver'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
-import Jsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as Jsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
 import AgentRegistry from '@deepseek-ai/dsh-agent'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import Storage from '@deepseek-ai/dsh-storage'
@@ -46,7 +47,7 @@ async function load() {
   const ctx = new Context()
   cleanups.push(() => ctx.fiber.dispose())
   const modules = new Map<string, unknown>([
-    ['credentials', Credentials], ['web', WebServer], ['connection', Connection], ['typert', Typert], ['gateway', Gateway],
+    ['credentials', Credentials], ['web', WebServer], ['connection', Connection], ['typert', Typert], ['remoteAccess', RemoteAccess], ['gateway', Gateway],
     ['sessions', SessionStore], ['persistence', Jsonl], ['storage', Storage], ['storage-json', StorageJson], ['storage-domain', StorageDomain],
     ['prompt', SystemPrompt], ['tools', Tools], ['agents', AgentRegistry], ['projections', SessionProjections], ['collaboration', Collaboration],
   ])
