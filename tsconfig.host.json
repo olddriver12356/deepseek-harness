@@ -644,6 +644,9 @@
       "path": "./packages/goal/goal"
     },
     {
+      "path": "./packages/goal/long-term-progress"
+    },
+    {
       "path": "./packages/goal/tool-goal"
     },
     {

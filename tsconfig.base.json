@@ -24,6 +24,8 @@
       "node"
     ],
     "paths": {
+      "@deepseek-ai/dsh-long-term-progress": ["./packages/goal/long-term-progress/src/index.ts"],
+      "@deepseek-ai/dsh-long-term-progress/types": ["./packages/goal/long-term-progress/src/types.ts"],
       "@deepseek-ai/dsh-experimental-session-search": ["./packages/experimental/session-search/src/index.ts"],
       "@deepseek-ai/dsh-experimental-ralph-bundle": ["./packages/experimental/ralph-bundle/src/index.ts"],
       "@deepseek-ai/dsh-experimental-terminal-bundle": ["./packages/experimental/terminal-bundle/src/index.ts"],

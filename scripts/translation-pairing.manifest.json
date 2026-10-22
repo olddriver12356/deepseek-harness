@@ -1,5 +1,6 @@
 {
   "excluded": [
+    "packages/goal/long-term-progress/README.md",
     ".agents/notes/implemented/feature/2026-10-20-global-clear-command.md",
     "packages/session/command-clear/README.md",
     ".agents/notes/AGENTS.md",
