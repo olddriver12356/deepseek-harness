@@ -2,9 +2,9 @@
 import { z } from 'zod'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import type { CheckpointId, MilestoneId, ProgressAuthority, ProgressLimits, ProgressRef, ProgressView } from './types.ts'
-/** Structured domain rejection; no Session mutation has committed when transition throws. */
+/** Structured admission or replay denial. Transition failures append nothing; replay failures follow a committed event. */
 export class ProgressError extends Error {
-  constructor(message: string, readonly code: 'PROGRESS_INVALID' | 'PROGRESS_STALE' = 'PROGRESS_INVALID') {
+  constructor(message: string, readonly code: 'PROGRESS_INVALID' | 'PROGRESS_STALE' | 'PROGRESS_REPLAY_FAILED' = 'PROGRESS_INVALID') {
     super(message)
     this.name = 'ProgressError'
   }
@@ -56,7 +56,7 @@ export const progressChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('replace'), milestones: z.array(milestone) }).strict(),
   ...(['approve', 'start', 'accept'] as const).map(kind => z.object({ kind: z.literal(kind), milestoneId: mid }).strict()),
   z.object({ kind: z.literal('reconcile'), checkpointId: cid, evidence }).strict(),
-  z.object({ kind: z.literal('refine'), checkpointId: cid, detail: text, references }).strict(),
+  z.object({ kind: z.literal('refine'), checkpointId: cid, detail: text, references, reason: requiredText }).strict(),
   z.object({ kind: z.literal('regression'),
     historicalCheckpointId: cid,
     milestoneId: mid,
@@ -70,7 +70,7 @@ export const progressChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('bind-goal'), binding: goalBinding }).strict(),
   z.object({ kind: z.literal('references'), references }).strict(),
 ])
-/** Strict durable/wire state schema, including branded Goal references. */
+/** Strict durable/wire state schema with identity, evidence and authority invariants. */
 export const progressViewSchema = z.object({
   revision: revision.refine(n => n > 0),
   milestones: z.array(milestone.extend({ checkpoints: z.array(checkpoint.extend({ complete: z.boolean(),
@@ -80,7 +80,50 @@ export const progressViewSchema = z.object({
   goalBinding: goalBinding.extend({ goal: goalBinding.shape.goal.extend({ id: idSchema.transform(value => brandString<import('@deepseek-ai/dsh-goal/types').GoalId>(value)) }) }).nullable(),
   vault: vault.nullable(),
 
-}).strict()
+}).strict().superRefine((state, ctx) => {
+  const reject = (message: string) => { ctx.addIssue({ code: 'custom', message }) }
+  const identities = state.milestones.flatMap(m => [m.id, ...m.checkpoints.map(c => c.id)])
+  if (new Set(identities).size !== identities.length)
+    reject('progress identities must be unique')
+  const decisions = [...state.approvals, ...state.acceptances, ...state.release === null ? [] : [state.release]]
+  if (decisions.some(d => d.revision < 1 || d.revision > state.revision
+    || !state.milestones.some(m => m.id === d.milestoneId)))
+    reject('milestone decision requires an existing milestone and committed revision')
+  for (const m of state.milestones) {
+    for (const c of m.checkpoints) {
+      if (c.complete !== (c.evidence.at(-1)?.kind === 'passed'))
+        reject('completion requires latest passing evidence')
+      if (c.evidence.some((e, index) => e.revision < 1 || e.revision > state.revision
+        || e.revision <= (c.evidence[index - 1]?.revision ?? 0)))
+        reject('checkpoint evidence requires increasing committed revisions')
+    }
+  }
+  if (new Set(state.acceptances.map(a => a.milestoneId)).size !== state.acceptances.length)
+    reject('milestone acceptance must be unique')
+  const settlementRevisions = [...decisions.map(d => d.revision),
+    ...state.milestones.flatMap(m => m.checkpoints.flatMap(c => c.evidence.map(e => e.revision)))]
+  if (new Set(settlementRevisions).size !== settlementRevisions.length)
+    reject('progress settlements require distinct committed revisions')
+  for (const accepted of state.acceptances) {
+    if (!state.approvals.some(a => a.milestoneId === accepted.milestoneId && a.revision < accepted.revision))
+      reject('acceptance requires an earlier milestone approval')
+    const m = state.milestones.find(value => value.id === accepted.milestoneId)
+    if (m === undefined || m.checkpoints.length === 0 || m.checkpoints.some(c => !c.complete
+      || (c.evidence.at(-1)?.revision ?? state.revision) >= accepted.revision))
+      reject('acceptance requires earlier completed checkpoint evidence')
+  }
+  if (state.release !== null && (currentMilestone(state)?.id !== state.release.milestoneId
+    || !state.approvals.some(a => a.milestoneId === state.release?.milestoneId && a.revision < state.release.revision)))
+    reject('release requires an earlier approval for the current milestone')
+  if (state.goalBinding !== null) {
+    const binding = state.goalBinding
+    const m = currentMilestone(state)
+    const start = m?.checkpoints.findIndex(c => c.id === binding.checkpointIds[0]) ?? -1
+    if (state.release?.milestoneId !== binding.milestoneId || m?.id !== binding.milestoneId
+      || start < 0 || !binding.checkpointIds.every((id, index) => m.checkpoints[start + index]?.id === id))
+      reject('Goal binding requires consecutive checkpoints in the released milestone')
+  }
+})
 /** Durable authority identifies an already authenticated adapter decision, not a model argument. */
 export const authoritySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('human'), source: z.enum(['command', 'ui', 'direct-human-tool']) }).strict(),
@@ -104,13 +147,15 @@ export function eligibleCheckpoints(state: ProgressView, id: MilestoneId, ids: r
     return false
   return ids.every((value, index) => current.checkpoints[first + index]?.id === value && !current.checkpoints[first + index]?.complete)
 }
-/** Reject over-limit values recursively at complete admission. */
-function checkBounds(value: unknown, limits: ProgressLimits): void {
-  if (typeof value === 'string' && value.length > limits.maxTextLength)
+/** Bound content and retained collections without applying text limits to protocol literals or IDs. */
+function checkBounds(value: unknown, limits: ProgressLimits, field = ''): void {
+  const content = ['title', 'caption', 'exitCondition', 'outcome', 'detail', 'references',
+    'summary', 'path', 'fingerprint', 'marker', 'message', 'reason']
+  if (typeof value === 'string' && content.includes(field) && value.length > limits.maxTextLength)
     throw new ProgressError('progress text limit exceeded')
   if (Array.isArray(value)) {
     for (const item of value)
-      checkBounds(item, limits)
+      checkBounds(item, limits, field)
     return
   }
   if (typeof value !== 'object' || value === null)
@@ -121,30 +166,16 @@ function checkBounds(value: unknown, limits: ProgressLimits): void {
       if (item.length > limit)
         throw new ProgressError(`progress ${key} limit exceeded`)
     }
-    checkBounds(item, limits)
+    checkBounds(item, limits, key)
   }
-}
-/** Validate complete identity and evidence invariants. */
-function validateState(state: ProgressView, limits: ProgressLimits): ProgressView {
-  const parsed = progressViewSchema.parse(state)
-  checkBounds(parsed, limits)
-  const ids = parsed.milestones.flatMap(m => [m.id, ...m.checkpoints.map(c => c.id)])
-  if (new Set(ids).size !== ids.length)
-    throw new ProgressError('progress identities must be unique')
-  for (const m of parsed.milestones)
-    for (const c of m.checkpoints) {
-      if (c.complete !== (c.evidence.at(-1)?.kind === 'passed'))
-        throw new ProgressError('completion requires latest passing evidence')
-    }
-  return parsed
 }
 /** Apply one validated revision-bound change without effects.
  * @param previous - prior state, null before creation.
  * @param ref - expected revision.
  * @param input - untrusted operation.
  * @param authority - trusted adapter authority.
- * @param limits - configured admission bounds.
- * @returns detached next durable state. */
+ * @param limits - admission bounds for incoming content and the result, not historical prior state.
+ * @returns detached next durable state; throws without effects on schema, authority or admission denial. */
 export function transition(previous: ProgressView | null,
   ref: ProgressRef,
   input: unknown,
@@ -163,7 +194,7 @@ export function transition(previous: ProgressView | null,
     throw new ProgressError('human authority required')
   const state: ProgressView = previous === null
     ? { revision: 0, milestones: [], approvals: [], release: null, acceptances: [], references: [], goalBinding: null, vault: null }
-    : validateState(previous, limits)
+    : progressViewSchema.parse(previous)
   const next = state.revision + 1
   if (!Number.isSafeInteger(next))
     throw new ProgressError('progress revision exhausted')
@@ -175,13 +206,16 @@ export function transition(previous: ProgressView | null,
     return current
   }
   switch (change.kind) {
-    case 'replace':
+    case 'replace': {
+      const checkpoints = new Map(state.milestones.flatMap(m => m.checkpoints.map(c => [c.id, c] as const)))
       result = { ...result, milestones: change.milestones.map(m => ({ ...m, checkpoints: m.checkpoints.map((c) => {
-        const old = state.milestones.find(prior => prior.id === m.id)?.checkpoints.find(prior => prior.id === c.id)
+        const old = checkpoints.get(c.id)
         if (old !== undefined && old.outcome !== c.outcome && old.evidence.length > 0)
           throw new ProgressError('changed evidenced outcomes require a new checkpoint identity')
         return { ...c, complete: old?.complete ?? false, evidence: old?.evidence ?? [] }
-      }) })), approvals: [], release: null, goalBinding: null }
+      }) })),
+      approvals: state.approvals.filter(a => state.acceptances.some(accepted => accepted.milestoneId === a.milestoneId)),
+      release: null, goalBinding: null }
       if (state.acceptances.length > 0) {
         for (const accepted of state.acceptances) {
           const before = state.milestones.find(m => m.id === accepted.milestoneId)
@@ -197,6 +231,7 @@ export function transition(previous: ProgressView | null,
             ? (state.milestones.find(old => old.id === m.id) ?? m) : m) }
       }
       break
+    }
     case 'approve':
       requireCurrent(change.milestoneId)
       result = { ...result, approvals: [...state.approvals, { milestoneId: change.milestoneId, revision: next }] }
@@ -285,5 +320,6 @@ export function transition(previous: ProgressView | null,
       throw new ProgressError(`unsupported progress change ${String(unreachable)}`)
     }
   }
-  return validateState(result, limits)
+  checkBounds(result, limits)
+  return progressViewSchema.parse(result)
 }

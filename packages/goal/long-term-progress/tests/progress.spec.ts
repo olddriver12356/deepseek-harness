@@ -2,12 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
-import SessionStore, { SessionId, type Session } from '@deepseek-ai/dsh-session'
+import SessionStore, { SessionId, SessionLogOffset, type Session } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import { createInboxStub } from '@deepseek-ai/dsh-agent-loop-testkit'
+import { GoalId } from '@deepseek-ai/dsh-goal'
 import LongTermProgress from '../src/index.ts'
-import { checkpointId, milestoneId } from '../src/domain.ts'
-import type { ProgressChange, ProgressView } from '../src/types.ts'
+import { checkpointId, eligibleCheckpoints, milestoneId } from '../src/domain.ts'
+import type { ProgressChange, ProgressProjectionState, ProgressView } from '../src/types.ts'
 const cleanups: (() => Promise<void>)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse())
   await cleanup() })
@@ -96,6 +97,20 @@ describe('durable progress service', () => {
     expect(ctx.longTermProgress.get(reopened)).toEqual(released)
     expect(reopened.inbox.nextStep).toEqual([])
   })
+  it('durably records refinement reasons and replays the implementation-only edit', async () => {
+    const { ctx, agent, change, register } = await harness()
+    change({ kind: 'replace', milestones })
+    change({ kind: 'approve', milestoneId: m1 })
+    const reason = 'Clarify the approved implementation approach'
+    const refined = change({ kind: 'refine', checkpointId: c1, detail: 'Run focused tests', references: [], reason })
+    const events = agent.session.snapshotEvents()
+    expect(events.at(-1)).toMatchObject({
+      type: 'progress/change', data: { change: { kind: 'refine', reason } },
+    })
+    const reopened = await register(ctx.sessions.create(SessionId(randomUUID()), { seed: events }))
+    expect(ctx.longTermProgress.get(reopened)).toEqual(refined)
+    expect(refined.milestones[0]?.checkpoints[0]?.outcome).toBe('Pass tests')
+  })
   it('forks references and suspends only child vault writeback', async () => {
     const { ctx, agent, change, register } = await harness()
     change({ kind: 'replace', milestones })
@@ -156,6 +171,120 @@ describe('durable progress service', () => {
     expect(ctx.longTermProgress.get(agent)?.acceptances).toEqual(accepted.acceptances)
     expect(ctx.longTermProgress.get(agent)?.milestones[1]?.checkpoints.map(c => c.id)).toEqual(['repair', c2])
   })
+  it('rejects release without approval through actual registry cache hydration', async () => {
+    const { ctx, agent, change, register } = await harness()
+    const state = change({ kind: 'replace', milestones })
+    const rows = ctx.sessionProjections.checkpoint(agent.session)
+    const row = rows.longTermProgress!
+    const invalid: ProgressProjectionState = {
+      current: { ...state, release: { milestoneId: m1, revision: 1 } },
+      replay: null, failure: null, inheritedEventCount: 0,
+    }
+    rows.longTermProgress = { ...row, val: invalid }
+    const events = agent.session.snapshotEvents()
+    const prepared = ctx.sessions.prepare(SessionId(randomUUID()), { seed: events })
+    expect(() => ctx.sessionProjections.hydrate(prepared, rows, events, SessionLogOffset(0)))
+      .toThrow(/release/)
+    expect(ctx.sessionProjections.viewCheckpoint(rows).longTermProgress).toBeUndefined()
+    const reopened = await register(prepared)
+    const view = ctx.longTermProgress.get(reopened)
+    expect(view?.release).toBeNull()
+    expect(view !== null && eligibleCheckpoints(view, m1, [c1])).toBe(false)
+    expect(() => ctx.longTermProgress.change(reopened, { revision: 1 }, {
+      kind: 'bind-goal', binding: {
+        goal: { id: GoalId('goal-1'), revision: 1 }, milestoneId: m1, checkpointIds: [c1],
+      },
+    }, maintenance)).toThrow(/released/)
+  })
+  it.each([
+    ['duplicate checkpoint identity', (view: ProgressView): ProgressView => ({
+      ...view, milestones: view.milestones.map(m => ({ ...m, checkpoints: [view.milestones[0]!.checkpoints[0]!] })),
+    })],
+    ['completion without evidence', (view: ProgressView): ProgressView => ({
+      ...view, milestones: view.milestones.map(m => ({ ...m, checkpoints: m.checkpoints.map(c => ({ ...c, complete: true })) })),
+    })],
+    ['future evidence revision', (view: ProgressView): ProgressView => ({
+      ...view, milestones: view.milestones.map(m => m.id !== m1 ? m : ({ ...m, checkpoints: m.checkpoints.map(c => ({
+        ...c, complete: true, evidence: [{ kind: 'passed', summary: 'Pass', references: ['run'], revision: 9 }],
+      })) })),
+    })],
+    ['acceptance without completion', (view: ProgressView): ProgressView => ({
+      ...view, acceptances: [{ milestoneId: m1, revision: 1 }],
+    })],
+    ['acceptance without approval', (view: ProgressView): ProgressView => ({
+      ...view, revision: 3, acceptances: [{ milestoneId: m1, revision: 3 }],
+      milestones: view.milestones.map(m => m.id !== m1 ? m : ({ ...m, checkpoints: m.checkpoints.map(c => ({
+        ...c, complete: true, evidence: [{ kind: 'passed', summary: 'Pass', references: ['run'], revision: 2 }],
+      })) })),
+    })],
+    ['release before approval', (view: ProgressView): ProgressView => ({
+      ...view, revision: 3, release: { milestoneId: m1, revision: 2 }, approvals: [{ milestoneId: m1, revision: 3 }],
+    })],
+    ['duplicate evidence revisions', (view: ProgressView): ProgressView => ({
+      ...view, revision: 3, milestones: view.milestones.map(m => ({ ...m, checkpoints: m.checkpoints.map(c => ({
+        ...c, complete: true, evidence: [{ kind: 'passed', summary: 'Pass', references: ['run'], revision: 2 }],
+      })) })),
+    })],
+    ['missing approval milestone', (view: ProgressView): ProgressView => ({
+      ...view, approvals: [{ milestoneId: milestoneId('missing'), revision: 1 }],
+    })],
+  ] as const)('rejects semantically invalid cached %s before seeding the registry', async (_name, corrupt) => {
+    const { ctx, agent, change } = await harness()
+    const state = change({ kind: 'replace', milestones })
+    const rows = ctx.sessionProjections.checkpoint(agent.session)
+    rows.longTermProgress = {
+      ...rows.longTermProgress!,
+      val: { current: corrupt(state), replay: null, failure: null, inheritedEventCount: 0 },
+    }
+    const events = agent.session.snapshotEvents()
+    const prepared = ctx.sessions.prepare(SessionId(randomUUID()), { seed: events })
+    expect(() => ctx.sessionProjections.hydrate(prepared, rows, events, SessionLogOffset(0))).toThrow()
+    expect(ctx.sessionProjections.viewCheckpoint(rows).longTermProgress).toBeUndefined()
+  })
+  it('rejects a cache whose inherited replay snapshot disagrees with its current fork view', async () => {
+    const { ctx, agent, change } = await harness()
+    change({ kind: 'replace', milestones })
+    change({ kind: 'approve', milestoneId: m1 })
+    change({ kind: 'start', milestoneId: m1 })
+    const child = ctx.sessions.fork(agent.session)
+    const rows = ctx.sessionProjections.checkpoint(child)
+    const childState = ctx.sessionProjections.stateOf(child, 'longTermProgress')!
+    const invalid: ProgressProjectionState = {
+      ...childState,
+      current: { ...childState.current!, release: null },
+    }
+    rows.longTermProgress = { ...rows.longTermProgress!, val: invalid }
+    const events = child.snapshotEvents()
+    const prepared = ctx.sessions.prepare(SessionId(randomUUID()), {
+      seed: events, inheritedEventCount: child.inheritedEventCount,
+      meta: { isSeeded: true, parentSession: agent.id },
+    })
+    expect(() => ctx.sessionProjections.hydrate(prepared, rows, events, SessionLogOffset(0))).toThrow(/inherited/)
+    expect(ctx.sessionProjections.viewCheckpoint(rows).longTermProgress).toBeUndefined()
+  })
+  it('hydrates valid released cache state and permits bounded repair after limits are lowered', async () => {
+    const { ctx, agent, change, fiber, register } = await harness()
+    change({ kind: 'replace', milestones })
+    change({ kind: 'approve', milestoneId: m1 })
+    const released = change({ kind: 'start', milestoneId: m1 })
+    const events = agent.session.snapshotEvents()
+    const rows = ctx.sessionProjections.checkpoint(agent.session)
+    await fiber.dispose()
+    const lowered = ctx.plugin(LongTermProgress, { maxMilestones: 1 })
+    await lowered
+    cleanups.push(() => lowered.dispose())
+    const prepared = ctx.sessions.prepare(SessionId(randomUUID()), { seed: events })
+    ctx.sessionProjections.hydrate(prepared, rows, events, SessionLogOffset(0))
+    const reopened = await register(prepared)
+    expect(ctx.longTermProgress.get(reopened)).toEqual(released)
+    expect(() => ctx.longTermProgress.change(reopened, { revision: 3 }, {
+      kind: 'references', references: [],
+    }, human)).toThrow(/milestones limit/)
+    expect(ctx.longTermProgress.change(reopened, { revision: 3 }, {
+      kind: 'replace', milestones: [],
+    }, human).milestones).toEqual([])
+    expect(reopened.inbox.nextStep).toEqual([])
+  })
   it('rejects corrupt durable events instead of continuing from stale state', async () => {
     const { ctx, agent, change } = await harness()
     const state = change({ kind: 'replace', milestones })
@@ -163,6 +292,43 @@ describe('durable progress service', () => {
       version: 1, change: { kind: 'replace', milestones }, authority: human, state: { ...state, revision: 99 },
     })
     expect(() => ctx.longTermProgress.get(agent)).toThrow(/replay/)
+  })
+  it('publishes persistent untrusted wire status alongside last-good progress after corrupt replay', async () => {
+    const { ctx, agent, change, register } = await harness()
+    const state = change({ kind: 'replace', milestones })
+    expect(ctx.sessionProjections.snapshot(agent.session).values.longTermProgress)
+      .toEqual({ status: 'ready', current: state })
+    const values: unknown[] = []
+    const unsubscribe = ctx.sessionProjections.onChanged((session, key, value) => {
+      if (session === agent.session && key === 'longTermProgress') values.push(value)
+    })
+    agent.session.append('progress/change', {
+      version: 1, change: { kind: 'replace', milestones }, authority: human, state: { ...state, revision: 99 },
+    })
+    const expected = {
+      status: 'untrusted', current: state,
+      failure: {
+        code: 'PROGRESS_REPLAY_FAILED', eventSeq: 1,
+        message: 'progress replay failed at event 1: durable state does not match transition',
+      },
+    }
+    expect(values).toEqual([expected])
+    expect(ctx.sessionProjections.snapshot(agent.session).values.longTermProgress).toEqual(expected)
+    expect(() => ctx.longTermProgress.get(agent)).toThrow(expect.objectContaining({ code: 'PROGRESS_REPLAY_FAILED' }))
+    expect(() => change({ kind: 'approve', milestoneId: m1 })).toThrow(/replay/)
+    agent.session.append('progress/change', {
+      version: 1, change: { kind: 'replace', milestones }, authority: human, state: { ...state, revision: 2 },
+    })
+    expect(values).toHaveLength(1)
+    const rows = ctx.sessionProjections.checkpoint(agent.session)
+    expect(ctx.sessionProjections.viewCheckpoint(rows).longTermProgress).toEqual(expected)
+    const events = agent.session.snapshotEvents()
+    const prepared = ctx.sessions.prepare(SessionId(randomUUID()), { seed: events })
+    expect(ctx.sessionProjections.hydrate(prepared, rows, events, SessionLogOffset(0)).values.longTermProgress)
+      .toEqual(expected)
+    const reopened = await register(prepared)
+    expect(() => ctx.longTermProgress.get(reopened)).toThrow(/replay/)
+    unsubscribe()
   })
   it('removes registrations and rejects retained service handles after unload, then replays on reload', async () => {
     const { ctx, agent, change, fiber } = await harness()

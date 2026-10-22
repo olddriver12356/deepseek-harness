@@ -9,7 +9,7 @@ export type CheckpointId = Branded<'CheckpointId'>
 export interface ProgressRef {
   readonly revision: number
 }
-/** Deployment bounds applied before durable admission. */
+/** Deployment bounds apply to incoming content and the complete result, not historical prior state. */
 export interface ProgressLimits {
   readonly maxMilestones: number
   readonly maxCheckpoints: number
@@ -102,6 +102,8 @@ export type ProgressChange = {
   readonly checkpointId: CheckpointId
   readonly detail: string
   readonly references: readonly string[]
+  /** Concrete implementation-only rationale retained in the Session event. */
+  readonly reason: string
 } | {
   readonly kind: 'regression'
   readonly historicalCheckpointId: CheckpointId
@@ -132,11 +134,26 @@ export interface ProgressEvent {
   readonly authority: ProgressAuthority
   readonly state: ProgressView
 }
-/** Projection failures block host mutation and retain the last valid display state. */
+/** Persistent replay denial; last-good data cannot authorize dependent work. */
+export interface ProgressProjectionFailure {
+  readonly code: 'PROGRESS_REPLAY_FAILED'
+  readonly eventSeq: number
+  readonly message: string
+}
+/** Client status is explicit even when no progress list exists; untrusted current data is display-only. */
+export type ProgressProjectionView = {
+  readonly status: 'ready'
+  readonly current: ProgressView | null
+} | {
+  readonly status: 'untrusted'
+  readonly current: ProgressView | null
+  readonly failure: ProgressProjectionFailure
+}
+/** Projection failures block host reads/mutations and retain the last valid display state. */
 export interface ProgressProjectionState {
   readonly current: ProgressView | null
   readonly replay: ProgressView | null
-  readonly failure: string | null
+  readonly failure: ProgressProjectionFailure | null
   readonly inheritedEventCount: number
 }
 declare module '@deepseek-ai/dsh-session-projection/types' {
@@ -144,6 +161,6 @@ declare module '@deepseek-ai/dsh-session-projection/types' {
     longTermProgress: ProgressProjectionState
   }
   interface SessionProjectionMap {
-    longTermProgress: ProgressView | null
+    longTermProgress: ProgressProjectionView
   }
 }

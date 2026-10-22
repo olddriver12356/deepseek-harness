@@ -68,12 +68,41 @@ describe('progress domain', () => {
   })
   it('structural replacement revokes release and refinements cannot change outcomes', () => {
     let state = step(step(initial(), { kind: 'approve', milestoneId: m1 }), { kind: 'start', milestoneId: m1 })
-    state = step(state, { kind: 'refine', checkpointId: c1, detail: 'More precise implementation', references: [] })
+    state = step(state, {
+      kind: 'refine', checkpointId: c1, detail: 'More precise implementation', references: [],
+      reason: 'Clarify the approved implementation approach',
+    })
     expect(state.milestones[0]?.checkpoints[0]?.outcome).toBe('First outcome')
     expect(state.release).not.toBeNull()
     state = step(state, { kind: 'replace', milestones: draft })
     expect(state.release).toBeNull()
     expect(state.approvals).toEqual([])
+  })
+  it('requires a concrete refinement reason before accepting implementation edits', () => {
+    const state = step(initial(), { kind: 'approve', milestoneId: m1 })
+    for (const reason of [undefined, '', '  ']) {
+      expect(() => transition(state, { revision: state.revision }, {
+        kind: 'refine', checkpointId: c1, detail: 'Implementation details', references: [],
+        ...reason === undefined ? {} : { reason },
+      }, model, defaultLimits)).toThrow()
+    }
+    expect(transition(state, { revision: state.revision }, {
+      kind: 'refine', checkpointId: c1, detail: 'Implementation details', references: [],
+      reason: 'Clarify the approved implementation approach',
+    }, model, defaultLimits).milestones[0]?.checkpoints[0]?.detail).toBe('Implementation details')
+  })
+  it('retains historical approval evidence for accepted milestones after structural replacement', () => {
+    let state = step(initial(), { kind: 'approve', milestoneId: m1 })
+    for (const id of [c1, c2]) state = step(state, {
+      kind: 'reconcile', checkpointId: id,
+      evidence: { kind: 'passed', summary: 'Observed pass', references: ['run'] },
+    })
+    state = step(state, { kind: 'accept', milestoneId: m1 })
+    const replaced = step(state, { kind: 'replace', milestones: draft })
+    expect(replaced.acceptances).toEqual([{ milestoneId: m1, revision: 5 }])
+    expect(replaced.approvals).toEqual([{ milestoneId: m1, revision: 2 }])
+    expect(replaced.release).toBeNull()
+    expect(() => step(replaced, { kind: 'start', milestoneId: m2 })).toThrow(/approved/)
   })
   it('preserves matching checkpoint evidence across structural edits', () => {
     let state = initial()
@@ -86,6 +115,71 @@ describe('progress domain', () => {
     state = step(state, { kind: 'replace', milestones: draft.map(m => ({ ...m, caption: `${m.caption} updated` })) })
     expect(state.milestones[0]?.checkpoints[0]?.evidence).toHaveLength(1)
     expect(state.milestones[0]?.checkpoints[0]?.complete).toBe(true)
+  })
+  it('preserves global checkpoint evidence when moving it between milestones', () => {
+    const state = step(initial(), {
+      kind: 'reconcile', checkpointId: c1,
+      evidence: { kind: 'passed', summary: 'Observed pass', references: ['run'] },
+    })
+    const moved = draft.map(m => ({
+      ...m,
+      checkpoints: m.id === m1 ? m.checkpoints.filter(c => c.id !== c1) : [draft[0]!.checkpoints[0]!],
+    }))
+    const result = step(state, { kind: 'replace', milestones: moved })
+    expect(result.milestones[1]?.checkpoints[0]).toMatchObject({
+      id: c1, complete: true,
+      evidence: [{ kind: 'passed', summary: 'Observed pass', references: ['run'], revision: 2 }],
+    })
+    expect(result.release).toBeNull()
+    expect(result.approvals).toEqual([])
+  })
+  it('rejects changing an evidenced outcome under the same ID across milestone moves', () => {
+    const state = step(initial(), {
+      kind: 'reconcile', checkpointId: c1,
+      evidence: { kind: 'failed', summary: 'Observed failure', references: ['run'] },
+    })
+    const moved = draft.map(m => ({
+      ...m,
+      checkpoints: m.id === m1 ? m.checkpoints.filter(c => c.id !== c1)
+        : [{ ...draft[0]!.checkpoints[0]!, outcome: 'Different approved outcome' }],
+    }))
+    expect(() => step(state, { kind: 'replace', milestones: moved })).toThrow(/new checkpoint identity/)
+  })
+  it('allows historical oversized state to shrink under reduced deployment limits', () => {
+    const state = initial()
+    const limits = { ...defaultLimits, maxMilestones: 1 }
+    expect(() => transition(state, { revision: 1 }, { kind: 'replace', milestones: draft }, human, limits))
+      .toThrow(/milestones limit/)
+    expect(() => transition(state, { revision: 1 }, { kind: 'references', references: [] }, human, limits))
+      .toThrow(/milestones limit/)
+    expect(transition(state, { revision: 1 }, { kind: 'replace', milestones: [] }, human, limits))
+      .toMatchObject({ revision: 2, milestones: [] })
+  })
+  it('allows replacing historical oversized text and checkpoint collections with bounded content', () => {
+    const state = initial()
+    const limits = { ...defaultLimits, maxCheckpoints: 1, maxTextLength: 1 }
+    expect(transition(state, { revision: 1 }, {
+      kind: 'replace', milestones: [{
+        id: m1, title: 'A', caption: 'B', exitCondition: 'C', references: [],
+        checkpoints: [{ id: c1, outcome: 'D', detail: '', references: [] }],
+      }],
+    }, human, limits).milestones[0]?.checkpoints).toHaveLength(1)
+  })
+  it('bounds content rather than protocol literals or stable identities at tiny text limits', () => {
+    const limits = { ...defaultLimits, maxTextLength: 1 }
+    expect(transition(null, { revision: 0 }, { kind: 'replace', milestones: [] }, human, limits).milestones)
+      .toEqual([])
+    const state = transition(null, { revision: 0 }, {
+      kind: 'replace', milestones: [{
+        id: m1, title: 'A', caption: 'B', exitCondition: 'C', references: ['D'],
+        checkpoints: [{ id: c1, outcome: 'E', detail: 'F', references: [] }],
+      }],
+    }, human, limits)
+    const approved = transition(state, { revision: 1 }, { kind: 'approve', milestoneId: m1 }, human, limits)
+    expect(transition(approved, { revision: 2 }, { kind: 'start', milestoneId: m1 }, human, limits).release)
+      .toEqual({ milestoneId: m1, revision: 3 })
+    expect(() => transition(state, { revision: 1 }, { kind: 'references', references: ['AB'] }, human, limits))
+      .toThrow(/text limit/)
   })
   it('rejects oversized lists and text rather than dropping captions', () => {
     expect(() => transition(null,

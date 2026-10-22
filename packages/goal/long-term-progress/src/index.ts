@@ -5,7 +5,7 @@ import { z as zod } from 'zod'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
-import { authoritySchema, defaultLimits, progressChangeSchema, progressViewSchema, transition } from './domain.ts'
+import { authoritySchema, defaultLimits, ProgressError, progressChangeSchema, progressViewSchema, transition } from './domain.ts'
 import type { ProgressAuthority,
   ProgressChange,
   ProgressEvent,
@@ -29,10 +29,23 @@ const eventSchema = zod.object({ version: zod.literal(1),
   change: progressChangeSchema,
   authority: authoritySchema,
   state: progressViewSchema }).strict()
+const failureSchema = zod.object({
+  code: zod.literal('PROGRESS_REPLAY_FAILED'),
+  eventSeq: zod.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  message: zod.string().min(1),
+}).strict()
+const wireSchema = zod.discriminatedUnion('status', [
+  zod.object({ status: zod.literal('ready'), current: progressViewSchema.nullable() }).strict(),
+  zod.object({ status: zod.literal('untrusted'), current: progressViewSchema.nullable(), failure: failureSchema }).strict(),
+])
 const projectionSchema = zod.object({ current: progressViewSchema.nullable(),
   replay: progressViewSchema.nullable(),
-  failure: zod.string().nullable(),
-  inheritedEventCount: zod.number().int().nonnegative() }).strict()
+  failure: failureSchema.nullable(),
+  inheritedEventCount: zod.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict().superRefine((state, ctx) => {
+  if (state.replay !== null && (state.inheritedEventCount === 0
+    || JSON.stringify(inherited(state.replay)) !== JSON.stringify(state.current)))
+    ctx.addIssue({ code: 'custom', message: 'inherited progress must match the suspended replay snapshot' })
+})
 /** Suspend external authority for inherited snapshots without modifying parent state. */
 function inherited(view: ProgressView): ProgressView {
   return { ...view, vault: view.vault === null ? null : { ...view.vault, writeback: 'suspended' }, goalBinding: null }
@@ -60,7 +73,10 @@ function fold(state: ProgressProjectionState, event: SessionEvent): ProgressProj
   }
   catch (error) {
     return { ...state,
-      failure: `progress replay failed at event ${event.seq}: ${error instanceof Error ? error.message : String(error)}` }
+      failure: {
+        code: 'PROGRESS_REPLAY_FAILED', eventSeq: event.seq,
+        message: `progress replay failed at event ${event.seq}: ${error instanceof Error ? error.message : String(error)}`,
+      } }
   }
 }
 /** Progress admission configuration; omitted fields use the documented deployment defaults. */
@@ -85,24 +101,26 @@ export class LongTermProgress extends Service {
       if (!Number.isSafeInteger(value) || value < 1)
         throw new Error('progress limits must be positive safe integers')
     const definition = {
-      key: 'longTermProgress', stateVersion: 1, stateSchema: projectionSchema,
+      key: 'longTermProgress', stateVersion: 2, stateSchema: projectionSchema,
       init: (_header, inheritedEventCount) => ({ current: null, replay: null, failure: null, inheritedEventCount }),
       apply: fold,
-      wire: { viewSchema: progressViewSchema.nullable(), view: state => state.current },
+      wire: { viewSchema: wireSchema, view: state => state.failure === null
+        ? { status: 'ready', current: state.current }
+        : { status: 'untrusted', current: state.current, failure: state.failure } },
     } satisfies ProjectionDefinition<'longTermProgress'>
     ctx.sessionProjections.register<'longTermProgress', ProgressProjectionState>(definition)
     ctx.effect(() => () => { this.disposed = true })
   }
-  /** Read detached durable state for an exact live Agent.
+  /** Read detached durable state for an exact live Agent; corrupt replay rejects with PROGRESS_REPLAY_FAILED.
  * @param agent - owning live Agent.
- * @returns projected state or null before creation. */
+ * @returns trusted projected state or null before creation; last-good failure data is wire-display-only. */
   get(agent: Agent): ProgressView | null {
     this.assertLive(agent)
     const state = this.ctx.sessionProjections.stateOf(agent.session, 'longTermProgress')
     if (state === undefined)
       throw new Error('progress projection is not registered')
     if (state.failure !== null)
-      throw new Error(state.failure)
+      throw new ProgressError(state.failure.message, state.failure.code)
     return state.current === null ? null : structuredClone(state.current)
   }
   /** Commit one revision-bound operation; trusted adapters derive authority outside JSON.
