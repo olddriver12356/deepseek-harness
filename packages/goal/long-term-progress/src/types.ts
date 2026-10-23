@@ -86,6 +86,12 @@ export interface ProgressView extends ProgressRef {
   } | null
   readonly vault: VaultBinding | null
 }
+/** Bounded objective and explicit consecutive scope for the existing execution Goal. */
+export interface AdvanceProgressGoal {
+  readonly milestoneId: MilestoneId
+  readonly checkpointIds: readonly CheckpointId[]
+  readonly objective: string
+}
 /** Sole domain operation vocabulary; no operation starts or resumes execution. */
 export type ProgressChange = {
   readonly kind: 'replace'
@@ -126,6 +132,10 @@ export type ProgressChange = {
 } | {
   readonly kind: 'references'
   readonly references: readonly string[]
+} | {
+  /** Records a lightweight review with no newly observed checkpoint evidence. */
+  readonly kind: 'review'
+  readonly reason: string
 }
 /** Whole-state durable settlement with the operation needed for strict replay. */
 export interface ProgressEvent {

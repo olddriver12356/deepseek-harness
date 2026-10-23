@@ -244,6 +244,36 @@ export class GoalService extends TypertRemoteService {
     defaultMaxGoalRounds: z.number().default(256),
   })
 
+  private readonly validators = new Set<(agent: Agent, goal: GoalSnapshot, operation: 'create' | 'edit' | 'resume' | 'continue') => void>()
+
+  /** Register a synchronous policy for activation and automatic round admission. Throws refuse before mutation.
+   * @param validate - policy owned by the registering plugin; pause, completion and clear remain available.
+   * @returns disposer removing this exact policy. */
+  registerValidator(validate: (agent: Agent, goal: GoalSnapshot, operation: 'create' | 'edit' | 'resume' | 'continue') => void): () => void {
+    // oxlint-disable-next-line typescript/no-misused-promises -- synchronous registration cleanup, matching owned registry effects
+    return this.ctx.effect(() => {
+      this.validators.add(validate)
+      return () => { this.validators.delete(validate) }
+    })
+  }
+
+  /** Revalidate an automatic round against all currently registered policies.
+   * @param agent - exact live recipient.
+   * @param goal - reserved Goal revision.
+   * @returns whether the live Goal and every policy still permit continuation. */
+  canContinue(agent: Agent, goal: GoalRef): boolean {
+    const current = this.get(agent)
+    if (current === undefined || current.id !== goal.id || current.revision !== goal.revision
+      || current.phase !== 'active' || current.activation !== 'armed') return false
+    try {
+      for (const validate of this.validators) validate(agent, current, 'continue')
+      return true
+    } catch (error) {
+      this.ctx.logger.debug('goal continuation policy refused: %s', error)
+      return false
+    }
+  }
+
   private readonly resolved: ResolvedConfig
   private readonly runtimeStates = new WeakMap<Session, GoalRuntimeState>()
 
@@ -586,6 +616,8 @@ export class GoalService extends TypertRemoteService {
     updatedAt: number,
     activation: GoalActivation,
   ): GoalView {
+    if (operation === 'create' || operation === 'edit' || operation === 'resume')
+      for (const validate of this.validators) validate(agent, goal, operation)
     const change: GoalSnapshotChangeMeta = {
       kind: 'goal/change',
       version: GOAL_CHANGE_VERSION,

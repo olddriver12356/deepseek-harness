@@ -16,6 +16,9 @@ import type { ProgressAuthority,
 import { registerProgressCommand } from './command.ts'
 import { registerProgressContext } from './context.ts'
 import { registerProgressTools } from './tools.ts'
+import { registerProgressGoals } from './goals.ts'
+import type { AdvanceProgressGoal } from './types.ts'
+import type { GoalView } from '@deepseek-ai/dsh-goal'
 export type * from './types.ts'
 export { ProgressError } from './domain.ts'
 declare module '@deepseek-ai/cordis' {
@@ -95,6 +98,7 @@ export class LongTermProgress extends Service {
     maxReferences: z.number().default(defaultLimits.maxReferences),
     maxHistory: z.number().default(defaultLimits.maxHistory),
   })
+  private advance: ReturnType<typeof registerProgressGoals> | undefined
   private disposed = false
   private readonly limits: ProgressLimits
   constructor(ctx: Context, config: Config = {}) {
@@ -104,7 +108,7 @@ export class LongTermProgress extends Service {
       if (!Number.isSafeInteger(value) || value < 1)
         throw new Error('progress limits must be positive safe integers')
     const definition = {
-      key: 'longTermProgress', stateVersion: 2, stateSchema: projectionSchema,
+      key: 'longTermProgress', stateVersion: 3, stateSchema: projectionSchema,
       init: (_header, inheritedEventCount) => ({ current: null, replay: null, failure: null, inheritedEventCount }),
       apply: fold,
       wire: { viewSchema: wireSchema, view: state => state.failure === null
@@ -114,6 +118,10 @@ export class LongTermProgress extends Service {
     ctx.sessionProjections.register<'longTermProgress', ProgressProjectionState>(definition)
     ctx.effect(() => () => { this.disposed = true })
     registerProgressContext(ctx)
+    ctx.inject(['goals'], (consumer) => {
+      this.advance = registerProgressGoals(consumer)
+      consumer.effect(() => () => { this.advance = undefined })
+    })
     ctx.inject(['commands'], (consumer) =>{  registerProgressCommand(consumer) })
     ctx.inject(['tools'], (consumer) =>{  registerProgressTools(consumer) })
   }
@@ -144,6 +152,16 @@ export class LongTermProgress extends Service {
     if (committed === null)
       throw new Error('progress append did not publish state')
     return committed
+  }
+  /** Advance only a fresh process-local released checkpoint group using the existing execution Goal.
+   * @param agent - exact live owner.
+   * @param ref - expected progress revision.
+   * @param request - consecutive checkpoint group and objective.
+   * @returns created or edited Goal; never resumes paused or disarmed work. */
+  advanceGoal(agent: Agent, ref: ProgressRef, request: AdvanceProgressGoal): GoalView {
+    this.assertLive(agent)
+    if (this.advance === undefined) throw new ProgressError('Goal integration is unavailable')
+    return this.advance(agent, ref, request)
   }
   private assertLive(agent: Agent): void {
     if (this.disposed)

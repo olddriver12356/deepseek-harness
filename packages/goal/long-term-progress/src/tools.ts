@@ -38,6 +38,7 @@ const changeParameter = {
       checkpoint: { ...checkpoint, required: true }, insertAt: { type: 'integer', required: true }, reason: string, evidence,
     } },
     { type: 'object', additionalProperties: false, properties: { kind: { ...string, const: 'references' }, references } },
+    { type: 'object', additionalProperties: false, properties: { kind: { ...string, const: 'review' }, reason: string } },
   ],
 } as const
 const readSchema = z.object({ milestone_id: z.string().optional(), checkpoint_id: z.string().optional() }).strict()

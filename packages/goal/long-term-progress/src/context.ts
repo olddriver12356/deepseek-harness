@@ -11,7 +11,7 @@ declare module '@deepseek-ai/dsh-llm' {
 }
 declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionStateMap {
-    longTermProgressContext: { admitted: boolean; revision: number | null }
+    longTermProgressContext: { admitted: boolean; revision: number | null; needsReview: boolean }
   }
 }
 
@@ -60,13 +60,19 @@ export function renderProgressReminder(view: ProgressView): string {
  * @param ctx - owning plugin context with progress and projection services. */
 export function registerProgressContext(ctx: Context): void {
   ctx.sessionProjections.register({
-    key: 'longTermProgressContext', stateVersion: 1,
-    stateSchema: z.object({ admitted: z.boolean(), revision: z.number().int().nonnegative().nullable() }).strict(),
-    init: () => ({ admitted: false, revision: null }),
+    key: 'longTermProgressContext', stateVersion: 2,
+    stateSchema: z.object({
+      admitted: z.boolean(), revision: z.number().int().nonnegative().nullable(), needsReview: z.boolean(),
+    }).strict(),
+    init: () => ({ admitted: false, revision: null, needsReview: false }),
     apply: (state, event) => {
       if (event.type === 'turn/start' || event.type === 'turn/end') return { ...state, admitted: false }
       if (event.type === 'user/message' && event.data.source.kind === 'long-term-progress')
-        return { admitted: true, revision: event.data.source.revision }
+        return { ...state, admitted: true, revision: event.data.source.revision }
+      if (event.type === 'goal/change' && (event.data.operation === 'create' || event.data.operation === 'edit'))
+        return { ...state, needsReview: true }
+      if (event.type === 'progress/change' && (event.data.change.kind === 'review' || event.data.change.kind === 'reconcile'))
+        return { ...state, needsReview: false }
       return state
     },
   })
@@ -78,7 +84,8 @@ export function registerProgressContext(ctx: Context): void {
     if (cadence.admitted) return decision
     const view = ctx.longTermProgress.get(agent)
     if (view === null || (view.milestones.length === 0 && cadence.revision === view.revision)) return decision
-    const text = renderProgressReminder(view)
+    const text = renderProgressReminder(view) + (cadence.needsReview
+      ? '\nGoal scope changed. First reconcile recent observed outcomes with update_progress reconcile, or record review with a concrete reason when there is no new evidence. Use recent context and targeted checks only; no broad audit.' : '')
     return { ...decision, messages: [...decision.messages, createUserMessage({
       content: [{ type: 'text', text }],
       source: { kind: 'long-term-progress', revision: view.revision, form: 'snapshot', sections: [{ name: 'long-term-progress', text }] },

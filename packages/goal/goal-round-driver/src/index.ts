@@ -76,6 +76,15 @@ function renderThrown(value: unknown): string {
 /** Install automatic same-session continuation and its race fences. */
 export function apply(ctx: Context): void {
   const states = new Map<Agent, DriverState>()
+  ctx.agents.registerInputPolicy('goal-round', (agent, message) => {
+    const source = message.source
+    if (source.kind !== 'goal' || source.round <= 0) return false
+    const attempt = states.get(agent)?.attempt
+    // Admitted turns retain their ordinary wrap-up/tool followup after a Goal mutation.
+    if (attempt?.phase === 'admitted' && !attempt.cancelled && !attempt.stale
+      && sameQueued(message.content, source, attempt)) return true
+    return ctx.goals.canContinue(agent, { id: source.goalId, revision: source.revision })
+  })
   // Releases drivers still joining subagents when the plugin unloads.
   const unloading = Promise.withResolvers<void>()
 
@@ -171,6 +180,7 @@ export function apply(ctx: Context): void {
 
     const goal = currentGoal(state)
     if (!drivable(goal)) return
+    if (!ctx.goals.canContinue(agent, goal)) { disarm(state); return }
     // A round started while descendants progress would only wait for them.
     // Every goal mutation requests a checkpoint, so passing the recheck
     // proves this goal view is still current.
@@ -191,7 +201,7 @@ export function apply(ctx: Context): void {
     const content = renderGoalRoundPrompt(goal, round)
     const message = createUserMessage({
       content,
-      source: { kind: 'goal', goalId: goal.id, revision: goal.revision, round },
+      source: { kind: 'goal', requiredAdmissionPolicy: 'goal-round', goalId: goal.id, revision: goal.revision, round },
     })
     const reservation: RoundAttempt = {
       goalId: goal.id,
@@ -375,6 +385,7 @@ export function apply(ctx: Context): void {
       && goal !== undefined && goal.id === source.goalId && goal.revision === source.revision
       && goal.phase === 'active' && goal.activation === 'armed'
       && source.round === goal.roundsStarted + 1
+      && ctx.goals.canContinue(state.agent, goal)
     }
 
     ctx.on('agent/pre-step', async ({ agent, messages, signal }, next): Promise<PreStepDecision> => {

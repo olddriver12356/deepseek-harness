@@ -69,6 +69,7 @@ export const progressChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('vault-settle'), fingerprint: requiredText, settlement: vault.shape.settlement, message: text }).strict(),
   z.object({ kind: z.literal('bind-goal'), binding: goalBinding }).strict(),
   z.object({ kind: z.literal('references'), references }).strict(),
+  z.object({ kind: z.literal('review'), reason: requiredText }).strict(),
 ])
 /** Strict durable/wire state schema with identity, evidence and authority invariants. */
 export const progressViewSchema = z.object({
@@ -258,12 +259,14 @@ export function transition(previous: ProgressView | null,
     }
     case 'reconcile':
     case 'refine': {
-      if (current === null || !current.checkpoints.some(c => c.id === change.checkpointId))
-        throw new ProgressError('checkpoint is not in current milestone')
-      if (change.kind === 'refine' && !state.approvals.some(a => a.milestoneId === current.id))
+      const target = change.kind === 'refine' ? current : state.milestones.find(m =>
+        !state.acceptances.some(a => a.milestoneId === m.id) && m.checkpoints.some(c => c.id === change.checkpointId))
+      if (target == null || !target.checkpoints.some(c => c.id === change.checkpointId))
+        throw new ProgressError('checkpoint is not in an eligible unaccepted milestone')
+      if (change.kind === 'refine' && !state.approvals.some(a => a.milestoneId === target.id))
         throw new ProgressError('refinement requires approved milestone')
       result = { ...result,
-        milestones: state.milestones.map(m => m.id !== current.id ? m : { ...m,
+        milestones: state.milestones.map(m => m.id !== target.id ? m : { ...m,
           checkpoints: m.checkpoints.map(c => c.id !== change.checkpointId ? c : change.kind === 'refine' ? { ...c,
             detail: change.detail,
             references: change.references } : { ...c,
@@ -311,6 +314,8 @@ export function transition(previous: ProgressView | null,
         goalBinding: { ...change.binding,
           goal: { ...change.binding.goal,
             id: brandString<import('@deepseek-ai/dsh-goal/types').GoalId>(change.binding.goal.id) } } }
+      break
+    case 'review':
       break
     case 'references':
       result = { ...result, references: change.references }
