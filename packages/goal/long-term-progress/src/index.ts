@@ -13,6 +13,9 @@ import type { ProgressAuthority,
   ProgressProjectionState,
   ProgressRef,
   ProgressView } from './types.ts'
+import { registerProgressCommand } from './command.ts'
+import { registerProgressContext } from './context.ts'
+import { registerProgressTools } from './tools.ts'
 export type * from './types.ts'
 export { ProgressError } from './domain.ts'
 declare module '@deepseek-ai/cordis' {
@@ -110,6 +113,9 @@ export class LongTermProgress extends Service {
     } satisfies ProjectionDefinition<'longTermProgress'>
     ctx.sessionProjections.register<'longTermProgress', ProgressProjectionState>(definition)
     ctx.effect(() => () => { this.disposed = true })
+    registerProgressContext(ctx)
+    ctx.inject(['commands'], (consumer) =>{  registerProgressCommand(consumer) })
+    ctx.inject(['tools'], (consumer) =>{  registerProgressTools(consumer) })
   }
   /** Read detached durable state for an exact live Agent; corrupt replay rejects with PROGRESS_REPLAY_FAILED.
  * @param agent - owning live Agent.

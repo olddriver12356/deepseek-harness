@@ -9,6 +9,10 @@
     { "path": "../../core/agent" },
     { "path": "../../core/session" },
     { "path": "../../session/session-projection" },
-    { "path": "../goal" }
+    { "path": "../goal" },
+    { "path": "../../interaction/commands" },
+    { "path": "../../interaction/user-questions" },
+    { "path": "../../core/tools" },
+    { "path": "../../llm/llm" }
   ]
 }
