@@ -208,6 +208,7 @@ export class ChecklistSync {
           policy?.resolve({ session: agent.session }))
         this.current(agent, state.revision, signal)
       }
+      this.current(agent, state.revision, signal)
       if (binding.settlement !== 'synchronized' || plan.changed || file.fingerprint !== binding.fingerprint)
         this.ctx.longTermProgress.change(agent, state, { kind: 'vault-settle', fingerprint: fingerprint(plan.text),
           settlement: 'synchronized', message: '' }, { kind: 'maintenance' })
@@ -215,7 +216,8 @@ export class ChecklistSync {
       signal.throwIfAborted()
       if (this.ctx.agents.get(agent.id) !== agent) throw error
       const latest = this.ctx.longTermProgress.get(agent)
-      if (latest?.vault?.path !== binding.path) throw error
+      if (latest?.revision !== state.revision || latest.vault?.path !== binding.path
+        || latest.vault.targetKey !== binding.targetKey || latest.vault.fingerprint !== binding.fingerprint) throw error
       this.ctx.longTermProgress.change(agent, latest, { kind: 'vault-settle', fingerprint: binding.fingerprint,
         settlement: error instanceof ProgressError || (error instanceof FsError && error.code === 'FS_STALE_VERSION') ? 'conflict' : 'failed',
         message: `${target?.displayPath ?? binding.path}: ${error instanceof Error ? error.message : String(error)}. Retry after reviewing both stores.` }, { kind: 'maintenance' })

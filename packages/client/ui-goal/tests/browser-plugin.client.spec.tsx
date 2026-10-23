@@ -133,10 +133,12 @@ async function bench(options: {
     get resume() { return activeGoals?.resume },
     get clear() { return activeGoals?.clear },
   })
+  ctx.provide('remote.longTermProgress', { update: answer('progress/update', null) })
   await ctx.plugin(SlotRegistry).await()
   ctx.slots.register({
     name: 'root', children: {
       'conversation.input.dock': { kind: 'list', scope: 'session' },
+      'shell.activity.progress': { kind: 'single', scope: 'session' },
       'conversation.chat.node': { kind: 'keyed', scope: 'session' },
     },
   } as never, (() => null) as never)
@@ -166,6 +168,13 @@ async function bench(options: {
 }
 
 describe('ui-goal browser plugin', () => {
+  it('contributes the Session progress slot and removes it with the plugin lifetime', async () => {
+    const b = await bench()
+    await b.fiber.await()
+    expect(b.ctx.slots.entries('shell.activity.progress')).toHaveLength(1)
+    await b.fiber.dispose()
+    expect(b.ctx.slots.entries('shell.activity.progress')).toHaveLength(0)
+  })
   it('waits for initial history before reading activation and releases the read reference', async () => {
     const opened = Promise.withResolvers<undefined>()
     const b = await bench({ projection: makeProjection(), activation: 'disarmed', initialOpen: () => opened.promise })

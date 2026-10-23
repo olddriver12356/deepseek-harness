@@ -27,6 +27,12 @@ Web GUI 的 goal 界面同时显示持久 goal 状态及当前的进程本地激
 
 与 `ui-conversation` 及 goal 领域包一起挂载本插件；只要会话存在目标，条带就会作为 composer 上下文堆栈的第二张卡片出现（位于 Todo 之后、Queue 之前）。Todo 与 Goal 使用相同的面板 elevation，使其位于 composer 层级之上。已 armed 的 active goal 提供暂停动作；active-but-disarmed 或 paused 的 goal 提供恢复；编辑在 ui-primitives 的 `InlineEditor` 中重写目标文本，多行目标编辑后仍保留换行；清除移除目标，并在投影追上之前抑制条带。
 
+### Session 长期进度
+
+组合 `longTermProgress` 后，本插件在 Live Signal 现有 Goal 控件旁贡献 `shell.activity.progress` 区块。区块通过标准 Session hook 读取 ready/untrusted 投影。精简的里程碑说明、完成计数与授权状态始终可见；展开里程碑后可查看检查点、实现细节，以及按需展开的证据与参考。编辑里程碑会打开包含稳定 ID 的完整 JSON 草稿；保存、批准范围、开始或放行里程碑、验收分别是独立动作。暂停或重启后可以明确重新授权已放行范围；显示持久的放行记录并不表示执行已激活。清单的待同步、失败、冲突与写回暂停状态始终可见。
+
+Host 的 `longTermProgress/update` 能力要求经过认证的 owner 调用，校验操作，并针对点击时所显示的精确 revision 提交。进程内模型与非 owner Peer 调用无法伪造 UI 权限。存在待处理交互、在途请求或不可信回放时禁用变更，但保留最近可用清单。陈旧请求与传输失败保留已显示条目，并在原位报告失败。UI 不维护第二份业务状态，也不启动调度器。
+
 ### 指令输入气泡
 
 每条持久的 `/goal` 运行都投影为一个右对齐的用户样式气泡，标签为 `Command input`（或 `指令输入`），渲染在通用命令结果行之前；开头的 `/goal` token 经共享的 `conversation.user.text` Factory 与 Goal 自有的 `command` renderer，使用 `facts.commands` 中的实际执行 token 范围， 以等宽代码字体渲染为指令引用 chip，目标文本保持正文字体。它不含时间戳、复制或分支操作，重新加载时会依据运行记录重建。

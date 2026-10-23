@@ -30,6 +30,9 @@ import type { GoalProjection, GoalRef } from '@deepseek-ai/dsh-goal/client'
 import type { GoalActionResult, GoalBarInjected } from './slots.ts'
 import { createGoalActivationSource } from './activation-source.ts'
 import { GoalDock } from './GoalBar.tsx'
+import { ProgressDock } from './ProgressSection.tsx'
+import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
+import type {} from '@deepseek-ai/dsh-long-term-progress/types'
 import { GoalCommandInputView } from './GoalCommandInputView.tsx'
 import { GoalCommandReference } from './GoalCommandReference.tsx'
 import { goalCommandInputDefinition } from './goal-command-input.ts'
@@ -83,6 +86,13 @@ export function apply(ctx: ClientContext): void {
     key: 'command-input',
     locale: NS,
   }, GoalCommandInputView))
+
+  ctx.inject(['remote.longTermProgress'], (consumer) => {
+    consumer.slots.inject('shell.activity.progress', () => consumer.slots.register({
+      name: 'shell.activity.progress', locale: NS,
+      inject: sessionId => ({ onUpdate: async (ref, change) => consumer.remote.longTermProgress.update(sessionId, ref, change) }),
+    }, ProgressDock))
+  })
 
   const sessions = ctx.sessions
 

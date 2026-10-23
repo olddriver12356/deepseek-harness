@@ -44,6 +44,8 @@
     {
       "path": "../../goal/goal"
     },
+    { "path": "../../goal/long-term-progress" },
+    { "path": "../ui-shell" },
     {
       "path": "../../typert/protocol"
     }

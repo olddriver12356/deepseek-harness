@@ -36,6 +36,10 @@ Evidence or detail changes mark the association pending in the same Session tran
 
 Session commits and file writes are separate operations. Pending, failed and conflicting settlements remain visible; a write refusal never removes checkpoint evidence or blocks unrelated authorized execution. An interrupted settlement reports that both stores need review rather than asserting synchronization. A retry with already matching contents performs no write. Plugin disposal aborts and drains owned synchronization/association operations; late answers cannot publish another file or Session change.
 
+## Owner UI capability
+
+`longTermProgress/update` is the service-owned Remote mutation. The Gateway resolves the exact live Agent; the operation requires an actual authenticated owner invocation and rejects ordinary in-process and non-owner calls. It validates the same operation schema as commands and tools, takes the Client's displayed revision, and derives human authority internally. Internal Goal and checklist bindings cannot be submitted through this capability. Saving, approval and release still do not queue a turn; an explicit later execution Goal uses the released scope.
+
 ## Configuration
 
 All bounds are positive safe integers: `maxMilestones` defaults to 64; `maxCheckpoints` to 256 per milestone; `maxTextLength` to 4096 UTF-16 code units per content field; `maxReferences` to 64 per collection; `maxHistory` to 1024 per other retained collection. Content includes captions, outcomes, implementation details, reasons, evidence summaries, references, and vault text, not fixed protocol literals or stable IDs. IDs retain their separate 128-code-unit protocol bound. Admission checks the complete incoming operation and next state, rejecting oversized lists rather than dropping captions. Prior state and replay validate durable invariants independently of deployment limits, so an existing oversized list can be replaced with content within reduced limits; operations that leave an oversized result still reject.

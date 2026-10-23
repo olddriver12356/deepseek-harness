@@ -27,6 +27,12 @@ The Web GUI goal surface shows both the durable goal state and its current proce
 
 Mount this plugin alongside `ui-conversation` and the goal domain package; the strip then appears as the second card in the composer-context stack (after Todo, before Queue) whenever the session has a goal. Todo and Goal use the same panel elevation above the composer. An armed active goal offers pause; an active-but-disarmed or paused goal offers resume; edit rewrites the objective in the ui-primitives `InlineEditor`, so multi-line objectives survive editing; clear removes the goal and suppresses the strip until the projection catches up.
 
+### Session long-term progress
+
+With `longTermProgress` composed, this plugin contributes the `shell.activity.progress` section beside the existing Goal controls in Live Signal. The section reads the ready/untrusted projection through the standard Session hook. Compact milestone captions, completion counts and authorization status stay visible; expanding a milestone reveals checkpoints, implementation details and on-demand evidence and references. Edit milestones opens the full JSON draft with stable IDs; saving, approving scope, starting or releasing a milestone, and accepting it are separate actions. A released scope can be explicitly authorized again after pause or restart; displaying its durable release does not assert live execution. Checklist pending, failed, conflict and suspended-writeback states remain visible.
+
+The Host `longTermProgress/update` capability requires an authenticated owner invocation, validates the operation, and commits against the exact revision displayed at click time. Same-process model and non-owner Peer calls cannot mint UI authority. A pending interaction, an in-flight request or untrusted replay disables mutations without hiding the last-good list. Stale and transport failures retain the populated rows and report the failure inline. The UI never maintains a second copy of business state or starts a scheduler.
+
 ### The command-input bubble
 
 Each durable `/goal` run projects as a right-aligned user-style bubble labeled `Command input` (or `指令输入`), rendered before the generic command result row; the leading `/goal` token renders as a command reference chip in the code face through the shared `conversation.user.text` Factory and the Goal-owned `command` renderer, using the executed token range in `facts.commands`, and the objective stays plain body text. It carries no timestamp, copy, or branch actions, and reloading reconstructs it from the run.

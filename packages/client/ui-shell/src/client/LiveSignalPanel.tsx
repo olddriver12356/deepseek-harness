@@ -13,6 +13,7 @@ type LiveSignalProps =
   PropsRuntime<'shell.activity'>
   & PropsRenderSlots<'shell.activity.selectors'>
   & PropsRenderSlots<'shell.activity.capture'>
+  & PropsRenderSlots<'shell.activity.progress'>
   & InjectFace<ActivityInjected>
   & PropsLocale<'shell'>
 
@@ -181,6 +182,7 @@ export function LiveSignalPanel({
         onResumeGoal={onResumeGoal}
       />
 
+      {renderSlot('shell.activity.progress', {})}
       {renderSlot('shell.activity.selectors', {})}
 
       <section className={css.section} aria-labelledby="signal-pending">

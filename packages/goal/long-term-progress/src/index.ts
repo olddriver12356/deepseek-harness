@@ -1,5 +1,6 @@
 /** Durable Session-local progress service; mutations never schedule execution. @module @deepseek-ai/dsh-long-term-progress */
-import { Context, Service } from '@deepseek-ai/cordis'
+import { Context } from '@deepseek-ai/cordis'
+import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import z from '@deepseek-ai/schemastery'
 import { z as zod } from 'zod'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -28,8 +29,9 @@ declare module '@deepseek-ai/cordis' {
     longTermProgress: LongTermProgress
   }
 }
-declare module '@deepseek-ai/dsh-session' {
+declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
+    /** One committed revision-bound milestone/checkpoint operation, its derived authority and complete post-state for replay validation. */
     'progress/change': ProgressEvent
   }
 }
@@ -93,7 +95,7 @@ export interface Config extends Partial<ProgressLimits> {
   maxChecklistBytes?: number
 }
 /** Owns the sole synchronous append-before-publish mutation path. */
-export class LongTermProgress extends Service {
+export class LongTermProgress extends TypertRemoteService {
   static inject = ['agents', 'sessionProjections']
   static Config: z<Config> = z.object({
     maxMilestones: z.number().default(defaultLimits.maxMilestones),
@@ -146,6 +148,21 @@ export class LongTermProgress extends Service {
     })
     ctx.inject(['commands'], (consumer) =>{  registerProgressCommand(consumer) })
     ctx.inject(['tools'], (consumer) =>{  registerProgressTools(consumer) })
+  }
+  /** Commit one owner UI decision against the exact displayed revision; never executes work.
+   * @param agent - owning live Agent resolved by the Gateway.
+   * @param ref - revision displayed by the Client.
+   * @param request - human list edit, authorization, evidence or historical repair; internal bindings are refused.
+   * @returns committed projected state. */
+  @Remote('update')
+  updateFromOwner(agent: Agent, ref: ProgressRef, request: ProgressChange): ProgressView {
+    const invocation = this.ctx.invocation
+    if (invocation?.peer.principal.kind !== 'owner') throw new ProgressError('progress mutations require an authenticated owner UI invocation')
+    invocation.signal.throwIfAborted()
+    const change = progressChangeSchema.parse(request)
+    if (change.kind === 'bind-goal' || change.kind === 'vault-link' || change.kind === 'vault-settle')
+      throw new ProgressError('internal progress bindings require their dedicated operation')
+    return this.change(agent, ref, change, { kind: 'human', source: 'ui' })
   }
   /** Read detached durable state for an exact live Agent; corrupt replay rejects with PROGRESS_REPLAY_FAILED.
  * @param agent - owning live Agent.

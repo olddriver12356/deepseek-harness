@@ -73,6 +73,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * what a selector does with its choice.
      */
     'shell.activity.selectors': { kind: 'list'; scope: 'session' }
+    /** Session-owned milestone bookkeeping contributed by the Goal UI. */
+    'shell.activity.progress': { kind: 'single'; scope: 'session' }
     /** Explicit conversation capture contributed by the Knowledge plugin. */
     'shell.activity.capture': { kind: 'single'; scope: 'session'; owner: { readonly className: string | undefined } }
   }
@@ -221,6 +223,7 @@ export function apply(ctx: ClientContext): void {
       locale: 'shell',
       children: {
         'shell.activity.selectors': { kind: 'list', scope: 'session' },
+        'shell.activity.progress': { kind: 'single', scope: 'session' },
         'shell.activity.capture': { kind: 'single', scope: 'session' },
       },
       inject: (sessionId: SessionId): ActivityInjected => ({

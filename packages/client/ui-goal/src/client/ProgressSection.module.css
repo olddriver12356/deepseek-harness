@@ -1,0 +1,60 @@
+.section {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  border-left: 3px solid var(--dsw-specific-agent-cyan);
+  background: var(--dsw-specific-agent-surface);
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--dsw-font-family);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.header, .row, .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.header { justify-content: space-between; }
+.title { font-weight: 500; }
+.list { max-height: 60vh; overflow: auto; }
+.milestone { border-top: 1px solid var(--dsw-specific-agent-line); padding: 10px 0; }
+.row {
+  width: 100%;
+  justify-content: space-between;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.row:focus-visible, .section summary:focus-visible, .editor textarea:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+.section p { margin: 6px 0; }
+.caption, .status, .reference { color: var(--dsw-alias-label-secondary); }
+.status { font-size: 12px; }
+.details { min-width: 0; padding: 6px 0; }
+.details ul { padding-left: 18px; }
+.details li { padding: 6px 0; }
+.outcome { display: flex; align-items: baseline; gap: 6px; }
+.outcome input { flex: none; }
+.section summary { cursor: pointer; padding: 4px 0; }
+.actions { padding-top: 8px; }
+.editor { padding: 8px 0; }
+.editor textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 160px;
+  max-height: 40vh;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--dsw-specific-agent-line);
+  background: var(--dsw-specific-agent-surface);
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--ds-font-family-code);
+  font-size: 13px;
+}
+.error { color: var(--dsw-alias-state-error-primary); white-space: pre-wrap; }
+.vault { padding-top: 8px; border-top: 1px solid var(--dsw-specific-agent-line); }
+@media (hover: hover) { .row:hover { color: var(--dsw-specific-agent-cyan); } }

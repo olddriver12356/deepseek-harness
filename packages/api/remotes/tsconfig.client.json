@@ -42,6 +42,7 @@
     {
       "path": "../../goal/goal"
     },
+    { "path": "../../goal/long-term-progress" },
     {
       "path": "../../schedule/schedule"
     },

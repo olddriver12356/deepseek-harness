@@ -25,6 +25,8 @@
     ],
     "paths": {
       "@deepseek-ai/dsh-long-term-progress": ["./packages/goal/long-term-progress/src/index.ts"],
+      "@deepseek-ai/dsh-long-term-progress/remote": ["./packages/goal/long-term-progress/lib/typert.remote-client.d.ts"],
+      "@deepseek-ai/dsh-long-term-progress/typert": ["./packages/goal/long-term-progress/lib/typert.host.d.ts"],
       "@deepseek-ai/dsh-long-term-progress/types": ["./packages/goal/long-term-progress/src/types.ts"],
       "@deepseek-ai/dsh-experimental-session-search": ["./packages/experimental/session-search/src/index.ts"],
       "@deepseek-ai/dsh-experimental-ralph-bundle": ["./packages/experimental/ralph-bundle/src/index.ts"],
