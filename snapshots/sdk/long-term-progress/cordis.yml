@@ -1,0 +1,19 @@
+# Deterministic progress input over the shipped SDK profile.
+- id: skill-filesystem
+  config:
+    includeDefaultRoots: false
+- id: session-persistence-jsonl
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+- id: session-log-deepseek
+  config:
+    enabled: false
+# No process tool executes; a configured runner excludes the platform-only ACL skill from this cross-platform case.
+- id: sandbox
+  config:
+    runnerCommand: [bash, -c, 'while [ "$1" != "--" ]; do shift; done; shift; exec "$@"', passthrough-runner]
+    runnerFailureSignatures: ['passthrough-runner: profile rejected']
+- insert:
+    - id: sdk-progress-fixture
+      name: '../../../packages/goal/long-term-progress/tests/fixtures/sdk-progress.mjs'

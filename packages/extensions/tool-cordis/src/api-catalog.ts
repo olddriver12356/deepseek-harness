@@ -1382,6 +1382,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
     methods: [
       {
+        signature: 'registerValidator(validate: (agent: Agent, goal: GoalSnapshot, operation: \'create\' | \'edit\' | \'resume\' | \'continue\') => void): () => void',
+        description: 'Register a synchronous policy for activation and automatic round admission. Throws refuse before mutation.',
+        parameters: [{ name: 'validate', description: 'policy owned by the registering plugin; pause, completion and clear remain available.' }],
+        returns: 'disposer removing this exact policy.',
+      },
+      {
+        signature: 'canContinue(agent: Agent, goal: GoalRef): boolean',
+        description: 'Revalidate an automatic round against all currently registered policies.',
+        parameters: [{ name: 'agent', description: 'exact live recipient.' }, { name: 'goal', description: 'reserved Goal revision.' }],
+        returns: 'whether the live Goal and every policy still permit continuation.',
+      },
+      {
         signature: '@Remote(\'get\') get(agent: Agent): GoalView | undefined',
         description: 'Read the current goal for one exact live agent.',
         parameters: [{ name: 'agent', description: 'owning live agent.' }],
@@ -1695,6 +1707,49 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Stream one model call as raw chunks (token-level deltas). Replay state is retained only when the same adapter instance owns its historical provider and the target provider. Final adapter selection remains fixed through asynchronous exact-model resolution and dispatch. Adapter selection, dispatch, and iteration failures become terminal `error` or `aborted` finish chunks; middleware, nested-call, cleanup, and consumer failures remain thrown.',
         parameters: [{ name: 'options', description: 'the full request; `options.provider` selects the adapter.' }],
         returns: 'the chunk stream, possibly wrapped by `llm/stream` listeners.',
+      },
+    ],
+  },
+  {
+    key: 'longTermProgress',
+    summary: 'Owns the sole synchronous append-before-publish mutation path.',
+    description: 'Owns the sole synchronous append-before-publish mutation path.',
+    methods: [
+      {
+        signature: '@Remote(\'update\') updateFromOwner(agent: Agent, ref: ProgressRef, request: ProgressChange): ProgressView',
+        description: 'Commit one owner UI decision against the exact displayed revision; never executes work.',
+        parameters: [{ name: 'agent', description: 'owning live Agent resolved by the Gateway.' }, { name: 'ref', description: 'revision displayed by the Client.' }, { name: 'request', description: 'human list edit, authorization, evidence or historical repair; internal bindings are refused.' }],
+        returns: 'committed projected state.',
+      },
+      {
+        signature: 'get(agent: Agent): ProgressView | null',
+        description: 'Read detached durable state for an exact live Agent; corrupt replay rejects with PROGRESS_REPLAY_FAILED.',
+        parameters: [{ name: 'agent', description: 'owning live Agent.' }],
+        returns: 'trusted projected state or null before creation; last-good failure data is wire-display-only.',
+      },
+      {
+        signature: 'change(agent: Agent, ref: ProgressRef, change: ProgressChange, authority: ProgressAuthority): ProgressView',
+        description: 'Commit one revision-bound operation; trusted adapters derive authority outside JSON.',
+        parameters: [{ name: 'agent', description: 'owning live Agent.' }, { name: 'ref', description: 'expected current revision.' }, { name: 'change', description: 'validated domain operation.' }, { name: 'authority', description: 'trusted live adapter authority.' }],
+        returns: 'committed detached state.',
+      },
+      {
+        signature: 'advanceGoal(agent: Agent, ref: ProgressRef, request: AdvanceProgressGoal): GoalView',
+        description: 'Advance only a fresh process-local released checkpoint group using the existing execution Goal.',
+        parameters: [{ name: 'agent', description: 'exact live owner.' }, { name: 'ref', description: 'expected progress revision.' }, { name: 'request', description: 'consecutive checkpoint group and objective.' }],
+        returns: 'created or edited Goal; never resumes paused or disarmed work.',
+      },
+      {
+        signature: 'linkChecklist(agent: Agent, ref: ProgressRef, request: ChecklistAssociation, signal: AbortSignal): Promise<ProgressView>',
+        description: 'Confirm an existing checklist and its standing permissions without creating a file.',
+        parameters: [{ name: 'agent', description: 'exact live owner.' }, { name: 'ref', description: 'expected progress revision.' }, { name: 'request', description: 'exact file and stable checkpoint mappings.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'committed association after confirmation and freshness recheck.',
+      },
+      {
+        signature: 'syncChecklist(agent: Agent, signal: AbortSignal): Promise<void>',
+        description: 'Retry independently settled checklist synchronization under confirmed standing permission.',
+        parameters: [{ name: 'agent', description: 'exact live owner.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'completion after visible synchronization, conflict or error settlement.',
       },
     ],
   },
@@ -4930,6 +4985,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AdmittedPromptContentPart = {\n    readonly type: \'text\';\n    readonly text: string;\n} | {\n    readonly type: \'image\';\n    readonly attachment: ImageAttachmentRef;\n} | {\n    readonly type: \'file\';\n    readonly attachment: FileAttachmentRef;\n};',
   },
   {
+    name: 'AdvanceProgressGoal',
+    declaration: 'export interface AdvanceProgressGoal {\n    readonly milestoneId: MilestoneId;\n    readonly checkpointIds: readonly CheckpointId[];\n    readonly objective: string;\n}',
+  },
+  {
     name: 'AfterScheduleRecord',
     declaration: 'export interface AfterScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'after\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly afterSeconds: number;\n    readonly scheduledAt: string;\n}',
   },
@@ -5216,6 +5275,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ChangeResult',
     declaration: 'export interface ChangeResult {\n    changed: boolean;\n    application: \'applied\' | \'restart-required\' | \'overridden\' | \'failed\' | \'cancelled\';\n    restartReason?: RestartReason;\n    stage: \'install\' | \'enable\' | \'remove\';\n    target: string;\n    enabled?: boolean;\n    error?: ManagementError;\n    warnings?: string[];\n    packageResult?: PackageResult;\n    bundle?: string;\n    version?: string;\n    pendingBuilds?: string[];\n    approvedBuilds?: string[];\n    registries?: Registry[];\n    failedAt?: \'registry\' | \'spec-host\';\n}',
+  },
+  {
+    name: 'ChecklistAssociation',
+    declaration: 'export interface ChecklistAssociation {\n    readonly path: string;\n    readonly mapping: VaultBinding[\'mapping\'];\n    readonly allowTextRefinement: boolean;\n}',
+  },
+  {
+    name: 'Checkpoint',
+    declaration: 'export interface Checkpoint extends CheckpointDraft {\n    readonly complete: boolean;\n    readonly evidence: readonly (ProgressEvidence & ProgressRef)[];\n}',
+  },
+  {
+    name: 'CheckpointDraft',
+    declaration: 'export interface CheckpointDraft {\n    readonly id: CheckpointId;\n    readonly outcome: string;\n    readonly detail: string;\n    readonly references: readonly string[];\n}',
+  },
+  {
+    name: 'CheckpointId',
+    declaration: 'export type CheckpointId = Branded<\'CheckpointId\'>;',
   },
   {
     name: 'ClientArtifactBaseline',
@@ -6514,6 +6589,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface MessageSourceMap {\n    user: {\n        kind: \'user\';\n    };\n    model: ModelMessageSource;\n    tool: ToolMessageSource;\n    \'system-prompt\': SystemPromptMessageSource;\n}',
   },
   {
+    name: 'Milestone',
+    declaration: 'export interface Milestone extends Omit<MilestoneDraft, \'checkpoints\'> {\n    readonly checkpoints: readonly Checkpoint[];\n}',
+  },
+  {
+    name: 'MilestoneDecision',
+    declaration: 'export interface MilestoneDecision extends ProgressRef {\n    readonly milestoneId: MilestoneId;\n}',
+  },
+  {
+    name: 'MilestoneDraft',
+    declaration: 'export interface MilestoneDraft {\n    readonly id: MilestoneId;\n    readonly title: string;\n    readonly caption: string;\n    readonly exitCondition: string;\n    readonly references: readonly string[];\n    readonly checkpoints: readonly CheckpointDraft[];\n}',
+  },
+  {
+    name: 'MilestoneId',
+    declaration: 'export type MilestoneId = Branded<\'MilestoneId\'>;',
+  },
+  {
     name: 'ModDefinition',
     declaration: 'export interface ModDefinition {\n    readonly name: string;\n    readonly version?: string;\n    readonly root?: string;\n    readonly options?: PluginOptions;\n    readonly register: ModRegister;\n}',
   },
@@ -6840,6 +6931,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ProfileReconciliation',
     declaration: 'export interface ProfileReconciliation {\n    warnings: string[];\n    pending: PendingModule[];\n    restartReason?: \'module-comparison\' | \'package-moved\';\n}',
+  },
+  {
+    name: 'ProgressAuthority',
+    declaration: 'export type ProgressAuthority = {\n    readonly kind: \'human\';\n    readonly source: \'command\' | \'ui\' | \'direct-human-tool\';\n} | {\n    readonly kind: \'maintenance\';\n};',
+  },
+  {
+    name: 'ProgressChange',
+    declaration: 'export type ProgressChange = {\n    readonly kind: \'replace\';\n    readonly milestones: readonly MilestoneDraft[];\n} | {\n    readonly kind: \'approve\' | \'start\' | \'accept\';\n    readonly milestoneId: MilestoneId;\n} | {\n    readonly kind: \'reconcile\';\n    readonly checkpointId: CheckpointId;\n    readonly evidence: ProgressEvidence;\n} | {\n    readonly kind: \'refine\';\n    readonly checkpointId: CheckpointId;\n    readonly detail: string;\n    readonly references: readonly string[];\n    readonly reason: string;\n} | {\n    readonly kind: \'regression\';\n    readonly historicalCheckpointId: CheckpointId;\n    readonly milestoneId: MilestoneId;\n    readonly checkpoint: CheckpointDraft;\n    readonly insertAt: number;\n    readonly reason: string;\n    readonly evidence: ProgressEvidence;\n} | {\n    readonly kind: \'vault-link\';\n    readonly binding: VaultBinding;\n} | {\n    readonly kind: \'vault-settle\';\n    readonly fingerprint: string;\n    readonly settlement: VaultBinding[\'settlement\'];\n    readonly message: string;\n} | {\n    readonly kind: \'bind-goal\';\n    readonly binding: NonNullable<ProgressView[\'goalBinding\']>;\n} | {\n    readonly kind: \'references\';\n    readonly references: readonly string[];\n} | {\n    readonly kind: \'review\';\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'ProgressEvidence',
+    declaration: 'export interface ProgressEvidence {\n    readonly kind: \'passed\' | \'failed\';\n    readonly summary: string;\n    readonly references: readonly string[];\n}',
+  },
+  {
+    name: 'ProgressRef',
+    declaration: 'export interface ProgressRef {\n    readonly revision: number;\n}',
+  },
+  {
+    name: 'ProgressView',
+    declaration: 'export interface ProgressView extends ProgressRef {\n    readonly milestones: readonly Milestone[];\n    readonly approvals: readonly MilestoneDecision[];\n    readonly release: MilestoneDecision | null;\n    readonly acceptances: readonly MilestoneDecision[];\n    readonly references: readonly string[];\n    readonly goalBinding: {\n        readonly goal: GoalRef;\n        readonly milestoneId: MilestoneId;\n        readonly checkpointIds: readonly CheckpointId[];\n    } | null;\n    readonly vault: VaultBinding | null;\n}',
   },
   {
     name: 'ProjectionChangeListener',
@@ -8920,6 +9031,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UserMessage',
     declaration: 'export interface UserMessage extends MessageBase {\n    readonly role: \'user\';\n}',
+  },
+  {
+    name: 'VaultBinding',
+    declaration: 'export interface VaultBinding {\n    readonly targetKey: string;\n    readonly path: string;\n    readonly fingerprint: string;\n    readonly mapping: readonly {\n        readonly checkpointId: CheckpointId;\n        readonly marker: string;\n    }[];\n    readonly allowTextRefinement: boolean;\n    readonly writeback: \'confirmed\' | \'suspended\';\n    readonly settlement: \'synchronized\' | \'pending\' | \'failed\' | \'conflict\';\n    readonly message: string;\n}',
   },
   {
     name: 'VerifiedWebhookDelivery',

@@ -13,8 +13,8 @@ import { checkpointId, milestoneId } from '../src/domain.ts'
 import { harness, milestones } from './consumer-harness.ts'
 import * as ToolGoal from '@deepseek-ai/dsh-tool-goal'
 
-async function scopedHarness() {
-  const h = await harness()
+async function scopedHarness(includeTools = true) {
+  const h = await harness(includeTools)
   await h.ctx.plugin(GoalService)
   const list = [{ ...milestones[0]!, checkpoints: [milestones[0]!.checkpoints[0]!, {
     id: checkpointId('c1b'), outcome: 'Second outcome', detail: '', references: [],
@@ -153,7 +153,7 @@ describe('released progress Goal scope', () => {
   })
 
   it('preserves ordinary Goal tools direct-human restrictions during automatic turns', async () => {
-    const h = await scopedHarness()
+    const h = await scopedHarness(false)
     await h.ctx.plugin(ToolGoal, {})
     h.session.append('turn/end', { turn: 1, reason: { kind: 'completed' } })
     h.open(2, false)

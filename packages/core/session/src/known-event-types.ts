@@ -52,6 +52,7 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'personal/observation-request',
   'personal/observation-result',
   'plan/mode',
+  'progress/change',
   'request/context',
   'request/header',
   'sandbox/mode',

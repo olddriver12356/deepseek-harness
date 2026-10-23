@@ -262,6 +262,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-command-goal` | no | Human-facing slash command for persisted same-session goals |
 | `@deepseek-ai/dsh-goal` | yes | Event-sourced same-session goal state and lifecycle service for the DeepSeek Harness |
 | `@deepseek-ai/dsh-goal-round-driver` | no | Race-fenced same-session goal-round driver |
+| `@deepseek-ai/dsh-long-term-progress` | yes | Durable Session-local milestones, checkpoint evidence and revision-bound authority |
 | `@deepseek-ai/dsh-tool-goal` | yes | Model-facing same-session goal tools with execution-time authority checks |
 
 ## guard
@@ -382,6 +383,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
+| `@deepseek-ai/dsh-command-clear` | no | Human slash command that resets conversation context without deleting Session history |
 | `@deepseek-ai/dsh-session-checkpoint-policy` | no | Semantic session durability checkpoints before model requests and tool side effects |
 | `@deepseek-ai/dsh-session-log-deepseek` | yes | Incremental lossless session-log request extension for the official DeepSeek LLM API |
 | `@deepseek-ai/dsh-session-persistence-jsonl` | yes | JSONL durable session persistence backend for the DeepSeek Harness |

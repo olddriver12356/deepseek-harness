@@ -666,6 +666,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Folds revisioned objective state from the session log and keeps live continuation activation process-local.',
   },
   {
+    key: 'longTermProgress',
+    pkg: 'long-term-progress',
+    title: 'Session milestone progress',
+    mode: 'core',
+    note: 'Owns revisioned milestones, checkpoint evidence and explicit scope decisions without scheduling execution.',
+  },
+  {
     key: 'ssh',
     pkg: 'ssh',
     title: 'POSIX SSH connection owner',

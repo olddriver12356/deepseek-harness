@@ -11,7 +11,7 @@ import type { AdvanceProgressGoal, ProgressRef, ProgressView } from './types.ts'
 /** Install scope validation and return the service-owned advancement operation.
  * @param ctx - lifecycle owner with Goal, progress and Agent services.
  * @returns synchronous scope-checked advancement operation. */
-export function registerProgressGoals(ctx: Context) {
+export function registerProgressGoals(ctx: Context): (agent: Agent, ref: ProgressRef, request: AdvanceProgressGoal) => GoalView {
   const activeReleases = new Map<Agent, number>()
   ctx.on('agent/disposed', ({ agent }) => { activeReleases.delete(agent) })
   const pending = new WeakMap<Agent, string>()
@@ -102,24 +102,6 @@ export function registerProgressGoals(ctx: Context) {
       if (['read_progress', 'update_progress', 'get_goal', 'update_goal', 'ask_user_question'].includes(exec.name)) return undefined
       return 'Reconcile recent checkpoint evidence with update_progress, or record review before implementation tools. Use recent context, not a broad audit.'
     })
-    const schema = z.object({ revision: z.number().int().nonnegative(), milestone_id: z.string(),
-      checkpoint_ids: z.array(z.string()).min(1), objective: z.string() }).strict()
-    consumer.tools.register(defineTool({
-      name: 'advance_progress_goal',
-      description: 'Advance the existing execution Goal within the freshly released milestone, covering a consecutive unfinished checkpoint group. '
-        + 'Never skips predecessors, crosses a milestone boundary, resumes paused work or treats a completed Goal as checkpoint evidence.',
-      parameters: { revision: { type: 'integer', required: true }, milestone_id: { type: 'string', required: true },
-        checkpoint_ids: { type: 'array', required: true, items: { type: 'string' } }, objective: { type: 'string', required: true } },
-      output: { schema: { type: 'json' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }] },
-      execute(_args, exec) {
-        const args = schema.parse(exec.arguments)
-        const goal = consumer.longTermProgress.advanceGoal(progressToolAgent(consumer, exec), args, {
-          milestoneId: milestoneId(args.milestone_id), checkpointIds: args.checkpoint_ids.map(checkpointId), objective: args.objective,
-        })
-        return Promise.resolve({ goal: { id: goal.id, revision: goal.revision, objective: goal.objective } })
-      },
-      presentCall: args => ({ card: 'generic', title: 'Advance milestone Goal', kind: 'other', rawInput: args.objective }),
-    }))
   })
   ctx.effect(() => () => {
     for (const agent of activeReleases.keys())
@@ -127,4 +109,27 @@ export function registerProgressGoals(ctx: Context) {
     activeReleases.clear()
   })
   return advance
+}
+
+/** Register Goal advancement in the existing Goal tool consumer scope.
+ * @param consumer - effect owner with tools and long-term progress. */
+export function registerProgressGoalTool(consumer: Context): void {
+  const schema = z.object({ revision: z.number().int().nonnegative(), milestone_id: z.string(),
+    checkpoint_ids: z.array(z.string()).min(1), objective: z.string() }).strict()
+  consumer.tools.register(defineTool({
+    name: 'advance_progress_goal',
+    description: 'Advance the existing execution Goal within the freshly released milestone, covering a consecutive unfinished checkpoint group. '
+        + 'Never skips predecessors, crosses a milestone boundary, resumes paused work or treats a completed Goal as checkpoint evidence.',
+    parameters: { revision: { type: 'integer', required: true }, milestone_id: { type: 'string', required: true },
+      checkpoint_ids: { type: 'array', required: true, items: { type: 'string' } }, objective: { type: 'string', required: true } },
+    output: { schema: { type: 'json' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }] },
+    execute(_args, exec) {
+      const args = schema.parse(exec.arguments)
+      const goal = consumer.longTermProgress.advanceGoal(progressToolAgent(consumer, exec), args, {
+        milestoneId: milestoneId(args.milestone_id), checkpointIds: args.checkpoint_ids.map(checkpointId), objective: args.objective,
+      })
+      return Promise.resolve({ goal: { id: goal.id, revision: goal.revision, objective: goal.objective } })
+    },
+    presentCall: args => ({ card: 'generic', title: 'Advance milestone Goal', kind: 'other', rawInput: args.objective }),
+  }))
 }

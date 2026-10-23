@@ -163,6 +163,12 @@ interface GoalChanged {
 
 [`GoalService`](../../packages/goal/goal/src/index.ts) resolves creation defaults, reads strict replay from the optionally registered `goal` projection, enforces exact-live-agent identity and compare-and-set mutations, and emits contained `goal/changed` notifications. Its first dependent access fails if the projection registry or key is absent. The package [README](../../packages/goal/goal/README.md) defines the callable API and model-visible contract.
 
+## Session-local long-term progress
+
+The [progress package](../../packages/goal/long-term-progress/README.md) owns the two-level milestone/checkpoint state. `ProgressRef` selects the displayed revision; `ProgressView` contains milestones, approvals, the current release, historical acceptances, document references, Goal binding and optional checklist association. `ProgressChange` is the strict operation union and `ProgressAuthority` is trusted adapter input, never model JSON. `AdvanceProgressGoal` selects a consecutive unfinished group within released scope; `ChecklistAssociation` names one confirmed existing file and stable marker mappings. These types are declared in the package's [type definitions](../../packages/goal/long-term-progress/src/types.ts).
+
+The projection publishes `ProgressProjectionView`: ready state or an untrusted last-good view with an explicit replay failure. Saving, approval, release and acceptance are separate decisions and none queues work. Existing Goal consumers own the command/tool registrations, preserving their preset scope; the Session projection and owner Remote remain available independently. Restored and forked scope is never process-local execution activation.
+
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
 <a id="cordis-surface"></a>
@@ -178,6 +184,17 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 Goal service (`ctx.goals`) backed exclusively by the owning session log.
 
 ```ts cordis-catalog
+/** Register a synchronous policy for activation and automatic round admission. Throws refuse before mutation.
+ * @param validate - policy owned by the registering plugin; pause, completion and clear remain available.
+ * @returns disposer removing this exact policy. */
+registerValidator(validate: (agent: Agent, goal: GoalSnapshot, operation: 'create' | 'edit' | 'resume' | 'continue') => void): () => void
+
+/** Revalidate an automatic round against all currently registered policies.
+ * @param agent - exact live recipient.
+ * @param goal - reserved Goal revision.
+ * @returns whether the live Goal and every policy still permit continuation. */
+canContinue(agent: Agent, goal: GoalRef): boolean
+
 /**
  * Read the current goal for one exact live agent.
  * @param agent - owning live agent.
@@ -267,6 +284,59 @@ block(agent: Agent, ref: GoalRef, reason: GoalBlockReason): GoalView
 Types: [Agent](core.md)
 
 Source: [`packages/goal/goal/src/index.ts`](../../packages/goal/goal/src/index.ts)
+
+<a id="ctxlongtermprogress--longtermprogress"></a>
+
+### `ctx.longTermProgress` — `LongTermProgress`
+
+Owns the sole synchronous append-before-publish mutation path.
+
+```ts cordis-catalog
+/** Commit one owner UI decision against the exact displayed revision; never executes work.
+ * @param agent - owning live Agent resolved by the Gateway.
+ * @param ref - revision displayed by the Client.
+ * @param request - human list edit, authorization, evidence or historical repair; internal bindings are refused.
+ * @returns committed projected state. */
+@Remote('update') updateFromOwner(agent: Agent, ref: ProgressRef, request: ProgressChange): ProgressView
+
+/** Read detached durable state for an exact live Agent; corrupt replay rejects with PROGRESS_REPLAY_FAILED.
+ * @param agent - owning live Agent.
+ * @returns trusted projected state or null before creation; last-good failure data is wire-display-only. */
+get(agent: Agent): ProgressView | null
+
+/** Commit one revision-bound operation; trusted adapters derive authority outside JSON.
+ * @param agent - owning live Agent.
+ * @param ref - expected current revision.
+ * @param change - validated domain operation.
+ * @param authority - trusted live adapter authority.
+ * @returns committed detached state. */
+change(agent: Agent, ref: ProgressRef, change: ProgressChange, authority: ProgressAuthority): ProgressView
+
+/** Advance only a fresh process-local released checkpoint group using the existing execution Goal.
+ * @param agent - exact live owner.
+ * @param ref - expected progress revision.
+ * @param request - consecutive checkpoint group and objective.
+ * @returns created or edited Goal; never resumes paused or disarmed work. */
+advanceGoal(agent: Agent, ref: ProgressRef, request: AdvanceProgressGoal): GoalView
+
+/** Confirm an existing checklist and its standing permissions without creating a file.
+ * @param agent - exact live owner.
+ * @param ref - expected progress revision.
+ * @param request - exact file and stable checkpoint mappings.
+ * @param signal - caller cancellation.
+ * @returns committed association after confirmation and freshness recheck. */
+linkChecklist(agent: Agent, ref: ProgressRef, request: ChecklistAssociation, signal: AbortSignal): Promise<ProgressView>
+
+/** Retry independently settled checklist synchronization under confirmed standing permission.
+ * @param agent - exact live owner.
+ * @param signal - caller cancellation.
+ * @returns completion after visible synchronization, conflict or error settlement. */
+syncChecklist(agent: Agent, signal: AbortSignal): Promise<void>
+```
+
+Types: [Agent](core.md)
+
+Source: [`packages/goal/long-term-progress/src/index.ts`](../../packages/goal/long-term-progress/src/index.ts)
 
 <a id="goal-events"></a>
 

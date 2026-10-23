@@ -1,0 +1,109 @@
+[
+  {
+    "type": "progress/change",
+    "data": {
+      "version": 1,
+      "change": {
+        "kind": "reconcile",
+        "checkpointId": "c1",
+        "evidence": {
+          "kind": "passed",
+          "summary": "Fixture observed the focused checks passing.",
+          "references": [
+            "test-run"
+          ]
+        }
+      },
+      "authority": {
+        "kind": "maintenance"
+      },
+      "state": {
+        "revision": 4,
+        "milestones": [
+          {
+            "id": "m1",
+            "title": "Foundation",
+            "caption": "Durable state",
+            "exitCondition": "Human verification",
+            "references": [],
+            "checkpoints": [
+              {
+                "id": "c1",
+                "outcome": "Pass focused checks",
+                "detail": "",
+                "references": [
+                  "test-run"
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "kind": "passed",
+                    "summary": "Fixture observed the focused checks passing.",
+                    "references": [
+                      "test-run"
+                    ],
+                    "revision": 4
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "m2",
+            "title": "Delivery",
+            "caption": "Ship verified work",
+            "exitCondition": "Explicit release",
+            "references": [],
+            "checkpoints": [
+              {
+                "id": "c2",
+                "outcome": "Deliver",
+                "detail": "",
+                "references": [],
+                "complete": false,
+                "evidence": []
+              }
+            ]
+          }
+        ],
+        "approvals": [
+          {
+            "milestoneId": "m1",
+            "revision": 2
+          }
+        ],
+        "release": {
+          "milestoneId": "m1",
+          "revision": 3
+        },
+        "acceptances": [],
+        "references": [],
+        "goalBinding": null,
+        "vault": null
+      }
+    }
+  },
+  {
+    "type": "user/message",
+    "data": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Long-term progress revision 4; this supersedes all earlier progress snapshots.\nm1: Foundation — Durable state (1/1; awaiting verification)\nm2: Delivery — Ship verified work (0/1; awaiting authorization)\nThis list is context and bookkeeping, not execution authorization. Work only within the current released milestone; stop at its boundary for human verification and explicit release of the next milestone. Use read_progress for checkpoint details and references. Read supplementary material or ask the user when intent is unclear."
+        }
+      ],
+      "source": {
+        "kind": "long-term-progress",
+        "revision": 4,
+        "form": "snapshot",
+        "sections": [
+          {
+            "name": "long-term-progress",
+            "text": "Long-term progress revision 4; this supersedes all earlier progress snapshots.\nm1: Foundation — Durable state (1/1; awaiting verification)\nm2: Delivery — Ship verified work (0/1; awaiting authorization)\nThis list is context and bookkeeping, not execution authorization. Work only within the current released milestone; stop at its boundary for human verification and explicit release of the next milestone. Use read_progress for checkpoint details and references. Read supplementary material or ask the user when intent is unclear."
+          }
+        ]
+      },
+      "role": "user"
+    }
+  }
+]

@@ -14,6 +14,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 const useResource = (() => ({ status: 'none' as const, value: undefined, failure: undefined })) as GlobalStandardProps['useResource']
 let selectedSession: SessionId | undefined
 let selectedSessionTitle: string | undefined
+let selectedSessionBlank = false
 let workspacesReady = true
 type AttentionSnapshot = Parameters<Parameters<AppFrameProps['useSessionStatus']>[0]>[0]
 const noAttention: AttentionSnapshot = new Map()
@@ -72,7 +73,7 @@ function mountFrame(windowWidth = frameWidth) {
     ids: selectedSession === undefined ? [] : [selectedSession],
     byId: selectedSession === undefined ? {} : {
       [selectedSession]: {
-        id: selectedSession, displayTitle: 'Test', running: false, blank: false, updatedAt: 1,
+        id: selectedSession, displayTitle: 'Test', running: false, blank: selectedSessionBlank, updatedAt: 1,
         retainedBy: { mainView: 1 },
         ...(selectedSessionTitle === undefined ? {} : { title: selectedSessionTitle }),
       },
@@ -205,6 +206,14 @@ describe('custom shell on the upstream layout contract', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(button)
     expect(panel.hidden).toBe(false)
+  })
+  it('offers progress controls for a selected blank Session before any execution turn', () => {
+    selectedSessionBlank = true
+    try {
+      const b = mountFrame()
+      expect(b.getByRole('button', { name: 'activity' })).toBeTruthy()
+      expect(b.container.querySelector<HTMLElement>('#live-signal-panel')!.hidden).toBe(false)
+    } finally { selectedSessionBlank = false }
   })
   it('does not show the strict activity surface without a selected session or on a phone', () => {
     selectedSession = undefined

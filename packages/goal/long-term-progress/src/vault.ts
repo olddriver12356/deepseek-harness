@@ -13,7 +13,7 @@ interface ChecklistEntry { marker: string; checked: boolean; text: string; start
  * @param text - exact file text, including original newline bytes.
  * @param binding - confirmed checkpoint-to-marker mapping.
  * @returns mapped entries in mapping order. */
-export function inspectChecklist(text: string, binding: Pick<VaultBinding, 'mapping'>) {
+export function inspectChecklist(text: string, binding: Pick<VaultBinding, 'mapping'>): { entries: ChecklistEntry[] } {
   const found = new Map<string, ChecklistEntry>()
   const duplicates = new Set<string>()
   const pattern = /^([\t ]*[-*+] \[)([ xX])(\] )([^\r\n]*?)([\t ]*<!-- dsh:([a-zA-Z0-9._:-]+) -->[^\r\n]*)$/gmu
@@ -40,7 +40,7 @@ export function inspectChecklist(text: string, binding: Pick<VaultBinding, 'mapp
  * @param state - trusted Session progress.
  * @param binding - confirmed checkbox and optional text permissions.
  * @returns complete replacement text and whether any mapped field changes. */
-export function planChecklistWrite(text: string, state: ProgressView, binding: VaultBinding) {
+export function planChecklistWrite(text: string, state: ProgressView, binding: VaultBinding): { text: string; changed: boolean } {
   const { entries } = inspectChecklist(text, binding)
   let result = text
   for (const entry of entries.toSorted((a, b) => b.start - a.start)) {

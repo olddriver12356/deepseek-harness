@@ -11,10 +11,15 @@ export interface ProgressRef {
 }
 /** Deployment bounds apply to incoming content and the complete result, not historical prior state. */
 export interface ProgressLimits {
+  /** Maximum milestones retained in one list. */
   readonly maxMilestones: number
+  /** Maximum checkpoints retained per milestone. */
   readonly maxCheckpoints: number
+  /** Maximum UTF-16 code units per content field. */
   readonly maxTextLength: number
+  /** Maximum references per collection. */
   readonly maxReferences: number
+  /** Maximum entries per other retained history collection. */
   readonly maxHistory: number
 }
 /** Trusted caller context, never accepted from model or wire JSON. Human adapters must derive authority from a live interaction. */

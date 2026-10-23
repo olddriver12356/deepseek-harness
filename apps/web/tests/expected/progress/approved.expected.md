@@ -1,0 +1,16 @@
+- region "Long-term progress":
+  - text: Long-term progress
+  - button "Edit milestones"
+  - article:
+    - button "Foundation with a deliberately long descriptive caption 0/1 complete" [expanded]
+    - paragraph: Durable progress without a second scheduler
+    - paragraph: Awaiting start
+    - paragraph: Human verification
+    - list:
+      - listitem:
+        - checkbox "Pass the focused acceptance checks"
+        - text: Pass the focused acceptance checks
+        - paragraph: Use existing tests
+        - group: Evidence and references
+    - paragraph: spec.md
+    - button "Start milestone"

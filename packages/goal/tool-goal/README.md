@@ -27,6 +27,8 @@ English | [中文](README.zh.md)
 
 Mount `dsh-tool-goal` beside the goal service when the model should create and update persisted goals itself. The tools are the model-facing half of the goal surface; the `/goal` command is the human-facing half, and the continuation driver uses the same tools to complete or block goals at the end of autonomous rounds.
 
+When `dsh-long-term-progress` is composed, this consumer also registers its selective progress, confirmed maintenance and released-scope Goal tools in this consumer's existing scope. Removing either plugin removes those contributions; presets without this consumer inherit no progress tools.
+
 ### Tools
 
 All three tools return the same compact JSON — `{ goal: null }` when no goal is current, otherwise the goal's id, revision, objective, phase, rounds started, round cap, optional blocker reason, and whether continuation is armed — matching what Native callers already render.

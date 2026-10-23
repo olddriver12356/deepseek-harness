@@ -31,6 +31,7 @@
   "peerDependencies": {
     "@deepseek-ai/dsh-commands": "workspace:*",
     "@deepseek-ai/dsh-goal": "workspace:*",
+    "@deepseek-ai/dsh-long-term-progress": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
     "@deepseek-ai/cordis": "workspace:~"
   },
@@ -41,6 +42,7 @@
     "@deepseek-ai/dsh-agent-loop-testkit": "workspace:*",
     "@deepseek-ai/dsh-commands": "workspace:*",
     "@deepseek-ai/dsh-goal": "workspace:*",
+    "@deepseek-ai/dsh-long-term-progress": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/cordis": "workspace:~",

@@ -17,6 +17,7 @@ declare module '@deepseek-ai/dsh-llm' {
 }
 
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { registerProgressTools, registerProgressGoalTool } from '@deepseek-ai/dsh-long-term-progress'
 import type { GenericCallView } from '@deepseek-ai/dsh-tools'
 import {
   completionAuthority,
@@ -185,6 +186,10 @@ function present(title: string, kind: 'read' | 'other', rawInput?: unknown): Gen
 
 /** Register the three Codex-shaped goal tools and their shared policy section. */
 export function apply(ctx: Context, config: Config): void {
+  ctx.inject(['longTermProgress'], (consumer) => {
+    registerProgressTools(consumer)
+    registerProgressGoalTool(consumer)
+  })
   const resolved = resolveConfig(config)
   ctx.systemPrompt.section({
     name: 'tool:goal',

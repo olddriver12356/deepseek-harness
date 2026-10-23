@@ -1,5 +1,6 @@
 /** Model-facing selective reads and revision-bound, human-confirmed progress maintenance. */
 import type { Context } from '@deepseek-ai/cordis'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import { z } from 'zod'
 import { HarnessError } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
@@ -55,7 +56,7 @@ const output = {
  * @param ctx - services owning Agents and turn admission.
  * @param exec - registry-supplied call identity.
  * @returns authenticated calling Agent. */
-export function progressToolAgent(ctx: Context, exec: ToolRunContext) {
+export function progressToolAgent(ctx: Context, exec: ToolRunContext): Agent {
   const agent = exec.agent
   if (agent === undefined || ctx.agents.get(agent.id) !== agent || agent.status !== 'running'
     || ctx.agents.currentInitiator() !== agent

@@ -2423,6 +2423,37 @@ export type Config = Readonly<Record<string, never>>
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-retry -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-long-term-progress -->
+<a id="deepseek-aidsh-long-term-progress"></a>
+
+## `@deepseek-ai/dsh-long-term-progress`
+
+- `inject`: `agents` · `sessionProjections`
+- `source`: [`packages/goal/long-term-progress/src/index.ts:95`](../packages/goal/long-term-progress/src/index.ts)
+
+```ts config-catalog
+/** Progress admission configuration; omitted fields use the documented deployment defaults. */
+export interface Config extends Partial<ProgressLimits> {
+  /** Complete checklist byte limit; larger files reject before synchronization. */
+  maxChecklistBytes?: number
+}
+
+/** Deployment bounds apply to incoming content and the complete result, not historical prior state. */
+export interface ProgressLimits {
+  /** Maximum milestones retained in one list. */
+  readonly maxMilestones: number
+  /** Maximum checkpoints retained per milestone. */
+  readonly maxCheckpoints: number
+  /** Maximum UTF-16 code units per content field. */
+  readonly maxTextLength: number
+  /** Maximum references per collection. */
+  readonly maxReferences: number
+  /** Maximum entries per other retained history collection. */
+  readonly maxHistory: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-long-term-progress -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-lsp-stdio -->
 <a id="deepseek-aidsh-lsp-stdio"></a>
 
@@ -4173,7 +4204,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-tool-goal`
 
 - `inject`: `agents` · `goals` · `tools` · `systemPrompt` · `sessionProjections`
-- `source`: [`packages/goal/tool-goal/src/index.ts:32`](../packages/goal/tool-goal/src/index.ts)
+- `source`: [`packages/goal/tool-goal/src/index.ts:33`](../packages/goal/tool-goal/src/index.ts)
 
 ```ts config-catalog
 /** Model policy and hard lower bounds for goal-state updates. */

@@ -3,8 +3,8 @@
  * stable error vocabulary.
  */
 
-import { describe, expect, it } from 'vitest'
-import { SESSION_FORMAT_VERSION, SessionId } from '@deepseek-ai/dsh-session'
+import { describe, expect, it, vi } from 'vitest'
+import { SESSION_FORMAT_VERSION, SessionId, KNOWN_SESSION_EVENT_TYPES } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import {
   SessionAlreadyExistsError,
@@ -136,6 +136,21 @@ describe('validateStoredEvents', () => {
     }
     expect((refusal as Error).message).toContain(`(raw log: ${LOCATION.path})`)
     expect((refusal as SessionFormatUnsupportedError).location).toBe(LOCATION)
+  })
+
+  it('refuses required progress records before adoption when the reader lacks their discriminator', () => {
+    const has = KNOWN_SESSION_EVENT_TYPES.has.bind(KNOWN_SESSION_EVENT_TYPES)
+    const oldReader = vi.spyOn(KNOWN_SESSION_EVENT_TYPES, 'has').mockImplementation(type => type === 'progress/change' ? false : has(type))
+    try {
+      const events = [userMessage(0)]
+      const data = events[0]!.data
+      // Exercise the runtime reader before payload interpretation without fabricating the new payload.
+      Reflect.set(events[0]!, 'type', 'progress/change')
+      expect(() => validateStoredEvents(meta('old-progress-reader'), events, LOCATION))
+        .toThrow(SessionFormatUnsupportedError)
+      expect(Object.isFrozen(data)).toBe(false)
+    } finally { oldReader.mockRestore() }
+    expect(KNOWN_SESSION_EVENT_TYPES.has('progress/change')).toBe(true)
   })
 
   it('retains an unknown event type its writer marked ignorable', () => {

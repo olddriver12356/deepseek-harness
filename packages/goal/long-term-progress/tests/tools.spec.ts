@@ -3,6 +3,21 @@ import { harness, milestones } from './consumer-harness.ts'
 import { milestoneId } from '../src/domain.ts'
 
 describe('progress tools', () => {
+  it('does not expose model tools until the existing Goal tool consumer is mounted and removes them with its owner', async () => {
+    const h = await harness(false)
+    expect(h.ctx.tools.get('read_progress')).toBeUndefined()
+    const consumer = await import('@deepseek-ai/dsh-tool-goal')
+    const { default: Goals } = await import('@deepseek-ai/dsh-goal')
+    await h.ctx.plugin(Goals)
+    const fiber = h.ctx.plugin(consumer, {})
+    await fiber
+    expect(h.ctx.tools.get('read_progress')).toBeDefined()
+    expect(h.ctx.tools.get('advance_progress_goal')).toBeDefined()
+    await fiber.dispose()
+    expect(h.ctx.tools.get('read_progress')).toBeUndefined()
+    expect(h.ctx.tools.get('advance_progress_goal')).toBeUndefined()
+    expect(h.ctx.longTermProgress.get(h.agent)).toBeNull()
+  })
   it('reads compact state by default and only selected details on demand', async () => {
     const h = await harness()
     h.change({ kind: 'replace', milestones })

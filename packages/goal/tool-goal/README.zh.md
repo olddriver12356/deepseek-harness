@@ -27,6 +27,8 @@ kind: "package-reference"
 
 当模型需要自行创建和更新持久 goal 时，把 `dsh-tool-goal` 挂在 goal 服务旁边。这些工具是 goal 表面面向模型的一半；`/goal` 命令是面向人类的一半，续行驱动器在自主 Round 结束时使用同一套工具完成或阻塞 goal。
 
+组合 `dsh-long-term-progress` 时，本消费者也会在自身现有作用域内注册选择性进度读取、经确认的维护及已释放范围内的 Goal 工具。移除任一插件都会移除这些贡献；不含本消费者的预设不会继承进度工具。
+
 ### 工具
 
 三个工具都返回相同的紧凑 JSON——没有当前 goal 时为 `{ goal: null }`，否则返回 goal 的 id、revision、目标、phase、已开始 Round、Round 上限、可选的 blocker reason 与续行是否已启用——与 Native 调用方已经渲染的内容一致。

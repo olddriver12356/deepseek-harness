@@ -803,7 +803,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        choices=("all", "sdk-default", "sdk-custom", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-fs-search", "sdk-spawn-node", "sdk-mcp", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-profile-plugin", "sdk-office", "sdk-authoring", "sdk-live", "runner", "direct"),
+        choices=("all", "sdk-default", "sdk-custom", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-fs-search", "sdk-spawn-node", "sdk-mcp", "sdk-progress", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-profile-plugin", "sdk-office", "sdk-authoring", "sdk-live", "runner", "direct"),
         default="all",
     )
     parser.add_argument("--exe", type=Path)
@@ -822,10 +822,10 @@ def main() -> None:
         parser.error("--scenario sdk-profile-plugin requires --installed-wheel")
     if args.installed_wheel:
         args.exe = assert_installed_wheel_environment()
-    if args.scenario in {"all", "sdk-custom", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-fs-search", "sdk-spawn-node", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-office", "sdk-authoring", "runner", "direct"} and args.exe is None:
+    if args.scenario in {"all", "sdk-custom", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-fs-search", "sdk-spawn-node", "sdk-progress", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-office", "sdk-authoring", "runner", "direct"} and args.exe is None:
         parser.error("--exe is required for custom, minimal, dynamic-tools, fs-search, spawn-node, snapshot, recovery, restart, office, runner, and direct scenarios")
-    if args.update_snapshots and args.scenario not in {"all", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-authoring"}:
-        parser.error("--update-snapshots requires --scenario sdk-minimal, sdk-minimal-in-history, sdk-dynamic-tools, sdk-snapshot, sdk-recovery, sdk-restart, sdk-authoring, or all")
+    if args.update_snapshots and args.scenario not in {"all", "sdk-minimal", "sdk-minimal-in-history", "sdk-dynamic-tools", "sdk-progress", "sdk-snapshot", "sdk-recovery", "sdk-restart", "sdk-authoring"}:
+        parser.error("--update-snapshots requires --scenario sdk-minimal, sdk-minimal-in-history, sdk-dynamic-tools, sdk-progress, sdk-snapshot, sdk-recovery, sdk-restart, sdk-authoring, or all")
     if args.exe is not None and not args.exe.is_file():
         parser.error(f"runtime executable does not exist: {args.exe}")
 
@@ -874,6 +874,9 @@ def main() -> None:
             smoke_sdk_spawn_node(model.url, args.exe.resolve())
         if args.scenario in {"all", "sdk-mcp"}:
             smoke_sdk_mcp(model.url, None if args.exe is None else args.exe.resolve())
+        if args.scenario in {"all", "sdk-progress"}:
+            assert args.exe is not None
+            smoke_sdk_progress(model.url, args.exe.resolve(), args.update_snapshots)
         if args.scenario in {"all", "sdk-snapshot"}:
             assert args.exe is not None
             smoke_sdk_snapshot(model.url, args.exe.resolve(), args.update_snapshots)
@@ -1598,6 +1601,45 @@ def smoke_sdk_profile_plugin(base_url: str) -> None:
 
         assert result.final_response == PROFILE_PLUGIN_TEXT, result.final_response
         assert_zstd_session_log(dsh_home / "sessions")
+
+
+def smoke_sdk_progress(base_url: str, executable: Path, update_snapshots: bool) -> None:
+    """Observe required milestone records and admitted context through the public Python SDK."""
+    from deepseek_harness import DeepSeekHarness
+
+    with tempfile.TemporaryDirectory(prefix="dsh-sdk-progress-") as temporary:
+        root = Path(temporary).resolve()
+        sessions = root / "home" / "sessions"
+        patch = write_profile_patch(root, "progress.patch.yml", sessions, [{"insert": [{
+            "id": "sdk-progress-fixture",
+            "name": str(Path(__file__).resolve().parents[1] / "packages/goal/long-term-progress/tests/fixtures/sdk-progress.mjs"),
+        }]}])
+        with DeepSeekHarness(provider="deepseek-official", model="smoke-model", cwd=str(root), dsh_bin=str(executable),
+                            dsh_home=str(root / "home"), patches=(str(patch),), api_key="sk-keyless-smoke",
+                            base_url=base_url, request_timeout_seconds=60) as harness:
+            result = harness.run("Report the observed milestone state.", session_id="progress-smoke")
+        progress = [event for event in result.events if event.get("type") == "progress/change"]
+        assert len(progress) == 1 and progress[0]["data"]["change"]["kind"] == "reconcile", progress
+        state = progress[0]["data"]["state"]
+        assert state["milestones"][0]["checkpoints"][0]["complete"] is True, state
+        assert state["acceptances"] == [] and state["release"]["milestoneId"] == "m1", state
+        reminders = [event for event in result.events if event.get("type") == "user/message"
+                     and event["data"].get("source", {}).get("kind") == "long-term-progress"]
+        assert len(reminders) == 1 and reminders[0]["data"]["source"]["revision"] == 4, reminders
+        assert "awaiting verification" in message_text(reminders[0]["data"]["content"]), reminders
+        observed = [notification.payload["event"] for notification in result.notifications
+                    if notification.method == "session.event" and notification.payload.get("event", {}).get("type") == "progress/change"]
+        assert observed == progress, observed
+        logs = read_session_logs(sessions)
+        durable = [event for event in logs[result.session_id] if event.get("type") == "progress/change"]
+        assert len(durable) == 4, durable
+        selected = [{"type": event["type"], "data": event["data"]} for event in [*progress, *reminders]]
+        for event in selected:
+            if event["type"] == "user/message":
+                event["data"].pop("id", None)
+        directory = Path(__file__).resolve().parent / "snapshots/python-sdk-single-exe/progress"
+        compare_snapshot_files({"events.expected.json": json.dumps(selected, ensure_ascii=False, indent=2) + "\n"},
+                               update_snapshots, directory, ("events.expected.json",))
 
 
 def smoke_sdk_snapshot(base_url: str, executable: Path, update_snapshots: bool) -> None:

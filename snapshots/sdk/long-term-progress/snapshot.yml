@@ -1,0 +1,8 @@
+version: 1
+scenario: long-term-progress
+profile: sdk
+composition: sdk-long-term-progress
+recording: authored
+header:
+  class: sdk-long-term-progress
+  pin: true

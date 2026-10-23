@@ -1,12 +1,12 @@
 /** Compact, logged progress context at the first admitted request of each turn. */
 import type { Context } from '@deepseek-ai/cordis'
 import { z } from 'zod'
-import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { Milestone, ProgressView } from './types.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
   interface MessageSourceMap {
-    'long-term-progress': { kind: 'long-term-progress'; revision: number } & ContextFormed
+    'long-term-progress': { kind: 'long-term-progress'; revision: number } & import('@deepseek-ai/dsh-llm').ContextFormed
   }
 }
 declare module '@deepseek-ai/dsh-session-projection/types' {
@@ -30,7 +30,10 @@ export function milestoneStatus(view: ProgressView, milestone: Milestone): strin
 /** Return captions and counts only, without checkpoint bodies or document references.
  * @param view - current progress or no list.
  * @returns compact selective-read value. */
-export function compactProgress(view: ProgressView | null) {
+export function compactProgress(view: ProgressView | null): {
+  revision: number
+  milestones: { id: Milestone['id']; title: string; caption: string; complete: number; total: number; status: string }[]
+} {
   return {
     revision: view?.revision ?? 0,
     milestones: view?.milestones.map(m => ({

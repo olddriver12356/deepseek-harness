@@ -11,7 +11,7 @@ import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import UserQuestions from '@deepseek-ai/dsh-user-questions'
-import LongTermProgress from '../src/index.ts'
+import LongTermProgress, { registerProgressCommand, registerProgressTools, registerProgressGoalTool } from '../src/index.ts'
 import { checkpointId, milestoneId } from '../src/domain.ts'
 import type { ProgressChange } from '../src/types.ts'
 
@@ -25,7 +25,7 @@ export const milestones = [{
   references: [], checkpoints: [{ id: checkpointId('c2'), outcome: 'Private shipping outcome', detail: '', references: [] }],
 }]
 
-export async function harness() {
+export async function harness(includeTools = true) {
   const ctx = new Context()
   const disposers: (() => Promise<void>)[] = []
   onTestFinished(async () => { for (const dispose of disposers.reverse()) await dispose() })
@@ -35,7 +35,16 @@ export async function harness() {
     disposers.push(() => fiber.dispose())
   }
   ctx.sessionProjections.register(turnBoundaryProjectionDefinition)
-  const fiber = ctx.plugin(LongTermProgress)
+  const fiber = ctx.plugin({ name: 'progress-with-consumers', inject: ['commands', 'tools', 'agents', 'sessionProjections'], async apply(owner: Context) {
+    await owner.plugin(LongTermProgress)
+    owner.inject(['longTermProgress'], (consumer) => {
+      registerProgressCommand(consumer)
+      if (includeTools) {
+        registerProgressTools(consumer)
+        registerProgressGoalTool(consumer)
+      }
+    })
+  } })
   await fiber
   disposers.push(() => fiber.dispose())
   const session = ctx.sessions.create(SessionId(randomUUID()))

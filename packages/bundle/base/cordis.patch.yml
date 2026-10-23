@@ -325,6 +325,9 @@
     - id: goal
       name: '@deepseek-ai/dsh-goal'
 
+    - id: long-term-progress
+      name: '@deepseek-ai/dsh-long-term-progress'
+
     - id: goal-round-driver
       name: '@deepseek-ai/dsh-goal-round-driver'
 

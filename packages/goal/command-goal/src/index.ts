@@ -9,6 +9,7 @@ import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands
 import { GoalError } from '@deepseek-ai/dsh-goal'
 import type { GoalPhase, GoalRef, GoalView } from '@deepseek-ai/dsh-goal'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import { registerProgressCommand } from '@deepseek-ai/dsh-long-term-progress'
 
 export const name = 'command-goal'
 export const inject = ['commands', 'goals']
@@ -188,6 +189,7 @@ function executeGoalCommand(ctx: Context, invocation: CommandInvocation): Comman
 
 /** Register the Codex-shaped `/goal` command for every composed command adapter. */
 export function apply(ctx: Context): void {
+  ctx.inject(['longTermProgress'], registerProgressCommand)
   ctx.commands.register({
     definitionId: CommandDefinitionId('@deepseek-ai/dsh-command-goal'),
     name: 'goal',

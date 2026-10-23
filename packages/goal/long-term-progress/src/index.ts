@@ -14,9 +14,11 @@ import type { ProgressAuthority,
   ProgressProjectionState,
   ProgressRef,
   ProgressView } from './types.ts'
-import { registerProgressCommand } from './command.ts'
+export { registerProgressCommand } from './command.ts'
+import './context.ts'
 import { registerProgressContext } from './context.ts'
-import { registerProgressTools } from './tools.ts'
+export { registerProgressTools } from './tools.ts'
+export { registerProgressGoalTool } from './goals.ts'
 import { registerProgressGoals } from './goals.ts'
 import { ChecklistSync } from './vault.ts'
 import type { ChecklistAssociation } from './types.ts'
@@ -146,8 +148,6 @@ export class LongTermProgress extends TypertRemoteService {
       this.advance = registerProgressGoals(consumer)
       consumer.effect(() => () => { this.advance = undefined })
     })
-    ctx.inject(['commands'], (consumer) =>{  registerProgressCommand(consumer) })
-    ctx.inject(['tools'], (consumer) =>{  registerProgressTools(consumer) })
   }
   /** Commit one owner UI decision against the exact displayed revision; never executes work.
    * @param agent - owning live Agent resolved by the Gateway.

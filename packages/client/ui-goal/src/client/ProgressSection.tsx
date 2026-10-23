@@ -26,19 +26,19 @@ PropsRuntime<'shell.activity.progress'> & InjectFace<ProgressActions> & PropsLoc
 /** Compact two-level checklist with distinct approval, release and acceptance decisions. */
 export function ProgressSection({ projection, readOnly, onUpdate, t }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [draft, setDraft] = useState<string | null>(null)
+  const [draft, setDraft] = useState<{ revision: number; text: string } | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const busy = useRef(false)
   const current = projection?.current
   const disabled = pending || readOnly || projection?.status !== 'ready'
-  const run = async (change: ProgressChange): Promise<void> => {
+  const run = async (change: ProgressChange, revision = current?.revision ?? 0): Promise<void> => {
     if (busy.current || disabled) return
     busy.current = true
     setPending(true)
     setError('')
     try {
-      const result = await onUpdate({ revision: current?.revision ?? 0 }, change)
+      const result = await onUpdate({ revision }, change)
       if (result.ok) setDraft(null)
       else setError(result.error.message)
     } catch (cause) {
@@ -49,8 +49,8 @@ export function ProgressSection({ projection, readOnly, onUpdate, t }: Props) {
     if (draft === null) return
     try {
       // The Host validates this user-edited wire payload before committing.
-      const milestones = JSON.parse(draft) as Extract<ProgressChange, { kind: 'replace' }>['milestones']
-      void run({ kind: 'replace', milestones })
+      const milestones = JSON.parse(draft.text) as Extract<ProgressChange, { kind: 'replace' }>['milestones']
+      void run({ kind: 'replace', milestones }, draft.revision)
     } catch (cause) { setError(cause instanceof Error ? cause.message : t('progress.error')) }
   }
   const currentIndex = current?.milestones.findIndex(m => !current.acceptances.some(a => a.milestoneId === m.id)) ?? -1
@@ -58,9 +58,9 @@ export function ProgressSection({ projection, readOnly, onUpdate, t }: Props) {
     <header className={css.header}>
       <span className={css.title}>{t('progress.title')}</span>
       <Button variant="ghost" disabled={disabled} onClick={() => {
-        setDraft(JSON.stringify(current?.milestones.map(m => ({ ...m,
+        setDraft({ revision: current?.revision ?? 0, text: JSON.stringify(current?.milestones.map(m => ({ ...m,
           checkpoints: m.checkpoints.map(({ id, outcome, detail, references }) => ({ id, outcome, detail, references })),
-        })) ?? [], null, 2))
+        })) ?? [], null, 2) })
       }}>{t('progress.edit')}</Button>
     </header>
     {projection === undefined && <p>{t('progress.loading')}</p>}
@@ -69,11 +69,11 @@ export function ProgressSection({ projection, readOnly, onUpdate, t }: Props) {
     </p>}
     {projection !== undefined && (current == null || current.milestones.length === 0) && <p>{t('progress.empty')}</p>}
     {draft !== null && <div className={css.editor}>
-      <label>{t('progress.draft')}<textarea aria-label={t('progress.draft')} value={draft} disabled={disabled}
-        onChange={(event) => { setDraft(event.target.value) }} /></label>
+      <label>{t('progress.draft')}<textarea aria-label={t('progress.draft')} value={draft.text} disabled={disabled}
+        onChange={(event) => { setDraft({ ...draft, text: event.target.value }) }} /></label>
       <p>{t('progress.draftHelp')}</p>
       <div className={css.actions}>
-        <Button variant="outline" disabled={disabled || draft.trim() === ''} onClick={save}>{t('progress.save')}</Button>
+        <Button variant="outline" disabled={disabled || draft.text.trim() === ''} onClick={save}>{t('progress.save')}</Button>
         <Button variant="ghost" disabled={pending} onClick={() => { setDraft(null); setError('') }}>{t('progress.cancel')}</Button>
       </div>
     </div>}

@@ -1003,6 +1003,25 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           expect.objectContaining({ data: { turn: 1, reason: { kind: 'completed' } } }),
         ])
       }
+      if (scenario.name === 'long-term-progress') {
+        const progress = results.flatMap(result => result.events).filter(event => event.type === 'progress/change')
+        expect(progress).toHaveLength(1)
+        expect(progress[0]).toMatchObject({ data: { change: { kind: 'reconcile' }, state: {
+          revision: 4, acceptances: [], release: { milestoneId: 'm1' },
+          milestones: [{ id: 'm1', checkpoints: [{ id: 'c1', complete: true }] }, { id: 'm2' }],
+        } } })
+        const subscribed = notifications.flatMap(notification => {
+          const event = notificationEvent(notification)
+          return event?.type === 'progress/change' ? [event] : []
+        })
+        expect(subscribed).toEqual(progress)
+        const reminders = results.flatMap(result => result.events).filter(event => event.type === 'user/message'
+          && (event.data as JsonObject).source !== undefined
+          && ((event.data as JsonObject).source as JsonObject).kind === 'long-term-progress')
+        expect(reminders).toHaveLength(1)
+        expect(JSON.stringify(reminders)).toContain('awaiting verification')
+        expect(records(ordered[0]!.content).filter(event => event.type === 'progress/change')).toHaveLength(4)
+      }
       if (scenario.name === 'dynamic-tool-updates') {
         const selectedTypes = new Set(['request/header', 'request/context', 'developer/message', 'tool/call', 'tool/result'])
         const events = results.flatMap(result => result.events).filter(event => selectedTypes.has(event.type))

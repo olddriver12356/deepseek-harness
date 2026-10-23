@@ -15,9 +15,13 @@ export const defaultLimits: ProgressLimits = { maxMilestones: 64,
   maxTextLength: 4096,
   maxReferences: 64,
   maxHistory: 1024 }
-/** Admit a stable milestone identifier. @param value - external identifier. @returns branded validated identity. */
+/** Admit a stable milestone identifier.
+ * @param value - external identifier.
+ * @returns branded validated identity. */
 export function milestoneId(value: string): MilestoneId { return brandString<MilestoneId>(idSchema.parse(value)) }
-/** Admit a stable checkpoint identifier. @param value - external identifier. @returns branded validated identity. */
+/** Admit a stable checkpoint identifier.
+ * @param value - external identifier.
+ * @returns branded validated identity. */
 export function checkpointId(value: string): CheckpointId { return brandString<CheckpointId>(idSchema.parse(value)) }
 const idSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/)
 const mid = idSchema.transform(value => brandString<MilestoneId>(value))
@@ -130,8 +134,10 @@ export const authoritySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('human'), source: z.enum(['command', 'ui', 'direct-human-tool']) }).strict(),
   z.object({ kind: z.literal('maintenance') }).strict(),
 ])
-/** Select the first milestone not yet accepted. @param state - current state. @returns milestone or null when none remains. */
-export function currentMilestone(state: ProgressView) {
+/** Select the first milestone not yet accepted.
+ * @param state - current state.
+ * @returns milestone or null when none remains. */
+export function currentMilestone(state: ProgressView): ProgressView['milestones'][number] | null {
   return state.milestones.find(m => !state.acceptances.some(a => a.milestoneId === m.id)) ?? null
 }
 /** Check a consecutive unfinished prefix within the released milestone.

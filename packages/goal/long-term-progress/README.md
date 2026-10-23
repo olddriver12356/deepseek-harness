@@ -1,8 +1,25 @@
 ---
 description: "Durable Session-local milestone and checkpoint state, evidence, and revision-bound authority."
+kind: package-reference
 ---
 
 # Long-term progress
+
+## Summary
+
+Track milestone outcomes, observed checkpoint evidence and separate human authorizations within one Session. Progress is durable bookkeeping beside the existing execution Goal, not another planner or scheduler.
+
+## Table of Contents
+
+- [Contract](#contract)
+- [Commands and tools](#commands-and-tools)
+- [Scoped execution Goals](#scoped-execution-goals)
+- [Optional existing checklist synchronization](#optional-existing-checklist-synchronization)
+- [Owner UI capability](#owner-ui-capability)
+- [Configuration](#configuration)
+- [Persistence and lifecycle](#persistence-and-lifecycle)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 
 ## Contract
 
@@ -20,7 +37,7 @@ Human adapters must derive `ProgressAuthority` from their live command, UI actio
 
 `read_progress` returns all milestone captions, counts, status and the revision by default. Optional `milestone_id` or `checkpoint_id` retrieves only the selected details and references; a combined selector must identify a checkpoint in that milestone. `update_progress` accepts an exact `revision` and strict `change` union. Evidence reconciliation and implementation-only refinement are autonomous; structural changes and human decisions always use the existing in-flight question service, including during direct-human turns. Confirmation shows the complete proposed operation, requires the explicit Confirm choice, and rechecks the revision and live caller after the answer. Missing interaction support, cancellation, disposal or stale confirmation rejects without mutation. Authority is never accepted from model JSON. Internal Goal/vault settlement operations are unavailable through this tool.
 
-The command registers only when the command service is composed; model tools register only when the tool service is composed. Removing the progress fiber removes both registrations and aborts pending confirmations. The durable service remains usable without either consumer.
+The existing `dsh-command-goal` consumer registers `/long-goal`, and `dsh-tool-goal` registers the progress tools, each only while the optional progress service is composed. Registrations retain the consumer's Agent/preset scope; mounting the durable service globally does not add tools to a minimal preset. Removing either consumer or the progress service removes its registrations and aborts pending confirmations. The durable service remains usable without either consumer.
 
 ## Scoped execution Goals
 
@@ -46,7 +63,7 @@ All bounds are positive safe integers: `maxMilestones` defaults to 64; `maxCheck
 
 ## Persistence and lifecycle
 
-`progress/change` version 1 is a required-on-read Session event. The service registers its pure projection through the existing Session projection registry with `stateVersion: 5`. Its cache schema validates unique identities, evidence/completion and committed-revision consistency, approval/release/acceptance relationships, released Goal scope, and agreement between inherited replay and suspended child state. Invalid cache rows cannot supply authority: `hydrate`/`restore` reject them, while checkpoint-only reads omit the key. The restoring owner must report the failure and explicitly rebuild from the Session log rather than accepting or repairing cache-granted release. Forks retain inherited progress and references, suspend child vault writeback, and clear inherited Goal bindings without modifying the parent. Renewed human `vault-link` confirmation is required before child settlements. Reload restores durable scope decisions but cannot activate execution because this package has no execution integration. All registrations are owned by the plugin fiber; retained handles reject mutation after disposal.
+`progress/change` version 1 is a required-on-read Session event. The service registers its pure projection through the existing Session projection registry with `stateVersion: 5`. Its cache schema validates unique identities, evidence/completion and committed-revision consistency, approval/release/acceptance relationships, released Goal scope, and agreement between inherited replay and suspended child state. Invalid cache rows cannot supply authority: `hydrate`/`restore` reject them, while checkpoint-only reads omit the key. The restoring owner must report the failure and explicitly rebuild from the Session log rather than accepting or repairing cache-granted release. Forks retain inherited progress and references, suspend child vault writeback, and clear inherited Goal bindings without modifying the parent. Renewed human `vault-link` confirmation is required before child settlements. Reload restores durable scope decisions but never restores process-local execution activation. All registrations are owned by the plugin fiber; retained handles reject mutation after disposal.
 
 The wire value is `ProgressProjectionView`: `{ status: 'ready', current }` before and after list creation, or `{ status: 'untrusted', current, failure }` after replay corruption. In an untrusted value, `current` is last-good display data only. The persistent failure supplies `code: 'PROGRESS_REPLAY_FAILED'`, `eventSeq`, and a diagnostic `message`; snapshots, change-feed notifications, and cached reads retain it. Host reads and mutations throw `ProgressError` with that code. Consumers must stop dependent work, localize an actionable corruption report, and have the restoring owner inspect the Session log before rebuilding; later events do not clear the failure or make last-good scope authoritative.
 
@@ -54,8 +71,30 @@ Vault metadata settlements are not filesystem writes. The adapter must validate 
 
 ## Model Experience
 
-The first admitted request of each turn receives one logged milestone-caption snapshot; requests following tool results reuse that history without another snapshot. The reminder includes every milestone identity, title, caption, completion count and authorization/verification status, but no checkpoint bodies, evidence or document contents. It states that the latest revision supersedes earlier snapshots and that bookkeeping does not authorize execution. A newly emptied list contributes a clearing snapshot; a Session that never had progress contributes nothing. Rejected, cancelled or empty admission adds no reminder and does not suppress a later admitted retry. Snapshots append to request history and therefore consume tokens and extend the KV cache once per turn; selective reads add only requested details. Saving progress never generates an execution plan or execution authority.
+### Progress reminders and selective reads
+
+#### What the model sees
+
+The first admitted request of each turn receives one logged `long-term-progress` milestone-caption snapshot; requests following tool results reuse that history without another snapshot. The reminder includes every milestone identity, title, caption, completion count and authorization/verification status, but no checkpoint bodies, evidence or document contents. It states that the latest revision supersedes earlier snapshots and that bookkeeping does not authorize execution. A newly emptied list contributes a clearing snapshot; a Session that never had progress contributes nothing. Rejected, cancelled or empty admission adds no reminder and does not suppress a later admitted retry. Saving progress never generates an execution plan or execution authority.
+
+#### Token effect
+
+One bounded caption snapshot is appended per admitted turn. Selective reads add only requested checkpoint details and references, while tool definitions add a fixed schema cost.
+
+#### KV Cache effect
+
+Reminders and results append to request history rather than replacing the system prefix. Tool-followup requests reuse the admitted snapshot; tool schemas remain stable within their consumer scope.
 
 ## Known Limitations and Deferred Work
 
-The UI consumer and shipped composition are separate integrations. They must not pass model-supplied authority or silently execute saved scope. Product composition, both SDK acknowledgements, Session compatibility acknowledgements and catalog regeneration, recorded-session snapshots, package classification, and final integration validation are owned by the integration task. The package does not provide a scheduler, evaluator, workspace database, or global progress page.
+- The package does not provide a scheduler, evaluator, workspace database, or global progress page.
+- Checklist synchronization supports only existing regular files with explicit stable-marker mappings; it never discovers, creates or restructures a project.
+
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

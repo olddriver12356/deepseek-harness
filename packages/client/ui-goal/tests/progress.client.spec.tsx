@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { makeTranslate, RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
 import type { ProgressProjectionView, ProgressView } from '@deepseek-ai/dsh-long-term-progress/types'
 import { ProgressSection } from '../src/client/ProgressSection.tsx'
 import { en } from '../src/client/locales.ts'
@@ -55,7 +55,7 @@ describe('Session long-term progress', () => {
     act(() => { approve.click(); approve.click() })
     expect(h.onUpdate).toHaveBeenCalledTimes(1)
     expect(approve).toHaveProperty('disabled', true)
-    await act(async () => { pending.resolve({ ok: false, error: { code: 'gateway/internal', message: 'stale progress revision', details: {} } }) })
+    await act(async () => { pending.resolve({ ok: false, error: new RemoteError('gateway/internal', 'stale progress revision', {}) }) })
     expect(screen.getByRole('alert').textContent).toContain('stale progress revision')
     expect(screen.getByText('Foundation')).toBeTruthy()
   })
@@ -83,6 +83,14 @@ describe('Session long-term progress', () => {
     fireEvent.click(screen.getByRole('button', { name: /Delivery/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Release next milestone' }))
     expect(h.onUpdate).toHaveBeenLastCalledWith({ revision: 2 }, { kind: 'start', milestoneId: m2.id })
+  })
+  it('submits an edited draft against its original revision after a newer projection arrives', async () => {
+    const h = mount()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit milestones' }))
+    h.rerender(<ProgressSection {...h.props} projection={{ status: 'ready', current: { ...current, revision: 2 } }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    expect(h.onUpdate).toHaveBeenCalledWith({ revision: 1 }, expect.objectContaining({ kind: 'replace' }))
+    await act(async () => {})
   })
   it('shows pending writeback and respects externally pending interaction read-only state', () => {
     mount({ status: 'ready', current: { ...current, vault: { targetKey: 'file', path: 'checklist.md', fingerprint: 'one', mapping: [],

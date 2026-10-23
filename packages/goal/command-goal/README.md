@@ -27,6 +27,8 @@ English | [中文](README.zh.md)
 
 Use `dsh-command-goal` in interactive deployments that mount a command adapter — the shipped Web client is the reference. It gives users direct control over the goal lifecycle without a model turn: commands execute in the UI command plane and the adapter renders their results directly.
 
+When `dsh-long-term-progress` is composed, this consumer also registers `/long-goal` in the same command scope. Its draft, approval, start and acceptance decisions are bookkeeping and never queue a model turn; see the [progress contract](../long-term-progress/README.md).
+
 ### Command reference
 
 Every sub-command runs against the current goal of the invoking agent; a bare `/goal` shows usage when no goal exists.
