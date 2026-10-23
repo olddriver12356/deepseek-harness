@@ -13,6 +13,8 @@
     { "path": "../../interaction/commands" },
     { "path": "../../interaction/user-questions" },
     { "path": "../../core/tools" },
-    { "path": "../../llm/llm" }
+    { "path": "../../llm/llm" },
+    { "path": "../../fs/fs" },
+    { "path": "../../sandbox/sandbox-policy" }
   ]
 }

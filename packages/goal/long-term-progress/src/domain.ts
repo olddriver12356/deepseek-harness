@@ -35,7 +35,7 @@ const milestone = z.object({ id: mid,
   references,
   checkpoints: z.array(checkpoint) }).strict()
 const decision = z.object({ milestoneId: mid, revision }).strict()
-const vault = z.object({ path: requiredText,
+const vault = z.object({ targetKey: requiredText, path: requiredText,
   fingerprint: requiredText,
   mapping: z.array(z.object({ checkpointId: cid,
     marker: requiredText }).strict()),
@@ -325,6 +325,8 @@ export function transition(previous: ProgressView | null,
       throw new ProgressError(`unsupported progress change ${String(unreachable)}`)
     }
   }
+  if (result.vault?.writeback === 'confirmed' && ['replace', 'reconcile', 'refine', 'regression'].includes(change.kind))
+    result = { ...result, vault: { ...result.vault, settlement: 'pending', message: 'Session progress changed; checklist synchronization pending.' } }
   checkBounds(result, limits)
   return progressViewSchema.parse(result)
 }

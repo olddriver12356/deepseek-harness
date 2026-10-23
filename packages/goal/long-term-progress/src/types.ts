@@ -61,6 +61,8 @@ export interface MilestoneDecision extends ProgressRef {
 }
 /** Confirmed external checklist association and settlement state. */
 export interface VaultBinding {
+  /** Opaque provider identity confirmed with the path; never interpreted as a host path. */
+  readonly targetKey: string
   readonly path: string
   readonly fingerprint: string
   readonly mapping: readonly {
@@ -71,6 +73,12 @@ export interface VaultBinding {
   readonly writeback: 'confirmed' | 'suspended'
   readonly settlement: 'synchronized' | 'pending' | 'failed' | 'conflict'
   readonly message: string
+}
+/** Explicit existing-file association proposal; confirmation is owned by the adapter. */
+export interface ChecklistAssociation {
+  readonly path: string
+  readonly mapping: VaultBinding['mapping']
+  readonly allowTextRefinement: boolean
 }
 /** Durable progress; release records scope permission but never arms execution. */
 export interface ProgressView extends ProgressRef {

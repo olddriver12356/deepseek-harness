@@ -17,6 +17,8 @@ import { registerProgressCommand } from './command.ts'
 import { registerProgressContext } from './context.ts'
 import { registerProgressTools } from './tools.ts'
 import { registerProgressGoals } from './goals.ts'
+import { ChecklistSync } from './vault.ts'
+import type { ChecklistAssociation } from './types.ts'
 import type { AdvanceProgressGoal } from './types.ts'
 import type { GoalView } from '@deepseek-ai/dsh-goal'
 export type * from './types.ts'
@@ -87,6 +89,8 @@ function fold(state: ProgressProjectionState, event: SessionEvent): ProgressProj
 }
 /** Progress admission configuration; omitted fields use the documented deployment defaults. */
 export interface Config extends Partial<ProgressLimits> {
+  /** Complete checklist byte limit; larger files reject before synchronization. */
+  maxChecklistBytes?: number
 }
 /** Owns the sole synchronous append-before-publish mutation path. */
 export class LongTermProgress extends Service {
@@ -97,18 +101,23 @@ export class LongTermProgress extends Service {
     maxTextLength: z.number().default(defaultLimits.maxTextLength),
     maxReferences: z.number().default(defaultLimits.maxReferences),
     maxHistory: z.number().default(defaultLimits.maxHistory),
+    maxChecklistBytes: z.number().default(1048576),
   })
+  private readonly checklist: ChecklistSync
   private advance: ReturnType<typeof registerProgressGoals> | undefined
   private disposed = false
   private readonly limits: ProgressLimits
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'longTermProgress')
-    this.limits = { ...defaultLimits, ...config }
+    const { maxChecklistBytes = 1048576, ...limits } = config
+    this.limits = { ...defaultLimits, ...limits }
+    if (!Number.isSafeInteger(maxChecklistBytes) || maxChecklistBytes < 1) throw new Error('maxChecklistBytes must be a positive safe integer')
+    this.checklist = new ChecklistSync(ctx, maxChecklistBytes)
     for (const value of Object.values(this.limits))
       if (!Number.isSafeInteger(value) || value < 1)
         throw new Error('progress limits must be positive safe integers')
     const definition = {
-      key: 'longTermProgress', stateVersion: 3, stateSchema: projectionSchema,
+      key: 'longTermProgress', stateVersion: 5, stateSchema: projectionSchema,
       init: (_header, inheritedEventCount) => ({ current: null, replay: null, failure: null, inheritedEventCount }),
       apply: fold,
       wire: { viewSchema: wireSchema, view: state => state.failure === null
@@ -118,6 +127,19 @@ export class LongTermProgress extends Service {
     ctx.sessionProjections.register<'longTermProgress', ProgressProjectionState>(definition)
     ctx.effect(() => () => { this.disposed = true })
     registerProgressContext(ctx)
+    ctx.on('agent/pre-step', async ({ agent, signal, step }, next) => {
+      const decision = await next()
+      if (step === 1 && decision.kind === 'enter' && decision.messages.length > 0 && !signal.aborted)
+        await this.checklist.sync(agent, signal)
+      return decision
+    })
+    ctx.on('tools/post-execute', async (exec, _result, next) => {
+      const settled = await next()
+      if (exec.agent !== undefined && !exec.signal.aborted
+        && ['update_progress', 'link_progress_checklist', 'sync_progress_checklist'].includes(exec.name))
+        await this.checklist.sync(exec.agent, exec.signal)
+      return settled
+    })
     ctx.inject(['goals'], (consumer) => {
       this.advance = registerProgressGoals(consumer)
       consumer.effect(() => () => { this.advance = undefined })
@@ -162,6 +184,24 @@ export class LongTermProgress extends Service {
     this.assertLive(agent)
     if (this.advance === undefined) throw new ProgressError('Goal integration is unavailable')
     return this.advance(agent, ref, request)
+  }
+  /** Confirm an existing checklist and its standing permissions without creating a file.
+   * @param agent - exact live owner.
+   * @param ref - expected progress revision.
+   * @param request - exact file and stable checkpoint mappings.
+   * @param signal - caller cancellation.
+   * @returns committed association after confirmation and freshness recheck. */
+  linkChecklist(agent: Agent, ref: ProgressRef, request: ChecklistAssociation, signal: AbortSignal): Promise<ProgressView> {
+    this.assertLive(agent)
+    return this.checklist.link(agent, ref, request, signal)
+  }
+  /** Retry independently settled checklist synchronization under confirmed standing permission.
+   * @param agent - exact live owner.
+   * @param signal - caller cancellation.
+   * @returns completion after visible synchronization, conflict or error settlement. */
+  syncChecklist(agent: Agent, signal: AbortSignal): Promise<void> {
+    this.assertLive(agent)
+    return this.checklist.sync(agent, signal)
   }
   private assertLive(agent: Agent): void {
     if (this.disposed)

@@ -5,7 +5,7 @@ import { HarnessError } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-user-questions'
 import { compactProgress } from './context.ts'
-import { ProgressError, progressChangeSchema } from './domain.ts'
+import { checkpointId, ProgressError, progressChangeSchema } from './domain.ts'
 
 const string = { type: 'string', required: true } as const
 const references = { type: 'array', required: true, items: { type: 'string' } } as const
@@ -67,6 +67,33 @@ export function progressToolAgent(ctx: Context, exec: ToolRunContext) {
 /** Install tools and cancel in-flight confirmations before the owning fiber unloads.
  * @param ctx - owning plugin context. */
 export function registerProgressTools(ctx: Context): void {
+  ctx.tools.register(defineTool({
+    name: 'link_progress_checklist',
+    description: 'Ask the human to associate an exact existing checklist file using stable <!-- dsh:marker --> entries. '
+      + 'Checkbox synchronization and optional implementation-text refinement are separate permissions. Never creates a checklist or project.',
+    parameters: { revision: { type: 'integer', required: true }, path: string,
+      mapping: { type: 'array', required: true, items: { type: 'object', additionalProperties: false,
+        properties: { checkpoint_id: string, marker: string } } },
+      allow_text_refinement: { type: 'boolean', required: true } }, output,
+    async execute(args, exec) {
+      const result = await ctx.longTermProgress.linkChecklist(progressToolAgent(ctx, exec), { revision: args.revision }, {
+        path: args.path, mapping: args.mapping.map(m => ({ checkpointId: checkpointId(m.checkpoint_id), marker: m.marker })),
+        allowTextRefinement: args.allow_text_refinement,
+      }, exec.signal)
+      return compactProgress(result)
+    },
+    presentCall: args => ({ card: 'generic', title: 'Link existing checklist', kind: 'other', rawInput: args.path }),
+  }))
+  ctx.tools.register(defineTool({
+    name: 'sync_progress_checklist', description: 'Retry the confirmed checklist association. External conflicts ask for human resolution; Session progress remains authoritative.',
+    parameters: {}, output,
+    async execute(_args, exec) {
+      const agent = progressToolAgent(ctx, exec)
+      await ctx.longTermProgress.syncChecklist(agent, exec.signal)
+      return z.json().parse({ vault: ctx.longTermProgress.get(agent)?.vault ?? null })
+    },
+    presentCall: () => ({ card: 'generic', title: 'Synchronize checklist', kind: 'other' }),
+  }))
   const lifetime = new AbortController()
   ctx.effect(() => () =>{  lifetime.abort() })
   ctx.tools.register(defineTool({

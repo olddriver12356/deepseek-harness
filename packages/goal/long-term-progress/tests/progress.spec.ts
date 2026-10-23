@@ -115,7 +115,7 @@ describe('durable progress service', () => {
     const { ctx, agent, change, register } = await harness()
     change({ kind: 'replace', milestones })
     change({ kind: 'vault-link',
-      binding: { path: 'checklist.md',
+      binding: { targetKey: 'checklist-target', path: 'checklist.md',
         fingerprint: 'v1',
         mapping: [{ checkpointId: c1,
           marker: 'stable-c1' }],
