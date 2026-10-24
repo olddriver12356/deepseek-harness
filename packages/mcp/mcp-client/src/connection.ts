@@ -24,6 +24,8 @@ import { createTransport } from './transport.ts'
 import { syncTools } from './tools.ts'
 import type { ToolBridgeOptions, ToolDisposers } from './tools.ts'
 import type { Config } from './index.ts'
+import type { McpReferenceSource } from './reference.ts'
+import type { McpToolReference } from '@deepseek-ai/dsh-host-plugin-inventory/types'
 
 /** Automatic reconnect policy for one MCP server connection. */
 export interface ReconnectConfig {
@@ -100,7 +102,7 @@ export interface ConnectionOutcome {
 }
 
 /** Handle for one plugin instance's supervised connection. */
-export interface ConnectionHandle extends ServerContext {
+export interface ConnectionHandle extends ServerContext, McpReferenceSource {
   /**
    * Settles when the first connection attempt completes (success or failure).
    * The supervisor enters its reconnect loop regardless; the caller decides
@@ -127,6 +129,14 @@ export interface ConnectionHandle extends ServerContext {
 export function startConnection(ctx: Context, config: Config, policy: ResolvedReconnectPolicy): ConnectionHandle {
   const label = `mcp-client(${config.serverName})`
   const incompleteDisposalMessage = `${label}: transport closure could not be confirmed during disposal — server shutdown may be incomplete`
+  let referenceTools: readonly McpToolReference[] = []
+  const referenceListeners = new Set<() => void>()
+  const notifyReference = (): void => {
+    for (const listener of referenceListeners) {
+      try { listener() }
+      catch (_error) { ctx.logger.warn(`${label}: reference observer failed`) }
+    }
+  }
   const opts: ToolBridgeOptions = {
     registrationFailure: 'contain',
     serverName: config.serverName,
@@ -169,7 +179,14 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
   function enqueueSync(generation: Client, syncOpts: ToolBridgeOptions = opts): Promise<void> {
     const run = syncChain.then(async () => {
       if (!isCurrent(generation)) return
-      disposers = await syncTools(generation, ctx, syncOpts, disposers)
+      disposers = await syncTools(generation, ctx, {
+        ...syncOpts,
+        onCommitted: (tools) => {
+          if (!isCurrent(generation)) return
+          referenceTools = tools
+          notifyReference()
+        },
+      }, disposers)
     })
     // The chain tail must survive a failed sync; the enqueuing caller owns reporting.
     syncChain = run.catch(() => {})
@@ -182,6 +199,7 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     client = undefined
     closeClient = undefined
     scheduleReconnect()
+    notifyReference()
   }
 
   /** Decide retry ownership after a failed connection's close barrier settles. */
@@ -190,6 +208,7 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     if (!quiesced) {
       client = undefined
       closeClient = undefined
+      notifyReference()
       ctx.logger.error(`${label}: failed generation could not confirm transport closure — reconnect stopped to avoid overlapping server processes; reload the plugin or restart the Host to retry`)
       return
     }
@@ -339,6 +358,7 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     if (!isCurrent(generation)) return
     serverInstructions = instructions
     connectedAt = Date.now()
+    notifyReference()
     if (failedAttempts > 0) ctx.logger.info(`${label}: reconnected and re-synced tools (attempt ${failedAttempts}/${policy.maxAttempts})`)
   }
 
@@ -362,6 +382,18 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
 
   return {
     ready,
+    reference: () => {
+      const connected = !disposed && client !== undefined && connectedAt !== undefined
+      const state = disposed ? 'disconnected' : connected ? 'connected'
+        : client !== undefined ? (failedAttempts === 0 ? 'connecting' : 'reconnecting')
+          : reconnectTimer !== undefined ? 'reconnecting' : firstAttemptError !== undefined || failedAttempts > policy.maxAttempts ? 'failed' : 'disconnected'
+      return {
+        state, transport: config.transport,
+        instructions: connected ? serverInstructions : '',
+        toolsAvailability: connected ? 'current' : 'unavailable', tools: connected ? referenceTools : [],
+      }
+    },
+    subscribeChanged: (listener) => { referenceListeners.add(listener); return () => { referenceListeners.delete(listener) } },
     instructions: () => serverInstructions,
     resources: {
       async request(request, exec): Promise<JsonValue> {
@@ -388,6 +420,9 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     async dispose(): Promise<void> {
       disposed = true
       serverInstructions = ''
+      referenceTools = []
+      notifyReference()
+      referenceListeners.clear()
       if (reconnectTimer !== undefined) {
         clearTimeout(reconnectTimer)
         reconnectTimer = undefined

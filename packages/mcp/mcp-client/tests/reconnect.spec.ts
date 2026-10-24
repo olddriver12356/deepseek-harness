@@ -6,6 +6,13 @@
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import Loader from '@deepseek-ai/cordis-plugin-loader'
+import Include from '@deepseek-ai/cordis-plugin-include'
+import PluginInventoryGateway from '@deepseek-ai/dsh-host-plugin-inventory'
+import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import McpResources from '@deepseek-ai/dsh-mcp-resources'
@@ -56,6 +63,7 @@ vi.mock('@modelcontextprotocol/client/stdio', () => ({
 // vi.mock is hoisted above static imports, so the modules under test see the
 // mocked SDK even through a static import.
 import { apply } from '@deepseek-ai/dsh-mcp-client/src/index.ts'
+import * as McpClient from '@deepseek-ai/dsh-mcp-client/src/index.ts'
 import { RECONNECT_DEFAULTS, resolveReconnectPolicy, startConnection } from '@deepseek-ai/dsh-mcp-client/src/connection.ts'
 
 // ---- Helpers ----
@@ -132,6 +140,111 @@ describe('reconnect supervisor', () => {
     mockListTools.mockResolvedValue(listing('remote'))
     mockCallTool.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
     ctx = await mountRegistry()
+  })
+
+  it('publishes the actual MCP owner through Loader and withdraws its reference on unload', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-mcp-reference-'))
+    try {
+      ctx.baseUrl = pathToFileURL(root).href + '/'
+      await ctx.plugin(Loader)
+      ctx.loader.builtins.include = Include
+      ctx.loader.builtins.inventory = PluginInventoryGateway
+      ctx.loader.builtins.mcp = McpClient
+      const path = join(root, 'cordis.yml')
+      await writeFile(path, JSON.stringify([
+        { id: 'inventory', name: 'cordis:inventory' },
+        { id: 'server', name: 'cordis:mcp', config: stdioConfig({ enabled: false }) },
+      ]))
+      await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(path).href } })
+      await ctx.loader.await()
+      const inventory = ctx.pluginInventory
+      const snapshot = inventory.referenceList({ locale: 'en' })
+      expect(snapshot.mcp.items).toMatchObject([{ name: 'srv', state: 'connected' }])
+      const id = snapshot.mcp.items[0]!.id
+      const requests = mockListTools.mock.calls.length
+      expect(inventory.referenceDetail({ id, locale: 'en' })).toMatchObject({ kind: 'mcp', tools: [{ rawName: 'remote' }] })
+      expect(mockListTools).toHaveBeenCalledTimes(requests)
+      const entry = [...ctx.loader.entries()].find(item => item.options.name === 'cordis:mcp')!
+      await ctx.loader.update(entry.id, { disabled: true })
+      expect(inventory.referenceList({ locale: 'en' }).mcp.items).toEqual([])
+      expect(inventory.referenceDetail({ id, locale: 'en' })).toBeNull()
+    } finally {
+      await ctx.fiber.dispose()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('observes connection and committed discovery without making MCP requests on reads', async () => {
+    const gate: PromiseWithResolvers<void> = Promise.withResolvers()
+    mockConnect.mockImplementationOnce(() => gate.promise)
+    mockListTools.mockResolvedValue({ tools: [{ name: 'raw/tool', description: 'Provider documentation', inputSchema: { type: 'object' }, outputSchema: { type: 'object' }, annotations: { readOnlyHint: true }, privateConfig: 'SECRET_METADATA' }] })
+    const handle = startConnection(ctx, stdioConfig({ enabled: false }), resolveReconnectPolicy({ enabled: false }, 'reconnect'))
+    try {
+      expect(handle.reference()).toMatchObject({ state: 'connecting', toolsAvailability: 'unavailable', tools: [] })
+      gate.resolve()
+      await handle.ready
+      expect(handle.reference()).toMatchObject({ state: 'connected', toolsAvailability: 'current', transport: 'stdio', tools: [{ rawName: 'raw/tool', description: 'Provider documentation', annotations: { readOnlyHint: true } }] })
+      const reference = handle.reference()
+      expect(JSON.stringify(reference)).not.toContain('SECRET_METADATA')
+      expect(reference.tools[0]?.inputSchema).toEqual({ type: 'object' })
+      expect(reference.tools[0]?.publicName).toContain('mcp__srv__raw_tool_')
+      expect(Object.isFrozen(reference.tools)).toBe(true)
+      expect(Object.isFrozen(reference.tools[0]?.inputSchema)).toBe(true)
+      const calls = { connect: mockConnect.mock.calls.length, list: mockListTools.mock.calls.length, call: mockCallTool.mock.calls.length }
+      for (let i = 0; i < 20; i++) expect(handle.reference()).toEqual(reference)
+      expect({
+        connect: mockConnect.mock.calls.length, list: mockListTools.mock.calls.length, call: mockCallTool.mock.calls.length,
+      }).toEqual(calls)
+      instances[0]!.onclose?.()
+      expect(handle.reference()).toMatchObject({ state: 'disconnected', toolsAvailability: 'unavailable', tools: [] })
+    } finally {
+      gate.resolve()
+      await handle.dispose()
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('preserves committed metadata on discovery failure and exposes no partial registration after rollback', async () => {
+    const handle = startConnection(ctx, stdioConfig(), resolveReconnectPolicy(undefined, 'reconnect'))
+    try {
+      await handle.ready
+      const reference = handle.reference()
+      const changed = mockSetNotificationHandler.mock.calls[0]![1] as () => void
+      mockListTools.mockRejectedValueOnce(new Error('SECRET_DISCOVERY_FAILURE'))
+      changed()
+      await vi.waitFor(() => { expect(mockListTools).toHaveBeenCalledTimes(2) })
+      await new Promise(resolve => setImmediate(resolve))
+      expect(handle.reference()).toEqual(reference)
+      ctx.tools.register({ name: 'mcp__srv__foreign', description: 'Conflicting owner', parameters: {}, output: { schema: { type: 'object' }, render: () => [] }, execute: () => ({ ok: true }) })
+      mockListTools.mockResolvedValueOnce(listing('new', 'foreign'))
+      changed()
+      await vi.waitFor(() => { expect(mockListTools).toHaveBeenCalledTimes(3) })
+      await vi.waitFor(() => { expect(handle.reference().tools).toEqual([]) })
+      expect(handle.reference()).toMatchObject({ state: 'connected', toolsAvailability: 'current' })
+      expect(ctx.tools.get('mcp__srv__new')).toBeUndefined()
+    } finally {
+      await handle.dispose()
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('reports a connected zero-tool server separately from contained startup failure', async () => {
+    mockListTools.mockResolvedValue(listing())
+    const policy = resolveReconnectPolicy({ enabled: false }, 'reconnect')
+    const handle = startConnection(ctx, stdioConfig({ enabled: false }), policy)
+    await handle.ready
+    expect(handle.reference()).toMatchObject({ state: 'connected', toolsAvailability: 'current', tools: [] })
+    await handle.dispose()
+    mockConnect.mockRejectedValueOnce(new Error('SECRET_TRANSPORT_FAILURE'))
+    const failed = startConnection(ctx, stdioConfig({ enabled: false }), policy)
+    try {
+      await failed.ready
+      expect(failed.reference()).toMatchObject({ state: 'failed', toolsAvailability: 'unavailable', tools: [] })
+      expect(JSON.stringify(failed.reference())).not.toContain('SECRET_TRANSPORT_FAILURE')
+    } finally {
+      await failed.dispose()
+      await ctx.fiber.dispose()
+    }
   })
 
   it('keeps instructions withdrawn when disposal interrupts initial discovery', async () => {

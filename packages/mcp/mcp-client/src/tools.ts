@@ -22,7 +22,9 @@ import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 import type { ToolDefinition, ToolExecution, ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import { assertSupportedJsonSchema } from '@deepseek-ai/dsh-tools'
 import type { JsonSchemaNode } from '@deepseek-ai/dsh-tools'
+import { deepFreeze, isJsonValue, snapshotJsonValue } from '@deepseek-ai/dsh-util-values'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { McpToolReference } from '@deepseek-ai/dsh-host-plugin-inventory/types'
 
 /** Resolved options relevant to tool bridging. */
 export interface ToolBridgeOptions {
@@ -30,6 +32,8 @@ export interface ToolBridgeOptions {
   registrationFailure: 'contain' | 'throw'
   serverName: string
   toolCallTimeoutMs: number
+  /** Committed registration metadata; never called when discovery fails before the swap. */
+  onCommitted?: (tools: readonly McpToolReference[]) => void
 }
 
 /** State for one sync generation: the current set of disposers keyed by public name. */
@@ -118,6 +122,7 @@ export async function syncTools(
 ): Promise<ToolDisposers> {
   // Phase 1: fetch and build the next generation without touching the registry.
   const definitions = new Map<string, ToolDefinition>()
+  const references: McpToolReference[] = []
   const response = client.getServerCapabilities()?.tools === undefined
     ? { tools: [] }
     : await client.listTools(undefined, { cacheMode: 'refresh' })
@@ -127,6 +132,23 @@ export async function syncTools(
       throw new Error(
         `mcp-client(${opts.serverName}): server listed tool "${tool.name}" more than once — invalid tool list`,
       )
+    }
+    if (opts.onCommitted !== undefined) {
+      if (!isJsonValue(tool.inputSchema) || (tool.outputSchema !== undefined && !isJsonValue(tool.outputSchema))) {
+        throw new Error(`mcp-client(${opts.serverName}): tool schemas must be lossless JSON`)
+      }
+      references.push({
+        publicName, rawName: tool.name, description: tool.description ?? '',
+        inputSchema: snapshotJsonValue(tool.inputSchema) as JsonValue,
+        ...tool.outputSchema === undefined ? {} : { outputSchema: snapshotJsonValue(tool.outputSchema) as JsonValue },
+        ...tool.annotations === undefined ? {} : { annotations: {
+          ...tool.annotations.title === undefined ? {} : { title: tool.annotations.title },
+          ...tool.annotations.readOnlyHint === undefined ? {} : { readOnlyHint: tool.annotations.readOnlyHint },
+          ...tool.annotations.destructiveHint === undefined ? {} : { destructiveHint: tool.annotations.destructiveHint },
+          ...tool.annotations.idempotentHint === undefined ? {} : { idempotentHint: tool.annotations.idempotentHint },
+          ...tool.annotations.openWorldHint === undefined ? {} : { openWorldHint: tool.annotations.openWorldHint },
+        } },
+      })
     }
     definitions.set(publicName, createMcpToolDefinition(ctx, {
       name: publicName,
@@ -155,9 +177,11 @@ export async function syncTools(
     // sees either the full generation or none of it — never a partial set.
     for (const dispose of disposers.values()) dispose()
     ctx.logger.error(`mcp-client(${opts.serverName}): tool registration failed, no tools registered: ${String(error)}`)
+    opts.onCommitted?.([])
     if (opts.registrationFailure === 'throw') throw error
     return new Map()
   }
+  opts.onCommitted?.(deepFreeze(references))
   return disposers
 }
 

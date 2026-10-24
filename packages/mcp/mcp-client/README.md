@@ -27,6 +27,10 @@ English | [中文](README.zh.md)
 
 Add `dsh-mcp-client` when the model should call tools from an external MCP server as if they were native. Give each server a unique name and transport. The official SDK selects the 2026-07-28 protocol when available and falls back to supported legacy revisions. Choose stdio for a local program and Streamable HTTP for a service; stdio negotiation starts a temporary probe process before the serving process.
 
+### Read-only reference observations
+
+When the optional Host plugin inventory is composed, each server publishes its supervisor connection state, transport kind, attributed instructions and committed tool documentation. Discovery captures public/raw names, descriptions, original JSON schemas and recognized annotations once; the reference excludes endpoints, environment, transport arguments and raw failure details. A connected zero-tool server remains connected. Disconnect makes reference tools unavailable, independently of existing execution-registry reconnect policy. Reading observations never reconnects, probes, discovers tools or calls a tool. Source removal withdraws the contribution and subscription.
+
 ### Minimal configuration
 
 Add one entry per server; nothing else is required. After the harness starts, the server's tools appear in the model's tool list.
