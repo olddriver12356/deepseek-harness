@@ -29,6 +29,10 @@ Hook processes and their payload `cwd` use the Session's current working directo
 
 Mount this package, point `configPath` at your hook config, and the hooks you already have start firing at the corresponding moments in agent runs. There is nothing else to set up before the first hook works.
 
+### Read-only handler reference
+
+With the optional Host plugin inventory, each successfully parsed command handler publishes a separate EN/ZH reference: literal event and matcher, ordinal label, filter type, trigger timing, honored effects and limitations. Commands and raw errors are excluded. Failed config loading publishes unavailable, not a healthy empty list. Browsing never runs a hook or reads history. Last execution is explicitly unavailable because invocation IDs do not identify configured handlers; detached lifecycle points also omit durable invocation/result pairs. Unloading removes all references.
+
 ### When to choose it
 
 Use it when you own a Claude Code `hooks.json` (or a settings file whose `hooks` key holds the config) and its command hooks should gate prompts, tools, and turns. Skip it for behavior with no Claude Code equivalent: a native plugin has the full harness API, while this bridge runs only the reference tool's command-hook subset.

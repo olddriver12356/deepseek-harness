@@ -9299,6 +9299,12 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/cordis-plugin-include':
+        specifier: workspace:~
+        version: link:../../../vendor/include
+      '@deepseek-ai/cordis-plugin-loader':
+        specifier: workspace:~
+        version: link:../../../vendor/loader
       '@deepseek-ai/dsh-agent':
         specifier: workspace:*
         version: link:../../core/agent
@@ -9317,6 +9323,9 @@ importers:
       '@deepseek-ai/dsh-hook-protocol':
         specifier: workspace:*
         version: link:../hook-protocol
+      '@deepseek-ai/dsh-host-plugin-inventory':
+        specifier: workspace:*
+        version: link:../../host/plugin-inventory
       '@deepseek-ai/dsh-llm':
         specifier: workspace:*
         version: link:../../llm/llm
@@ -9354,6 +9363,12 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/cordis-plugin-include':
+        specifier: workspace:~
+        version: link:../../../vendor/include
+      '@deepseek-ai/cordis-plugin-loader':
+        specifier: workspace:~
+        version: link:../../../vendor/loader
       '@deepseek-ai/dsh-agent':
         specifier: workspace:*
         version: link:../../core/agent
@@ -9369,6 +9384,9 @@ importers:
       '@deepseek-ai/dsh-hook-protocol':
         specifier: workspace:*
         version: link:../hook-protocol
+      '@deepseek-ai/dsh-host-plugin-inventory':
+        specifier: workspace:*
+        version: link:../../host/plugin-inventory
       '@deepseek-ai/dsh-llm':
         specifier: workspace:*
         version: link:../../llm/llm

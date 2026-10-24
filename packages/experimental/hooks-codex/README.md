@@ -29,6 +29,10 @@ Hook processes and their payload `cwd` use the Session's current working directo
 
 Mount this package, point `configPath` at your `hooks.json`, and the hooks you already have start firing at the corresponding moments in agent runs. There is nothing else to set up before the first hook works.
 
+### Read-only handler reference
+
+With the optional Host plugin inventory, each supported synchronous command handler publishes a separate EN/ZH reference with event, matcher, ordinal label, filter type, timing, honored effects and limitations. Skipped async/non-command hooks are not active entries. Commands and raw config errors are excluded; failed loading publishes unavailable. Browsing neither invokes hooks nor scans history. Last execution is unavailable because configured handlers have no stable correlation to invocation IDs; detached SessionStart also omits durable invocation/result pairs. Unloading removes the references.
+
 ### When to choose it
 
 Use it when you own a Codex `hooks.json` and its command hooks should gate prompts, tools, and turns. Skip it for behavior with no Codex equivalent: a native plugin has the full harness API, while this bridge runs only the reference tool's command-hook subset.

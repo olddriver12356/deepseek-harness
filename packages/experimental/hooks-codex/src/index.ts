@@ -41,6 +41,7 @@ import {
   type MergedHookOutcome,
 } from '@deepseek-ai/dsh-hook-protocol'
 import { parseCodexConfig, type CodexHookConfig } from './config.ts'
+import { registerReferences } from './reference.ts'
 /* jscpd:ignore-end */
 
 export const name = 'hooks-codex'
@@ -99,8 +100,10 @@ export function apply(ctx: Context, config: Config): void {
     }
   } catch (error: unknown) {
     ctx.logger.warn(`hooks-codex: could not load hook config "${config.configPath}": ${String(error)} — no hooks registered`)
+    registerReferences(ctx, null)
     return
   }
+  registerReferences(ctx, parsed)
 
   const model = config.model ?? ''
 

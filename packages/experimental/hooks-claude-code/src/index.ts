@@ -41,6 +41,7 @@ import {
 // start/end edges.
 import type { SubagentRunId } from '@deepseek-ai/dsh-subagent'
 import { parseClaudeCodeConfig, type ClaudeCodeHookConfig } from './config.ts'
+import { registerReferences } from './reference.ts'
 
 export const name = 'hooks-claude-code'
 // `shell` runs hooks and `sessionProjections` supplies turn numbers; the rest
@@ -118,8 +119,10 @@ export function apply(ctx: Context, config: Config): void {
     }
   } catch (error: unknown) {
     ctx.logger.warn(`hooks-claude-code: could not load hook config "${config.configPath}": ${String(error)} — no hooks registered`)
+    registerReferences(ctx, null)
     return
   }
+  registerReferences(ctx, parsed)
 
   // Emit-shaped points run detached, so track their chains; disposal aborts
   // active hooks and drains continuations before resolving.

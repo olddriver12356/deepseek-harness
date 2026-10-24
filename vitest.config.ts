@@ -43,7 +43,11 @@ const windowsUnsupportedPackages = process.platform === 'win32'
 
 const windowsUnsupportedTests = process.platform === 'win32'
   ? [
-      ...windowsUnsupportedPackages.map(path => `${path}/tests/**/*.spec.ts`),
+      ...windowsUnsupportedPackages.map((path) => {
+        // Reference metadata suites never launch the POSIX hooks they describe.
+        const metadataOnly = path === 'packages/experimental/hooks-claude-code' || path === 'packages/experimental/hooks-codex'
+        return `${path}/tests/**/${metadataOnly ? '!(reference)' : '*'}.spec.ts`
+      }),
       'packages/subprocess/subprocess/tests/**/*.spec.ts',
       'packages/subprocess/subprocess-local/tests/local.spec.ts',
       'packages/subprocess/subprocess-local/tests/process-inspector.spec.ts',

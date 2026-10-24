@@ -30,6 +30,7 @@
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
+    "@deepseek-ai/dsh-host-plugin-inventory": "workspace:*",
     "@deepseek-ai/dsh-agent": "workspace:*",
     "@deepseek-ai/dsh-hook-protocol": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
@@ -40,7 +41,11 @@
     "@deepseek-ai/dsh-session-projection": "workspace:*",
     "@deepseek-ai/dsh-working-directory": "workspace:*"
   },
+  "peerDependenciesMeta": { "@deepseek-ai/dsh-host-plugin-inventory": { "optional": true } },
   "devDependencies": {
+    "@deepseek-ai/dsh-host-plugin-inventory": "workspace:*",
+    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
+    "@deepseek-ai/cordis-plugin-include": "workspace:~",
     "@deepseek-ai/dsh-agent": "workspace:*",
     "@deepseek-ai/dsh-agent-loop": "workspace:*",
     "@deepseek-ai/dsh-agent-loop-testkit": "workspace:*",
