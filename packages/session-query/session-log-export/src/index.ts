@@ -1,6 +1,7 @@
 /** Session-log download command and Host-owned streaming route. */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import type { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import Schema from '@deepseek-ai/schemastery'
 import { brandString } from '@deepseek-ai/dsh-brand'
@@ -78,7 +79,7 @@ const REQUESTED: CommandResult = {
 export function apply(ctx: Context, config: Config = {}): void {
   ctx.effect(() => ctx.commands.register({
     definitionId: brandString<CommandDefinitionId>('@deepseek-ai/dsh-session-log-export'),
-    name: 'export',
+    name: 'export', reference,
     description: 'Download this Session log as a ZIP archive',
     handler: invocation => Promise.resolve(invocation.rawInput.trim() === ''
       ? REQUESTED

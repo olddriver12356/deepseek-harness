@@ -54,6 +54,42 @@ describe('parseCommand()', () => {
 })
 
 describe('CommandRuntime', () => {
+  it('reads immutable source-owned guides from the effective scoped definition without logging', async () => {
+    const ctx = await mount()
+    const { scope, agent } = await mintAgentScope(ctx, 'manual')
+    const guide = {
+      purpose: 'Inspect the global state', when: 'When checking configuration', syntax: '/inspect',
+      arguments: { kind: 'none' as const }, subcommands: [],
+      examples: [{ title: 'Inspect', input: '/inspect', expectedResult: 'Displays configuration' }],
+      effects: ['Does not change state'], limitations: [],
+    }
+    ctx.commands.register({ ...command('inspect'), reference: { en: guide, zh: { ...guide, purpose: '查看配置' } } })
+    const before = agent.session.snapshotEvents()
+    expect(ctx.commands.list(agent)[0]).toMatchObject({ name: 'inspect', hasReference: true })
+    expect(ctx.commands.list(agent)[0]).not.toHaveProperty('reference')
+    guide.examples[0]!.input = '/something-else'
+    const loaded = ctx.commands.reference(agent, 'inspect', 'en')
+    expect(loaded?.examples[0]?.input).toBe('/inspect')
+    expect(Object.isFrozen(loaded?.examples[0])).toBe(true)
+    expect(ctx.commands.reference(agent, 'inspect', 'zh')?.purpose).toBe('查看配置')
+    scope.ctx.commands.register({ ...command('inspect'), reference: { en: { ...guide, purpose: 'Scoped guide' }, zh: guide } })
+    expect(ctx.commands.reference(agent, 'inspect', 'en')?.purpose).toBe('Scoped guide')
+    await scope.dispose()
+    expect(ctx.commands.reference(agent, 'inspect', 'en')?.purpose).toBe('Inspect the global state')
+    expect(agent.session.snapshotEvents()).toEqual(before)
+    await ctx.fiber.dispose()
+  })
+
+  it('does not invent a guide from a summary or free-form input hint', async () => {
+    const ctx = await mount()
+    const { agent } = await mintAgentScope(ctx, 'extension')
+    ctx.commands.register({ ...command('extension'), input: { hint: '<anything>' } })
+    expect(ctx.commands.reference(agent, 'extension', 'en')).toBeNull()
+    expect(ctx.commands.reference(agent, 'missing', 'en')).toBeNull()
+    expect(ctx.commands.list(agent)[0]).not.toHaveProperty('hasReference')
+    await ctx.fiber.dispose()
+  })
+
   it('lists immutable global descriptors with input metadata', async () => {
     const ctx = await mount()
     const { agent } = await mintAgentScope(ctx, 'a')

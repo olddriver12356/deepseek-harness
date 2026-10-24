@@ -26,6 +26,10 @@ interface CommandInputDescriptor {
 }
 ```
 
+## Usage guides
+
+`ReferenceLocale` selects an authored `en` or `zh` manual. `CommandUsageGuide` contains purpose, when-to-use guidance, syntax, an explicit no-arguments/documented-arguments union, subcommands, examples with expected results, effects and limitations. Arguments carry required/default/accepted-value notes. The source definitions live in [`types.ts`](../../packages/interaction/commands/src/types.ts). The registry snapshots and freezes guides, exposes only `hasReference` on discovery descriptors, and reads the selected effective owner's guide with `reference(agent, name, locale)`. Missing guides return null; scoped definitions never inherit shadowed manuals. Reads neither execute commands nor append events or model input.
+
 ## Definition
 
 `CommandDefinition` is the plugin-authored registration. The registry validates and freezes a detached effective definition.
@@ -41,6 +45,8 @@ interface CommandDefinition {
   readonly description: string
   /** Optional free-form input hint advertised to capable clients. */
   readonly input?: CommandInputDescriptor
+  /** Optional human-only usage guides; list responses advertise presence without including the body. */
+  readonly reference?: Readonly<Record<ReferenceLocale, CommandUsageGuide>>
   /**
    * Whether `command/run` records `rawInput`. Defaults to true. A command
    * whose domain event owns the payload sets this false to avoid duplicating
@@ -155,6 +161,15 @@ registerFileReceiptResolver(resolver: CommandFileReceiptResolver): () => void
  * @returns name-sorted descriptors after scoped shadowing.
  */
 @Remote list(agent: Agent): readonly CommandDescriptor[]
+
+/**
+ * Read the effective owner's human-only usage guide without executing or logging.
+ * @param agent - existing receiving Agent and scope key.
+ * @param name - command name without its leading slash.
+ * @param locale - authored guide language.
+ * @returns immutable guide, or null when the command or its guide is absent.
+ */
+reference(agent: Agent, name: string, locale: ReferenceLocale): CommandUsageGuide | null
 
 /**
  * Resolve one effective command definition.

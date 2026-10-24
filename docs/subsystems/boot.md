@@ -136,6 +136,60 @@ async reconcileProfile(requiredIds: readonly string[] = []): Promise<ProfileReco
 
 Source: [`packages/boot/hmr/src/index.ts`](../../packages/boot/hmr/src/index.ts)
 
+<a id="ctxplugininventory--plugininventorygateway"></a>
+
+### `ctx.pluginInventory` — `PluginInventoryGateway`
+
+Read-only Loader inventory and effect-owned capability reference observations.
+
+```ts cordis-catalog
+/**
+ * Publish source-owned reference observations for the calling registration scope.
+ * @param contribution - synchronous safe observations, with optional committed-state invalidation.
+ * @returns exact effect disposer; leaving the owner removes its reference and subscription.
+ */
+registerReference(contribution: ReferenceContribution): () => void
+
+/**
+ * Read Host references and the selected Agent's existing capability descriptors.
+ * @param request - locale and optional Session; absent or cold Session never materializes an Agent.
+ * @returns point-in-time reference summaries without loading manuals or calling providers.
+ */
+@Remote({ resources: { session: request => request.sessionId } }) referenceList(request: ReferenceListRequest): ToolReferenceSnapshot
+
+/**
+ * Read a selected manual from an already-registered authorized source.
+ * @param request - opaque entry and selected scope; reads never start a Session or provider operation.
+ * @returns safe detail, explicit source failure, or null when absent or inaccessible.
+ */
+@Remote({ resources: { session: request => request.sessionId } }) referenceDetail(request: ReferenceDetailRequest): ToolReferenceDetail | null
+
+/**
+ * Read an existing Agent's source-owned command guide without resuming or executing.
+ * @param request - selected Session, literal command name and authored locale.
+ * @returns guide, or null for a cold Session, absent registry, unknown command or missing guide.
+ */
+@Remote({ resources: { session: request => request.sessionId } }) commandReference(request: { readonly sessionId: import('@deepseek-ai/dsh-session/types').SessionId; readonly name: string; readonly locale: import('@deepseek-ai/dsh-commands/types').ReferenceLocale }): import('@deepseek-ai/dsh-commands/types').CommandUsageGuide | null
+
+/**
+ * Read the Loader directly on every call. Cordis's internal plugin/status
+ * events already maintain Entry.fiber and Fiber.state, so a second cache
+ * would only add another lifecycle truth to keep synchronized.
+ *
+ * When an agent-preset roster is composed, the snapshot also carries each
+ * preset's composition rows, because those rows — not the Loader's own
+ * entries — are where a deployment that mounts the roster runs its
+ * model-facing plugins.
+ * @returns Current non-group Loader entries in Loader order, with optional display metadata
+ * and per-preset compositions when a roster is composed.
+ */
+@Remote('list') async list(): Promise<PluginInventorySnapshot>
+```
+
+Types: [CommandUsageGuide](commands.md) · [ReferenceLocale](commands.md) · [SessionId](core.md)
+
+Source: [`packages/host/plugin-inventory/src/index.ts`](../../packages/host/plugin-inventory/src/index.ts)
+
 <a id="ctxpluginmanager--pluginmanager"></a>
 
 ### `ctx.pluginManager` — `PluginManager`
@@ -366,6 +420,29 @@ Module replacements have finished loading.
 ```
 
 Source: [`packages/boot/hmr/src/index.ts`](../../packages/boot/hmr/src/index.ts)
+
+<a id="plugin-inventory-events"></a>
+
+### `plugin-inventory/*` events
+
+<a id="plugin-inventoryreferences-changed--emit"></a>
+
+#### `plugin-inventory/references-changed` — emit
+
+One or more reference observations changed; no provider IO has been requested.
+
+```ts cordis-catalog
+/**
+ * One or more reference observations changed; no provider IO has been requested.
+ * @param sessionId - affected Session when known; absent for Host or shared-scope changes.
+ * @mode emit
+ */
+'plugin-inventory/references-changed'(sessionId?: SessionId): void
+```
+
+Types: [SessionId](core.md)
+
+Source: [`packages/host/plugin-inventory/src/reference-types.ts`](../../packages/host/plugin-inventory/src/reference-types.ts)
 
 <a id="plugin-manager-events"></a>
 

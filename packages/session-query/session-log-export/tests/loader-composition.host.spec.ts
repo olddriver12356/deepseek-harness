@@ -62,8 +62,13 @@ describe('session-log-download real Loader composition', () => {
     const agent = { session, status: 'idle', options: {} } as unknown as Agent
     expect(context.commands.list(agent)).toContainEqual({
       definitionId: '@deepseek-ai/dsh-session-log-export',
-      name: 'export', description: 'Download this Session log as a ZIP archive',
+      name: 'export', description: 'Download this Session log as a ZIP archive', hasReference: true,
     })
+    for (const locale of ['en', 'zh'] as const) {
+      const guide = context.commands.reference(agent, 'export', locale)
+      expect(guide).not.toBeNull()
+      expect(guide!.examples.map(item => item.input)).toEqual(['/export'])
+    }
     const execution = await context.commands.execute(agent, '/export', [], new AbortController().signal)
     expect(execution?.result).toEqual({ kind: 'success', text: 'Session log download requested.' })
     expect(session.snapshotEvents().map(event => event.type)).toEqual(['command/run', 'command/done'])

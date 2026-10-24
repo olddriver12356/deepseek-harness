@@ -27,6 +27,8 @@ Plan mode asks an agent to explore and design before execution, then presents th
 
 When plan mode is active, the agent works under your instructions and presents its plan for review instead of executing right away. The common path: configure the guidance text, enter plan mode with `/plan`, and review the finished plan when the agent calls `exit_plan_mode`.
 
+The `/plan` registration supplies an EN/ZH usage guide describing mode transitions and optional model-visible input. Reading the guide neither changes mode nor submits input.
+
 ### When to choose it
 
 Choose plan mode when the agent should explore and design before executing and you want to approve the plan first. It does not restrict the agent: every tool stays callable, so use sandbox mode and approval prompts when you need enforced limits. Skip it when the agent should act on your requests immediately, without a planning phase.

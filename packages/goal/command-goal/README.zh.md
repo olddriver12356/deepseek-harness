@@ -27,7 +27,7 @@ kind: "package-reference"
 
 在挂载了命令适配器的交互式部署中使用 `dsh-command-goal`——随附的 Web 客户端是参考实现。它让用户无需模型轮次即可直接控制 goal 生命周期：命令在 UI 命令平面执行，适配器直接渲染其结果。
 
-组合 `dsh-long-term-progress` 时，本消费者也会在相同命令作用域内注册 `/long-goal`。其草案、批准、开始及验收决策只记录进度，不会排入模型轮次；详见[进度契约](../long-term-progress/README.md)。
+组合 `dsh-long-term-progress` 时，本消费者也会在相同命令作用域内注册 `/long-goal`。草案操作提交自然语言提议请求，可能排入模型工作；批准、开始和验收更新进度记录，不调度执行。两个命令均发布模型上下文之外的按需 EN/ZH 使用手册；详见[进度契约](../long-term-progress/README.md)。
 
 ### 命令参考
 

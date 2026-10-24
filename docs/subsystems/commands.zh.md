@@ -26,6 +26,10 @@ interface CommandInputDescriptor {
 }
 ```
 
+## 使用手册
+
+`ReferenceLocale` 选择来源编写的 `en` 或 `zh` 手册。`CommandUsageGuide` 包含用途、使用时机、语法、明确的无参数或有文档参数联合、子命令、带预期结果的示例、效果和限制。参数记录必填、默认值和接受值说明。来源定义位于 [`types.ts`](../../packages/interaction/commands/src/types.ts)。注册表复制并冻结手册，发现描述符仅提供 `hasReference`，通过 `reference(agent, name, locale)` 读取所选有效所有者的手册。缺失时返回 null，作用域定义不会继承被覆盖的手册。读取不会执行命令，也不会追加事件或模型输入。
+
 ## 定义
 
 `CommandDefinition` 是由插件编写的注册定义。注册表会验证并冻结一份与原始注册对象脱离的生效定义。
@@ -41,6 +45,8 @@ interface CommandDefinition {
   readonly description: string
   /** Optional free-form input hint advertised to capable clients. */
   readonly input?: CommandInputDescriptor
+  /** Optional human-only usage guides; list responses advertise presence without including the body. */
+  readonly reference?: Readonly<Record<ReferenceLocale, CommandUsageGuide>>
   /**
    * Whether `command/run` records `rawInput`. Defaults to true. A command
    * whose domain event owns the payload sets this false to avoid duplicating
@@ -155,6 +161,15 @@ registerFileReceiptResolver(resolver: CommandFileReceiptResolver): () => void
  * @returns name-sorted descriptors after scoped shadowing.
  */
 @Remote list(agent: Agent): readonly CommandDescriptor[]
+
+/**
+ * Read the effective owner's human-only usage guide without executing or logging.
+ * @param agent - existing receiving Agent and scope key.
+ * @param name - command name without its leading slash.
+ * @param locale - authored guide language.
+ * @returns immutable guide, or null when the command or its guide is absent.
+ */
+reference(agent: Agent, name: string, locale: ReferenceLocale): CommandUsageGuide | null
 
 /**
  * Resolve one effective command definition.

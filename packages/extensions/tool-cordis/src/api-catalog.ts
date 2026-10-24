@@ -794,6 +794,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'name-sorted descriptors after scoped shadowing.',
       },
       {
+        signature: 'reference(agent: Agent, name: string, locale: ReferenceLocale): CommandUsageGuide | null',
+        description: 'Read the effective owner\'s human-only usage guide without executing or logging.',
+        parameters: [{ name: 'agent', description: 'existing receiving Agent and scope key.' }, { name: 'name', description: 'command name without its leading slash.' }, { name: 'locale', description: 'authored guide language.' }],
+        returns: 'immutable guide, or null when the command or its guide is absent.',
+      },
+      {
         signature: 'find(agent: Agent, name: string): CommandDefinition | undefined',
         description: 'Resolve one effective command definition.',
         parameters: [{ name: 'agent', description: 'exact receiving agent and scoped-layer key.' }, { name: 'name', description: 'command name without a slash.' }],
@@ -1932,6 +1938,43 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Select whether plan mode should be active. Between turns the method appends the change immediately because no in-turn pre-step will run until another prompt starts a turn. The open-turn fold is the idle signal: agent status stays `running` through post-turn checkpointing, when no further in-turn pre-step runs. During an open turn the selection remains pending until the next accepted in-turn pre-step. Repeated selection of the current or already-pending state is a no-op.',
         parameters: [{ name: 'agent', description: 'The agent to switch.' }, { name: 'active', description: 'Whether plan mode should be active.' }],
         returns: 'what happened: `committed` (logged now), `queued` (awaiting the next accepted in-turn pre-step), `cancelled` (an opposite pending selection was cleared; the logged state already matches), or `noop` (already in that state).',
+      },
+    ],
+  },
+  {
+    key: 'pluginInventory',
+    summary: 'Read-only Loader inventory and effect-owned capability reference observations.',
+    description: 'Read-only Loader inventory and effect-owned capability reference observations.',
+    methods: [
+      {
+        signature: 'registerReference(contribution: ReferenceContribution): () => void',
+        description: 'Publish source-owned reference observations for the calling registration scope.',
+        parameters: [{ name: 'contribution', description: 'synchronous safe observations, with optional committed-state invalidation.' }],
+        returns: 'exact effect disposer; leaving the owner removes its reference and subscription.',
+      },
+      {
+        signature: '@Remote({ resources: { session: request => request.sessionId } }) referenceList(request: ReferenceListRequest): ToolReferenceSnapshot',
+        description: 'Read Host references and the selected Agent\'s existing capability descriptors.',
+        parameters: [{ name: 'request', description: 'locale and optional Session; absent or cold Session never materializes an Agent.' }],
+        returns: 'point-in-time reference summaries without loading manuals or calling providers.',
+      },
+      {
+        signature: '@Remote({ resources: { session: request => request.sessionId } }) referenceDetail(request: ReferenceDetailRequest): ToolReferenceDetail | null',
+        description: 'Read a selected manual from an already-registered authorized source.',
+        parameters: [{ name: 'request', description: 'opaque entry and selected scope; reads never start a Session or provider operation.' }],
+        returns: 'safe detail, explicit source failure, or null when absent or inaccessible.',
+      },
+      {
+        signature: '@Remote({ resources: { session: request => request.sessionId } }) commandReference(request: { readonly sessionId: import(\'@deepseek-ai/dsh-session/types\').SessionId; readonly name: string; readonly locale: import(\'@deepseek-ai/dsh-commands/types\').ReferenceLocale }): import(\'@deepseek-ai/dsh-commands/types\').CommandUsageGuide | null',
+        description: 'Read an existing Agent\'s source-owned command guide without resuming or executing.',
+        parameters: [{ name: 'request', description: 'selected Session, literal command name and authored locale.' }],
+        returns: 'guide, or null for a cold Session, absent registry, unknown command or missing guide.',
+      },
+      {
+        signature: '@Remote(\'list\') async list(): Promise<PluginInventorySnapshot>',
+        description: 'Read the Loader directly on every call. Cordis\'s internal plugin/status events already maintain Entry.fiber and Fiber.state, so a second cache would only add another lifecycle truth to keep synchronized.\n\nWhen an agent-preset roster is composed, the snapshot also carries each preset\'s composition rows, because those rows — not the Loader\'s own entries — are where a deployment that mounts the roster runs its model-facing plugins.',
+        parameters: [],
+        returns: 'Current non-group Loader entries in Loader order, with optional display metadata and per-preset compositions when a roster is composed.',
       },
     ],
   },
@@ -4657,6 +4700,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [],
   },
   {
+    name: 'plugin-inventory/references-changed',
+    mode: 'emit',
+    signature: '\'plugin-inventory/references-changed\'(sessionId?: SessionId): void',
+    summary: 'One or more reference observations changed; no provider IO has been requested.',
+    description: 'One or more reference observations changed; no provider IO has been requested.',
+    parameters: [{ name: 'sessionId', description: 'affected Session when known; absent for Host or shared-scope changes.' }],
+  },
+  {
     name: 'plugin-manager/changed',
     mode: 'emit',
     signature: '\'plugin-manager/changed\'(change: PluginChange): void',
@@ -5029,6 +5080,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AgentPresetInspection {\n    readonly id: string;\n    readonly modules: readonly {\n        readonly moduleName: string;\n        readonly baseUrl?: string;\n        readonly useHostBase: boolean;\n    }[];\n    readonly leakedServices: readonly string[];\n}',
   },
   {
+    name: 'AgentPresetPluginGroup',
+    declaration: 'export interface AgentPresetPluginGroup {\n    readonly id: string;\n    readonly name?: string;\n    readonly isDefault: boolean;\n    readonly broken?: string;\n    readonly rows: readonly AgentPresetPluginRow[];\n}',
+  },
+  {
+    name: 'AgentPresetPluginRow',
+    declaration: 'export interface AgentPresetPluginRow {\n    readonly entryId: string | null;\n    readonly moduleName: string;\n    readonly meta?: PluginLocalizedMeta;\n    readonly enabled: PresetPluginEnablement;\n    readonly condition?: string;\n    readonly fiberPhase: PluginFiberPhase;\n}',
+  },
+  {
     name: 'AgentPresetRoster',
     declaration: 'export interface AgentPresetRoster {\n    readonly presets: readonly AgentPresetRow[];\n}',
   },
@@ -5330,7 +5389,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CommandDefinition',
-    declaration: 'export interface CommandDefinition {\n    readonly definitionId?: CommandDefinitionId;\n    readonly name: string;\n    readonly description: string;\n    readonly input?: CommandInputDescriptor;\n    readonly recordInput?: boolean;\n    readonly handler: (invocation: CommandInvocation) => CommandResult | Promise<CommandResult>;\n}',
+    declaration: 'export interface CommandDefinition {\n    readonly definitionId?: CommandDefinitionId;\n    readonly name: string;\n    readonly description: string;\n    readonly input?: CommandInputDescriptor;\n    readonly reference?: Readonly<Record<ReferenceLocale, CommandUsageGuide>>;\n    readonly recordInput?: boolean;\n    readonly handler: (invocation: CommandInvocation) => CommandResult | Promise<CommandResult>;\n}',
   },
   {
     name: 'CommandDefinitionId',
@@ -5338,7 +5397,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CommandDescriptor',
-    declaration: 'export interface CommandDescriptor {\n    readonly definitionId?: CommandDefinitionId;\n    readonly name: string;\n    readonly description: string;\n    readonly input?: CommandInputDescriptor;\n}',
+    declaration: 'export interface CommandDescriptor {\n    readonly definitionId?: CommandDefinitionId;\n    readonly name: string;\n    readonly description: string;\n    readonly input?: CommandInputDescriptor;\n    readonly hasReference?: boolean;\n}',
   },
   {
     name: 'CommandExecution',
@@ -5383,6 +5442,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CommandSubmitAttachment',
     declaration: 'export type CommandSubmitAttachment = ({\n    readonly type: \'image\';\n} & EncodedImageAttachment) | {\n    readonly type: \'file\';\n    readonly receiptId: string;\n};',
+  },
+  {
+    name: 'CommandUsageArgument',
+    declaration: 'export interface CommandUsageArgument {\n    readonly name: string;\n    readonly description: string;\n    readonly required: boolean;\n    readonly defaultValue?: string;\n    readonly acceptedValues?: readonly string[];\n}',
+  },
+  {
+    name: 'CommandUsageGuide',
+    declaration: 'export interface CommandUsageGuide {\n    readonly purpose: string;\n    readonly when: string;\n    readonly syntax: string;\n    readonly arguments: {\n        readonly kind: \'none\';\n    } | {\n        readonly kind: \'documented\';\n        readonly items: readonly CommandUsageArgument[];\n    };\n    readonly subcommands: readonly {\n        readonly name: string;\n        readonly syntax: string;\n        readonly description: string;\n        readonly arguments: readonly CommandUsageArgument[];\n    }[];\n    readonly examples: readonly {\n        readonly title: string;\n        readonly input: string;\n        readonly expectedResult: string;\n    }[];\n    readonly effects: readonly string[];\n    readonly limitations: readonly string[];\n}',
   },
   {
     name: 'CompactionAgentContext',
@@ -5997,6 +6064,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface HookBudget {\n    readonly ms: number;\n    readonly remainingMs: number;\n}',
   },
   {
+    name: 'HookDetailContent',
+    declaration: 'export interface HookDetailContent {\n    readonly adapter: \'claude-code\' | \'codex\';\n    readonly matcher?: string;\n    readonly trigger: string;\n    readonly effects: readonly string[];\n    readonly limitations: readonly string[];\n    readonly lastExecution: {\n        readonly kind: \'unavailable\';\n        readonly reason: \'uncorrelated-history\' | \'not-recorded\';\n    };\n}',
+  },
+  {
     name: 'HookFailure',
     declaration: 'export interface HookFailure {\n    readonly kind: \'throw\' | \'timeout\';\n    readonly message: string;\n}',
   },
@@ -6015,6 +6086,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'HookRegistration',
     declaration: 'export interface HookRegistration {\n    catch(handler: AnyHook): void;\n}',
+  },
+  {
+    name: 'HookSummaryContent',
+    declaration: 'export interface HookSummaryContent extends ReferenceSummaryContent {\n    readonly types: readonly HookType[];\n    readonly events: readonly string[];\n    readonly enabled: boolean;\n}',
+  },
+  {
+    name: 'HookType',
+    declaration: 'export type HookType = \'session\' | \'prompt\' | \'tool\' | \'turn-completion\' | \'subagent\';',
   },
   {
     name: 'HostConnectionFetch',
@@ -6485,12 +6564,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type MatcherValue = string | number | boolean | null | RegExp | readonly (string | number | boolean | null)[];',
   },
   {
+    name: 'McpConnectionState',
+    declaration: 'export type McpConnectionState = \'connecting\' | \'connected\' | \'reconnecting\' | \'disconnected\' | \'failed\';',
+  },
+  {
+    name: 'McpDetailContent',
+    declaration: 'export interface McpDetailContent {\n    readonly transport: \'stdio\' | \'streamable-http\';\n    readonly instructions: string;\n    readonly toolsAvailability: \'current\' | \'unavailable\';\n    readonly tools: readonly McpToolReference[];\n}',
+  },
+  {
     name: 'McpResourceProvider',
     declaration: 'export interface McpResourceProvider {\n    request(request: McpResourceRequest, exec: ToolExecution): Promise<JsonValue>;\n}',
   },
   {
     name: 'McpResourceRequest',
     declaration: 'export type McpResourceRequest = {\n    method: \'resources/list\' | \'resources/templates/list\';\n    cursor?: string;\n} | {\n    method: \'resources/read\';\n    uri: string;\n};',
+  },
+  {
+    name: 'McpSummaryContent',
+    declaration: 'export interface McpSummaryContent extends ReferenceSummaryContent {\n    readonly state: McpConnectionState;\n}',
+  },
+  {
+    name: 'McpToolReference',
+    declaration: 'export interface McpToolReference {\n    readonly publicName: string;\n    readonly rawName: string;\n    readonly description: string;\n    readonly inputSchema: JsonValue;\n    readonly outputSchema?: JsonValue;\n    readonly annotations?: {\n        readonly title?: string;\n        readonly readOnlyHint?: boolean;\n        readonly destructiveHint?: boolean;\n        readonly idempotentHint?: boolean;\n        readonly openWorldHint?: boolean;\n    };\n}',
   },
   {
     name: 'Message',
@@ -6837,6 +6932,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PluginInventoryEntry {\n    readonly entryId: PluginEntryId;\n    readonly moduleName: string;\n    readonly meta?: PluginLocalizedMeta;\n    readonly enabled: boolean;\n    readonly fiberPhase: PluginFiberPhase;\n}',
   },
   {
+    name: 'PluginInventorySnapshot',
+    declaration: 'export interface PluginInventorySnapshot {\n    readonly managementAvailable?: boolean;\n    readonly entries: readonly PluginInventoryEntry[];\n    readonly agentPresets?: readonly AgentPresetPluginGroup[];\n}',
+  },
+  {
     name: 'PluginLocalizedMeta',
     declaration: 'export interface PluginLocalizedMeta {\n    readonly title?: LocalizedText;\n    readonly description?: LocalizedText;\n    readonly icon?: string;\n    readonly error?: string;\n}',
   },
@@ -6891,6 +6990,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PresetOption',
     declaration: 'export interface PresetOption {\n    value: string;\n    name: string;\n    description?: string;\n}',
+  },
+  {
+    name: 'PresetPluginEnablement',
+    declaration: 'export type PresetPluginEnablement = boolean | \'conditional\';',
   },
   {
     name: 'PresetSpec',
@@ -7095,6 +7198,46 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RedactedSecret',
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
+  },
+  {
+    name: 'ReferenceChangeSource',
+    declaration: 'export interface ReferenceChangeSource {\n    readonly subscribeChanged?: (listener: () => void) => () => void;\n}',
+  },
+  {
+    name: 'ReferenceContribution',
+    declaration: 'export type ReferenceContribution = ReferenceChangeSource & {\n    readonly moduleName: string;\n} & ({\n    readonly kind: \'mcp\';\n    readonly summary: (locale: ReferenceLocale) => McpSummaryContent;\n    readonly detail: (locale: ReferenceLocale) => McpDetailContent;\n} | {\n    readonly kind: \'hook\';\n    readonly summary: (locale: ReferenceLocale) => HookSummaryContent;\n    readonly detail: (locale: ReferenceLocale) => HookDetailContent;\n});',
+  },
+  {
+    name: 'ReferenceDetailRequest',
+    declaration: 'export interface ReferenceDetailRequest extends ReferenceListRequest {\n    readonly id: ToolReferenceId;\n}',
+  },
+  {
+    name: 'ReferenceDocumentation',
+    declaration: 'export type ReferenceDocumentation = \'supplied\' | \'partial\' | \'missing\';',
+  },
+  {
+    name: 'ReferenceIdentity',
+    declaration: 'export interface ReferenceIdentity {\n    readonly id: ToolReferenceId;\n    readonly kind: \'mcp\' | \'hook\';\n    readonly moduleName: string;\n    readonly scope: ReferenceScope;\n}',
+  },
+  {
+    name: 'ReferenceListRequest',
+    declaration: 'export interface ReferenceListRequest {\n    readonly sessionId?: SessionId;\n    readonly locale: ReferenceLocale;\n}',
+  },
+  {
+    name: 'ReferenceLocale',
+    declaration: 'export type ReferenceLocale = \'en\' | \'zh\';',
+  },
+  {
+    name: 'ReferenceScope',
+    declaration: 'export type ReferenceScope = {\n    readonly kind: \'host\';\n} | {\n    readonly kind: \'session\';\n    readonly sessionId: SessionId;\n};',
+  },
+  {
+    name: 'ReferenceSummaryContent',
+    declaration: 'export interface ReferenceSummaryContent {\n    readonly name: string;\n    readonly description: string;\n    readonly documentation: ReferenceDocumentation;\n}',
+  },
+  {
+    name: 'ReferenceUnavailable',
+    declaration: 'export interface ReferenceUnavailable extends ReferenceIdentity {\n    readonly name: string;\n    readonly description: string;\n    readonly documentation: \'missing\';\n    readonly state: \'unavailable\';\n    readonly code: \'REFERENCE_SOURCE_UNAVAILABLE\';\n}',
   },
   {
     name: 'Registration',
@@ -8771,6 +8914,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ToolProviderResult',
     declaration: 'export interface ToolProviderResult {\n    readonly schemas: readonly ToolSchema[];\n    readonly knownNames?: readonly string[];\n}',
+  },
+  {
+    name: 'ToolReferenceDetail',
+    declaration: 'export type ToolReferenceDetail = (ReferenceIdentity & McpSummaryContent & McpDetailContent & {\n    readonly kind: \'mcp\';\n}) | (ReferenceIdentity & HookSummaryContent & HookDetailContent & {\n    readonly kind: \'hook\';\n}) | ReferenceUnavailable;',
+  },
+  {
+    name: 'ToolReferenceId',
+    declaration: 'export type ToolReferenceId = Branded<\'ToolReferenceId\'>;',
+  },
+  {
+    name: 'ToolReferenceSnapshot',
+    declaration: 'export interface ToolReferenceSnapshot {\n    readonly observedAt: number;\n    readonly sessionAvailability: \'live\' | \'not-live\' | \'not-selected\';\n    readonly commands: readonly CommandDescriptor[];\n    readonly mcp: {\n        readonly kind: \'ready\';\n        readonly items: readonly ToolReferenceSummary[];\n    };\n    readonly hooks: {\n        readonly kind: \'ready\';\n        readonly items: readonly ToolReferenceSummary[];\n    };\n}',
+  },
+  {
+    name: 'ToolReferenceSummary',
+    declaration: 'export type ToolReferenceSummary = (ReferenceIdentity & McpSummaryContent & {\n    readonly kind: \'mcp\';\n}) | (ReferenceIdentity & HookSummaryContent & {\n    readonly kind: \'hook\';\n}) | ReferenceUnavailable;',
   },
   {
     name: 'ToolRemovalBlock',

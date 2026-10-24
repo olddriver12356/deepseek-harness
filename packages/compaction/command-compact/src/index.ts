@@ -4,6 +4,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import { ManualCompactionError } from '@deepseek-ai/dsh-compaction'
 import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
@@ -100,7 +101,7 @@ export function apply(ctx: Context): void {
     yield async () => { await Promise.allSettled(active) }
     yield ctx.commands.register({
       definitionId: CommandDefinitionId('@deepseek-ai/dsh-command-compact'),
-      name: 'compact',
+      name: 'compact', reference,
       description: 'Compact older conversation history',
       handler,
     })

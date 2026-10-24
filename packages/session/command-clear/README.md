@@ -11,7 +11,7 @@ Registers `/clear` on the human-command registry. Mount the plugin at the Web pr
 
 The command requires an idle Agent, takes the existing maintenance reservation, clears pending input and the current goal when that service is present, and replaces the conversation surface with an empty system-message node. The protected leading system prompt remains; workspace instructions, skill catalogs and runtime context are reassembled on subsequent turns by their owning plugins. Session identity, working directory, model, permission settings and the append-only audit log remain unchanged. No summarization model call is made.
 
-The command flushes the Session before reporting success. A persistence failure reports that the in-memory reset may not survive restart. Running or maintenance-busy Agents reject the command rather than cancelling work implicitly. Arguments and attachments are not accepted.
+The registration supplies a lazy EN/ZH human-only usage guide through the command registry; reading it neither resets context nor calls a model. The command flushes the Session before reporting success. A persistence failure reports that the in-memory reset may not survive restart. Running or maintenance-busy Agents reject the command rather than cancelling work implicitly. Arguments and attachments are not accepted.
 
 ## Installation
 

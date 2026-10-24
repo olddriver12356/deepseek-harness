@@ -1,5 +1,6 @@
 /** Human-only context reset using the durable Session surface replacement seam. */
 import type { Context } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import { conversationClearProjection } from './projection.ts'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
@@ -76,7 +77,7 @@ export function apply(ctx: Context): void {
     yield async () => { await Promise.allSettled(active) }
     yield ctx.commands.register({
       definitionId: CommandDefinitionId('local/command-clear'),
-      name: 'clear',
+      name: 'clear', reference,
       description: 'Clear conversation context and reuse this Session',
       handler: (invocation) => {
         const operation = execute(invocation)

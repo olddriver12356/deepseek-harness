@@ -45,6 +45,10 @@ ctx.commands.register({
 
 The handler returns `success` or `error` plus optional UI text that the adapter renders. `recordInput` defaults to true; a command whose own authoritative domain event already carries the payload sets it to false so the session log does not duplicate the input. Registering the same name twice in one scope throws.
 
+### Source-owned usage guides
+
+Definitions may supply an EN/ZH `reference` with purpose, syntax, arguments, subcommands, examples, effects and limitations. The registry detaches and freezes guides at registration. `list(agent)` advertises only `hasReference`; `reference(agent, name, locale)` reads the effective definition's manual lazily, returning null when absent. A scoped shadow never inherits the global guide. Reading a manual does not execute a handler, append Session events, or add model context. Command handlers remain the sole grammar authority.
+
 ### Command syntax
 
 A command line starts with a slash at byte zero, a lowercase name containing letters, digits, `_` or `-`, and then either end-of-input or whitespace. Everything after the name — including separator whitespace — is the command's `rawInput`, and the command owns its own grammar for it. Lines that are not syntactically a command, or that name an unknown command, are rejected by the adapter instead of becoming a model prompt.

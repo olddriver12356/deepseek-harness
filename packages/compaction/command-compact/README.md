@@ -25,7 +25,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Type `/compact` in a chat UI when the conversation has grown long and you want to condense it immediately. The shipped `dsh` base mounts the command next to the default backend, so it is usually already available.
+Type `/compact` in a chat UI when the conversation has grown long and you want to condense it immediately. The shipped `dsh` base mounts the command next to the default backend, so it is usually already available. The registration supplies an EN/ZH usage guide with examples and model-call effects; reading it never starts compaction.
 
 ### Using the command
 

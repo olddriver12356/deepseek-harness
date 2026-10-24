@@ -113,6 +113,17 @@ export class PluginInventoryGateway extends TypertRemoteService {
   }
 
   /**
+   * Read an existing Agent's source-owned command guide without resuming or executing.
+   * @param request - selected Session, literal command name and authored locale.
+   * @returns guide, or null for a cold Session, absent registry, unknown command or missing guide.
+   */
+  @Remote({ resources: { session: request => request.sessionId } })
+  commandReference(request: { readonly sessionId: import('@deepseek-ai/dsh-session/types').SessionId; readonly name: string; readonly locale: import('@deepseek-ai/dsh-commands/types').ReferenceLocale }): import('@deepseek-ai/dsh-commands/types').CommandUsageGuide | null {
+    const agent = this.ctx.get('agents')?.get(request.sessionId)
+    return agent === undefined ? null : (this.ctx.get('commands')?.reference(agent, request.name, request.locale) ?? null)
+  }
+
+  /**
    * Read the Loader directly on every call. Cordis's internal plugin/status
    * events already maintain Entry.fiber and Fiber.state, so a second cache
    * would only add another lifecycle truth to keep synchronized.

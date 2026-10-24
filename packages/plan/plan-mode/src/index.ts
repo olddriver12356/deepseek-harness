@@ -22,6 +22,7 @@
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { z as zod } from 'zod'
 import type { ZodType } from 'zod'
@@ -229,7 +230,7 @@ export class PlanModeController extends Service {
     ctx.inject(['commands'], (commandCtx) => {
       commandCtx.commands.register({
         definitionId: brandString<CommandDefinitionId>('@deepseek-ai/dsh-plan-mode'),
-        name: 'plan',
+        name: 'plan', reference,
         description: 'Enter or leave plan mode',
         input: { hint: '[off|message]', attachments: true },
         handler: ({ agent, rawInput, attachments }) => {

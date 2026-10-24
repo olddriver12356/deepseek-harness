@@ -66,6 +66,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   productAnalytics: 'product-telemetry.md',
   connection: 'web-server.md',
   pluginManager: 'boot.md',
+  pluginInventory: 'boot.md',
   pluginMarket: 'boot.md',
   pluginRegistryProbe: 'boot.md',
   configEditor: 'boot.md',
@@ -232,6 +233,7 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
   'app-boot': 'boot.md',
   hmr: 'boot.md',
   'plugin-manager': 'boot.md',
+  'plugin-inventory': 'boot.md',
   'plugin-market': 'boot.md',
   'agent': 'core.md',
   'agent-loop': 'core.md',
@@ -552,6 +554,8 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   CreateGoalResult: 'goal.md',
   CommandDefinition: 'commands.md',
   CommandDescriptor: 'commands.md',
+  CommandUsageGuide: 'commands.md',
+  ReferenceLocale: 'commands.md',
   CommandFileReceiptResolver: 'commands.md',
   CommandId: 'commands.md',
   CommandResult: 'commands.md',
@@ -902,6 +906,12 @@ export const FOUNDATION_TYPE_NAMES: ReadonlySet<string> = new Set([
 
 /** Project types deliberately documented outside the subsystems catalog. */
 export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
+  PluginInventorySnapshot: 'Host plugin inventory data is owned by packages/host/plugin-inventory/README.md',
+  ReferenceContribution: 'read-only source contributions are owned by packages/host/plugin-inventory/README.md',
+  ReferenceListRequest: 'reference snapshot selection is owned by packages/host/plugin-inventory/README.md',
+  ReferenceDetailRequest: 'opaque reference selection is owned by packages/host/plugin-inventory/README.md',
+  ToolReferenceSnapshot: 'read-only inventory wire results are owned by packages/host/plugin-inventory/README.md',
+  ToolReferenceDetail: 'source-selected manual details are owned by packages/host/plugin-inventory/README.md',
   SkillInventory: 'Physical skill editor contract documented in packages/api/workspace-controller/README.md.',
   SkillArtifactId: 'Physical skill editor contract documented in packages/api/workspace-controller/README.md.',
   SkillTreeEntry: 'Physical skill editor contract documented in packages/api/workspace-controller/README.md.',

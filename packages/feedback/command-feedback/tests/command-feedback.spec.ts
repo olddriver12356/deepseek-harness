@@ -86,6 +86,20 @@ function feedbackTexts(session: Session): (string | undefined)[] {
 }
 
 describe('@deepseek-ai/dsh-command-feedback registration', () => {
+  it('records every authored EN/ZH example as feedback, not a model message', async () => {
+    for (const locale of ['en', 'zh'] as const) {
+      const test = await harness()
+      const guide = test.ctx.commands.reference(test.agent, 'feedback', locale)
+      expect(guide).not.toBeNull()
+      for (const example of guide!.examples) {
+        const execution = await test.ctx.commands.execute(test.agent, example.input, [], new AbortController().signal)
+        expect(execution?.result.kind).toBe('success')
+        expect(feedbackTexts(test.session)).toContain(example.input.slice('/feedback'.length).trim())
+      }
+      expect(test.session.deriveMessages()).toEqual([])
+    }
+  })
+
   it('registers one global command with Loader-safe exports and disposes it', async () => {
     const test = await harness()
     expect(commandFeedback.name).toBe('command-feedback')
@@ -97,7 +111,7 @@ describe('@deepseek-ai/dsh-command-feedback registration', () => {
     expect(test.ctx.commands.list(test.agent)).toContainEqual({
       definitionId: '@deepseek-ai/dsh-command-feedback',
       name: 'feedback',
-      description: 'Record feedback about this session',
+      description: 'Record feedback about this session', hasReference: true,
       input: { hint: '<text>' },
     })
     expect(test.ctx.commands.find(test.agent, 'feedback')).toMatchObject({ recordInput: false })

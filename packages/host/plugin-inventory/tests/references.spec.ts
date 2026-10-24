@@ -79,7 +79,7 @@ describe('Tool reference inventory', () => {
 
   it('declares Session resource readers without requiring Agent materialization', async () => {
     const ctx = await harness()
-    for (const method of ['referenceList', 'referenceDetail']) {
+    for (const method of ['referenceList', 'referenceDetail', 'commandReference']) {
       const marker = remoteMethods(ctx.pluginInventory).find(item => item.method === method)
       expect(marker?.resources).toHaveProperty('session')
       const reader = marker!.resources!.session!
@@ -117,6 +117,13 @@ describe('Tool reference inventory', () => {
     expect(result.sessionAvailability).toBe('not-live')
     expect(result.commands).toEqual([])
     expect(result.mcp.items.map(item => item.name)).toEqual(['host-only'])
+  })
+
+  it('returns no command manual for a cold Session without resuming its Agent', async () => {
+    const ctx = await harness()
+    const session = ctx.sessions.create(SessionId('cold-manual'))
+    expect(ctx.pluginInventory.commandReference({ sessionId: session.id, name: 'inspect', locale: 'en' })).toBeNull()
+    expect(ctx.agents.get(session.id)).toBeUndefined()
   })
 
   it('reads a cold Session without creating an Agent or its scoped references', async () => {

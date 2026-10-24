@@ -100,7 +100,7 @@ describe('@deepseek-ai/dsh-command-goal registration', () => {
     expect(test.ctx.commands.list(test.agent)).toContainEqual({
       definitionId: '@deepseek-ai/dsh-command-goal',
       name: 'goal',
-      description: 'Set or view the goal for a long-running task',
+      description: 'Set or view the goal for a long-running task', hasReference: true,
       input: { hint: '[<objective>|clear|edit <objective>|pause|resume]', attachments: true },
     })
     expect(test.ctx.commands.find(test.agent, 'goal')).toBeDefined()
@@ -111,6 +111,20 @@ describe('@deepseek-ai/dsh-command-goal registration', () => {
 })
 
 describe('/goal human command', () => {
+  it('executes the authored inspect, create and pause examples in order', async () => {
+    for (const locale of ['en', 'zh'] as const) {
+      const test = await harness()
+      const guide = test.ctx.commands.reference(test.agent, 'goal', locale)
+      expect(guide).not.toBeNull()
+      for (const example of guide!.examples) {
+        const execution = await test.ctx.commands.execute(test.agent, example.input, [], new AbortController().signal)
+        expect(execution?.result.kind).toBe('success')
+      }
+      expect(test.ctx.goals.get(test.agent)?.phase).toBe('paused')
+      expect(test.ctx.goals.get(test.agent)?.objective).toBe(guide!.examples[1]!.input.slice('/goal '.length))
+    }
+  })
+
   it('shows an empty status without mutating the session', async () => {
     const test = await harness()
     await expect(run(test)).resolves.toEqual({

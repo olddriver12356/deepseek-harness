@@ -164,7 +164,7 @@ describe('@deepseek-ai/dsh-command-compact registration', () => {
     expect(test.ctx.commands.list(test.agent)).toContainEqual({
       definitionId: '@deepseek-ai/dsh-command-compact',
       name: 'compact',
-      description: 'Compact older conversation history',
+      description: 'Compact older conversation history', hasReference: true,
     })
 
     await test.plugin.dispose()
@@ -173,6 +173,20 @@ describe('@deepseek-ai/dsh-command-compact registration', () => {
 })
 
 describe('/compact human command', () => {
+  it('executes every authored EN/ZH example through the real registry', async () => {
+    for (const locale of ['en', 'zh'] as const) {
+      const test = await harness()
+      const guide = test.ctx.commands.reference(test.agent, 'compact', locale)
+      expect(guide).not.toBeNull()
+      for (const example of guide!.examples) {
+        const execution = await test.ctx.commands.execute(test.agent, example.input, [], new AbortController().signal)
+        expect(execution?.result.kind).toBe('success')
+        expect(execution?.result.text).toContain('Compacted 3 history items')
+      }
+      expect(test.compact.calls).toHaveLength(guide!.examples.length)
+    }
+  })
+
   it('reports success with useful accounting and forwards the exact target and signal', async () => {
     const test = await harness()
     const controller = new AbortController()

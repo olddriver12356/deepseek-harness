@@ -16,6 +16,7 @@ import type {} from '@deepseek-ai/dsh-settings'
 import type { Volatile } from '@deepseek-ai/cordis'
 
 import { Context } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import z from '@deepseek-ai/schemastery'
 import { z as zod } from 'zod'
@@ -255,7 +256,7 @@ export class PermissionPresetService extends TypertRemoteService {
     ctx.inject(['commands'], (commandCtx) => {
       commandCtx.commands.register({
         definitionId: CommandDefinitionId('@deepseek-ai/dsh-permission-presets'),
-        name: 'permission',
+        name: 'permission', reference,
         description: 'Switch the permission preset (sandbox mode + approval policy)',
         input: { hint: '<preset>' },
         // No settlement text labels its value with this command's own name: a

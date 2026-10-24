@@ -27,6 +27,8 @@ Offer named permission modes that set sandbox and approval together while each e
 
 Choose this service when a deployment wants to offer users one Permissions selector instead of separate sandbox and approval controls. It bundles the knobs; execution and approval keep their own values, so removing the package later leaves the last selection in effect.
 
+The `/permission` registration supplies an EN/ZH usage guide. It describes available names as profile-dependent; browsing the guide neither switches policy nor adds model context.
+
 ### Configuring presets
 
 The plugin config defines the preset table and the default for fresh sessions. Each preset name bundles one sandbox mode with one approval policy; `name` and `description` are optional client presentation. The reserved names `custom` and `auto` cannot appear in this table.

@@ -27,7 +27,7 @@ English | [中文](README.zh.md)
 
 Use `dsh-command-goal` in interactive deployments that mount a command adapter — the shipped Web client is the reference. It gives users direct control over the goal lifecycle without a model turn: commands execute in the UI command plane and the adapter renders their results directly.
 
-When `dsh-long-term-progress` is composed, this consumer also registers `/long-goal` in the same command scope. Its draft, approval, start and acceptance decisions are bookkeeping and never queue a model turn; see the [progress contract](../long-term-progress/README.md).
+When `dsh-long-term-progress` is composed, this consumer also registers `/long-goal` in the same command scope. Drafting submits a natural-language proposal request and can queue model work; approval, start and acceptance update bookkeeping without scheduling execution. Both commands publish lazy EN/ZH usage guides outside model context; see the [progress contract](../long-term-progress/README.md).
 
 ### Command reference
 

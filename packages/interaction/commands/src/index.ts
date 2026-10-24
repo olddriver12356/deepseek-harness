@@ -18,6 +18,8 @@ import { CommandId } from './brand.ts'
 import type { CommandDefinitionId } from './brand.ts'
 import type {
   CommandDescriptor,
+  CommandUsageGuide,
+  ReferenceLocale,
   CommandExecution,
   CommandInputDescriptor,
   CommandResult,
@@ -67,6 +69,8 @@ export interface CommandDefinition {
   readonly description: string
   /** Optional free-form input hint advertised to capable clients. */
   readonly input?: CommandInputDescriptor
+  /** Optional human-only usage guides; list responses advertise presence without including the body. */
+  readonly reference?: Readonly<Record<ReferenceLocale, CommandUsageGuide>>
   /**
    * Whether `command/run` records `rawInput`. Defaults to true. A command
    * whose domain event owns the payload sets this false to avoid duplicating
@@ -175,6 +179,27 @@ function withAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   })
 }
 
+/** Snapshot authored guide arrays without retaining caller-owned mutable values. */
+function snapshotGuide(guide: CommandUsageGuide): CommandUsageGuide {
+  const argument = (item: import('./types.ts').CommandUsageArgument): import('./types.ts').CommandUsageArgument => Object.freeze({
+    name: item.name, description: item.description, required: item.required,
+    ...item.defaultValue === undefined ? {} : { defaultValue: item.defaultValue },
+    ...item.acceptedValues === undefined ? {} : { acceptedValues: Object.freeze([...item.acceptedValues]) },
+  })
+  return Object.freeze({
+    purpose: guide.purpose, when: guide.when, syntax: guide.syntax,
+    arguments: guide.arguments.kind === 'none' ? Object.freeze({ kind: 'none' as const })
+      : Object.freeze({ kind: 'documented' as const, items: Object.freeze(guide.arguments.items.map(argument)) }),
+    subcommands: Object.freeze(guide.subcommands.map(item => Object.freeze({
+      name: item.name, syntax: item.syntax, description: item.description, arguments: Object.freeze(item.arguments.map(argument)),
+    }))),
+    examples: Object.freeze(guide.examples.map(item => Object.freeze({
+      title: item.title, input: item.input, expectedResult: item.expectedResult,
+    }))),
+    effects: Object.freeze([...guide.effects]), limitations: Object.freeze([...guide.limitations]),
+  })
+}
+
 /** Reject invalid command metadata before it can reach a UI protocol. */
 function normalizeDefinition(definition: CommandDefinition): RegisteredCommand {
   if (!COMMAND_NAME.test(definition.name)) {
@@ -212,6 +237,9 @@ function normalizeDefinition(definition: CommandDefinition): RegisteredCommand {
     name: definition.name,
     description: definition.description,
     ...input === undefined ? {} : { input },
+    ...definition.reference === undefined ? {} : { reference: Object.freeze({
+      en: snapshotGuide(definition.reference.en), zh: snapshotGuide(definition.reference.zh),
+    }) },
     ...definition.recordInput === undefined ? {} : { recordInput: definition.recordInput },
     handler: definition.handler,
   })
@@ -220,6 +248,7 @@ function normalizeDefinition(definition: CommandDefinition): RegisteredCommand {
     name: normalized.name,
     description: normalized.description,
     ...normalized.input === undefined ? {} : { input: normalized.input },
+    ...normalized.reference === undefined ? {} : { hasReference: true },
   })
   return { definition: normalized, descriptor }
 }
@@ -317,6 +346,17 @@ export class CommandRuntime extends TypertRemoteService {
       .map(command => command.descriptor)
       // Names are unique in the effective view, so equality is impossible.
       .sort((left, right) => left.name < right.name ? -1 : 1))
+  }
+
+  /**
+   * Read the effective owner's human-only usage guide without executing or logging.
+   * @param agent - existing receiving Agent and scope key.
+   * @param name - command name without its leading slash.
+   * @param locale - authored guide language.
+   * @returns immutable guide, or null when the command or its guide is absent.
+   */
+  reference(agent: Agent, name: string, locale: ReferenceLocale): CommandUsageGuide | null {
+    return this.view(agent).get(name)?.definition.reference?.[locale] ?? null
   }
 
   /**

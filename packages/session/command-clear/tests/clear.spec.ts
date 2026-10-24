@@ -77,6 +77,16 @@ it('registers globally through Loader and removes the command when unloaded', as
   expect(commands.find(test.agent, 'clear')).toBeUndefined()
 })
 
+it('executes the registered EN/ZH manual examples without a summary model request', async () => {
+  const test = await harness()
+  for (const locale of ['en', 'zh'] as const) {
+    const guide = test.ctx.commands.reference(test.agent, 'clear', locale)
+    expect(guide).not.toBeNull()
+    for (const example of guide!.examples) expect((await test.run(example.input))?.result.kind).toBe('success')
+  }
+  expect(test.adapter.requests).toEqual([])
+})
+
 it('reuses the same Session with no old conversation, preserves audit history and survives replay', async () => {
   const test = await harness()
   test.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'SECRET_OLD_CONTEXT' }], source: { kind: 'user' } }))

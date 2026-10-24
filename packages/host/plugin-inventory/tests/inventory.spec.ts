@@ -147,6 +147,7 @@ describe('PluginInventoryGateway', () => {
     expect(remoteMethods(inventory)).toEqual([
       expect.objectContaining({ method: 'referenceList', invocation: { kind: 'direct' } }),
       expect.objectContaining({ method: 'referenceDetail', invocation: { kind: 'direct' } }),
+      expect.objectContaining({ method: 'commandReference', invocation: { kind: 'direct' } }),
       { method: 'list', invocation: { kind: 'direct' } },
     ])
   })

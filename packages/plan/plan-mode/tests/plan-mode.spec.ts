@@ -603,7 +603,7 @@ describe('/plan', () => {
     const plainSteer = vi.fn()
     ;(plainAgent as unknown as { steer: typeof plainSteer }).steer = plainSteer
     expect(ctx.commands.list(plainAgent)).toEqual([
-      { definitionId: '@deepseek-ai/dsh-plan-mode', name: 'plan', description: 'Enter or leave plan mode', input: { hint: '[off|message]', attachments: true } },
+      { definitionId: '@deepseek-ai/dsh-plan-mode', name: 'plan', description: 'Enter or leave plan mode', input: { hint: '[off|message]', attachments: true }, hasReference: true },
     ])
 
     const signal = new AbortController().signal
@@ -633,6 +633,25 @@ describe('/plan', () => {
       content: [{ type: 'text', text: 'draft the migration' }],
       source: { kind: 'user' },
     })
+  })
+
+  it('executes the registered EN/ZH manual examples through mode transitions and planning input', async () => {
+    const ctx = await setup()
+    await ctx.plugin(CommandRuntime)
+    await new Promise(resolve => setImmediate(resolve))
+    for (const locale of ['en', 'zh'] as const) {
+      const agent = await agentWithSession(ctx, `guide-plan-${locale}`)
+      const steer = vi.fn()
+      agent.steer = steer
+      const guide = ctx.commands.reference(agent, 'plan', locale)
+      expect(guide).not.toBeNull()
+      for (const example of guide!.examples) {
+        const result = await ctx.commands.execute(agent, example.input, [], new AbortController().signal)
+        expect(result?.result.kind).toBe('success')
+      }
+      expect(ctx.planMode.get(agent).active).toBe(true)
+      expect(steer).toHaveBeenCalledTimes(1)
+    }
   })
 
   it('leaves active plan mode, cancels a pending entry, and treats inactive exit as idempotent', async () => {

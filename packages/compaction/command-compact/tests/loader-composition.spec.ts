@@ -122,7 +122,7 @@ describe('command-compact real Loader composition', () => {
     expect(context.commands.list(agent)).toContainEqual({
       definitionId: '@deepseek-ai/dsh-command-compact',
       name: 'compact',
-      description: 'Compact older conversation history',
+      description: 'Compact older conversation history', hasReference: true,
     })
     const execution = await context.commands.execute(agent, '/compact', [], new AbortController().signal)
     if (execution === undefined) throw new Error('Loader composition did not resolve /compact')

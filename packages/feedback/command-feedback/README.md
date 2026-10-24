@@ -27,6 +27,8 @@ English | [中文](README.zh.md)
 
 Users can record feedback from the Web client out of the box: the `/feedback` command ships with the standard `dsh` base, needs no configuration, and works in any conversation. A custom app gets the same command by mounting the Session store, command registry, and this plugin together.
 
+The registration supplies an EN/ZH usage guide through the command registry. Browsing it appends no feedback and makes no model request.
+
 ### The `/feedback` command
 
 Type `/feedback` followed by your remark and send it. A successful entry is acknowledged with the receiving session id and the anonymous user id:

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import CommandRuntime from '@deepseek-ai/dsh-commands'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import SessionStore, {
   Session,
   SessionId,
@@ -80,6 +82,28 @@ describe('permission preset fold', () => {
 })
 
 describe('PermissionPresetService', () => {
+  it('executes the authored inspection examples without selecting a different preset', async () => {
+    const ctx = await mounted()
+    try {
+      await ctx.plugin(CommandRuntime)
+      await new Promise(resolve => setImmediate(resolve))
+      const session = freshSession('manual-permission')
+      const agent = { session, status: 'idle', options: {} } as Agent
+      const before = ctx.permissionPresets.current(session)
+      for (const locale of ['en', 'zh'] as const) {
+        const guide = ctx.commands.reference(agent, 'permission', locale)
+        expect(guide).not.toBeNull()
+        for (const example of guide!.examples) {
+          const execution = await ctx.commands.execute(agent, example.input, [], new AbortController().signal)
+          expect(execution?.result.kind).toBe('success')
+          expect(execution?.result.text).toContain(`current preset ${before}`)
+        }
+      }
+      expect(ctx.permissionPresets.current(session)).toBe(before)
+      expect(session.deriveMessages()).toEqual([])
+    } finally { await ctx.fiber.dispose() }
+  })
+
   it('does not activate without the required projection registry', async () => {
     const ctx = await mounted({ projection: false })
     expect(ctx.get('permissionPresets')).toBeUndefined()

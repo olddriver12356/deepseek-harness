@@ -4,6 +4,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { reference } from './reference.ts'
 import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import { GoalError } from '@deepseek-ai/dsh-goal'
@@ -192,7 +193,7 @@ export function apply(ctx: Context): void {
   ctx.inject(['longTermProgress'], registerProgressCommand)
   ctx.commands.register({
     definitionId: CommandDefinitionId('@deepseek-ai/dsh-command-goal'),
-    name: 'goal',
+    name: 'goal', reference,
     description: 'Set or view the goal for a long-running task',
     input: { hint: '[<objective>|clear|edit <objective>|pause|resume]', attachments: true },
     handler: invocation => executeGoalCommand(ctx, invocation),
