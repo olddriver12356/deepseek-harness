@@ -16,6 +16,35 @@ export type CommandSubmitAttachment =
   | ({ readonly type: 'image' } & EncodedImageAttachment)
   | { readonly type: 'file'; readonly receiptId: string }
 
+/** Locale of a source-owned human reference guide. */
+export type ReferenceLocale = 'en' | 'zh'
+
+/** Authored argument documentation; absent arguments differ from absent documentation. */
+export interface CommandUsageArgument {
+  readonly name: string
+  readonly description: string
+  readonly required: boolean
+  readonly defaultValue?: string
+  readonly acceptedValues?: readonly string[]
+}
+
+/** Human-only guide, kept outside model schemas and command lifecycle records. */
+export interface CommandUsageGuide {
+  readonly purpose: string
+  readonly when: string
+  readonly syntax: string
+  readonly arguments: { readonly kind: 'none' } | { readonly kind: 'documented'; readonly items: readonly CommandUsageArgument[] }
+  readonly subcommands: readonly {
+    readonly name: string
+    readonly syntax: string
+    readonly description: string
+    readonly arguments: readonly CommandUsageArgument[]
+  }[]
+  readonly examples: readonly { readonly title: string; readonly input: string; readonly expectedResult: string }[]
+  readonly effects: readonly string[]
+  readonly limitations: readonly string[]
+}
+
 /** Immutable metadata for a command's optional unstructured input. */
 export interface CommandInputDescriptor {
   /** Placeholder shown before the user supplies free-form input. */

@@ -25,7 +25,13 @@ Clients can call `pluginInventory/list` to display the host’s current plugins 
 <a id="use-this-package"></a>
 ## Use this package
 
-Call `pluginInventory/list` when a client or settings page needs to show what is currently composed in the host — which plugins are loaded, enabled, and alive, and what each agent preset would give a session. The Remote is the only entry point: the service is Remote-only and deliberately declares no same-process Cordis `Context` merge.
+Call `pluginInventory/list` when a client or settings page needs to show what is currently composed in the host — which plugins are loaded, enabled, and alive, and what each agent preset would give a session. Source owners can optionally register safe reference observations through `ctx.get('pluginInventory')`; this registration publishes metadata, not tools or model context.
+
+### Tool references
+
+`referenceList` reads Host contributions and an optional already-live Session's contributions, plus its command descriptors. Selecting a persisted Session never resumes an Agent. `referenceDetail` loads only the selected visible registration; an absent, disposed, or inaccessible identity returns null. Session-addressed calls declare the Session resource, and aggregate reads filter Host and Session resources independently. A failing source becomes an explicit unavailable row without blanking neighboring sources or exposing its error text.
+
+Register source-owned synchronous summary/detail callbacks with `registerReference`. The returned exact Cordis disposer removes that contribution; an optional change subscription is released with it. `plugin-inventory/references-changed` invalidates observations without polling or provider IO. Responses explicitly project safe fields: no arbitrary configuration, executable arguments, environment, transport headers, or hook commands. Provider documentation is external text and must remain inert in consumers.
 
 ### What a snapshot contains
 

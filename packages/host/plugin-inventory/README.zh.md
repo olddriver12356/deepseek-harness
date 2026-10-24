@@ -25,7 +25,13 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-当客户端或设置页需要展示宿主当前组合了什么——哪些插件已加载、已启用、是否存活，以及每个 agent preset 会给会话什么——时调用 `pluginInventory/list`。Remote 是唯一入口：该服务仅供 Remote 使用，刻意不声明同进程 Cordis `Context` 合并。
+当客户端或设置页需要展示宿主当前组合了什么——哪些插件已加载、已启用、是否存活，以及每个 agent preset 会给会话什么——时调用 `pluginInventory/list`。来源所有者可通过 `ctx.get('pluginInventory')` 可选注册安全的参考观测；注册仅发布元数据，不注册工具或模型上下文。
+
+### 工具参考
+
+`referenceList` 读取 Host 贡献，以及可选的已存活 Session 的贡献和命令描述。选择持久化 Session 从不恢复 Agent。`referenceDetail` 仅读取所选的可见注册；标识不存在、已释放或不可访问时返回 null。指定 Session 的调用声明 Session 资源，聚合读取分别过滤 Host 与 Session 资源。某个来源失败时产生显式不可用行，不清空其他来源，也不暴露其错误文本。
+
+通过 `registerReference` 注册来源所有者提供的同步摘要和详情回调。返回的原始 Cordis disposer 移除该贡献，并释放可选的变更订阅。`plugin-inventory/references-changed` 使观测失效，不进行轮询或提供方 IO。响应显式投影安全字段：不包含任意配置、可执行参数、环境、传输标头或 hook 命令。提供方文档属于外部文本，消费者必须以惰性内容呈现。
 
 ### 快照包含什么
 

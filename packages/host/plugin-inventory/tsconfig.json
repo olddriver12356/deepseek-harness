@@ -8,6 +8,12 @@
     "src"
   ],
   "references": [
+    { "path": "../../core/agent" },
+    { "path": "../../core/scope" },
+    { "path": "../../core/session" },
+    { "path": "../../api/remote-access/tsconfig.host.json" },
+    { "path": "../../interaction/commands" },
+    { "path": "../../util/values" },
     {
       "path": "../../boot/app-boot"
     },

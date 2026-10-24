@@ -1,6 +1,18 @@
 /** Read-only projection of the current Cordis Loader plugin entries. */
 
 import type { Context, FiberState } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-agent'
+import type {} from '@deepseek-ai/dsh-commands'
+import type {} from '@deepseek-ai/dsh-api-remote-access'
+import { ReferenceRegistry } from './references.ts'
+import type { ReferenceContribution, ReferenceListRequest, ReferenceDetailRequest, ToolReferenceSnapshot, ToolReferenceDetail } from './reference-types.ts'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    /** Scoped source-owned references and current Loader inventory. */
+    pluginInventory: PluginInventoryGateway
+  }
+}
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 // Type-only: the optional agent-preset roster resolved through `ctx.get`.
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
@@ -47,12 +59,57 @@ const FIBER_PHASE = {
   [FIBER_STATE.UNLOADING]: 'unloading',
 } as const satisfies Record<FiberState, PluginFiberPhase>
 
-/** Remote-only service exposing the Loader's current non-group entry state. */
+/** Read-only Loader inventory and effect-owned capability reference observations. */
 export class PluginInventoryGateway extends TypertRemoteService {
   static inject = ['loader']
+  private readonly references = new ReferenceRegistry()
 
   constructor(ctx: Context) {
     super(ctx, 'pluginInventory')
+  }
+
+  /**
+   * Publish source-owned reference observations for the calling registration scope.
+   * @param contribution - synchronous safe observations, with optional committed-state invalidation.
+   * @returns exact effect disposer; leaving the owner removes its reference and subscription.
+   */
+  registerReference(contribution: ReferenceContribution): () => void {
+    return this.references.register(this.ctx, contribution)
+  }
+
+  /**
+   * Read Host references and the selected Agent's existing capability descriptors.
+   * @param request - locale and optional Session; absent or cold Session never materializes an Agent.
+   * @returns point-in-time reference summaries without loading manuals or calling providers.
+   */
+  @Remote({ resources: { session: request => request.sessionId } })
+  referenceList(request: ReferenceListRequest): ToolReferenceSnapshot {
+    const agent = request.sessionId === undefined ? undefined : this.ctx.get('agents')?.get(request.sessionId)
+    const access = this.ctx.get('remoteAccess')
+    const rows = this.references.list(agent, agent?.id, request.locale)
+      .filter(row => access === undefined || access.allows(row.scope.kind === 'host'
+        ? { kind: 'global' } : { kind: 'session', id: row.scope.sessionId }))
+    return {
+      observedAt: Date.now(),
+      sessionAvailability: request.sessionId === undefined ? 'not-selected' : agent === undefined ? 'not-live' : 'live',
+      commands: agent === undefined ? [] : (this.ctx.get('commands')?.list(agent) ?? []),
+      mcp: { kind: 'ready', items: rows.filter(row => row.kind === 'mcp') },
+      hooks: { kind: 'ready', items: rows.filter(row => row.kind === 'hook') },
+    }
+  }
+
+  /**
+   * Read a selected manual from an already-registered authorized source.
+   * @param request - opaque entry and selected scope; reads never start a Session or provider operation.
+   * @returns safe detail, explicit source failure, or null when absent or inaccessible.
+   */
+  @Remote({ resources: { session: request => request.sessionId } })
+  referenceDetail(request: ReferenceDetailRequest): ToolReferenceDetail | null {
+    const agent = request.sessionId === undefined ? undefined : this.ctx.get('agents')?.get(request.sessionId)
+    const access = this.ctx.get('remoteAccess')
+    return this.references.detail(request.id, agent, agent?.id, request.locale,
+      scope => access === undefined || access.allows(scope.kind === 'host'
+        ? { kind: 'global' } : { kind: 'session', id: scope.sessionId }))
   }
 
   /**

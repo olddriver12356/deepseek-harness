@@ -1,3 +1,5 @@
+export type * from './reference-types.ts'
+
 import type { Branded } from '@deepseek-ai/dsh-brand'
 import type { PluginLocalizedMeta } from '@deepseek-ai/dsh-package-manifest'
 
