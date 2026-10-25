@@ -7,22 +7,15 @@ import type {} from '@deepseek-ai/dsh-client-ui-shell/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type { SkillDeleteRequest, SkillFileRequest, SkillFileWriteRequest, SkillArtifactId, WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/types'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { SkillsPanel, type CatalogInventory, type CatalogItem } from './SkillsPanel.tsx'
+import { ReferenceCatalog } from './ReferenceCatalog.tsx'
+import { referenceResourceProvider } from './reference-resources.ts'
+import type {} from '@deepseek-ai/dsh-client-resources/client'
 import { panelEn, panelZh, type PanelKey } from './panel-locales.ts'
 import { createDraftHandoff, draftingPrompt, toolDraftingPrompt, type AgentToolDraft, type AgentToolKind, type SkillDraft } from './creation.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' { interface LocaleNamespaceMap { skillsPanel: PanelKey } }
-export const inject = ['uiWorkspace', 'sessions', 'slots', 'locale', 'remote', 'remote.skillFiles', 'remote.commands', 'remote.pluginInventory', 'appPanels', 'workspaces']
-
-const commandGuideKeys = {
-  '@deepseek-ai/dsh-command-compact': ['compactWhen', 'compactExample'],
-  '@deepseek-ai/dsh-command-feedback': ['feedbackWhen', 'feedbackExample'],
-  '@deepseek-ai/dsh-command-goal': ['goalWhen', 'goalExample'],
-  '@deepseek-ai/dsh-plan-mode': ['planWhen', 'planExample'],
-  '@deepseek-ai/dsh-session-log-export': ['exportWhen', 'exportExample'],
-  '@deepseek-ai/dsh-permission-presets': ['permissionWhen', 'permissionExample'],
-} as const satisfies Record<string, readonly [PanelKey, PanelKey]>
+export const inject = ['uiWorkspace', 'sessions', 'slots', 'locale', 'remote', 'remote.skillFiles', 'remote.commands', 'remote.pluginInventory', 'resources', 'appPanels', 'workspaces']
 
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register('skillsPanel', { zh: panelZh, en: panelEn }), 'ui-skill: panel dictionaries')
@@ -30,10 +23,22 @@ export function apply(ctx: Context): void {
     if (!result.ok) throw new Error(`${result.error.code}: ${result.error.message}`)
     return result.value
   }
+  ctx.effect(() => ctx.resources.register(referenceResourceProvider(ctx.remote.pluginInventory, (listener) => {
+    const references = ctx.remote.$on('plugin-inventory/references-changed', listener)
+    const commands = ctx.remote.$on('commands/change', listener)
+    const presets = ctx.remote.$on('agent-preset/selected', listener)
+    const activity = ctx.remote.$on('api-session/status', listener)
+    const plugins = ctx.remote.$on('plugin-manager/changed', () => { listener() })
+    const reset = ctx.on('connection/reset', () => { listener() })
+    return () => { references(); commands(); presets(); activity(); plugins(); reset() }
+  })), 'ui-skill: read-only reference resources')
+  ctx.slots.inject('tools.reference', () => ctx.slots.register({
+    name: 'tools.reference', locale: 'skillsPanel',
+    inject: () => ({ hooks: { referenceLocale: ctx.locale } }),
+  }, ReferenceCatalog))
   const api = {
     catalog: async (sessionId?: string, presetId?: string): Promise<CatalogInventory> => {
       const plugins = unwrap(await ctx.remote.pluginInventory.list())
-      const commands = sessionId === undefined ? [] : unwrap(await ctx.remote.commands.list(sessionId as SessionId))
       const preset = sessionId === undefined ? undefined : (
         plugins.agentPresets?.find(item => item.id === presetId) ?? plugins.agentPresets?.find(item => item.isDefault)
       )
@@ -46,16 +51,7 @@ export function apply(ctx: Context): void {
       ].map(item => /@deepseek-ai\/dsh-experimental-(?:tool-)?agent-team(?:-profile)?$/.test(item.detail)
         ? { ...item, guide: teamGuide } : item)
       return {
-        commands: commands.map((item) => {
-          const keys = (commandGuideKeys as Partial<Record<string, readonly [PanelKey, PanelKey]>>)[item.definitionId ?? '']
-          return { id: `command:${item.name}`, name: `/${item.name}`, description: item.description,
-            source: t('catalogSession'), status: t('catalogAvailable'),
-            detail: `/${item.name}${item.input ? ` ${item.input.hint}` : ''}`, guide: keys === undefined
-              ? { category: t('catalogSlashCommand'), note: t('catalogNoGuide') }
-              : { category: t('catalogSlashCommand'), when: t(keys[0]), example: t(keys[1]) } }
-        }),
-        mcp: rows.filter(item => /mcp-client(?:$|\/)/.test(item.detail)),
-        hooks: rows.filter(item => /hooks-(?:codex|claude-code)(?:$|\/)/.test(item.detail)),
+        commands: [], mcp: [], hooks: [],
         plugins: rows,
       }
     },
@@ -71,6 +67,7 @@ export function apply(ctx: Context): void {
   }
   ctx.slots.inject('shell.app-overlay', () => ctx.slots.register({
     name: 'shell.app-overlay', id: 'skills-panel', locale: 'skillsPanel',
+    children: { 'tools.reference': { kind: 'single', scope: 'root' } },
     inject: () => ({ appPanels: ctx.appPanels, workspaces: ctx.workspaces, sessions: ctx.sessions, api, t: ctx.locale.bind('skillsPanel') }),
   }, SkillsPanel))
 }

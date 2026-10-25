@@ -42,8 +42,9 @@ function setup(extraSkills: Partial<SkillArtifact>[] = []) {
   const content: SkillFileContent = { file: 'SKILL.md', content: '---\nname: capture\ndescription: Capture sources\nmetadata:\n  category: writing\n---\nRead source', revision: 'revision', bytes: 100 }
   const run = vi.fn().mockResolvedValue(undefined)
   const api: SkillsApi = { list: vi.fn().mockResolvedValue({ skills: [item, ...extraSkills.map(skill => ({ ...item, ...skill }))], projectDestination: '/project/.agents/skills', personalDestination: '/user/.agents/skills' }), tree: vi.fn().mockResolvedValue([{ path: 'SKILL.md', kind: 'file' }, { path: 'references', kind: 'directory' }, { path: 'references/note.md', kind: 'file' }]), read: vi.fn<SkillsApi['read']>().mockImplementation(async request => ({ ...content, file: request.file })), write: vi.fn<SkillsApi['write']>().mockImplementation(async request => ({ ...content, content: request.content })), remove: vi.fn().mockResolvedValue({ recoveryPath: '/recovery/capture' }), handoff: vi.fn().mockReturnValue(run), handoffTool: vi.fn().mockReturnValue(run) }
-  render(<SkillsPanel appPanels={appPanels} api={api} sessions={sessions} workspaces={workspaces} t={t} />)
-  return { api, run }
+  const renderSlot = vi.fn().mockReturnValue(null)
+  render(<SkillsPanel appPanels={appPanels} api={api} sessions={sessions} workspaces={workspaces} t={t} renderSlot={renderSlot} />)
+  return { api, run, renderSlot }
 }
 it('searches names by default and includes descriptions only when selected', async () => {
   setup([
@@ -141,19 +142,16 @@ it('confirms removal and reports the recovery path', async () => {
   expect(screen.queryByRole('button', { name: 'Delete capture' })).toBeNull()
 })
 it('keeps the Skills workbench and shows read-only tool sections', async () => {
-  const { api } = setup()
-  api.catalog = vi.fn().mockResolvedValue({
-    commands: [{ id: 'command:help', name: '/help', description: 'Show commands', source: 'Current session', status: 'Available', detail: '/help', guide: { category: 'Session slash command', when: 'Find available commands', example: '/help' } }],
-    mcp: [{ id: 'host:mcp-github', name: 'mcp-github', description: '@deepseek-ai/dsh-mcp-client', source: 'Host', status: 'Plugin active', detail: '@deepseek-ai/dsh-mcp-client' }],
-    hooks: [], plugins: [],
-  })
+  const { api, renderSlot } = setup()
+  api.catalog = vi.fn()
   fireEvent.click(screen.getByRole('button', { name: 'MCP' }))
-  expect(await screen.findByRole('button', { name: /mcp-github/ })).toBeTruthy()
-  expect(screen.getByRole('status')).toHaveProperty('textContent', 'Plugin active')
+  expect(renderSlot).toHaveBeenLastCalledWith('tools.reference', expect.objectContaining({ section: 'mcp' }))
+  expect(api.catalog).not.toHaveBeenCalled()
   expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Commands' }))
-  expect(await screen.findByText('Find available commands')).toBeTruthy()
-  expect(screen.getByText('Session slash command')).toBeTruthy()
+  expect(renderSlot).toHaveBeenLastCalledWith('tools.reference', expect.objectContaining({ section: 'commands' }))
+  const create = screen.getByRole('button', { name: 'Create command' })
+  expect(create.closest('header')).not.toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Skills' }))
   expect(await screen.findByRole('button', { name: /^capture/ })).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Create skill' })).toBeTruthy()

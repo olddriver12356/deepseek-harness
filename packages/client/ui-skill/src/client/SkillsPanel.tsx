@@ -7,6 +7,8 @@ import type { SkillArtifact, SkillArtifactId, SkillDeleteRequest, SkillDeleteRes
 import { editField, invocationOf, readFields, type Invocation, type SkillFields } from './skill-document.ts'
 import type { AgentToolDraft, AgentToolKind, SkillDraft } from './creation.ts'
 import type { PanelTranslate } from './panel-locales.ts'
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
+import type {} from './ReferenceCatalog.tsx'
 import css from './SkillsPanel.module.css'
 
 export type CatalogSection = AgentToolKind
@@ -30,7 +32,7 @@ export interface SkillsApi {
   handoffTool(this: void, workspaceId: WorkspaceId, kind: AgentToolKind, draft: AgentToolDraft): () => Promise<void>
   catalog?(this: void, sessionId?: string, presetId?: string): Promise<CatalogInventory>
 }
-export interface SkillsPanelProps { appPanels: IAppPanels; workspaces: Pick<IWorkspaces, 'list'>; sessions: Pick<ISessions, 'list'>; api: SkillsApi; t: PanelTranslate }
+export interface SkillsPanelProps { appPanels: IAppPanels; workspaces: Pick<IWorkspaces, 'list'>; sessions: Pick<ISessions, 'list'>; api: SkillsApi; t: PanelTranslate; renderSlot?: PropsRenderSlots<'tools.reference'>['renderSlot'] }
 const modes: readonly Invocation[] = ['both', 'user', 'agent', 'neither']
 const errorText = (error: unknown): string => error instanceof Error ? error.message : String(error)
 const EMPTY: SkillInventory = { skills: [], projectDestination: '', personalDestination: '' }
@@ -55,7 +57,7 @@ function FileTree({ entries, active, onSelect, t, disabled = false, parent = '' 
 }
 
 /** Category index, physical file tree and a single source-backed editor buffer. */
-export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsPanelProps): ReactNode {
+export function SkillsPanel({ appPanels, workspaces, sessions, api, t, renderSlot }: SkillsPanelProps): ReactNode {
   const active = useSyncExternalStore(appPanels.subscribe, appPanels.getSnapshot)
   const entranceRef = useEntranceMotion<HTMLDivElement>(active === 'skills')
   const workspaceSubscribe = useCallback((listener: () => void) => workspaces.list.subscribe(listener), [workspaces])
@@ -72,6 +74,8 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   const [selectedTool, setSelectedTool] = useState('')
   const [catalogError, setCatalogError] = useState('')
   const [catalogBusy, setCatalogBusy] = useState(false)
+  const [referenceGeneration, setReferenceGeneration] = useState(0)
+  const referenceSection = section === 'commands' || section === 'mcp' || section === 'hooks'
   const [inventory, setInventory] = useState<SkillInventory>(EMPTY)
   const [selected, setSelected] = useState<SkillArtifact>()
   const [tree, setTree] = useState<readonly SkillTreeEntry[]>([])
@@ -141,7 +145,7 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
     finally { if (sequence === catalogGeneration.current) setCatalogBusy(false) }
   }, [api, sessionId, presetId])
   useEffect(() => { if (active === 'skills') void refresh() }, [active, refresh])
-  useEffect(() => { if (active === 'skills' && section !== 'skills') void refreshCatalog() }, [active, section, refreshCatalog])
+  useEffect(() => { if (active === 'skills' && section === 'plugins') void refreshCatalog() }, [active, section, refreshCatalog])
   useEffect(() => {
     if (workspaceId === undefined && currentWorkspace !== undefined) setWorkspaceId(currentWorkspace)
   }, [workspaceId, currentWorkspace])
@@ -222,11 +226,11 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
   }
   const formField = (label: string, key: keyof SkillFields, multiline = false) => <label>{label}{multiline ? <textarea className={key === 'instructions' ? css.instructions : undefined} value={fields.value?.[key] ?? ''} rows={key === 'instructions' ? 18 : 3} onChange={(event) => { changeField(key, event.target.value) }} /> : <input value={fields.value?.[key] ?? ''} onChange={(event) => { changeField(key, event.target.value) }} list={key === 'category' ? 'skill-categories' : undefined} />}</label>
 
-  return <section className={css.panel} hidden={active !== 'skills'} data-skills-panel aria-label={t('title')} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (dirty) void save() } }}>
-    <header className={css.header}><div className={css.titleLockup}><span className={css.titleMark} aria-hidden="true">03</span><div><h1>{t('title')}</h1><small>{t('subtitle')}</small></div></div><label>{t('workspace')}<select value={workspaceId ?? ''} disabled={busy || catalogBusy} onChange={(event) => { switchWorkspace(event.target.value as WorkspaceId) }}><option value="" disabled>{t('chooseWorkspace')}</option>{workspaceState.items.map(item => <option key={item.workspaceId} value={item.workspaceId}>{item.title}</option>)}</select></label><button type="button" disabled={busy || catalogBusy || workspaceId === undefined} onClick={() => { if (section === 'skills') void refresh(); else void refreshCatalog() }}>{t('refresh')}</button></header>
-    <section className={css.hero}><div><p className={css.heroKicker}>{t('subtitle')}</p><h2>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h2><p className={css.heroBody}>{t('heroBody')}</p></div>{section === 'skills'
+  return <section className={`${css.panel} ${referenceSection ? css.referencePanel : ''}`} hidden={active !== 'skills'} data-skills-panel aria-label={t('title')} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (dirty) void save() } }}>
+    <header className={css.header}><div className={css.titleLockup}><span className={css.titleMark} aria-hidden="true">03</span><div><h1>{t('title')}</h1><small>{t('subtitle')}</small></div></div><label>{t('workspace')}<select value={workspaceId ?? ''} disabled={busy || catalogBusy} onChange={(event) => { switchWorkspace(event.target.value as WorkspaceId) }}><option value="" disabled>{t('chooseWorkspace')}</option>{workspaceState.items.map(item => <option key={item.workspaceId} value={item.workspaceId}>{item.title}</option>)}</select></label><button type="button" disabled={busy || catalogBusy || workspaceId === undefined} onClick={() => { if (section === 'skills') void refresh(); else if (referenceSection) setReferenceGeneration(value => value + 1); else void refreshCatalog() }}>{t('refresh')}</button>{referenceSection && <button type="button" disabled={workspaceId === undefined || busy} onClick={() => { setError(''); setCreatingTool(section) }}>{t(createLabels[section])}</button>}</header>
+    {!referenceSection && <section className={css.hero}><div><p className={css.heroKicker}>{t('subtitle')}</p><h2>{t('heroLineOne')}<br /><span>{t('heroLineTwo')}</span></h2><p className={css.heroBody}>{t('heroBody')}</p></div>{section === 'skills'
       ? <button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setCreating(true) }}><span aria-hidden="true">＋</span>{t('create')}</button>
-      : <button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setError(''); setCreatingTool(section) }}><span aria-hidden="true">＋</span>{t(createLabels[section])}</button>}</section>
+      : <button className={css.heroCreate} type="button" disabled={workspaceId === undefined || busy} onClick={() => { setError(''); setCreatingTool(section) }}><span aria-hidden="true">＋</span>{t(createLabels[section])}</button>}</section>}
     <nav className={css.catalogTabs} aria-label={t('toolTypes')}>{sections.map(value => <button key={value} type="button" aria-current={section === value ? 'page' : undefined} onClick={() => { navigate(() => { setSection(value); setCatalogQuery(''); setSelectedTool('') }) }}>{t(value)}</button>)}</nav>
     {error !== ''  && <p className={css.error} role="alert">{error}</p>}
     {section === 'skills' ? <div ref={entranceRef} className={css.workbench}>
@@ -244,8 +248,8 @@ export function SkillsPanel({ appPanels, workspaces, sessions, api, t }: SkillsP
           {loaded.file === selected.entryFile && fields.value !== undefined && <header className={css.documentHeader}><p className={css.documentKicker}>{t(selected.scope)} · {fields.value.category || t('uncategorized')}</p><h2>{fields.value.name || selected.name}</h2><p className={css.documentDescription}>{fields.value.description}</p><span className={css.modeBadge}>{t(fields.value.invocation)}</span></header>}
           <div className={css.prose}><MarkdownText text={loaded.file === selected.entryFile && fields.value !== undefined ? fields.value.instructions : buffer} labels={{ code: { copyLabel: t('copyCode'), copiedLabel: t('copiedCode') }, footnotes: t('footnotes') }} /></div>
         </article> : <fieldset className={css.document} disabled={!selected.writable || busy}>{view === 'structured' && loaded.file === selected.entryFile && fields.value !== undefined ? <><div className={css.fieldGrid}>{formField(t('name'), 'name')}{formField(t('category'), 'category')}</div>{formField(t('description'), 'description', true)}<label>{t('invocation')}<select value={fields.value.invocation} onChange={(event) => { changeField('invocation', event.target.value) }}>{modes.map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</select></label>{formField(t('instructions'), 'instructions', true)}</> : <>{view === 'structured' && loaded.file === selected.entryFile && fields.error !== '' && <p role="alert">{t('sourceProblem')} {fields.error}</p>}<label className={css.source}>{t('source')}<textarea aria-label={t('source')} spellCheck={false} value={buffer} onChange={(event) => { setBuffer(event.target.value); setStatus('') }} /></label></>}</fieldset>}</> }</main>
-    </div> : <div className={`${css.workbench} ${css.catalogWorkbench}`}>
-      <aside className={css.index}><input aria-label={t('catalogSearch')} placeholder={t('catalogSearch')} value={catalogQuery} onChange={(event) => { setCatalogQuery(event.target.value) }} /><p className={css.count}>{t('catalogCount', { count: catalogItems.length })}</p><div className={css.list}>{catalogItems.map(item => <button key={item.id} className={css.skill} type="button" aria-pressed={tool?.id === item.id} onClick={() => { setSelectedTool(item.id) }}><strong>{item.name}</strong><small>{item.description}</small><span>{item.source}</span></button>)}{catalogItems.length === 0 && <p className={css.empty}>{catalogBusy ? t('loading') : section === 'commands' && sessionId === undefined ? t('chooseSession') : t('catalogEmpty')}</p>}</div><small className={css.notice}>{section === 'commands' ? t('catalogCommandsNotice') : t('catalogNotice')}</small></aside>
+    </div> : referenceSection ? renderSlot?.('tools.reference', { section, generation: referenceGeneration, ...(sessionId === undefined ? {} : { sessionId: sessionId as import('@deepseek-ai/dsh-session/types').SessionId }), ...(presetId === undefined ? {} : { presetId }) }) : <div className={`${css.workbench} ${css.catalogWorkbench}`}>
+      <aside className={css.index}><input aria-label={t('catalogSearch')} placeholder={t('catalogSearch')} value={catalogQuery} onChange={(event) => { setCatalogQuery(event.target.value) }} /><p className={css.count}>{t('catalogCount', { count: catalogItems.length })}</p><div className={css.list}>{catalogItems.map(item => <button key={item.id} className={css.skill} type="button" aria-pressed={tool?.id === item.id} onClick={() => { setSelectedTool(item.id) }}><strong>{item.name}</strong><small>{item.description}</small><span>{item.source}</span></button>)}{catalogItems.length === 0 && <p className={css.empty}>{catalogBusy ? t('loading') : t('catalogEmpty')}</p>}</div><small className={css.notice}>{t('catalogNotice')}</small></aside>
       <main className={css.editor}>{catalogError !== '' ? <p className={css.error} role="alert">{catalogError}</p> : tool === undefined ? <div className={css.empty}><span aria-hidden="true">✳</span><h2>{t('catalogSelect')}</h2></div> : <><header><div><strong>{tool.name}</strong><small>{t(section)} · {tool.source}</small></div><span role="status">{tool.status}</span></header><article className={css.preview}><h2>{tool.name}</h2><p>{tool.description}</p><dl className={css.catalogFacts}><div><dt>{t('source')}</dt><dd>{tool.source}</dd></div><div><dt>{t('catalogStatus')}</dt><dd>{tool.status}</dd></div><div><dt>{t('catalogDetail')}</dt><dd><code>{tool.detail}</code></dd></div>{tool.guide !== undefined && <><div><dt>{t('catalogType')}</dt><dd>{tool.guide.category}</dd></div>{tool.guide.when !== undefined && <div><dt>{t('catalogWhen')}</dt><dd>{tool.guide.when}</dd></div>}{tool.guide.example !== undefined && <div><dt>{t('catalogExample')}</dt><dd>{tool.guide.example}</dd></div>}{tool.guide.note !== undefined && <div><dt>{t('catalogNote')}</dt><dd>{tool.guide.note}</dd></div>}</>}</dl></article></>}</main>
     </div>}<datalist id="skill-categories">{categories.map(value => <option key={value} value={value} />)}</datalist>
     {recoveryPath !== '' && <p className={css.recovery} role="status">{t('deleted')} <code>{recoveryPath}</code></p>}

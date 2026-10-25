@@ -8,6 +8,11 @@
     "src"
   ],
   "references": [
+    { "path": "../resources" },
+    { "path": "../store" },
+    { "path": "../../interaction/commands" },
+    { "path": "../../host/plugin-inventory" },
+    { "path": "../../typert/protocol" },
     { "path": "../ui-workspace" },
     { "path": "../../util/crypto" },
     {

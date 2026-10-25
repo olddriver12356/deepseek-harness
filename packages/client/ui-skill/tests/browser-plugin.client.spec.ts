@@ -27,6 +27,7 @@ import type { ClientSessionContext, InputTriggerSource } from '@deepseek-ai/dsh-
 import { apply, inject } from '../src/client/index.ts'
 import { SkillRow as SkillToolRow } from '../src/client/SkillRow.tsx'
 import * as panelPlugin from '../src/client/panel-plugin.ts'
+import * as resourcesPlugin from '../../resources/src/client/index.ts'
 import { SkillReference, type SkillReferenceInjected } from '../src/client/SkillReference.tsx'
 import { UserTextRegistry } from '../../ui-conversation/src/client/conversation/user-text-registry.ts'
 
@@ -136,6 +137,7 @@ describe('apply', () => {
       commands: { list: async () => ({ ok: true, value: [] }) },
       pluginInventory: { list: async () => ({ ok: true, value: { entries: [] } }) },
     })
+    await ctx.plugin(resourcesPlugin).await()
     const fiber = ctx.plugin(panelPlugin)
     await fiber.await()
     expect(presentation.slots.entries('shell.app-overlay')).toHaveLength(1)
@@ -614,7 +616,7 @@ describe('reference preview', () => {
     expect(openResource).not.toHaveBeenCalled()
   })
 })
-it('projects command and plugin remotes into the four read-only sections', async () => {
+it('keeps configured plugins separate from source-owned live references', async () => {
   const ctx = new Context()
   ctx.provide('uiWorkspace', { openSession: vi.fn() } as never)
   const presentation = providePresentation(ctx)
@@ -634,21 +636,19 @@ it('projects command and plugin remotes into the four read-only sections', async
       { id: 'minimal', trust: 'user', isDefault: false, rows: [{ entryId: 'minimal-tool', moduleName: '@deepseek-ai/dsh-minimal-tool', enabled: 'conditional', fiberPhase: null }] },
     ] } }) },
   })
+  await ctx.plugin(resourcesPlugin).await()
   const fiber = ctx.plugin(panelPlugin)
   onTestFinished(async () => { await fiber.dispose(); await ctx.fiber.dispose() })
   await fiber.await()
   const entry = presentation.slots.entries('shell.app-overlay')[0]!
   const injected = entry.inject!() as { api: import('../src/client/SkillsPanel.tsx').SkillsApi }
   const catalog = await injected.api.catalog?.('session', 'minimal')
-  expect(catalog?.commands.map(item => item.name)).toEqual(['/compact', '/goal', '/goal'])
-  expect(catalog?.commands[1]?.detail).toBe('/goal [<objective>|clear]')
-  expect(catalog?.commands[2]?.guide?.note).toBe('catalogNoGuide')
-  expect(catalog?.mcp.map(item => item.name)).toEqual(['mcp-github'])
-  expect(catalog?.hooks.map(item => item.name)).toEqual(['hooks-codex'])
+  expect(catalog?.commands).toEqual([])
+  expect(catalog?.mcp).toEqual([])
+  expect(catalog?.hooks).toEqual([])
+  expect(presentation.slots.entries('tools.reference')).toHaveLength(1)
   expect(catalog?.plugins.map(item => item.name)).toEqual(['mcp-github', 'hooks-codex', 'other', 'team', 'minimal-tool'])
-  expect(catalog?.commands[0]?.guide?.when).toBe('compactWhen')
-  expect(catalog?.commands[0]?.guide?.category).toBe('catalogSlashCommand')
   expect(catalog?.plugins.find(item => item.name === 'team')?.guide?.note).toBe('teamNote')
   expect(catalog?.plugins.find(item => item.name === 'minimal-tool')?.status).toBe('catalogConditional')
-  expect(catalog?.hooks[0]?.status).toBe('catalogDisabled')
+  expect(catalog?.plugins.find(item => item.name === 'hooks-codex')?.status).toBe('catalogDisabled')
 })

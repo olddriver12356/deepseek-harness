@@ -12,16 +12,16 @@
   height: 100%;
   min-width: 0;
   overflow: auto;
-  scrollbar-color: var(--skill-accent) var(--skill-ink);
   scrollbar-gutter: stable;
   container-type: inline-size;
   color: var(--skill-paper);
   background: radial-gradient(ellipse at 12% 0%, rgb(66 150 134 / 16%), transparent 55%), radial-gradient(ellipse at 90% 100%, rgb(184 145 72 / 14%), transparent 55%), var(--skill-ink) url('./assets/workbench-collage.png') right top / cover no-repeat;
   font: 14px/1.5 var(--dsw-font-family, sans-serif);
 }
+.panel:not(.referencePanel) { scrollbar-color: var(--skill-accent) var(--skill-ink); }
 .panel[hidden] { display: none; }
 .panel *, .panel *::before, .panel *::after { box-sizing: border-box; }
-.panel button, .panel input, .panel select, .panel textarea { font: inherit; color: inherit; border: 1px solid var(--skill-line); border-radius: 8px; background: var(--skill-surface); }
+.panel:not(.referencePanel) button, .panel:not(.referencePanel) input, .panel:not(.referencePanel) select, .panel:not(.referencePanel) textarea { font: inherit; color: inherit; border: 1px solid var(--skill-line); border-radius: 8px; background: var(--skill-surface); }
 .panel button { padding: 8px 12px; cursor: pointer; }
 .panel button:hover { border-color: var(--skill-accent); }
 .panel button:disabled { cursor: default; opacity: .45; }
@@ -148,6 +148,30 @@
 .catalogTabs { display: flex; flex: 0 0 auto; gap: 6px; margin: 0 24px 12px; overflow-x: auto; }
 .panel .catalogTabs button { flex: none; padding: 8px 15px; background: rgb(25 31 34 / 86%); }
 .panel .catalogTabs button[aria-current='page'] { color: var(--skill-accent); border-color: var(--skill-accent); }
+.referencePanel {
+  --skill-ink: var(--dsw-alias-bg-layer-1);
+  --skill-surface: var(--dsw-alias-bg-layer-2);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+  --skill-paper: var(--dsw-alias-label-primary);
+  --skill-accent: var(--dsw-alias-state-business-primary);
+  --skill-muted: var(--dsw-alias-label-secondary);
+  --skill-line: var(--dsw-alias-border-l3);
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-layer-1);
+}
+.referencePanel .header { background: transparent; flex-wrap: wrap; padding-top: 28px; }
+.referencePanel .header h1 { font-size: 20px; line-height: 28px; font-weight: 500; }
+.referencePanel .titleMark, .referencePanel .hero { display: none; }
+.referencePanel .header small { letter-spacing: normal; color: var(--dsw-alias-label-secondary); }
+.referencePanel .catalogTabs { flex-wrap: wrap; overflow: visible; }
+.referencePanel .catalogTabs button { background: transparent; border-width: .5px; }
+.referencePanel .catalogTabs button[aria-current='page'] { background: var(--dsw-alias-bg-layer-2); }
+.referencePanel label { color: var(--dsw-alias-label-secondary); }
+.referencePanel .header button, .referencePanel .header select { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2); border: .5px solid var(--dsw-alias-border-l3); border-radius: 8px; }
+.referencePanel .header select { padding: 8px; }
+.referencePanel .catalogTabs button { color: var(--dsw-alias-label-primary); font: inherit; border: .5px solid transparent; border-radius: 8px; }
+:global([data-platform='darwin']) .referencePanel .header { padding-top: calc(28px + var(--dsh-frame-top-clearance, 0px)); }
 .catalogWorkbench { grid-template-columns: minmax(230px, 32%) minmax(0, 1fr); }
 .catalogWorkbench .index { min-width: 0; }
 .catalogWorkbench .skill { width: 100%; }
