@@ -86,9 +86,9 @@ export class PluginInventoryGateway extends TypertRemoteService {
   referenceList(request: ReferenceListRequest): ToolReferenceSnapshot {
     const agent = request.sessionId === undefined ? undefined : this.ctx.get('agents')?.get(request.sessionId)
     const access = this.ctx.get('remoteAccess')
-    const rows = this.references.list(agent, agent?.id, request.locale)
-      .filter(row => access === undefined || access.allows(row.scope.kind === 'host'
-        ? { kind: 'global' } : { kind: 'session', id: row.scope.sessionId }))
+    const rows = this.references.list(agent, agent?.id, request.locale,
+      scope => access === undefined || access.allows(scope.kind === 'host'
+        ? { kind: 'global' } : { kind: 'session', id: scope.sessionId }))
     return {
       observedAt: Date.now(),
       sessionAvailability: request.sessionId === undefined ? 'not-selected' : agent === undefined ? 'not-live' : 'live',

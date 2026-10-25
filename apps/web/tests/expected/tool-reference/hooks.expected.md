@@ -1,0 +1,29 @@
+- region "Tools":
+  - heading "Tools" [level=1]
+  - text: Your working library Workspace
+  - combobox "Workspace":
+    - option "Choose a workspace" [disabled]
+    - option "workspace" [selected]
+  - button "Refresh"
+  - button "Create hook"
+  - navigation "Tool types":
+    - button "Skills"
+    - button "Commands"
+    - button "MCP"
+    - button "Hooks"
+    - button "Plugins"
+  - complementary:
+    - textbox "Search this section"
+    - text: Hook type
+    - combobox "Hook type":
+      - option "All types"
+      - option "Session"
+      - option "Prompt"
+      - option "Tool" [selected]
+      - option "Turn completion"
+      - option "Subagent"
+    - paragraph: 0 items
+    - status: No matching items
+    - text: Read-only reference. Browsing does not execute commands, tools or hooks.
+  - main:
+    - paragraph: Choose an item

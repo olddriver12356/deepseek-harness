@@ -1,0 +1,7 @@
+# This reference-only scenario never executes a process. A deliberately unavailable
+# runner removes platform-specific native sandbox skill discovery from model input;
+# any accidental process request fails rather than running an unconfined command.
+- id: sandbox
+  config:
+    runnerCommand: [reference-scenario-must-not-execute]
+    runnerFailureSignatures: [reference-scenario-must-not-execute]

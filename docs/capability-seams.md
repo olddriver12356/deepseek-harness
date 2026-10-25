@@ -7,6 +7,12 @@ A service can be a core spine service, a swappable capability seam, a bundle/com
 
 ```mermaid
 flowchart LR
+  pkg_host_plugin_inventory["host-plugin-inventory"]
+  svc_pluginInventory["ctx.pluginInventory<br/>Source-owned Tool reference inventory"]
+  pkg_client_ui_skill["client-ui-skill"]
+  pkg_mcp_client["mcp-client"]
+  pkg_hooks_claude_code["hooks-claude-code"]
+  pkg_hooks_codex["hooks-codex"]
   pkg_api_workspace_controller["api-workspace-controller"]
   svc_skillFilesController["ctx.skillFilesController<br/>Physical skill editor Remote controller"]
   pkg_experimental_client_ui_cot_translation["experimental-client-ui-cot-translation"]
@@ -42,7 +48,6 @@ flowchart LR
   pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
-  pkg_mcp_client["mcp-client"]
   pkg_browser_use["browser-use"]
   svc_browserUse["ctx.browserUse<br/>Browser-use provider registration"]
   pkg_experimental_browser_use_playwright_mcp["experimental-browser-use-playwright-mcp"]
@@ -109,8 +114,6 @@ flowchart LR
   svc_remoteAccess["ctx.remoteAccess<br/>Remote method access control"]
   svc_sessionPersistence["ctx.sessionPersistence<br/>Durable session persistence seam"]
   pkg_session_persistence_jsonl["session-persistence-jsonl"]
-  pkg_hooks_claude_code["hooks-claude-code"]
-  pkg_hooks_codex["hooks-codex"]
   pkg_config_editor["config-editor"]
   svc_configEditor["ctx.configEditor<br/>Profile configuration edits"]
   pkg_settings["settings"]
@@ -379,6 +382,7 @@ flowchart LR
   pkg_host_directory_picker_browse --> svc_directoryPicker
   pkg_host_directory_picker_native --> svc_directoryPicker
   pkg_host_experts --> svc_experts
+  pkg_host_plugin_inventory --> svc_pluginInventory
   pkg_host_product_telemetry_otel --> svc_productTelemetry
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
@@ -528,6 +532,10 @@ flowchart LR
   svc_otel --> pkg_host_product_telemetry_otel
   svc_otel --> pkg_session_telemetry_otel
   svc_peerInbox --> pkg_peer_inbox
+  svc_pluginInventory --> pkg_client_ui_skill
+  svc_pluginInventory --> pkg_hooks_claude_code
+  svc_pluginInventory --> pkg_hooks_codex
+  svc_pluginInventory --> pkg_mcp_client
   svc_pluginManager --> pkg_plugin_manager
   svc_pluginManager --> pkg_ui_settings_plugin_inventory
   svc_pluginMarket --> pkg_client_ui_plugin_market
@@ -636,6 +644,7 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.pluginInventory` | `service` | [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | [`client-ui-skill`](../packages/client/ui-skill), [`mcp-client`](../packages/mcp/mcp-client), [`hooks-claude-code`](../packages/experimental/hooks-claude-code), [`hooks-codex`](../packages/experimental/hooks-codex) | - | Owns scoped read-only reference registrations and safe observations without activating Sessions or providers. |
 | `ctx.skillFilesController` | `core` | [`api-workspace-controller`](../packages/api/workspace-controller) | - | - | - | Lists and edits skill sources within registered Workspace roots, preserving revisions and recoverable deletion. |
 | `ctx.cotTranslation` | `service` | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | - | - | Serves reasoning translations, reuses saved results, and joins ordinary Session activation for uncached inactive Sessions. |
 | `ctx.translator` | `service` | [`experimental-translator`](../packages/experimental/translator) | - | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | Resolves Google or Bing requests and retains shared experimental records through the active Session writer. |

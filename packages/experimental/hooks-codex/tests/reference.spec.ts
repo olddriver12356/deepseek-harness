@@ -14,6 +14,11 @@ import PluginInventoryGateway from '@deepseek-ai/dsh-host-plugin-inventory'
 import { parseCodexConfig } from '../src/config.ts'
 import { registerReferences } from '../src/reference.ts'
 
+class UnusedShell extends ShellService {
+  resolve(): never { throw new Error('Reference reads must not resolve shell commands') }
+  execute(): never { throw new Error('Reference reads must not execute shell commands') }
+}
+
 const contexts: Context[] = []
 afterEach(async () => { for (const ctx of contexts.splice(0)) await ctx.fiber.dispose() })
 
@@ -26,7 +31,7 @@ describe('Codex hook references', () => {
       await ctx.plugin(Loader)
       await ctx.plugin(PluginInventoryGateway)
       await ctx.plugin(SessionProjectionRegistry)
-      await ctx.plugin(ShellService)
+      await ctx.plugin(UnusedShell)
       provideWorkingDirectoryFixture(ctx)
       ctx.baseUrl = pathToFileURL(root).href + '/'
       ctx.loader.builtins.include = Include

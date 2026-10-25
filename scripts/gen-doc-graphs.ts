@@ -108,6 +108,14 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'pluginInventory',
+    pkg: 'host-plugin-inventory',
+    title: 'Source-owned Tool reference inventory',
+    mode: 'service',
+    consumers: ['client-ui-skill', 'mcp-client', 'hooks-claude-code', 'hooks-codex'],
+    note: 'Owns scoped read-only reference registrations and safe observations without activating Sessions or providers.',
+  },
+  {
     key: 'skillFilesController',
     pkg: 'api-workspace-controller',
     title: 'Physical skill editor Remote controller',

@@ -67,10 +67,12 @@ export class ReferenceRegistry {
    * @param scope - selected live Agent, or undefined for Host only.
    * @param sessionId - selected Agent identity when live.
    * @param locale - authored content language.
+   * @param allows - optional access predicate evaluated before any source reads.
    * @returns independent rows, containing source failures without leaking diagnostics.
    */
-  list(scope: ScopeKey | undefined, sessionId: import('@deepseek-ai/dsh-session/types').SessionId | undefined, locale: ReferenceLocale): ToolReferenceSummary[] {
+  list(scope: ScopeKey | undefined, sessionId: import('@deepseek-ai/dsh-session/types').SessionId | undefined, locale: ReferenceLocale, allows?: (visibility: ReferenceScope) => boolean): ToolReferenceSummary[] {
     return [...this.layers.merge(scope, layer => layer.entries).values()]
+      .filter(entry => allows?.(this.visibility(entry, sessionId)) !== false)
       .map(entry => this.summary(entry, this.visibility(entry, sessionId), locale))
   }
 

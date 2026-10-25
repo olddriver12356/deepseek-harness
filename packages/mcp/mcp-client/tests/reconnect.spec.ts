@@ -215,7 +215,7 @@ describe('reconnect supervisor', () => {
       await vi.waitFor(() => { expect(mockListTools).toHaveBeenCalledTimes(2) })
       await new Promise(resolve => setImmediate(resolve))
       expect(handle.reference()).toEqual(reference)
-      ctx.tools.register({ name: 'mcp__srv__foreign', description: 'Conflicting owner', parameters: {}, output: { schema: { type: 'object' }, render: () => [] }, execute: () => ({ ok: true }) })
+      ctx.tools.register({ name: 'mcp__srv__foreign', description: 'Conflicting owner', parameters: {}, output: { schema: { type: 'object' }, render: () => [] }, execute: async () => ({ ok: true }) })
       mockListTools.mockResolvedValueOnce(listing('new', 'foreign'))
       changed()
       await vi.waitFor(() => { expect(mockListTools).toHaveBeenCalledTimes(3) })

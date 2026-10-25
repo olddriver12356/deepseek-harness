@@ -51,7 +51,7 @@ it('edits real nested skill files in a browser and renders both panel background
     page.on('console', (message) => { if (message.type() === 'error') console.error(message.text()) })
     page.on('response', (response) => { if (response.status() >= 400) console.error(response.status(), response.url()) })
     await page.goto(server.resolvedUrls!.local[0])
-    for (const [tab, heading, create] of [['Commands', '/fixture-command', 'Create command'], ['MCP', 'mcp-fixture', 'Add MCP server'], ['Hooks', 'hook-fixture', 'Create hook'], ['Plugins', 'plugin-fixture', 'Add plugin']] as const) {
+    for (const [tab, heading, create] of [['Plugins', 'plugin-fixture', 'Add plugin']] as const) {
       await page.locator('[data-skills-panel] nav').getByRole('button', { name: tab }).click()
       await page.getByRole('heading', { name: heading }).waitFor()
       expect(await page.getByRole('button', { name: 'Save', exact: true }).count()).toBe(0)

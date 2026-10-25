@@ -113,6 +113,8 @@ interface CommandDescriptor {
   readonly description: string
   /** Optional free-form input hint advertised to capable clients. */
   readonly input?: CommandInputDescriptor
+  /** True when the effective owner supplies a complete guide; bodies are selected lazily. */
+  readonly hasReference?: boolean
 }
 ```
 

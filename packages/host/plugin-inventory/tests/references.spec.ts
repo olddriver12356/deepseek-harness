@@ -12,6 +12,7 @@ import { createScope, type Scope } from '@deepseek-ai/dsh-scope'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import { remoteMethods } from '@deepseek-ai/dsh-typert-protocol'
 import PluginInventoryGateway from '../src/index.ts'
+import { ReferenceRegistry } from '../src/references.ts'
 
 const contexts: Context[] = []
 const roots: string[] = []
@@ -51,6 +52,14 @@ function server(name: string) {
 }
 
 describe('Tool reference inventory', () => {
+  it('checks aggregate scope access before invoking any source summary', async () => {
+    const ctx = await harness()
+    const registry = new ReferenceRegistry()
+    let reads = 0
+    registry.register(ctx, { ...server('restricted'), summary: () => { reads++; return server('restricted').summary() } })
+    expect(registry.list(undefined, undefined, 'en', () => false)).toEqual([])
+    expect(reads).toBe(0)
+  })
   it('loads contributions from cordis.yml and removes them when the configured source unloads', async () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-reference-loader-'))
     roots.push(root)
@@ -168,7 +177,7 @@ describe('Tool reference inventory', () => {
     const id = result.mcp.items.find(item => item.name === 'usable')!.id
     const detail = ctx.pluginInventory.referenceDetail({ id, locale: 'en' })
     expect(JSON.stringify({ result, detail })).not.toContain('SECRET_')
-    expect(result.mcp.items.find(item => item.state === 'unavailable')).toBeDefined()
+    expect(result.mcp.items.find(item => 'state' in item && item.state === 'unavailable')).toBeDefined()
   })
 
   it('reads selected detail without consulting unrelated providers', async () => {
