@@ -144,7 +144,7 @@
     ".recorder: border-radius: 10px"
   ],
   "ui-skill/src/client/SkillsPanel.module.css": [
-    ".panel button, .panel input, .panel select, .panel textarea: border-radius: 8px",
+    ".panel:not(.referencePanel) button, .panel:not(.referencePanel) input, .panel:not(.referencePanel) select, .panel:not(.referencePanel) textarea: border-radius: 8px",
     ".titleMark: border-radius: 12px",
     ".index, .files, .editor: border-radius: 12px",
     ".error: border-radius: 8px",

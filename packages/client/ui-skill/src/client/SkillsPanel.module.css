@@ -165,12 +165,12 @@
 .referencePanel .titleMark, .referencePanel .hero { display: none; }
 .referencePanel .header small { letter-spacing: normal; color: var(--dsw-alias-label-secondary); }
 .referencePanel .catalogTabs { flex-wrap: wrap; overflow: visible; }
-.referencePanel .catalogTabs button { background: transparent; border-width: .5px; }
+.referencePanel .catalogTabs button { background: transparent; border-width: 0.5px; }
 .referencePanel .catalogTabs button[aria-current='page'] { background: var(--dsw-alias-bg-layer-2); }
 .referencePanel label { color: var(--dsw-alias-label-secondary); }
-.referencePanel .header button, .referencePanel .header select { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2); border: .5px solid var(--dsw-alias-border-l3); border-radius: 8px; }
+.referencePanel .header button, .referencePanel .header select { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2); border: 0.5px solid var(--dsw-alias-border-l3); border-radius: var(--dsw-radius-sm); }
 .referencePanel .header select { padding: 8px; }
-.referencePanel .catalogTabs button { color: var(--dsw-alias-label-primary); font: inherit; border: .5px solid transparent; border-radius: 8px; }
+.referencePanel .catalogTabs button { color: var(--dsw-alias-label-primary); font: inherit; border: 0.5px solid transparent; border-radius: var(--dsw-radius-sm); }
 :global([data-platform='darwin']) .referencePanel .header { padding-top: calc(28px + var(--dsh-frame-top-clearance, 0px)); }
 .catalogWorkbench { grid-template-columns: minmax(230px, 32%) minmax(0, 1fr); }
 .catalogWorkbench .index { min-width: 0; }

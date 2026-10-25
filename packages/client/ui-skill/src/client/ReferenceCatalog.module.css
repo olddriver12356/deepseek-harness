@@ -1,10 +1,10 @@
 .catalog { flex: 1 0 auto; display: grid; grid-template-columns: minmax(220px, 30%) minmax(0, 1fr); gap: 24px; min-width: 0; min-height: 360px; padding: 20px 28px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); font: 13px/1.6 var(--dsw-font-family); }
 .index { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .index label { display: grid; gap: 6px; color: var(--dsw-alias-label-secondary); }
-.index select { font: inherit; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2); border: .5px solid var(--dsw-alias-border-l3); border-radius: 8px; padding: 8px; min-width: 0; width: 100%; }
+.index select { font: inherit; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2); border: 0.5px solid var(--dsw-alias-border-l3); border-radius: var(--dsw-radius-sm); padding: 8px; min-width: 0; width: 100%; }
 .index p, .index small { color: var(--dsw-alias-label-secondary); }
 .list { display: flex; flex-direction: column; gap: 4px; overflow: auto; }
-.list button { display: grid; gap: 4px; padding: 10px 12px; text-align: left; color: var(--dsw-alias-label-primary); background: transparent; border: 0; border-radius: 8px; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.list button { display: grid; gap: 4px; padding: 10px 12px; text-align: left; color: var(--dsw-alias-label-primary); background: transparent; border: 0; border-radius: var(--dsw-radius-sm); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
 .list button[aria-pressed='true'] { background: var(--dsw-alias-bg-layer-2); }
 .list strong { font-weight: 500; }
 .list small { color: var(--dsw-alias-label-secondary); }
@@ -18,15 +18,15 @@
 .manual dt { font-weight: 500; margin-top: 8px; }
 .manual dd { margin: 4px 0 12px; }
 .manual code { overflow-wrap: anywhere; white-space: pre-wrap; font-family: var(--ds-font-family-code, monospace); }
-.manual pre { --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2); --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2); max-width: 100%; overflow: auto; padding: 12px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2); }
+.manual pre { --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2); --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2); max-width: 100%; overflow: auto; padding: 12px; border-radius: var(--dsw-radius-sm); background: var(--dsw-alias-bg-layer-2); }
 .manual summary, .configuration summary { cursor: pointer; padding: 8px 0; }
 .literal { white-space: pre-wrap; overflow-wrap: anywhere; }
 .codeRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .codeRow code { flex: 1; min-width: 0; }
-.configuration { border-top: .5px solid var(--dsw-alias-border-l3); margin-top: 24px; padding-top: 12px; }
+.configuration { border-top: 0.5px solid var(--dsw-alias-border-l3); margin-top: 24px; padding-top: 12px; }
 .toolList { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .toolList button { max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
 .loading { min-height: 32px; }
-.catalog :focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: 2px; }
+.catalog :focus-visible { outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)); outline-offset: 2px; }
 @media (hover: hover) { .list button:hover { background: var(--dsw-alias-bg-layer-2); } }
 @media (max-width: 700px) { .catalog { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 20px; } .list { max-height: 280px; } .detail { padding: 0; } }
